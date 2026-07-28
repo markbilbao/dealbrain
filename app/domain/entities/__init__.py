@@ -28,6 +28,16 @@ from app.domain.entities.product_relation import (
     ProductRelationType,
     RelationDirection,
 )
+from app.domain.entities.recommendation import (
+    AlternativeRecommendation,
+    PurchaseDecision,
+    Recommendation,
+    RecommendationConfidence,
+    RecommendationReason,
+    RecommendationTradeoff,
+    RecommendationWarning,
+    ShoppingRecommendationResult,
+)
 from app.domain.entities.registered_product import (
     CanonicalProductStatus,
     ParseListingResult,
@@ -36,6 +46,7 @@ from app.domain.entities.registered_product import (
 )
 
 __all__ = [
+    "AlternativeRecommendation",
     "AvailabilityStatus",
     "CanonicalProduct",
     "CanonicalProductStatus",
@@ -55,10 +66,17 @@ __all__ = [
     "ProductMatchResult",
     "ProductRelation",
     "ProductRelationType",
+    "PurchaseDecision",
     "RankingResult",
+    "Recommendation",
+    "RecommendationConfidence",
+    "RecommendationReason",
+    "RecommendationTradeoff",
+    "RecommendationWarning",
     "RegisteredCanonicalProduct",
     "RegistryResolveResult",
     "RelationDirection",
     "ScoreableListing",
+    "ShoppingRecommendationResult",
     "rating_for_score",
 ]

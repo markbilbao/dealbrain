@@ -14,6 +14,7 @@ from app.domain.interfaces.deal_score_engine import DealScoreEngine
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
+from app.domain.interfaces.recommendation_engine import RecommendationEngine
 from app.infrastructure.database.repositories.canonical_product_repository import (
     SqlAlchemyCanonicalProductStore,
 )
@@ -27,10 +28,12 @@ from app.intelligence.dealscore import WeightedDealScoreEngine
 from app.intelligence.marketplace import LazadaConnector, ShopeeConnector
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
+from app.intelligence.recommendation import RuleBasedRecommendationEngine
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
+from app.services.shopping_recommendation_service import ShoppingRecommendationService
 
 # Process-scoped in-memory registry for demo / local runs without Postgres.
 _MEMORY_CANONICAL_STORE = InMemoryCanonicalProductStore()
@@ -122,4 +125,22 @@ def get_deal_recommendation_service(
     return DealRecommendationService(
         marketplace_service=marketplace_service,
         deal_score_engine=deal_score_engine,
+    )
+
+
+def get_recommendation_engine() -> RecommendationEngine:
+    """Provide the deterministic rule-based recommendation engine."""
+    return RuleBasedRecommendationEngine()
+
+
+def get_shopping_recommendation_service(
+    deal_recommendation_service: DealRecommendationService = Depends(
+        get_deal_recommendation_service
+    ),
+    recommendation_engine: RecommendationEngine = Depends(get_recommendation_engine),
+) -> ShoppingRecommendationService:
+    """Provide the shopping recommendation orchestration service."""
+    return ShoppingRecommendationService(
+        deal_recommendation_service=deal_recommendation_service,
+        recommendation_engine=recommendation_engine,
     )
