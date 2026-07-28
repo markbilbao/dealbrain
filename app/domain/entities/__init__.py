@@ -1,6 +1,11 @@
 """Domain entities and value objects for Product Identity."""
 
 from app.domain.entities.canonical_product import CanonicalProduct, ParseSignal
+from app.domain.entities.marketplace_listing import (
+    AvailabilityStatus,
+    MarketplaceListing,
+    MarketplaceSearchResult,
+)
 from app.domain.entities.product_match import (
     FieldCompareStatus,
     FieldConflict,
@@ -20,10 +25,13 @@ from app.domain.entities.registered_product import (
 )
 
 __all__ = [
+    "AvailabilityStatus",
     "CanonicalProduct",
     "CanonicalProductStatus",
     "FieldCompareStatus",
     "FieldConflict",
+    "MarketplaceListing",
+    "MarketplaceSearchResult",
     "MatchType",
     "ParseListingResult",
     "ParseSignal",
