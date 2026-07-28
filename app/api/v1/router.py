@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     price_history,
     products,
     recommendations,
+    reviews,
     watchlists,
 )
 
@@ -29,3 +30,4 @@ api_v1_router.include_router(
 )
 api_v1_router.include_router(watchlists.router, tags=["watchlists"])
 api_v1_router.include_router(watchlists.alerts_router, tags=["alerts"])
+api_v1_router.include_router(reviews.router, tags=["reviews"])

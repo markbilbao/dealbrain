@@ -23,6 +23,7 @@ from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.domain.interfaces.recommendation_engine import RecommendationEngine
 from app.domain.interfaces.repository import Repository
+from app.domain.interfaces.review_repository import ReviewCollector, ReviewRepository
 from app.domain.interfaces.watchlist_repository import (
     AlertRepository,
     WatchlistRepository,
@@ -47,5 +48,7 @@ __all__ = [
     "RateLimitDecision",
     "RecommendationEngine",
     "Repository",
+    "ReviewCollector",
+    "ReviewRepository",
     "WatchlistRepository",
 ]

@@ -155,3 +155,19 @@ class AlertNotFoundError(Exception):
     def __init__(self, alert_id: str) -> None:
         self.alert_id = alert_id
         super().__init__(f"Alert not found: {alert_id}")
+
+
+class ReviewValidationError(Exception):
+    """Raised when review intelligence inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class ReviewNotFoundError(Exception):
+    """Raised when no review snapshots exist for a product."""
+
+    def __init__(self, product_id: str) -> None:
+        self.product_id = product_id
+        super().__init__(f"No review snapshots found for product: {product_id}")

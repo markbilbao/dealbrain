@@ -655,12 +655,44 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Review intelligence">
+      <h2 class="panel-heading">Review Intelligence</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Marketplace rating comparison · mock collectors only (Shopee, Lazada, TikTok Shop, Amazon).
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="rv_product_id" style="flex:1;min-width:12rem;">
+          Product ID
+          <input id="rv_product_id" type="text" value="00000000-0000-4000-8000-000000000017" />
+        </label>
+        <label for="rv_product_label" style="flex:1;min-width:10rem;">
+          Label
+          <input id="rv_product_label" type="text" value="iPhone 17 Pro Max" />
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="rv_collect" type="button">Collect Reviews</button>
+        <button id="rv_refresh" type="button" style="background:#475569;">Refresh</button>
+        <button id="rv_compare" type="button" style="background:#0F172A;">Compare Marketplaces</button>
+      </div>
+      <div id="rv-summary" class="meta" style="margin-top:1rem;"></div>
+      <div id="rv-status" class="status" aria-live="polite"></div>
+      <section id="rv-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Marketplace Comparison</h3>
+        <div id="rv-compare"></div>
+        <h3 class="section-title">Ratings per marketplace</h3>
+        <div id="rv-ratings"></div>
+        <h3 class="section-title">Review History</h3>
+        <div id="rv-history"></div>
+      </section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
       GET /api/v1/recommendations/search · GET /api/v1/price-history/search ·
       POST /api/v1/collections/run · GET /api/v1/collection-operations/status ·
-      POST /api/v1/watchlists/check-alerts
+      POST /api/v1/watchlists/check-alerts · POST /api/v1/reviews/collect
     </footer>
   </main>
 
@@ -2243,6 +2275,195 @@
     wlSeedBtn.addEventListener("click", seedWatchlist);
     wlCheckBtn.addEventListener("click", checkWatchlistAlerts);
     refreshWatchlists();
+
+    const rvCollectBtn = document.getElementById("rv_collect");
+    const rvRefreshBtn = document.getElementById("rv_refresh");
+    const rvCompareBtn = document.getElementById("rv_compare");
+    const rvProductIdInput = document.getElementById("rv_product_id");
+    const rvProductLabelInput = document.getElementById("rv_product_label");
+    const rvSummaryEl = document.getElementById("rv-summary");
+    const rvStatusEl = document.getElementById("rv-status");
+    const rvCompareEl = document.getElementById("rv-compare");
+    const rvRatingsEl = document.getElementById("rv-ratings");
+    const rvHistoryEl = document.getElementById("rv-history");
+
+    function rvStat(label, value, emerald) {
+      return `<div class="stat"><div class="label">${label}</div><div class="value${emerald ? " emerald" : ""}">${value}</div></div>`;
+    }
+
+    function renderReviewMarketplaces(marketplaces) {
+      if (!marketplaces.length) {
+        return '<p class="empty-state">No marketplace reviews yet. Collect reviews to begin.</p>';
+      }
+      const rows = marketplaces.map((m) => `
+        <tr>
+          <td>${escapeHtml(m.marketplace)}</td>
+          <td><strong>${Number(m.rating).toFixed(1)}</strong></td>
+          <td>${Number(m.reviews).toLocaleString()}</td>
+          <td>${m.seller_rating != null ? Number(m.seller_rating).toFixed(1) : "—"}</td>
+          <td>${m.seller_followers != null ? Number(m.seller_followers).toLocaleString() : "—"}</td>
+        </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Marketplace</th><th>Rating</th><th>Reviews</th><th>Seller</th><th>Followers</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    function renderReviewStars(marketplaces) {
+      if (!marketplaces.length) {
+        return '<p class="empty-state">No star distributions available.</p>';
+      }
+      return marketplaces.map((m) => `
+        <div style="margin-bottom:0.85rem;">
+          <div class="hint" style="margin:0 0 0.35rem;"><strong>${escapeHtml(m.marketplace)}</strong>
+            · ${Number(m.rating).toFixed(1)} · ${Number(m.reviews).toLocaleString()} reviews</div>
+          <div class="meta">
+            ${rvStat("★★★★★", (m.five_star_count || 0).toLocaleString())}
+            ${rvStat("★★★★", (m.four_star_count || 0).toLocaleString())}
+            ${rvStat("★★★", (m.three_star_count || 0).toLocaleString())}
+            ${rvStat("★★", (m.two_star_count || 0).toLocaleString())}
+            ${rvStat("★", (m.one_star_count || 0).toLocaleString())}
+          </div>
+        </div>`).join("");
+    }
+
+    function renderReviewHistory(snapshots) {
+      if (!snapshots.length) {
+        return '<p class="empty-state">No review history yet.</p>';
+      }
+      const rows = snapshots.slice(0, 24).map((s) => `
+        <tr>
+          <td>${escapeHtml(s.marketplace)}</td>
+          <td>${Number(s.average_rating).toFixed(2)}</td>
+          <td>${Number(s.review_count).toLocaleString()}</td>
+          <td>${s.seller_rating != null ? Number(s.seller_rating).toFixed(1) : "—"}</td>
+          <td><code>${escapeHtml((s.collected_at || "").replace("T", " ").slice(0, 19))}</code></td>
+        </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Marketplace</th><th>Rating</th><th>Reviews</th><th>Seller</th><th>Collected</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    async function refreshReviews() {
+      const productId = (rvProductIdInput.value || "").trim();
+      if (!productId) {
+        showEl(rvStatusEl, '<div class="error">Product ID is required.</div>');
+        return;
+      }
+      showEl(
+        rvStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading reviews…</div>'
+      );
+      try {
+        const [latestRes, historyRes] = await Promise.all([
+          fetch(`/api/v1/reviews/${encodeURIComponent(productId)}`),
+          fetch(`/api/v1/reviews/history/${encodeURIComponent(productId)}`),
+        ]);
+        if (latestRes.status === 404) {
+          rvSummaryEl.innerHTML = rvStat("Overall Rating", "—") + rvStat("Total Reviews", "0");
+          rvCompareEl.innerHTML = '<p class="empty-state">No reviews yet. Click Collect Reviews.</p>';
+          rvRatingsEl.innerHTML = "";
+          rvHistoryEl.innerHTML = "";
+          showEl(rvStatusEl, '<div class="hint">No snapshots stored for this product.</div>');
+          return;
+        }
+        if (!latestRes.ok) {
+          const detail = await latestRes.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load reviews.");
+        }
+        const latest = await latestRes.json();
+        const history = historyRes.ok ? await historyRes.json() : { snapshots: [] };
+        rvSummaryEl.innerHTML = [
+          rvStat("Overall Rating", latest.overall_rating != null ? Number(latest.overall_rating).toFixed(2) : "—", true),
+          rvStat("Total Reviews", Number(latest.total_review_count || 0).toLocaleString(), true),
+          rvStat("Product", escapeHtml(latest.product || productId)),
+          rvStat("Marketplaces", (latest.marketplaces || []).length),
+        ].join("");
+        rvCompareEl.innerHTML = renderReviewMarketplaces(latest.marketplaces || []);
+        rvRatingsEl.innerHTML = renderReviewStars(latest.marketplaces || []);
+        rvHistoryEl.innerHTML = renderReviewHistory(history.snapshots || []);
+        showEl(rvStatusEl, "");
+      } catch (error) {
+        showEl(rvStatusEl, `<div class="error">${error.message || error}</div>`);
+      }
+    }
+
+    async function collectReviews() {
+      const productId = (rvProductIdInput.value || "").trim();
+      const productLabel = (rvProductLabelInput.value || "").trim() || null;
+      if (!productId) {
+        showEl(rvStatusEl, '<div class="error">Product ID is required.</div>');
+        return;
+      }
+      rvCollectBtn.disabled = true;
+      showEl(
+        rvStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Collecting mock reviews…</div>'
+      );
+      try {
+        const response = await fetch("/api/v1/reviews/collect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: productId,
+            product_label: productLabel,
+          }),
+        });
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to collect reviews.");
+        }
+        const body = await response.json();
+        showEl(
+          rvStatusEl,
+          `<div class="hint">Collected ${body.collected_count} marketplace snapshots · overall ${body.overall_rating}</div>`
+        );
+        await refreshReviews();
+      } catch (error) {
+        showEl(rvStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        rvCollectBtn.disabled = false;
+      }
+    }
+
+    async function compareReviews() {
+      const productId = (rvProductIdInput.value || "").trim();
+      if (!productId) {
+        showEl(rvStatusEl, '<div class="error">Product ID is required.</div>');
+        return;
+      }
+      rvCompareBtn.disabled = true;
+      showEl(
+        rvStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Comparing marketplaces…</div>'
+      );
+      try {
+        const response = await fetch(`/api/v1/reviews/compare/${encodeURIComponent(productId)}`);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to compare marketplaces.");
+        }
+        const body = await response.json();
+        rvSummaryEl.innerHTML = [
+          rvStat("Overall Rating", body.overall_rating != null ? Number(body.overall_rating).toFixed(2) : "—", true),
+          rvStat("Total Reviews", Number(body.total_review_count || 0).toLocaleString(), true),
+          rvStat("Product", escapeHtml(body.product || productId)),
+        ].join("");
+        rvCompareEl.innerHTML = renderReviewMarketplaces(body.marketplaces || []);
+        rvRatingsEl.innerHTML = renderReviewStars(body.marketplaces || []);
+        showEl(rvStatusEl, '<div class="hint">Marketplace comparison updated.</div>');
+      } catch (error) {
+        showEl(rvStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        rvCompareBtn.disabled = false;
+      }
+    }
+
+    rvCollectBtn.addEventListener("click", collectReviews);
+    rvRefreshBtn.addEventListener("click", refreshReviews);
+    rvCompareBtn.addEventListener("click", compareReviews);
+    refreshReviews();
   </script>
 </body>
 </html>
