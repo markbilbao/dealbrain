@@ -10,6 +10,7 @@ from app.domain.interfaces.canonical_registry import (
     CanonicalProductRegistry,
     CanonicalProductStore,
 )
+from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.infrastructure.database.repositories.canonical_product_repository import (
@@ -21,8 +22,10 @@ from app.intelligence.canonical_registry import (
     CanonicalProductRegistryService,
     InMemoryCanonicalProductStore,
 )
+from app.intelligence.marketplace import LazadaConnector, ShopeeConnector
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
+from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
 
@@ -87,3 +90,15 @@ def get_product_intelligence_service(
 ) -> ProductIntelligenceService:
     """Provide the Product Intelligence orchestration service."""
     return ProductIntelligenceService(parser=parser, registry=registry, matcher=matcher)
+
+
+def get_marketplace_connectors() -> list[MarketplaceConnector]:
+    """Provide registered marketplace connectors (mocked Sprint 4 adapters)."""
+    return [ShopeeConnector(), LazadaConnector()]
+
+
+def get_marketplace_intelligence_service(
+    connectors: list[MarketplaceConnector] = Depends(get_marketplace_connectors),
+) -> MarketplaceIntelligenceService:
+    """Provide the Marketplace Intelligence orchestration service."""
+    return MarketplaceIntelligenceService(connectors=connectors)

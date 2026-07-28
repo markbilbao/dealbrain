@@ -319,8 +319,8 @@
     <p class="brand">DealBrain</p>
     <h1>Product Intelligence Demo</h1>
     <p class="lede">
-      Parse messy Apple listings into canonical products, then compare two
-      titles to decide whether they are the same exact variant — no LLMs.
+      Parse messy Apple listings into canonical products, compare exact variants,
+      and search mocked marketplace listings across Shopee and Lazada — no LLMs.
     </p>
 
     <section class="panel" aria-label="Analyze listing">
@@ -375,7 +375,30 @@
       <section id="match-results" class="results" aria-live="polite"></section>
     </section>
 
-    <footer>Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match</footer>
+    <section class="panel" aria-label="Marketplace search">
+      <h2 class="panel-heading">Marketplace Intelligence</h2>
+      <label for="marketplace_q">Search marketplaces</label>
+      <div class="row">
+        <input
+          id="marketplace_q"
+          type="text"
+          value="iPhone 17 Pro Max"
+          placeholder="e.g. iPhone 17 Pro Max"
+          autocomplete="off"
+        />
+        <button id="marketplace_search" type="button">Search</button>
+      </div>
+      <p class="hint">
+        Mocked Shopee + Lazada · Try: AirPods · MacBook · Samsung Galaxy
+      </p>
+      <div id="marketplace-status" class="status" aria-live="polite"></div>
+      <section id="marketplace-results" class="results" aria-live="polite"></section>
+    </section>
+
+    <footer>
+      Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
+      GET /api/v1/marketplace/search
+    </footer>
   </main>
 
   <script>
@@ -389,6 +412,11 @@
     const compareBtn = document.getElementById("compare");
     const matchStatusEl = document.getElementById("match-status");
     const matchResultsEl = document.getElementById("match-results");
+
+    const marketplaceQueryInput = document.getElementById("marketplace_q");
+    const marketplaceSearchBtn = document.getElementById("marketplace_search");
+    const marketplaceStatusEl = document.getElementById("marketplace-status");
+    const marketplaceResultsEl = document.getElementById("marketplace-results");
 
     function showEl(el, html) {
       el.innerHTML = html;
@@ -524,6 +552,65 @@
       matchResultsEl.classList.add("visible");
     }
 
+    function formatPrice(price, currency) {
+      const amount = Number(price);
+      if (Number.isNaN(amount)) return "—";
+      return `${escapeHtml(currency || "")} ${amount.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`.trim();
+    }
+
+    function renderMarketplaceResults(data) {
+      const results = data.results || [];
+      const marketplaces = [...new Set(results.map((r) => r.marketplace))];
+
+      const rows = results
+        .map(
+          (item) => `<tr>
+            <td><span class="badge">${escapeHtml(item.marketplace)}</span></td>
+            <td>${escapeHtml(item.title)}</td>
+            <td>${formatPrice(item.price, item.currency)}</td>
+            <td>${escapeHtml(item.seller || "—")}</td>
+            <td>${item.rating != null ? escapeHtml(String(item.rating)) : "—"}</td>
+            <td><a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Open</a></td>
+          </tr>`
+        )
+        .join("");
+
+      marketplaceResultsEl.innerHTML = `
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Query</div>
+            <div class="value">${escapeHtml(data.query || "")}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Results</div>
+            <div class="value emerald">${results.length}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Marketplaces</div>
+            <div class="value">${escapeHtml(marketplaces.join(", ") || "—")}</div>
+          </div>
+        </div>
+        <h3 class="section-title">Listings</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Marketplace</th>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Seller</th>
+              <th>Rating</th>
+              <th>URL</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="6">No mocked listings matched this query.</td></tr>'}</tbody>
+        </table>
+      `;
+      marketplaceResultsEl.classList.add("visible");
+    }
+
     async function analyze() {
       const title = titleInput.value.trim();
       clearEl(resultsEl);
@@ -594,6 +681,51 @@
       if (event.key === "Enter") analyze();
     });
     compareBtn.addEventListener("click", compare);
+
+    async function searchMarketplaces() {
+      const q = marketplaceQueryInput.value.trim();
+      clearEl(marketplaceResultsEl);
+
+      if (!q) {
+        showEl(marketplaceStatusEl, '<div class="error">Please enter a search query.</div>');
+        return;
+      }
+
+      marketplaceSearchBtn.disabled = true;
+      showEl(
+        marketplaceStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Searching marketplaces…</div>'
+      );
+
+      try {
+        const response = await fetch(
+          `/api/v1/marketplace/search?q=${encodeURIComponent(q)}`,
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            marketplaceStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(marketplaceStatusEl);
+        renderMarketplaceResults(payload);
+      } catch (err) {
+        showEl(
+          marketplaceStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        marketplaceSearchBtn.disabled = false;
+      }
+    }
+
+    marketplaceSearchBtn.addEventListener("click", searchMarketplaces);
+    marketplaceQueryInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") searchMarketplaces();
+    });
   </script>
 </body>
 </html>

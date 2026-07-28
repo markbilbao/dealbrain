@@ -128,7 +128,9 @@ async def test_demo_page_served(intelligence_client: AsyncClient) -> None:
     assert "DealBrain" in body
     assert "Product Intelligence Demo" in body
     assert "Product Matching" in body
+    assert "Marketplace Intelligence" in body
     assert "/api/v1/intelligence/parse" in body
     assert "/api/v1/intelligence/match" in body
+    assert "/api/v1/marketplace/search" in body
     assert "#0F172A" in body
     assert "#10B981" in body
