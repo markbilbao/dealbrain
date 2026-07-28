@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     health,
     intelligence,
     marketplace,
+    price_history,
     products,
     recommendations,
 )
@@ -18,3 +19,4 @@ api_v1_router.include_router(intelligence.router, tags=["intelligence"])
 api_v1_router.include_router(marketplace.router, tags=["marketplace"])
 api_v1_router.include_router(dealscore.router, tags=["dealscore"])
 api_v1_router.include_router(recommendations.router, tags=["recommendations"])
+api_v1_router.include_router(price_history.router, tags=["price-history"])

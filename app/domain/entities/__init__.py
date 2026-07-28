@@ -23,6 +23,14 @@ from app.domain.entities.product_match import (
     MatchType,
     ProductMatchResult,
 )
+from app.domain.entities.price_history import (
+    MarketplacePriceSummary,
+    PriceHistory,
+    PriceHistorySearchResult,
+    PriceSnapshot,
+    PriceStatistics,
+    PriceTrend,
+)
 from app.domain.entities.product_relation import (
     ProductRelation,
     ProductRelationType,
@@ -63,6 +71,12 @@ __all__ = [
     "MatchType",
     "ParseListingResult",
     "ParseSignal",
+    "PriceHistory",
+    "PriceHistorySearchResult",
+    "PriceSnapshot",
+    "PriceStatistics",
+    "PriceTrend",
+    "MarketplacePriceSummary",
     "ProductMatchResult",
     "ProductRelation",
     "ProductRelationType",

@@ -443,8 +443,8 @@
     <h1>Product Intelligence Demo</h1>
     <p class="lede">
       Parse messy Apple listings into canonical products, compare exact variants,
-      search mocked marketplace listings, rank deals with DealScore, and get
-      explainable buying advice — no LLMs.
+      search mocked marketplace listings, rank deals with DealScore, get
+      explainable buying advice, and inspect recorded price history — no LLMs.
     </p>
 
     <section class="panel" aria-label="Analyze listing">
@@ -559,10 +559,33 @@
       <section id="recommendation-results" class="results" aria-live="polite"></section>
     </section>
 
+    <section class="panel" aria-label="Price intelligence">
+      <h2 class="panel-heading">Price Intelligence</h2>
+      <label for="price_history_q">Search recorded price history</label>
+      <div class="row">
+        <input
+          id="price_history_q"
+          type="text"
+          value="iPhone 17 Pro Max"
+          placeholder="e.g. iPhone 17 Pro Max"
+          autocomplete="off"
+        />
+        <button id="price_history_search" type="button">Load history</button>
+      </div>
+      <p class="hint">
+        Stored observations only · no future predictions · Try: iPhone 17 Pro Max
+      </p>
+      <p class="hint" id="price-history-mock-note" style="color: var(--emerald-dark); font-weight: 650;">
+        Development history uses mocked observations.
+      </p>
+      <div id="price-history-status" class="status" aria-live="polite"></div>
+      <section id="price-history-results" class="results" aria-live="polite"></section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
-      GET /api/v1/recommendations/search
+      GET /api/v1/recommendations/search · GET /api/v1/price-history/search
     </footer>
   </main>
 
@@ -1246,6 +1269,190 @@
     recommendationSearchBtn.addEventListener("click", searchRecommendations);
     recommendationQueryInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") searchRecommendations();
+    });
+
+    const priceHistoryQueryInput = document.getElementById("price_history_q");
+    const priceHistorySearchBtn = document.getElementById("price_history_search");
+    const priceHistoryStatusEl = document.getElementById("price-history-status");
+    const priceHistoryResultsEl = document.getElementById("price-history-results");
+
+    function formatTrend(trend) {
+      const value = (trend || "insufficient_data").toLowerCase();
+      const cls =
+        value === "rising"
+          ? "decision-consider"
+          : value === "falling"
+            ? "decision-buy"
+            : value === "stable"
+              ? "neutral"
+              : "decision-insufficient_information";
+      return `<span class="badge ${cls}">${escapeHtml(value)}</span>`;
+    }
+
+    function renderPriceHistoryResults(data) {
+      const stats = data.statistics;
+      if (!stats) {
+        priceHistoryResultsEl.innerHTML =
+          '<p class="empty-state">No recorded observations for this query yet.</p>';
+        priceHistoryResultsEl.classList.add("visible");
+        return;
+      }
+
+      const currency = data.currency || "PHP";
+      const summaries = (data.marketplace_summaries || [])
+        .map(
+          (row) => `
+          <tr>
+            <td>${escapeHtml(row.marketplace)}</td>
+            <td>${formatPrice(row.latest_total_cost, currency)}</td>
+            <td>${formatPrice(row.lowest_recorded_total_cost, currency)}</td>
+            <td>${formatPrice(row.average_total_cost, currency)}</td>
+            <td>${row.observation_count}</td>
+            <td><span class="badge neutral">${escapeHtml(row.latest_availability)}</span></td>
+            <td>${escapeHtml(row.last_observed)}</td>
+          </tr>`
+        )
+        .join("");
+
+      const historyRows = (data.history || [])
+        .map(
+          (row) => `
+          <tr>
+            <td>${escapeHtml(row.observed_at)}</td>
+            <td>${escapeHtml(row.marketplace)}</td>
+            <td><code>${escapeHtml(row.listing_id)}</code></td>
+            <td>${formatPrice(row.item_price, row.currency)}</td>
+            <td>${formatPrice(row.shipping_cost, row.currency)}</td>
+            <td>${formatPrice(row.total_cost, row.currency)}</td>
+            <td><span class="badge neutral">${escapeHtml(row.availability)}</span></td>
+            <td>${escapeHtml(row.seller_name || "—")}</td>
+          </tr>`
+        )
+        .join("");
+
+      priceHistoryResultsEl.innerHTML = `
+        <p class="hint" style="margin-top:0;color:var(--emerald-dark);font-weight:650;">
+          Development history uses mocked observations.
+        </p>
+        <p class="hint">${escapeHtml(data.disclaimer || "Lowest recorded price in the available DealBrain history.")}</p>
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Current recorded price</div>
+            <div class="value emerald">${formatPrice(stats.current_total_cost, currency)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Lowest recorded price</div>
+            <div class="value">${formatPrice(stats.lowest_recorded_total_cost, currency)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Highest recorded price</div>
+            <div class="value">${formatPrice(stats.highest_recorded_total_cost, currency)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Average price</div>
+            <div class="value">${formatPrice(stats.average_total_cost, currency)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Median price</div>
+            <div class="value">${formatPrice(stats.median_total_cost, currency)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Trend</div>
+            <div class="value">${formatTrend(stats.trend)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Observation count</div>
+            <div class="value">${stats.observation_count}</div>
+          </div>
+          <div class="stat">
+            <div class="label">First observed</div>
+            <div class="value">${escapeHtml(stats.first_observed)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Last updated</div>
+            <div class="value">${escapeHtml(stats.last_observed)}</div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Marketplace comparison</h3>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Marketplace</th>
+              <th>Latest</th>
+              <th>Lowest recorded</th>
+              <th>Average</th>
+              <th>Obs.</th>
+              <th>Availability</th>
+              <th>Last observed</th>
+            </tr>
+          </thead>
+          <tbody>${summaries || '<tr><td colspan="7">No marketplace summaries.</td></tr>'}</tbody>
+        </table>
+
+        <h3 class="section-title">Historical observations</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Observed at</th>
+              <th>Marketplace</th>
+              <th>Listing</th>
+              <th>Item</th>
+              <th>Shipping</th>
+              <th>Total</th>
+              <th>Availability</th>
+              <th>Seller</th>
+            </tr>
+          </thead>
+          <tbody>${historyRows || '<tr><td colspan="8">No observations.</td></tr>'}</tbody>
+        </table>
+      `;
+      priceHistoryResultsEl.classList.add("visible");
+    }
+
+    async function searchPriceHistory() {
+      const q = priceHistoryQueryInput.value.trim();
+      clearEl(priceHistoryResultsEl);
+
+      if (!q) {
+        showEl(priceHistoryStatusEl, '<div class="error">Please enter a search query.</div>');
+        return;
+      }
+
+      priceHistorySearchBtn.disabled = true;
+      showEl(
+        priceHistoryStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading price history…</div>'
+      );
+
+      try {
+        const response = await fetch(
+          `/api/v1/price-history/search?q=${encodeURIComponent(q)}`,
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            priceHistoryStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(priceHistoryStatusEl);
+        renderPriceHistoryResults(payload);
+      } catch (err) {
+        showEl(
+          priceHistoryStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        priceHistorySearchBtn.disabled = false;
+      }
+    }
+
+    priceHistorySearchBtn.addEventListener("click", searchPriceHistory);
+    priceHistoryQueryInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") searchPriceHistory();
     });
   </script>
 </body>

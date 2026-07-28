@@ -12,11 +12,15 @@ from app.domain.interfaces.canonical_registry import (
 )
 from app.domain.interfaces.deal_score_engine import DealScoreEngine
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
+from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.domain.interfaces.recommendation_engine import RecommendationEngine
 from app.infrastructure.database.repositories.canonical_product_repository import (
     SqlAlchemyCanonicalProductStore,
+)
+from app.infrastructure.database.repositories.price_history_repository import (
+    SQLAlchemyPriceHistoryStore,
 )
 from app.infrastructure.database.repositories.product_repository import ProductRepository
 from app.infrastructure.database.session import get_db_session
@@ -26,17 +30,20 @@ from app.intelligence.canonical_registry import (
 )
 from app.intelligence.dealscore import WeightedDealScoreEngine
 from app.intelligence.marketplace import LazadaConnector, ShopeeConnector
+from app.intelligence.price_history import InMemoryPriceHistoryStore
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
 from app.intelligence.recommendation import RuleBasedRecommendationEngine
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
+from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
 
 # Process-scoped in-memory registry for demo / local runs without Postgres.
 _MEMORY_CANONICAL_STORE = InMemoryCanonicalProductStore()
+_MEMORY_PRICE_HISTORY_STORE = InMemoryPriceHistoryStore()
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -143,4 +150,38 @@ def get_shopping_recommendation_service(
     return ShoppingRecommendationService(
         deal_recommendation_service=deal_recommendation_service,
         recommendation_engine=recommendation_engine,
+    )
+
+
+async def get_price_history_store() -> AsyncGenerator[PriceHistoryStore, None]:
+    """Provide the Price History persistence adapter.
+
+    Defaults to an in-memory store for local demos. Set
+    ``PRICE_HISTORY_BACKEND=sqlalchemy`` to use Postgres.
+    """
+    if settings.price_history_backend == "sqlalchemy":
+        async for session in get_db_session():
+            yield SQLAlchemyPriceHistoryStore(session)
+            return
+    yield _MEMORY_PRICE_HISTORY_STORE
+
+
+def get_price_history_service(
+    store: PriceHistoryStore = Depends(get_price_history_store),
+    marketplace_service: MarketplaceIntelligenceService = Depends(
+        get_marketplace_intelligence_service
+    ),
+    product_intelligence_service: ProductIntelligenceService = Depends(
+        get_product_intelligence_service
+    ),
+) -> PriceHistoryService:
+    """Provide the Price History orchestration service."""
+    seed_mock = settings.price_history_seed_demo_mock and settings.app_env != "production"
+    return PriceHistoryService(
+        store,
+        marketplace_service=marketplace_service,
+        product_intelligence_service=product_intelligence_service,
+        trend_threshold_percent=settings.price_trend_threshold_percent,
+        app_env=settings.app_env,
+        seed_demo_mock_on_search=seed_mock,
     )

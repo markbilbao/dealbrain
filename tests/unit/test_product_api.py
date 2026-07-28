@@ -51,7 +51,10 @@ async def product_client(
 
 
 @pytest.mark.asyncio
-async def test_list_products_endpoint(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_list_products_endpoint(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.list_products.return_value = [_sample_response()]
 
     response = await product_client.get("/api/v1/products")
@@ -64,7 +67,10 @@ async def test_list_products_endpoint(product_client: AsyncClient, product_servi
 
 
 @pytest.mark.asyncio
-async def test_get_product_endpoint(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_get_product_endpoint(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.get_product.return_value = _sample_response()
 
     response = await product_client.get(f"/api/v1/products/{PRODUCT_ID}")
@@ -74,7 +80,10 @@ async def test_get_product_endpoint(product_client: AsyncClient, product_service
 
 
 @pytest.mark.asyncio
-async def test_get_product_not_found(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_get_product_not_found(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.get_product.side_effect = ProductNotFoundError(PRODUCT_ID)
 
     response = await product_client.get(f"/api/v1/products/{PRODUCT_ID}")
@@ -83,7 +92,10 @@ async def test_get_product_not_found(product_client: AsyncClient, product_servic
 
 
 @pytest.mark.asyncio
-async def test_create_product_endpoint(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_create_product_endpoint(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.create_product.return_value = _sample_response()
 
     response = await product_client.post(
@@ -109,7 +121,10 @@ async def test_create_product_endpoint(product_client: AsyncClient, product_serv
 
 
 @pytest.mark.asyncio
-async def test_update_product_endpoint(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_update_product_endpoint(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.update_product.return_value = _sample_response(brand="Apple Inc.")
 
     response = await product_client.put(
@@ -126,7 +141,10 @@ async def test_update_product_endpoint(product_client: AsyncClient, product_serv
 
 
 @pytest.mark.asyncio
-async def test_update_product_not_found(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_update_product_not_found(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.update_product.side_effect = ProductNotFoundError(PRODUCT_ID)
 
     response = await product_client.put(
@@ -138,7 +156,10 @@ async def test_update_product_not_found(product_client: AsyncClient, product_ser
 
 
 @pytest.mark.asyncio
-async def test_delete_product_endpoint(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_delete_product_endpoint(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.delete_product.return_value = None
 
     response = await product_client.delete(f"/api/v1/products/{PRODUCT_ID}")
@@ -148,7 +169,10 @@ async def test_delete_product_endpoint(product_client: AsyncClient, product_serv
 
 
 @pytest.mark.asyncio
-async def test_delete_product_not_found(product_client: AsyncClient, product_service: AsyncMock) -> None:
+async def test_delete_product_not_found(
+    product_client: AsyncClient,
+    product_service: AsyncMock,
+) -> None:
     product_service.delete_product.side_effect = ProductNotFoundError(PRODUCT_ID)
 
     response = await product_client.delete(f"/api/v1/products/{PRODUCT_ID}")
