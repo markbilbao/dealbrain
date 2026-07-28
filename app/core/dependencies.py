@@ -16,10 +16,15 @@ from app.domain.interfaces.deal_score_engine import DealScoreEngine
 from app.domain.interfaces.marketplace_collector import MarketplaceCollector
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.marketplace_rate_limiter import MarketplaceRateLimiter
+from app.domain.interfaces.notification_service import NotificationService
 from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.domain.interfaces.recommendation_engine import RecommendationEngine
+from app.domain.interfaces.watchlist_repository import (
+    AlertRepository,
+    WatchlistRepository,
+)
 from app.infrastructure.database.repositories.canonical_product_repository import (
     SqlAlchemyCanonicalProductStore,
 )
@@ -45,6 +50,11 @@ from app.intelligence.price_history import InMemoryPriceHistoryStore
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
 from app.intelligence.recommendation import RuleBasedRecommendationEngine
+from app.intelligence.watchlists import (
+    InMemoryWatchlistRepository,
+    MockNotificationService,
+)
+from app.services.alert_service import AlertService
 from app.services.collection_operations_service import CollectionOperationsService
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
@@ -53,6 +63,7 @@ from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
+from app.services.watchlist_service import WatchlistService
 
 # Process-scoped in-memory registry for demo / local runs without Postgres.
 _MEMORY_CANONICAL_STORE = InMemoryCanonicalProductStore()
@@ -62,9 +73,13 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
     max_requests=100,
     window_seconds=60.0,
 )
+_MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistRepository()
+_MOCK_NOTIFICATION_SERVICE = MockNotificationService()
 _COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
 _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
 _COLLECTION_OPERATIONS_SERVICE: CollectionOperationsService | None = None
+_WATCHLIST_SERVICE: WatchlistService | None = None
+_ALERT_SERVICE: AlertService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -294,3 +309,70 @@ def get_collection_operations_service(
     _COLLECTION_OPERATIONS_SERVICE._scheduler = scheduler  # noqa: SLF001
     _COLLECTION_OPERATIONS_SERVICE._price_history_store = store  # noqa: SLF001
     return _COLLECTION_OPERATIONS_SERVICE
+
+
+def get_watchlist_repository() -> WatchlistRepository:
+    """Provide the process-scoped in-memory watchlist repository."""
+    return _MEMORY_WATCHLIST_REPOSITORY
+
+
+def get_alert_repository() -> AlertRepository:
+    """Provide the process-scoped in-memory alert repository."""
+    return _MEMORY_WATCHLIST_REPOSITORY
+
+
+def get_notification_service() -> NotificationService:
+    """Provide the mock notification service (queued status only)."""
+    return _MOCK_NOTIFICATION_SERVICE
+
+
+def get_watchlist_service(
+    repository: WatchlistRepository = Depends(get_watchlist_repository),
+    price_history_service: PriceHistoryService = Depends(get_price_history_service),
+    deal_recommendation_service: DealRecommendationService = Depends(
+        get_deal_recommendation_service
+    ),
+    registry: CanonicalProductRegistry = Depends(get_canonical_product_registry),
+) -> WatchlistService:
+    """Provide the Watchlist orchestration service."""
+    global _WATCHLIST_SERVICE
+    if _WATCHLIST_SERVICE is None:
+        _WATCHLIST_SERVICE = WatchlistService(
+            repository,
+            price_history_service=price_history_service,
+            deal_recommendation_service=deal_recommendation_service,
+            canonical_registry=registry,
+        )
+        return _WATCHLIST_SERVICE
+
+    _WATCHLIST_SERVICE._price_history = price_history_service  # noqa: SLF001
+    _WATCHLIST_SERVICE._deal_recommendation = deal_recommendation_service  # noqa: SLF001
+    _WATCHLIST_SERVICE._registry = registry  # noqa: SLF001
+    return _WATCHLIST_SERVICE
+
+
+def get_alert_service(
+    repository: WatchlistRepository = Depends(get_watchlist_repository),
+    alert_repository: AlertRepository = Depends(get_alert_repository),
+    price_history_service: PriceHistoryService = Depends(get_price_history_service),
+    notification_service: NotificationService = Depends(get_notification_service),
+    deal_recommendation_service: DealRecommendationService = Depends(
+        get_deal_recommendation_service
+    ),
+) -> AlertService:
+    """Provide the Alert evaluation service."""
+    global _ALERT_SERVICE
+    if _ALERT_SERVICE is None:
+        _ALERT_SERVICE = AlertService(
+            repository,
+            alert_repository,
+            price_history_service=price_history_service,
+            notification_service=notification_service,
+            deal_recommendation_service=deal_recommendation_service,
+        )
+        return _ALERT_SERVICE
+
+    _ALERT_SERVICE._price_history = price_history_service  # noqa: SLF001
+    _ALERT_SERVICE._notifications = notification_service  # noqa: SLF001
+    _ALERT_SERVICE._deal_recommendation = deal_recommendation_service  # noqa: SLF001
+    return _ALERT_SERVICE

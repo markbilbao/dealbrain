@@ -633,11 +633,34 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Watchlists and price alerts">
+      <h2 class="panel-heading">Watchlists &amp; Price Alerts</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Track products · evaluate alerts on demand · mock notifications only (queued, never sent).
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="wl_refresh" type="button" style="background:#475569;">Refresh</button>
+        <button id="wl_seed" type="button">Seed demo watchlist</button>
+        <button id="wl_check" type="button" style="background:#0F172A;">Check Alerts</button>
+      </div>
+      <div id="wl-summary" class="meta" style="margin-top:1rem;"></div>
+      <div id="wl-status" class="status" aria-live="polite"></div>
+      <section id="wl-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Watchlists</h3>
+        <div id="wl-lists"></div>
+        <h3 class="section-title">Tracked products</h3>
+        <div id="wl-items"></div>
+        <h3 class="section-title">Recent alerts</h3>
+        <div id="wl-alerts"></div>
+      </section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
       GET /api/v1/recommendations/search · GET /api/v1/price-history/search ·
-      POST /api/v1/collections/run · GET /api/v1/collection-operations/status
+      POST /api/v1/collections/run · GET /api/v1/collection-operations/status ·
+      POST /api/v1/watchlists/check-alerts
     </footer>
   </main>
 
@@ -1999,6 +2022,227 @@
     opsRunDueBtn.addEventListener("click", runOpsDueJobs);
     opsSeedJobBtn.addEventListener("click", seedOpsJob);
     refreshCollectionOps();
+
+    const wlRefreshBtn = document.getElementById("wl_refresh");
+    const wlSeedBtn = document.getElementById("wl_seed");
+    const wlCheckBtn = document.getElementById("wl_check");
+    const wlSummaryEl = document.getElementById("wl-summary");
+    const wlStatusEl = document.getElementById("wl-status");
+    const wlListsEl = document.getElementById("wl-lists");
+    const wlItemsEl = document.getElementById("wl-items");
+    const wlAlertsEl = document.getElementById("wl-alerts");
+    const WL_DEMO_PRODUCT_ID = "00000000-0000-4000-8000-000000000017";
+    let wlActiveId = null;
+
+    function wlStat(label, value, emerald) {
+      return `<div class="stat"><div class="label">${label}</div><div class="value${emerald ? " emerald" : ""}">${value}</div></div>`;
+    }
+
+    function formatMoney(value, currency) {
+      if (value == null) return "—";
+      const cur = currency || "PHP";
+      return `${cur} ${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function renderWatchlists(lists) {
+      if (!lists.length) {
+        return '<p class="empty-state">No watchlists yet. Seed a demo watchlist to begin.</p>';
+      }
+      const rows = lists.map((wl) => {
+        const active = wl.watchlist_id === wlActiveId ? " style=\"outline:2px solid var(--emerald);\"" : "";
+        return `<tr${active}>
+          <td><button type="button" data-wl-select="${wl.watchlist_id}" style="padding:0.35rem 0.65rem;font-size:0.8rem;background:#0F172A;">${escapeHtml(wl.name)}</button>
+            <div class="hint" style="margin:0.25rem 0 0;"><code>${wl.watchlist_id.slice(0, 12)}…</code></div></td>
+          <td><span class="badge">${wl.enabled ? "enabled" : "disabled"}</span></td>
+          <td>${wl.item_count}</td>
+          <td>${formatTs(wl.updated_at)}</td>
+        </tr>`;
+      }).join("");
+      return `<table>
+        <thead><tr><th>Watchlist</th><th>Status</th><th>Items</th><th>Updated</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    function renderWatchlistItems(items) {
+      if (!items.length) {
+        return '<p class="empty-state">No tracked products on this watchlist.</p>';
+      }
+      const rows = items.map((item) => `<tr>
+        <td>${escapeHtml(item.product_label || item.canonical_product_id.slice(0, 12) + "…")}
+          <div class="hint" style="margin:0.25rem 0 0;">Target ${formatMoney(item.target_price, item.currency)}</div></td>
+        <td>${formatMoney(item.current_price, item.observed_currency || item.currency)}</td>
+        <td>${formatMoney(item.historical_low, item.observed_currency || item.currency)}</td>
+        <td>${item.dealscore == null ? "—" : Number(item.dealscore).toFixed(1)}</td>
+        <td>${item.observation_count || 0}</td>
+      </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Product</th><th>Current</th><th>Hist. low</th><th>DealScore</th><th>Obs.</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    function renderWatchlistAlerts(alerts) {
+      if (!alerts.length) {
+        return '<p class="empty-state">No alerts yet. Click Check Alerts after seeding price history.</p>';
+      }
+      const rows = alerts.map((alert) => `<tr>
+        <td><span class="badge">${escapeHtml(alert.alert_type)}</span></td>
+        <td>${escapeHtml(alert.message)}</td>
+        <td><span class="badge">${escapeHtml(alert.status)}</span></td>
+        <td>${formatTs(alert.created_at)}</td>
+      </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Type</th><th>Message</th><th>Status</th><th>Created</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    async function ensureDemoPriceHistory() {
+      await fetch("/api/v1/price-history/search?q=" + encodeURIComponent("iPhone 17 Pro Max"), {
+        headers: { Accept: "application/json" },
+      });
+    }
+
+    async function refreshWatchlists() {
+      wlRefreshBtn.disabled = true;
+      showEl(
+        wlStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading watchlists…</div>'
+      );
+      try {
+        const [listsRes, alertsRes] = await Promise.all([
+          fetch("/api/v1/watchlists"),
+          fetch("/api/v1/alerts?limit=20"),
+        ]);
+        if (!listsRes.ok || !alertsRes.ok) {
+          throw new Error("Failed to load watchlists or alerts.");
+        }
+        const lists = (await listsRes.json()).watchlists || [];
+        const alerts = (await alertsRes.json()).alerts || [];
+        if (!wlActiveId && lists.length) {
+          wlActiveId = lists[0].watchlist_id;
+        }
+        let items = [];
+        if (wlActiveId) {
+          const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/items`);
+          if (itemsRes.ok) {
+            items = (await itemsRes.json()).items || [];
+          }
+        }
+        wlSummaryEl.innerHTML = [
+          wlStat("Watchlists", lists.length, true),
+          wlStat("Tracked", items.length),
+          wlStat("Alerts", alerts.length, alerts.length > 0),
+        ].join("");
+        wlListsEl.innerHTML = renderWatchlists(lists);
+        wlItemsEl.innerHTML = renderWatchlistItems(items);
+        wlAlertsEl.innerHTML = renderWatchlistAlerts(alerts);
+        clearEl(wlStatusEl);
+      } catch (error) {
+        showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        wlRefreshBtn.disabled = false;
+      }
+    }
+
+    async function seedWatchlist() {
+      wlSeedBtn.disabled = true;
+      showEl(
+        wlStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Seeding demo watchlist…</div>'
+      );
+      try {
+        await ensureDemoPriceHistory();
+        const created = await fetch("/api/v1/watchlists", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "Demo phone watchlist",
+            owner_id: "demo-user",
+            description: "iPhone 17 Pro Max price alerts",
+            enabled: true,
+          }),
+        });
+        if (!created.ok) {
+          const detail = await created.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to create watchlist.");
+        }
+        const watchlist = await created.json();
+        wlActiveId = watchlist.watchlist_id;
+        const itemRes = await fetch(
+          `/api/v1/watchlists/${encodeURIComponent(watchlist.watchlist_id)}/items`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              canonical_product_id: WL_DEMO_PRODUCT_ID,
+              product_label: "iPhone 17 Pro Max 256GB",
+              target_price: 74000,
+              currency: "PHP",
+              search_query: "iPhone 17 Pro Max",
+              last_known_price: 76000,
+              last_known_dealscore: 70,
+              last_historical_low: 73990,
+            }),
+          }
+        );
+        if (!itemRes.ok) {
+          const detail = await itemRes.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to add watchlist item.");
+        }
+        clearEl(wlStatusEl);
+        await refreshWatchlists();
+      } catch (error) {
+        showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        wlSeedBtn.disabled = false;
+      }
+    }
+
+    async function checkWatchlistAlerts() {
+      wlCheckBtn.disabled = true;
+      showEl(
+        wlStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Checking alerts…</div>'
+      );
+      try {
+        await ensureDemoPriceHistory();
+        const url = wlActiveId
+          ? `/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/check-alerts`
+          : "/api/v1/watchlists/check-alerts";
+        const response = await fetch(url, { method: "POST" });
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Alert check failed.");
+        }
+        const payload = await response.json();
+        showEl(
+          wlStatusEl,
+          `<div class="hint" style="color:var(--emerald-dark);font-weight:650;">
+            Checked ${payload.items_checked} item(s) · created ${payload.alerts_count} alert(s)
+            (notifications queued, not sent).
+          </div>`
+        );
+        await refreshWatchlists();
+      } catch (error) {
+        showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        wlCheckBtn.disabled = false;
+      }
+    }
+
+    document.getElementById("wl-lists").addEventListener("click", async (event) => {
+      const btn = event.target.closest("[data-wl-select]");
+      if (!btn) return;
+      wlActiveId = btn.getAttribute("data-wl-select");
+      await refreshWatchlists();
+    });
+
+    wlRefreshBtn.addEventListener("click", refreshWatchlists);
+    wlSeedBtn.addEventListener("click", seedWatchlist);
+    wlCheckBtn.addEventListener("click", checkWatchlistAlerts);
+    refreshWatchlists();
   </script>
 </body>
 </html>

@@ -17,14 +17,20 @@ from app.domain.interfaces.marketplace_rate_limiter import (
     MarketplaceRateLimiter,
     RateLimitDecision,
 )
+from app.domain.interfaces.notification_service import NotificationService
 from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.domain.interfaces.recommendation_engine import RecommendationEngine
 from app.domain.interfaces.repository import Repository
+from app.domain.interfaces.watchlist_repository import (
+    AlertRepository,
+    WatchlistRepository,
+)
 
 __all__ = [
     "AIProvider",
+    "AlertRepository",
     "CanonicalProductRegistry",
     "CanonicalProductStore",
     "CollectionJobRepository",
@@ -34,10 +40,12 @@ __all__ = [
     "MarketplaceCollector",
     "MarketplaceConnector",
     "MarketplaceRateLimiter",
+    "NotificationService",
     "PriceHistoryStore",
     "ProductIntelligenceEngine",
     "ProductMatcher",
     "RateLimitDecision",
     "RecommendationEngine",
     "Repository",
+    "WatchlistRepository",
 ]
