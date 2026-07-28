@@ -10,8 +10,12 @@ from app.domain.interfaces.canonical_registry import (
     CanonicalProductRegistry,
     CanonicalProductStore,
 )
+from app.domain.interfaces.collection_job_repository import CollectionJobRepository
+from app.domain.interfaces.collection_scheduler import CollectionScheduler
 from app.domain.interfaces.deal_score_engine import DealScoreEngine
+from app.domain.interfaces.marketplace_collector import MarketplaceCollector
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
+from app.domain.interfaces.marketplace_rate_limiter import MarketplaceRateLimiter
 from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
@@ -28,6 +32,13 @@ from app.intelligence.canonical_registry import (
     CanonicalProductRegistryService,
     InMemoryCanonicalProductStore,
 )
+from app.intelligence.collection import (
+    InMemoryCollectionJobRepository,
+    InMemoryCollectionScheduler,
+    InMemoryMarketplaceRateLimiter,
+    MockLazadaCollector,
+    MockShopeeCollector,
+)
 from app.intelligence.dealscore import WeightedDealScoreEngine
 from app.intelligence.marketplace import LazadaConnector, ShopeeConnector
 from app.intelligence.price_history import InMemoryPriceHistoryStore
@@ -35,6 +46,7 @@ from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
 from app.intelligence.recommendation import RuleBasedRecommendationEngine
 from app.services.deal_recommendation_service import DealRecommendationService
+from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
 from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
@@ -44,6 +56,13 @@ from app.services.shopping_recommendation_service import ShoppingRecommendationS
 # Process-scoped in-memory registry for demo / local runs without Postgres.
 _MEMORY_CANONICAL_STORE = InMemoryCanonicalProductStore()
 _MEMORY_PRICE_HISTORY_STORE = InMemoryPriceHistoryStore()
+_MEMORY_COLLECTION_JOB_REPOSITORY = InMemoryCollectionJobRepository()
+_MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
+    max_requests=100,
+    window_seconds=60.0,
+)
+_COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
+_COLLECTION_SERVICE: MarketplaceCollectionService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -185,3 +204,63 @@ def get_price_history_service(
         app_env=settings.app_env,
         seed_demo_mock_on_search=seed_mock,
     )
+
+
+def get_marketplace_collectors() -> list[MarketplaceCollector]:
+    """Provide registered mock marketplace collectors (no live HTTP)."""
+    return [MockShopeeCollector(), MockLazadaCollector()]
+
+
+def get_collection_job_repository() -> CollectionJobRepository:
+    """Provide the process-scoped in-memory collection job repository."""
+    return _MEMORY_COLLECTION_JOB_REPOSITORY
+
+
+def get_marketplace_rate_limiter() -> MarketplaceRateLimiter:
+    """Provide the process-scoped in-memory marketplace rate limiter."""
+    return _MEMORY_COLLECTION_RATE_LIMITER
+
+
+def get_marketplace_collection_service(
+    collectors: list[MarketplaceCollector] = Depends(get_marketplace_collectors),
+    price_history_service: PriceHistoryService = Depends(get_price_history_service),
+    product_intelligence_service: ProductIntelligenceService = Depends(
+        get_product_intelligence_service
+    ),
+    repository: CollectionJobRepository = Depends(get_collection_job_repository),
+    rate_limiter: MarketplaceRateLimiter = Depends(get_marketplace_rate_limiter),
+) -> MarketplaceCollectionService:
+    """Provide the Marketplace Collection orchestration service."""
+    global _COLLECTION_SERVICE
+    # Reuse a process-scoped service so the scheduler callback stays consistent
+    # with the same repository and collectors for the demo process.
+    if _COLLECTION_SERVICE is None:
+        _COLLECTION_SERVICE = MarketplaceCollectionService(
+            collectors,
+            price_history_service=price_history_service,
+            product_intelligence_service=product_intelligence_service,
+            repository=repository,
+            rate_limiter=rate_limiter,
+        )
+        return _COLLECTION_SERVICE
+
+    # Refresh collaborator references that may be request-scoped (SQLAlchemy).
+    _COLLECTION_SERVICE._price_history = price_history_service  # noqa: SLF001
+    _COLLECTION_SERVICE._product_intelligence = product_intelligence_service  # noqa: SLF001
+    return _COLLECTION_SERVICE
+
+
+def get_collection_scheduler(
+    service: MarketplaceCollectionService = Depends(get_marketplace_collection_service),
+    repository: CollectionJobRepository = Depends(get_collection_job_repository),
+) -> CollectionScheduler:
+    """Provide the deterministic in-memory collection scheduler."""
+    global _COLLECTION_SCHEDULER
+    if _COLLECTION_SCHEDULER is None:
+        _COLLECTION_SCHEDULER = InMemoryCollectionScheduler(
+            repository,
+            run_job=service.run_job,
+        )
+    else:
+        _COLLECTION_SCHEDULER._run_job = service.run_job  # noqa: SLF001
+    return _COLLECTION_SCHEDULER

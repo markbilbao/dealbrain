@@ -582,10 +582,41 @@
       <section id="price-history-results" class="results" aria-live="polite"></section>
     </section>
 
+    <section class="panel" aria-label="Marketplace collection">
+      <h2 class="panel-heading">Marketplace Collection</h2>
+      <label for="collection_q">Product query</label>
+      <div class="row">
+        <input
+          id="collection_q"
+          type="text"
+          value="iPhone 17 Pro Max"
+          placeholder="e.g. iPhone 17 Pro Max"
+          autocomplete="off"
+        />
+        <button id="collection_run" type="button">Run collection</button>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="collection_shopee" type="checkbox" checked /> Shopee
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="collection_lazada" type="checkbox" checked /> Lazada
+        </label>
+        <button id="collection_run_due" type="button" style="background:#0F172A;">Run due jobs</button>
+        <button id="collection_refresh_runs" type="button" style="background:#475569;">Recent runs</button>
+      </div>
+      <p class="hint" style="color: var(--emerald-dark); font-weight: 650;">
+        Development collection uses mocked marketplace data. No live marketplace APIs are called.
+      </p>
+      <div id="collection-status" class="status" aria-live="polite"></div>
+      <section id="collection-results" class="results" aria-live="polite"></section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
-      GET /api/v1/recommendations/search · GET /api/v1/price-history/search
+      GET /api/v1/recommendations/search · GET /api/v1/price-history/search ·
+      POST /api/v1/collections/run
     </footer>
   </main>
 
@@ -1453,6 +1484,278 @@
     priceHistorySearchBtn.addEventListener("click", searchPriceHistory);
     priceHistoryQueryInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") searchPriceHistory();
+    });
+
+    const collectionQueryInput = document.getElementById("collection_q");
+    const collectionShopeeInput = document.getElementById("collection_shopee");
+    const collectionLazadaInput = document.getElementById("collection_lazada");
+    const collectionRunBtn = document.getElementById("collection_run");
+    const collectionRunDueBtn = document.getElementById("collection_run_due");
+    const collectionRefreshRunsBtn = document.getElementById("collection_refresh_runs");
+    const collectionStatusEl = document.getElementById("collection-status");
+    const collectionResultsEl = document.getElementById("collection-results");
+
+    function selectedCollectionMarketplaces() {
+      const markets = [];
+      if (collectionShopeeInput.checked) markets.push("shopee");
+      if (collectionLazadaInput.checked) markets.push("lazada");
+      return markets;
+    }
+
+    function renderCollectionRun(run) {
+      const failures = (run.results || [])
+        .flatMap((result) => result.errors || [])
+        .map(
+          (error) =>
+            `<li><strong>${escapeHtml(error.marketplace)}</strong>: ${escapeHtml(error.code)} — ${escapeHtml(error.message)}</li>`
+        )
+        .join("");
+
+      const listingRows = (run.results || [])
+        .flatMap((result) =>
+          (result.listings || []).map(
+            (row) => `
+            <tr>
+              <td>${escapeHtml(row.marketplace)}</td>
+              <td><code>${escapeHtml(row.product_id)}</code></td>
+              <td>${escapeHtml(row.title)}</td>
+              <td>${formatPrice(row.price, row.currency)}</td>
+              <td><span class="badge neutral">${escapeHtml(row.availability)}</span></td>
+              <td>${row.is_duplicate ? "yes" : "no"}</td>
+            </tr>`
+          )
+        )
+        .join("");
+
+      const warningList = (run.warnings || [])
+        .map((w) => `<li>${escapeHtml(w)}</li>`)
+        .join("");
+
+      return `
+        <p class="hint" style="margin-top:0;color:var(--emerald-dark);font-weight:650;">
+          Development collection uses mocked marketplace data. No live marketplace APIs are called.
+        </p>
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Status</div>
+            <div class="value"><span class="badge neutral">${escapeHtml(run.status)}</span></div>
+          </div>
+          <div class="stat">
+            <div class="label">Run id</div>
+            <div class="value"><code>${escapeHtml(run.run_id)}</code></div>
+          </div>
+          <div class="stat">
+            <div class="label">Collected</div>
+            <div class="value">${run.collected_count}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Snapshots recorded</div>
+            <div class="value emerald">${run.stored_snapshot_count}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Skipped</div>
+            <div class="value">${run.skipped_count}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Failures</div>
+            <div class="value">${run.failure_count}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Marketplaces attempted</div>
+            <div class="value">${escapeHtml((run.marketplaces_attempted || []).join(", ") || "—")}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Marketplaces completed</div>
+            <div class="value">${escapeHtml((run.marketplaces_completed || []).join(", ") || "—")}</div>
+          </div>
+        </div>
+        <h3 class="section-title">Listings collected</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Marketplace</th>
+              <th>Listing</th>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Availability</th>
+              <th>Duplicate</th>
+            </tr>
+          </thead>
+          <tbody>${listingRows || '<tr><td colspan="6">No listings collected.</td></tr>'}</tbody>
+        </table>
+        <h3 class="section-title">Failures and warnings</h3>
+        ${
+          failures
+            ? `<ul class="warnings">${failures}</ul>`
+            : '<p class="empty-state">No marketplace failures.</p>'
+        }
+        ${
+          warningList
+            ? `<ul class="warnings">${warningList}</ul>`
+            : '<p class="empty-state">No warnings.</p>'
+        }
+      `;
+    }
+
+    function renderCollectionRuns(runs) {
+      if (!runs.length) {
+        return '<p class="empty-state">No recent collection runs.</p>';
+      }
+      const rows = runs
+        .map(
+          (run) => `
+          <tr>
+            <td><code>${escapeHtml(run.run_id)}</code></td>
+            <td>${escapeHtml(run.query)}</td>
+            <td><span class="badge neutral">${escapeHtml(run.status)}</span></td>
+            <td>${run.collected_count}</td>
+            <td>${run.stored_snapshot_count}</td>
+            <td>${run.failure_count}</td>
+            <td>${escapeHtml(run.started_at || "—")}</td>
+          </tr>`
+        )
+        .join("");
+      return `
+        <h3 class="section-title">Recent collection runs</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Run</th>
+              <th>Query</th>
+              <th>Status</th>
+              <th>Collected</th>
+              <th>Snapshots</th>
+              <th>Failures</th>
+              <th>Started</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    async function runCollection() {
+      const q = collectionQueryInput.value.trim();
+      const marketplaces = selectedCollectionMarketplaces();
+      clearEl(collectionResultsEl);
+
+      if (!q) {
+        showEl(collectionStatusEl, '<div class="error">Please enter a product query.</div>');
+        return;
+      }
+      if (!marketplaces.length) {
+        showEl(collectionStatusEl, '<div class="error">Select at least one marketplace.</div>');
+        return;
+      }
+
+      collectionRunBtn.disabled = true;
+      showEl(
+        collectionStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Running mock collection…</div>'
+      );
+
+      try {
+        const response = await fetch("/api/v1/collections/run", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query: q, marketplaces }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            collectionStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(collectionStatusEl);
+        collectionResultsEl.innerHTML = renderCollectionRun(payload);
+        collectionResultsEl.classList.add("visible");
+      } catch (err) {
+        showEl(
+          collectionStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        collectionRunBtn.disabled = false;
+      }
+    }
+
+    async function runDueCollectionJobs() {
+      collectionRunDueBtn.disabled = true;
+      showEl(
+        collectionStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Running due jobs…</div>'
+      );
+      try {
+        const response = await fetch("/api/v1/collections/jobs/run-due", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            collectionStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(collectionStatusEl);
+        const runsHtml = (payload.runs || []).map(renderCollectionRun).join("<hr />");
+        collectionResultsEl.innerHTML = `
+          <p class="hint">Jobs executed: ${payload.jobs_executed || 0}</p>
+          ${runsHtml || '<p class="empty-state">No due jobs were executed.</p>'}
+        `;
+        collectionResultsEl.classList.add("visible");
+      } catch (err) {
+        showEl(
+          collectionStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        collectionRunDueBtn.disabled = false;
+      }
+    }
+
+    async function refreshCollectionRuns() {
+      collectionRefreshRunsBtn.disabled = true;
+      showEl(
+        collectionStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading recent runs…</div>'
+      );
+      try {
+        const response = await fetch("/api/v1/collections/runs?limit=10", {
+          headers: { Accept: "application/json" },
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            collectionStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(collectionStatusEl);
+        collectionResultsEl.innerHTML = renderCollectionRuns(payload.runs || []);
+        collectionResultsEl.classList.add("visible");
+      } catch (err) {
+        showEl(
+          collectionStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        collectionRefreshRunsBtn.disabled = false;
+      }
+    }
+
+    collectionRunBtn.addEventListener("click", runCollection);
+    collectionRunDueBtn.addEventListener("click", runDueCollectionJobs);
+    collectionRefreshRunsBtn.addEventListener("click", refreshCollectionRuns);
+    collectionQueryInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") runCollection();
     });
   </script>
 </body>

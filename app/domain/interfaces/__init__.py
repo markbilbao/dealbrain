@@ -5,8 +5,15 @@ from app.domain.interfaces.canonical_registry import (
     CanonicalProductRegistry,
     CanonicalProductStore,
 )
+from app.domain.interfaces.collection_job_repository import CollectionJobRepository
+from app.domain.interfaces.collection_scheduler import CollectionScheduler
 from app.domain.interfaces.deal_score_engine import DealScoreEngine
+from app.domain.interfaces.marketplace_collector import MarketplaceCollector
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
+from app.domain.interfaces.marketplace_rate_limiter import (
+    MarketplaceRateLimiter,
+    RateLimitDecision,
+)
 from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
@@ -17,11 +24,16 @@ __all__ = [
     "AIProvider",
     "CanonicalProductRegistry",
     "CanonicalProductStore",
+    "CollectionJobRepository",
+    "CollectionScheduler",
     "DealScoreEngine",
+    "MarketplaceCollector",
     "MarketplaceConnector",
+    "MarketplaceRateLimiter",
     "PriceHistoryStore",
     "ProductIntelligenceEngine",
     "ProductMatcher",
+    "RateLimitDecision",
     "RecommendationEngine",
     "Repository",
 ]
