@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from app.domain.entities.collection import CollectionJob, CollectionRun
-from app.domain.interfaces.collection_job_repository import CollectionJobRepository
+from app.domain.exceptions import CollectionRunImmutableError
+from app.domain.interfaces.collection_job_repository import (
+    CollectionJobRepository,
+    CollectionRunRepository,
+)
 
 
-class InMemoryCollectionJobRepository(CollectionJobRepository):
+class InMemoryCollectionJobRepository(CollectionJobRepository, CollectionRunRepository):
     """Process-local job and run store with deterministic ordering."""
 
     def __init__(self) -> None:
@@ -14,6 +18,7 @@ class InMemoryCollectionJobRepository(CollectionJobRepository):
         self._job_order: list[str] = []
         self._runs: dict[str, CollectionRun] = {}
         self._run_order: list[str] = []
+        self._idempotency: dict[str, str] = {}
 
     def save_job(self, job: CollectionJob) -> CollectionJob:
         if job.job_id not in self._jobs:
@@ -35,9 +40,16 @@ class InMemoryCollectionJobRepository(CollectionJobRepository):
         return True
 
     def save_run(self, run: CollectionRun) -> CollectionRun:
+        existing = self._runs.get(run.run_id)
+        if existing is not None and existing.is_terminal():
+            if run != existing:
+                raise CollectionRunImmutableError(run.run_id)
+            return existing
         if run.run_id not in self._runs:
             self._run_order.append(run.run_id)
         self._runs[run.run_id] = run
+        if run.idempotency_key:
+            self._idempotency[run.idempotency_key] = run.run_id
         return run
 
     def get_run(self, run_id: str) -> CollectionRun | None:
@@ -49,9 +61,24 @@ class InMemoryCollectionJobRepository(CollectionJobRepository):
         ]
         return ordered[: max(0, limit)]
 
+    def get_run_by_idempotency_key(self, key: str) -> CollectionRun | None:
+        cleaned = key.strip()
+        if not cleaned:
+            return None
+        run_id = self._idempotency.get(cleaned)
+        if run_id is None:
+            return None
+        return self._runs.get(run_id)
+
+    def save_idempotency_key(self, key: str, run_id: str) -> None:
+        cleaned = key.strip()
+        if cleaned:
+            self._idempotency[cleaned] = run_id
+
     def clear(self) -> None:
         """Reset all stored jobs and runs (tests)."""
         self._jobs.clear()
         self._job_order.clear()
         self._runs.clear()
         self._run_order.clear()
+        self._idempotency.clear()

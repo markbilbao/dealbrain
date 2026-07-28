@@ -45,6 +45,7 @@ from app.intelligence.price_history import InMemoryPriceHistoryStore
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
 from app.intelligence.recommendation import RuleBasedRecommendationEngine
+from app.services.collection_operations_service import CollectionOperationsService
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
@@ -63,6 +64,7 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
 )
 _COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
 _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
+_COLLECTION_OPERATIONS_SERVICE: CollectionOperationsService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -264,3 +266,31 @@ def get_collection_scheduler(
     else:
         _COLLECTION_SCHEDULER._run_job = service.run_job  # noqa: SLF001
     return _COLLECTION_SCHEDULER
+
+
+def get_collection_operations_service(
+    collection_service: MarketplaceCollectionService = Depends(
+        get_marketplace_collection_service
+    ),
+    repository: CollectionJobRepository = Depends(get_collection_job_repository),
+    scheduler: CollectionScheduler = Depends(get_collection_scheduler),
+    collectors: list[MarketplaceCollector] = Depends(get_marketplace_collectors),
+    store: PriceHistoryStore = Depends(get_price_history_store),
+) -> CollectionOperationsService:
+    """Provide the Collection Operations control-plane service."""
+    global _COLLECTION_OPERATIONS_SERVICE
+    if _COLLECTION_OPERATIONS_SERVICE is None:
+        _COLLECTION_OPERATIONS_SERVICE = CollectionOperationsService(
+            collection_service=collection_service,
+            repository=repository,
+            run_repository=repository,  # type: ignore[arg-type]
+            scheduler=scheduler,
+            collectors=collectors,
+            price_history_store=store,
+        )
+        return _COLLECTION_OPERATIONS_SERVICE
+
+    _COLLECTION_OPERATIONS_SERVICE._collection = collection_service  # noqa: SLF001
+    _COLLECTION_OPERATIONS_SERVICE._scheduler = scheduler  # noqa: SLF001
+    _COLLECTION_OPERATIONS_SERVICE._price_history_store = store  # noqa: SLF001
+    return _COLLECTION_OPERATIONS_SERVICE

@@ -98,3 +98,28 @@ class CollectionRunNotFoundError(Exception):
     def __init__(self, run_id: str) -> None:
         self.run_id = run_id
         super().__init__(f"Collection run not found: {run_id}")
+
+
+class CollectionRunImmutableError(Exception):
+    """Raised when a completed collection run would be mutated."""
+
+    def __init__(self, run_id: str) -> None:
+        self.run_id = run_id
+        super().__init__(f"Collection run is immutable after completion: {run_id}")
+
+
+class CollectionConcurrentRunError(Exception):
+    """Raised when a job is already executing."""
+
+    def __init__(self, job_id: str) -> None:
+        self.job_id = job_id
+        super().__init__(f"Collection job is already running: {job_id}")
+
+
+class CollectionJobNotRunnableError(Exception):
+    """Raised when a disabled or paused job cannot be executed."""
+
+    def __init__(self, job_id: str, reason: str) -> None:
+        self.job_id = job_id
+        self.reason = reason
+        super().__init__(f"Collection job {job_id} cannot run: {reason}")

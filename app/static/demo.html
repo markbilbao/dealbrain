@@ -612,11 +612,32 @@
       <section id="collection-results" class="results" aria-live="polite"></section>
     </section>
 
+    <section class="panel" aria-label="Collection operations">
+      <h2 class="panel-heading">Collection Operations</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Operational control for mock collection jobs — no live marketplace scraping.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="ops_refresh" type="button" style="background:#475569;">Refresh</button>
+        <button id="ops_run_due" type="button" style="background:#0F172A;">Run Due Jobs</button>
+        <button id="ops_seed_job" type="button">Seed demo job</button>
+      </div>
+      <div id="ops-health" class="meta" style="margin-top:1rem;"></div>
+      <div id="ops-summary" class="meta"></div>
+      <div id="ops-status" class="status" aria-live="polite"></div>
+      <section id="ops-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Collection jobs</h3>
+        <div id="ops-jobs"></div>
+        <h3 class="section-title">Recent run history</h3>
+        <div id="ops-runs"></div>
+      </section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
       GET /api/v1/recommendations/search · GET /api/v1/price-history/search ·
-      POST /api/v1/collections/run
+      POST /api/v1/collections/run · GET /api/v1/collection-operations/status
     </footer>
   </main>
 
@@ -1757,6 +1778,227 @@
     collectionQueryInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") runCollection();
     });
+
+    const opsRefreshBtn = document.getElementById("ops_refresh");
+    const opsRunDueBtn = document.getElementById("ops_run_due");
+    const opsSeedJobBtn = document.getElementById("ops_seed_job");
+    const opsHealthEl = document.getElementById("ops-health");
+    const opsSummaryEl = document.getElementById("ops-summary");
+    const opsStatusEl = document.getElementById("ops-status");
+    const opsJobsEl = document.getElementById("ops-jobs");
+    const opsRunsEl = document.getElementById("ops-runs");
+
+    function opsStat(label, value, emerald) {
+      return `<div class="stat"><div class="label">${label}</div><div class="value${emerald ? " emerald" : ""}">${value}</div></div>`;
+    }
+
+    function formatTs(value) {
+      if (!value) return "—";
+      try {
+        return new Date(value).toLocaleString();
+      } catch {
+        return value;
+      }
+    }
+
+    function renderOpsJobs(jobs) {
+      if (!jobs.length) {
+        return '<p class="empty-state">No collection jobs yet. Seed a demo job to begin.</p>';
+      }
+      const rows = jobs.map((job) => {
+        const pauseLabel = job.paused ? "Resume" : "Pause";
+        const pauseAction = job.paused ? "resume" : "pause";
+        return `<tr>
+          <td><code>${job.job_id.slice(0, 14)}…</code><div class="hint" style="margin:0.25rem 0 0;">${job.name}</div></td>
+          <td><span class="badge">${job.status}</span></td>
+          <td>${formatTs(job.next_run_at)}</td>
+          <td>${formatTs(job.last_run_at)}</td>
+          <td>${job.consecutive_failure_count}</td>
+          <td>
+            <div class="row" style="gap:0.4rem;">
+              <button type="button" data-ops-run="${job.job_id}" style="padding:0.45rem 0.75rem;font-size:0.8rem;">Run</button>
+              <button type="button" data-ops-toggle="${job.job_id}" data-ops-action="${pauseAction}" style="padding:0.45rem 0.75rem;font-size:0.8rem;background:#0F172A;">${pauseLabel}</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
+      return `<table>
+        <thead><tr><th>Job</th><th>Status</th><th>Next run</th><th>Last run</th><th>Failures</th><th>Actions</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    function renderOpsRuns(runs) {
+      if (!runs.length) {
+        return '<p class="empty-state">No recent collection runs.</p>';
+      }
+      const rows = runs.map((run) => `<tr>
+        <td><code>${run.run_id.slice(0, 14)}…</code></td>
+        <td>${run.trigger}</td>
+        <td><span class="badge">${run.status}</span></td>
+        <td>${run.collected_count}</td>
+        <td>${run.stored_snapshot_count}</td>
+        <td>${run.failure_count}</td>
+        <td>${run.duration_ms == null ? "—" : run.duration_ms + " ms"}</td>
+      </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Run</th><th>Trigger</th><th>Status</th><th>Collected</th><th>Stored</th><th>Failures</th><th>Duration</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    async function refreshCollectionOps() {
+      opsRefreshBtn.disabled = true;
+      showEl(
+        opsStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading collection operations…</div>'
+      );
+      try {
+        const [statusRes, healthRes, readyRes, jobsRes, runsRes] = await Promise.all([
+          fetch("/api/v1/collection-operations/status"),
+          fetch("/api/v1/collection-operations/health"),
+          fetch("/api/v1/collection-operations/readiness"),
+          fetch("/api/v1/collection-operations/jobs"),
+          fetch("/api/v1/collection-operations/runs?limit=10"),
+        ]);
+        if (![statusRes, healthRes, readyRes, jobsRes, runsRes].every((r) => r.ok)) {
+          throw new Error("One or more collection-operations requests failed.");
+        }
+        const status = await statusRes.json();
+        const health = await healthRes.json();
+        const readiness = await readyRes.json();
+        const jobs = (await jobsRes.json()).jobs || [];
+        const runs = (await runsRes.json()).runs || [];
+
+        opsHealthEl.innerHTML = [
+          opsStat("Health", health.running ? "UP" : "DOWN", health.running),
+          opsStat("Readiness", readiness.ready ? "READY" : "NOT READY", readiness.ready),
+          opsStat("Scheduler", status.scheduler_status || "—"),
+        ].join("");
+
+        opsSummaryEl.innerHTML = [
+          opsStat("Total jobs", status.total_jobs),
+          opsStat("Enabled", status.enabled_jobs, true),
+          opsStat("Paused", status.paused_jobs),
+          opsStat("Due now", status.jobs_currently_due),
+          opsStat("Recent failures", status.jobs_with_recent_failures),
+          opsStat("Snapshots", status.total_snapshots_collected, true),
+        ].join("");
+
+        opsJobsEl.innerHTML = renderOpsJobs(jobs);
+        opsRunsEl.innerHTML = renderOpsRuns(runs);
+        clearEl(opsStatusEl);
+      } catch (error) {
+        showEl(opsStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        opsRefreshBtn.disabled = false;
+      }
+    }
+
+    async function seedOpsJob() {
+      opsSeedJobBtn.disabled = true;
+      showEl(
+        opsStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Seeding demo job…</div>'
+      );
+      try {
+        const response = await fetch("/api/v1/collection-operations/jobs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: "Demo iPhone watch",
+            query: "iPhone 17 Pro Max",
+            marketplaces: ["shopee", "lazada"],
+            interval_minutes: 60,
+            enabled: true,
+          }),
+        });
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to seed demo job.");
+        }
+        clearEl(opsStatusEl);
+        await refreshCollectionOps();
+      } catch (error) {
+        showEl(opsStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        opsSeedJobBtn.disabled = false;
+      }
+    }
+
+    async function runOpsDueJobs() {
+      opsRunDueBtn.disabled = true;
+      showEl(
+        opsStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Running due jobs…</div>'
+      );
+      try {
+        const response = await fetch("/api/v1/collection-operations/run-due", { method: "POST" });
+        if (!response.ok) {
+          throw new Error("Failed to run due jobs.");
+        }
+        const payload = await response.json();
+        showEl(
+          opsStatusEl,
+          `<div class="hint" style="color:var(--emerald-dark);font-weight:650;">Executed ${payload.jobs_executed} due job(s).</div>`
+        );
+        await refreshCollectionOps();
+      } catch (error) {
+        showEl(opsStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        opsRunDueBtn.disabled = false;
+      }
+    }
+
+    document.getElementById("ops-jobs").addEventListener("click", async (event) => {
+      const runBtn = event.target.closest("[data-ops-run]");
+      const toggleBtn = event.target.closest("[data-ops-toggle]");
+      if (runBtn) {
+        const jobId = runBtn.getAttribute("data-ops-run");
+        runBtn.disabled = true;
+        try {
+          const response = await fetch(`/api/v1/collection-operations/jobs/${encodeURIComponent(jobId)}/run`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          });
+          if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            throw new Error(detail.detail || "Manual run failed.");
+          }
+          await refreshCollectionOps();
+        } catch (error) {
+          showEl(opsStatusEl, `<div class="error">${error.message || error}</div>`);
+        } finally {
+          runBtn.disabled = false;
+        }
+      }
+      if (toggleBtn) {
+        const jobId = toggleBtn.getAttribute("data-ops-toggle");
+        const action = toggleBtn.getAttribute("data-ops-action");
+        toggleBtn.disabled = true;
+        try {
+          const response = await fetch(
+            `/api/v1/collection-operations/jobs/${encodeURIComponent(jobId)}/${action}`,
+            { method: "POST" }
+          );
+          if (!response.ok) {
+            const detail = await response.json().catch(() => ({}));
+            throw new Error(detail.detail || `Failed to ${action} job.`);
+          }
+          await refreshCollectionOps();
+        } catch (error) {
+          showEl(opsStatusEl, `<div class="error">${error.message || error}</div>`);
+        } finally {
+          toggleBtn.disabled = false;
+        }
+      }
+    });
+
+    opsRefreshBtn.addEventListener("click", refreshCollectionOps);
+    opsRunDueBtn.addEventListener("click", runOpsDueJobs);
+    opsSeedJobBtn.addEventListener("click", seedOpsJob);
+    refreshCollectionOps();
   </script>
 </body>
 </html>
