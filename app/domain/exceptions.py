@@ -123,3 +123,35 @@ class CollectionJobNotRunnableError(Exception):
         self.job_id = job_id
         self.reason = reason
         super().__init__(f"Collection job {job_id} cannot run: {reason}")
+
+
+class WatchlistValidationError(Exception):
+    """Raised when watchlist or alert inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class WatchlistNotFoundError(Exception):
+    """Raised when a watchlist cannot be found."""
+
+    def __init__(self, watchlist_id: str) -> None:
+        self.watchlist_id = watchlist_id
+        super().__init__(f"Watchlist not found: {watchlist_id}")
+
+
+class WatchlistItemNotFoundError(Exception):
+    """Raised when a watchlist item cannot be found."""
+
+    def __init__(self, item_id: str) -> None:
+        self.item_id = item_id
+        super().__init__(f"Watchlist item not found: {item_id}")
+
+
+class AlertNotFoundError(Exception):
+    """Raised when an alert cannot be found."""
+
+    def __init__(self, alert_id: str) -> None:
+        self.alert_id = alert_id
+        super().__init__(f"Alert not found: {alert_id}")
