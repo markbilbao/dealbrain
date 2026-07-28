@@ -21,6 +21,7 @@ from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.domain.interfaces.recommendation_engine import RecommendationEngine
+from app.domain.interfaces.review_repository import ReviewCollector, ReviewRepository
 from app.domain.interfaces.watchlist_repository import (
     AlertRepository,
     WatchlistRepository,
@@ -50,6 +51,13 @@ from app.intelligence.price_history import InMemoryPriceHistoryStore
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
 from app.intelligence.recommendation import RuleBasedRecommendationEngine
+from app.intelligence.reviews import (
+    InMemoryReviewRepository,
+    MockAmazonReviewCollector,
+    MockLazadaReviewCollector,
+    MockShopeeReviewCollector,
+    MockTikTokShopReviewCollector,
+)
 from app.intelligence.watchlists import (
     InMemoryWatchlistRepository,
     MockNotificationService,
@@ -62,6 +70,7 @@ from app.services.marketplace_intelligence_service import MarketplaceIntelligenc
 from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
+from app.services.review_service import ReviewService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
 from app.services.watchlist_service import WatchlistService
 
@@ -74,12 +83,14 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
     window_seconds=60.0,
 )
 _MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistRepository()
+_MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
 _MOCK_NOTIFICATION_SERVICE = MockNotificationService()
 _COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
 _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
 _COLLECTION_OPERATIONS_SERVICE: CollectionOperationsService | None = None
 _WATCHLIST_SERVICE: WatchlistService | None = None
 _ALERT_SERVICE: AlertService | None = None
+_REVIEW_SERVICE: ReviewService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -376,3 +387,32 @@ def get_alert_service(
     _ALERT_SERVICE._notifications = notification_service  # noqa: SLF001
     _ALERT_SERVICE._deal_recommendation = deal_recommendation_service  # noqa: SLF001
     return _ALERT_SERVICE
+
+
+def get_review_collectors() -> list[ReviewCollector]:
+    """Provide registered mock review collectors (no live HTTP / scraping)."""
+    return [
+        MockShopeeReviewCollector(),
+        MockLazadaReviewCollector(),
+        MockTikTokShopReviewCollector(),
+        MockAmazonReviewCollector(),
+    ]
+
+
+def get_review_repository() -> ReviewRepository:
+    """Provide the process-scoped in-memory review repository."""
+    return _MEMORY_REVIEW_REPOSITORY
+
+
+def get_review_service(
+    repository: ReviewRepository = Depends(get_review_repository),
+    collectors: list[ReviewCollector] = Depends(get_review_collectors),
+) -> ReviewService:
+    """Provide the Review Intelligence orchestration service."""
+    global _REVIEW_SERVICE
+    if _REVIEW_SERVICE is None:
+        _REVIEW_SERVICE = ReviewService(repository, collectors)
+        return _REVIEW_SERVICE
+    # Keep the process-scoped service; refresh collectors if DI rebuilds them.
+    _REVIEW_SERVICE._collectors = list(collectors)  # noqa: SLF001
+    return _REVIEW_SERVICE

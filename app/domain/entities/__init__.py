@@ -69,6 +69,12 @@ from app.domain.entities.registered_product import (
     RegisteredCanonicalProduct,
     RegistryResolveResult,
 )
+from app.domain.entities.review import (
+    MarketplaceReviewComparison,
+    MarketplaceReviewSummary,
+    ReviewCollectionResult,
+    ReviewSnapshot,
+)
 from app.domain.entities.watchlist import (
     Alert,
     AlertEvaluationResult,
@@ -115,6 +121,8 @@ __all__ = [
     "ListingEvaluation",
     "MarketplaceListing",
     "MarketplacePriceSummary",
+    "MarketplaceReviewComparison",
+    "MarketplaceReviewSummary",
     "MarketplaceSearchResult",
     "MatchType",
     "NotificationChannel",
@@ -141,6 +149,8 @@ __all__ = [
     "RegistryResolveResult",
     "RelationDirection",
     "RetryVisibility",
+    "ReviewCollectionResult",
+    "ReviewSnapshot",
     "ScoreableListing",
     "ShoppingRecommendationResult",
     "Watchlist",
