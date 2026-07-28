@@ -284,6 +284,46 @@
       color: var(--emerald-dark);
     }
 
+    .badge.decision-buy {
+      background: rgba(16, 185, 129, 0.18);
+      color: var(--emerald-dark);
+    }
+
+    .badge.decision-consider {
+      background: rgba(234, 179, 8, 0.18);
+      color: #A16207;
+    }
+
+    .badge.decision-wait {
+      background: rgba(59, 130, 246, 0.14);
+      color: #1D4ED8;
+    }
+
+    .badge.decision-avoid,
+    .badge.decision-insufficient_information {
+      background: rgba(220, 38, 38, 0.12);
+      color: var(--danger);
+    }
+
+    .reason-list,
+    .tradeoff-list,
+    .alt-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: var(--navy);
+      line-height: 1.45;
+    }
+
+    .reason-list li,
+    .tradeoff-list li,
+    .alt-list li {
+      margin-bottom: 0.4rem;
+    }
+
+    .comparison-table {
+      margin-top: 0.35rem;
+    }
+
     .deal-card {
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -403,8 +443,8 @@
     <h1>Product Intelligence Demo</h1>
     <p class="lede">
       Parse messy Apple listings into canonical products, compare exact variants,
-      search mocked marketplace listings, and rank the best purchase with DealScore —
-      no LLMs.
+      search mocked marketplace listings, rank deals with DealScore, and get
+      explainable buying advice — no LLMs.
     </p>
 
     <section class="panel" aria-label="Analyze listing">
@@ -499,9 +539,30 @@
       <section id="dealscore-results" class="results" aria-live="polite"></section>
     </section>
 
+    <section class="panel" aria-label="Shopping recommendation">
+      <h2 class="panel-heading">Shopping Recommendation</h2>
+      <label for="recommendation_q">Search for buying advice</label>
+      <div class="row">
+        <input
+          id="recommendation_q"
+          type="text"
+          value="iPhone 17 Pro Max 256GB"
+          placeholder="e.g. iPhone 17 Pro Max 256GB"
+          autocomplete="off"
+        />
+        <button id="recommendation_search" type="button">Get recommendation</button>
+      </div>
+      <p class="hint">
+        Rule-based advice from DealScore · Buy / Consider / Wait / Avoid · no LLM
+      </p>
+      <div id="recommendation-status" class="status" aria-live="polite"></div>
+      <section id="recommendation-results" class="results" aria-live="polite"></section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
-      GET /api/v1/marketplace/search · GET /api/v1/dealscore/search
+      GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
+      GET /api/v1/recommendations/search
     </footer>
   </main>
 
@@ -526,6 +587,11 @@
     const dealscoreSearchBtn = document.getElementById("dealscore_search");
     const dealscoreStatusEl = document.getElementById("dealscore-status");
     const dealscoreResultsEl = document.getElementById("dealscore-results");
+
+    const recommendationQueryInput = document.getElementById("recommendation_q");
+    const recommendationSearchBtn = document.getElementById("recommendation_search");
+    const recommendationStatusEl = document.getElementById("recommendation-status");
+    const recommendationResultsEl = document.getElementById("recommendation-results");
 
     function showEl(el, html) {
       el.innerHTML = html;
@@ -984,6 +1050,202 @@
     dealscoreSearchBtn.addEventListener("click", searchDealScore);
     dealscoreQueryInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") searchDealScore();
+    });
+
+    function decisionBadgeClass(decision) {
+      const key = String(decision || "").toLowerCase();
+      return `badge decision-${key || "neutral"}`;
+    }
+
+    function formatDecisionLabel(decision) {
+      const raw = String(decision || "unknown");
+      return raw
+        .split("_")
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    }
+
+    function renderRecommendationResults(data) {
+      const rec = data.recommendation || {};
+      const ranked = data.ranked_results || [];
+      const decision = rec.decision || "insufficient_information";
+
+      if (!ranked.length && !rec.recommended_listing_id) {
+        recommendationResultsEl.innerHTML = `
+          <div class="meta">
+            <div class="stat">
+              <div class="label">Decision</div>
+              <div class="value">
+                <span class="${decisionBadgeClass(decision)}">${escapeHtml(formatDecisionLabel(decision))}</span>
+              </div>
+            </div>
+            <div class="stat">
+              <div class="label">Confidence</div>
+              <div class="value">${formatConfidence(rec.confidence || 0)}</div>
+            </div>
+          </div>
+          <h3 class="section-title">${escapeHtml(rec.headline || "No recommendation")}</h3>
+          <p>${escapeHtml(rec.summary || "No marketplace listings matched this query.")}</p>
+          ${
+            (rec.warnings || []).length
+              ? `<h3 class="section-title">Warnings</h3>
+                 <ul class="warnings">${(rec.warnings || [])
+                   .map((line) => `<li>${escapeHtml(line)}</li>`)
+                   .join("")}</ul>`
+              : ""
+          }
+          <p class="empty-state">No ranked listings to compare.</p>
+        `;
+        recommendationResultsEl.classList.add("visible");
+        return;
+      }
+
+      const recommendedListing = ranked.find(
+        (item) => (item.listing || {}).product_id === rec.recommended_listing_id
+      );
+      const recommendedTitle =
+        (recommendedListing && recommendedListing.listing && recommendedListing.listing.title) ||
+        rec.recommended_listing_id ||
+        "—";
+
+      const reasons = (rec.reasoning || [])
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("");
+      const tradeoffs = (rec.tradeoffs || [])
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("");
+      const warnings = (rec.warnings || [])
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("");
+      const alternatives = (rec.alternatives || [])
+        .map(
+          (alt) => `<li>
+            <strong>${escapeHtml(alt.label || "Alternative")}</strong>
+            · listing <code>${escapeHtml(alt.listing_id || "")}</code><br />
+            ${escapeHtml(alt.reason || "")}
+          </li>`
+        )
+        .join("");
+
+      const comparisonRows = ranked
+        .map((item) => {
+          const listing = item.listing || {};
+          const deal = item.deal_score || {};
+          const isRec = listing.product_id === rec.recommended_listing_id;
+          return `<tr>
+            <td>${escapeHtml(String(item.rank ?? ""))}${isRec ? ' <span class="badge recommended">Rec</span>' : ""}</td>
+            <td>${escapeHtml(listing.title || listing.product_id || "—")}</td>
+            <td>${escapeHtml(String(deal.score ?? "—"))}</td>
+            <td>${formatPrice(listing.total_cost ?? deal.total_cost, listing.currency || data.currency)}</td>
+            <td>${escapeHtml(listing.marketplace || "")}</td>
+          </tr>`;
+        })
+        .join("");
+
+      recommendationResultsEl.innerHTML = `
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Decision</div>
+            <div class="value">
+              <span class="${decisionBadgeClass(decision)}">${escapeHtml(formatDecisionLabel(decision))}</span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="label">Confidence</div>
+            <div class="value emerald">${formatConfidence(rec.confidence || 0)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Recommended listing</div>
+            <div class="value">${escapeHtml(String(rec.recommended_listing_id || "—"))}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Currency</div>
+            <div class="value">${escapeHtml(data.currency || "—")}</div>
+          </div>
+        </div>
+        <h3 class="section-title">${escapeHtml(rec.headline || "Recommendation")}</h3>
+        <p><strong>${escapeHtml(recommendedTitle)}</strong></p>
+        <p>${escapeHtml(rec.summary || "")}</p>
+        <h3 class="section-title">Main reasons</h3>
+        <ul class="reason-list">${reasons || "<li>No reasons available.</li>"}</ul>
+        <h3 class="section-title">Tradeoffs</h3>
+        ${
+          tradeoffs
+            ? `<ul class="tradeoff-list">${tradeoffs}</ul>`
+            : '<p class="empty-state">No tradeoffs noted.</p>'
+        }
+        <h3 class="section-title">Warnings</h3>
+        ${
+          warnings
+            ? `<ul class="warnings">${warnings}</ul>`
+            : '<p class="empty-state">No warnings.</p>'
+        }
+        <h3 class="section-title">Alternative options</h3>
+        ${
+          alternatives
+            ? `<ul class="alt-list">${alternatives}</ul>`
+            : '<p class="empty-state">No alternatives in this result set.</p>'
+        }
+        <h3 class="section-title">DealScore and total-cost comparison</h3>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Listing</th>
+              <th>DealScore</th>
+              <th>Total cost</th>
+              <th>Marketplace</th>
+            </tr>
+          </thead>
+          <tbody>${comparisonRows || '<tr><td colspan="5">No ranked results.</td></tr>'}</tbody>
+        </table>
+      `;
+      recommendationResultsEl.classList.add("visible");
+    }
+
+    async function searchRecommendations() {
+      const q = recommendationQueryInput.value.trim();
+      clearEl(recommendationResultsEl);
+
+      if (!q) {
+        showEl(recommendationStatusEl, '<div class="error">Please enter a search query.</div>');
+        return;
+      }
+
+      recommendationSearchBtn.disabled = true;
+      showEl(
+        recommendationStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Building recommendation…</div>'
+      );
+
+      try {
+        const response = await fetch(
+          `/api/v1/recommendations/search?q=${encodeURIComponent(q)}`,
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            recommendationStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(recommendationStatusEl);
+        renderRecommendationResults(payload);
+      } catch (err) {
+        showEl(
+          recommendationStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        recommendationSearchBtn.disabled = false;
+      }
+    }
+
+    recommendationSearchBtn.addEventListener("click", searchRecommendations);
+    recommendationQueryInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") searchRecommendations();
     });
   </script>
 </body>
