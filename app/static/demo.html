@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DealBrain — Product Intelligence Demo</title>
+  <style>
+    :root {
+      --navy: #0F172A;
+      --emerald: #10B981;
+      --emerald-dark: #059669;
+      --bg: #ffffff;
+      --surface: #F8FAFC;
+      --border: #E2E8F0;
+      --muted: #64748B;
+      --danger: #DC2626;
+      --danger-bg: #FEF2F2;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06);
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--navy);
+      background:
+        radial-gradient(ellipse 80% 50% at 100% -20%, rgba(16, 185, 129, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at -10% 100%, rgba(15, 23, 42, 0.06), transparent),
+        var(--bg);
+    }
+
+    .wrap {
+      width: min(720px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2.5rem 0 4rem;
+    }
+
+    .brand {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--emerald);
+      margin: 0 0 0.75rem;
+    }
+
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.6rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+    }
+
+    .lede {
+      margin: 0 0 1.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 1rem;
+    }
+
+    .panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-heading {
+      margin: 0 0 1rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.5rem;
+    }
+
+    .row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    input[type="text"] {
+      flex: 1 1 240px;
+      width: 100%;
+      min-width: 0;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      color: var(--navy);
+      background: var(--surface);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+      background: #fff;
+    }
+
+    button {
+      flex: 0 0 auto;
+      padding: 0.85rem 1.35rem;
+      border: none;
+      border-radius: 10px;
+      background: var(--emerald);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button:hover:not(:disabled) { background: var(--emerald-dark); }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    .hint {
+      margin: 0.75rem 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .status {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .status.visible { display: block; }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .spinner {
+      width: 1.1rem;
+      height: 1.1rem;
+      border: 2px solid var(--border);
+      border-top-color: var(--emerald);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error {
+      background: var(--danger-bg);
+      border: 1px solid #FECACA;
+      color: var(--danger);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .results {
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .results.visible { display: block; }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+    }
+
+    .stat .label {
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .stat .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--navy);
+      word-break: break-all;
+    }
+
+    .stat .value.emerald { color: var(--emerald); }
+
+    .section-title {
+      margin: 1.25rem 0 0.65rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--navy);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.7rem 0.6rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    td code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.82rem;
+      background: var(--surface);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 650;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-dark);
+    }
+
+    .badge.existing,
+    .badge.neutral {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--navy);
+    }
+
+    .badge.danger {
+      background: rgba(220, 38, 38, 0.12);
+      color: var(--danger);
+    }
+
+    ul.explain {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: var(--navy);
+      line-height: 1.55;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .chip {
+      display: inline-block;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--emerald-dark);
+    }
+
+    .chip.conflict {
+      background: rgba(220, 38, 38, 0.12);
+      color: var(--danger);
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="brand">DealBrain</p>
+    <h1>Product Intelligence Demo</h1>
+    <p class="lede">
+      Parse messy Apple listings into canonical products, then compare two
+      titles to decide whether they are the same exact variant — no LLMs.
+    </p>
+
+    <section class="panel" aria-label="Analyze listing">
+      <h2 class="panel-heading">Product Parsing</h2>
+      <label for="title">Product listing</label>
+      <div class="row">
+        <input
+          id="title"
+          type="text"
+          value="Apple IP17PM 256 BT"
+          placeholder="e.g. Apple IP17PM 256 BT"
+          autocomplete="off"
+        />
+        <button id="analyze" type="button">Analyze</button>
+      </div>
+      <p class="hint">Try: Apple IP16P 128 WT · Apple iPhone 15 256GB Blue</p>
+      <div id="status" class="status" aria-live="polite"></div>
+      <section id="results" class="results" aria-live="polite"></section>
+    </section>
+
+    <section class="panel" aria-label="Match listings">
+      <h2 class="panel-heading">Product Matching</h2>
+      <div class="stack">
+        <div>
+          <label for="title_a">Listing A</label>
+          <input
+            id="title_a"
+            type="text"
+            value="Apple iPhone 17 Pro Max 256GB Black Titanium"
+            placeholder="Listing A"
+            autocomplete="off"
+          />
+        </div>
+        <div>
+          <label for="title_b">Listing B</label>
+          <input
+            id="title_b"
+            type="text"
+            value="Apple IP17PM 256 BT"
+            placeholder="Listing B"
+            autocomplete="off"
+          />
+        </div>
+        <div class="row">
+          <button id="compare" type="button">Compare</button>
+        </div>
+      </div>
+      <p class="hint">
+        Try: AirPods Pro 2 USB-C vs Apple APP2 Type C · iPhone 17 Pro vs Pro Max
+      </p>
+      <div id="match-status" class="status" aria-live="polite"></div>
+      <section id="match-results" class="results" aria-live="polite"></section>
+    </section>
+
+    <footer>Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match</footer>
+  </main>
+
+  <script>
+    const titleInput = document.getElementById("title");
+    const analyzeBtn = document.getElementById("analyze");
+    const statusEl = document.getElementById("status");
+    const resultsEl = document.getElementById("results");
+
+    const titleAInput = document.getElementById("title_a");
+    const titleBInput = document.getElementById("title_b");
+    const compareBtn = document.getElementById("compare");
+    const matchStatusEl = document.getElementById("match-status");
+    const matchResultsEl = document.getElementById("match-results");
+
+    function showEl(el, html) {
+      el.innerHTML = html;
+      el.classList.add("visible");
+    }
+
+    function clearEl(el) {
+      el.innerHTML = "";
+      el.classList.remove("visible");
+    }
+
+    function formatConfidence(value) {
+      return Math.round(Number(value) * 100) + "%";
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function detailMessage(payload) {
+      const detail = payload.detail;
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail) && detail.length) {
+        return detail.map((d) => d.msg || JSON.stringify(d)).join(" ");
+      }
+      return "Request failed.";
+    }
+
+    function renderParseResults(data) {
+      const product = data.canonical_product;
+      const badgeClass = data.is_new_product ? "" : "existing";
+      const badgeText = data.is_new_product ? "New registry identity" : "Existing registry identity";
+
+      const fields = [
+        ["Brand", product.brand],
+        ["Family", product.family],
+        ["Model", product.model],
+        ["Storage", product.storage || "—"],
+        ["Color", product.color || "—"],
+      ];
+
+      const fieldRows = fields
+        .map(([k, v]) => `<tr><th>${k}</th><td>${escapeHtml(String(v))}</td></tr>`)
+        .join("");
+
+      const evidenceRows = (data.evidence || [])
+        .map(
+          (item) => `<tr>
+            <td>${escapeHtml(item.field)}</td>
+            <td><code>${escapeHtml(item.matched_text)}</code></td>
+            <td><code>${escapeHtml(item.rule)}</code></td>
+          </tr>`
+        )
+        .join("");
+
+      resultsEl.innerHTML = `
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Confidence</div>
+            <div class="value emerald">${formatConfidence(data.confidence)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Canonical ID</div>
+            <div class="value">${escapeHtml(product.id)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Registry</div>
+            <div class="value"><span class="badge ${badgeClass}">${badgeText}</span></div>
+          </div>
+        </div>
+        <h3 class="section-title">Canonical product</h3>
+        <table><tbody>${fieldRows}</tbody></table>
+        <h3 class="section-title">Parsing evidence</h3>
+        <table>
+          <thead><tr><th>Field</th><th>Matched text</th><th>Rule</th></tr></thead>
+          <tbody>${evidenceRows || '<tr><td colspan="3">No evidence signals</td></tr>'}</tbody>
+        </table>
+      `;
+      resultsEl.classList.add("visible");
+    }
+
+    function matchBadgeClass(matchType, isMatch) {
+      if (isMatch) return "";
+      if (matchType === "insufficient_information") return "neutral";
+      return "danger";
+    }
+
+    function renderMatchResults(data) {
+      const matchedChips = (data.matched_fields || [])
+        .map((f) => `<span class="chip">${escapeHtml(f)}</span>`)
+        .join("") || "<span class='chip conflict'>none</span>";
+
+      const conflictChips = (data.conflicts || [])
+        .map(
+          (c) =>
+            `<span class="chip conflict">${escapeHtml(c.field)}: ${escapeHtml(c.value_a)} ≠ ${escapeHtml(c.value_b)}</span>`
+        )
+        .join("") || "<span class='chip'>none</span>";
+
+      const explanation = (data.explanation || [])
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("");
+
+      matchResultsEl.innerHTML = `
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Classification</div>
+            <div class="value">
+              <span class="badge ${matchBadgeClass(data.match_type, data.is_match)}">${escapeHtml(data.match_type)}</span>
+            </div>
+          </div>
+          <div class="stat">
+            <div class="label">Confidence</div>
+            <div class="value emerald">${formatConfidence(data.confidence)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Is match</div>
+            <div class="value">${data.is_match ? "Yes" : "No"}</div>
+          </div>
+        </div>
+        <h3 class="section-title">Matched fields</h3>
+        <div class="chip-row">${matchedChips}</div>
+        <h3 class="section-title">Conflicting fields</h3>
+        <div class="chip-row">${conflictChips}</div>
+        <h3 class="section-title">Explanation</h3>
+        <ul class="explain">${explanation || "<li>No explanation available.</li>"}</ul>
+      `;
+      matchResultsEl.classList.add("visible");
+    }
+
+    async function analyze() {
+      const title = titleInput.value.trim();
+      clearEl(resultsEl);
+
+      if (!title) {
+        showEl(statusEl, '<div class="error">Please enter a product listing title.</div>');
+        return;
+      }
+
+      analyzeBtn.disabled = true;
+      showEl(statusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Analyzing listing…</div>');
+
+      try {
+        const response = await fetch("/api/v1/intelligence/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ title }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(statusEl, `<div class="error">${escapeHtml(detailMessage(payload))}</div>`);
+          return;
+        }
+        clearEl(statusEl);
+        renderParseResults(payload);
+      } catch (err) {
+        showEl(statusEl, '<div class="error">Network error. Is the DealBrain API running?</div>');
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    }
+
+    async function compare() {
+      const title_a = titleAInput.value.trim();
+      const title_b = titleBInput.value.trim();
+      clearEl(matchResultsEl);
+
+      if (!title_a || !title_b) {
+        showEl(matchStatusEl, '<div class="error">Please enter both listing titles.</div>');
+        return;
+      }
+
+      compareBtn.disabled = true;
+      showEl(matchStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Comparing listings…</div>');
+
+      try {
+        const response = await fetch("/api/v1/intelligence/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ title_a, title_b }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(matchStatusEl, `<div class="error">${escapeHtml(detailMessage(payload))}</div>`);
+          return;
+        }
+        clearEl(matchStatusEl);
+        renderMatchResults(payload);
+      } catch (err) {
+        showEl(matchStatusEl, '<div class="error">Network error. Is the DealBrain API running?</div>');
+      } finally {
+        compareBtn.disabled = false;
+      }
+    }
+
+    analyzeBtn.addEventListener("click", analyze);
+    titleInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") analyze();
+    });
+    compareBtn.addEventListener("click", compare);
+  </script>
+</body>
+</html>

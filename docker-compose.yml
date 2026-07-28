@@ -1,0 +1,50 @@
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dealbrain:dealbrain@db:5432/dealbrain
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dealbrain
+      POSTGRES_PASSWORD: dealbrain
+      POSTGRES_DB: dealbrain
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dealbrain -d dealbrain"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      target: runtime
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dealbrain:dealbrain@db:5432/dealbrain
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data:
