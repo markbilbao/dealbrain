@@ -1,6 +1,15 @@
 """Domain entities and value objects for Product Identity."""
 
 from app.domain.entities.canonical_product import CanonicalProduct, ParseSignal
+from app.domain.entities.collection import (
+    CollectedListing,
+    CollectionFailure,
+    CollectionJob,
+    CollectionResult,
+    CollectionRun,
+    CollectionStatus,
+    CollectionTarget,
+)
 from app.domain.entities.deal_score import (
     DealListingAttributes,
     DealRating,
@@ -58,6 +67,13 @@ __all__ = [
     "AvailabilityStatus",
     "CanonicalProduct",
     "CanonicalProductStatus",
+    "CollectedListing",
+    "CollectionFailure",
+    "CollectionJob",
+    "CollectionResult",
+    "CollectionRun",
+    "CollectionStatus",
+    "CollectionTarget",
     "DealListingAttributes",
     "DealRating",
     "DealScore",

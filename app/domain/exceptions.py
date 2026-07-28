@@ -74,3 +74,27 @@ class PriceHistoryValidationError(Exception):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(message)
+
+
+class CollectionValidationError(Exception):
+    """Raised when marketplace collection inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class CollectionJobNotFoundError(Exception):
+    """Raised when a scheduled collection job cannot be found."""
+
+    def __init__(self, job_id: str) -> None:
+        self.job_id = job_id
+        super().__init__(f"Collection job not found: {job_id}")
+
+
+class CollectionRunNotFoundError(Exception):
+    """Raised when a collection run cannot be found."""
+
+    def __init__(self, run_id: str) -> None:
+        self.run_id = run_id
+        super().__init__(f"Collection run not found: {run_id}")
