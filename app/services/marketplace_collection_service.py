@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.core.logging import get_logger
@@ -20,6 +20,8 @@ from app.domain.entities.collection import (
     CollectionRun,
     CollectionStatus,
     CollectionTarget,
+    CollectionTriggerType,
+    RetryVisibility,
 )
 from app.domain.entities.marketplace_listing import MarketplaceListing
 from app.domain.exceptions import (
@@ -83,6 +85,8 @@ class MarketplaceCollectionService:
         scenario: str | None = None,
         job_id: str | None = None,
         run_id: str | None = None,
+        trigger: CollectionTriggerType = CollectionTriggerType.MANUAL,
+        idempotency_key: str | None = None,
     ) -> CollectionRun:
         """Run one or more collectors and forward valid listings to Price History."""
         cleaned = query.strip()
@@ -100,7 +104,7 @@ class MarketplaceCollectionService:
             query=cleaned,
             marketplaces=marketplace_names,
             observed_at=observation_time,
-            suffix=job_id or "",
+            suffix=f"{job_id or ''}:{trigger.value}:{idempotency_key or ''}",
         )
 
         results: list[CollectionResult] = []
@@ -141,6 +145,14 @@ class MarketplaceCollectionService:
                             ),
                             status=CollectionStatus.FAILED,
                             warnings=("Rate limiter rejected marketplace request",),
+                            retry=RetryVisibility(
+                                attempt=1,
+                                max_attempts=self._retry_policy.max_attempts,
+                                delay_seconds=float(decision.retry_after_seconds),
+                                next_retry_at=started_at
+                                + timedelta(seconds=decision.retry_after_seconds),
+                                final_failure_reason=None,
+                            ),
                         )
                     )
                     warnings.append(f"{market}: rate limited")
@@ -204,6 +216,15 @@ class MarketplaceCollectionService:
 
         completed_at = self._clock()
         status = self._aggregate_status(results)
+        error_summaries = tuple(
+            f"{error.marketplace}:{error.code}:{error.message}"
+            for result in results
+            for error in result.errors
+        )
+        run_retry = next(
+            (result.retry for result in results if result.retry is not None),
+            None,
+        )
         run = CollectionRun(
             run_id=resolved_run_id,
             query=cleaned,
@@ -218,6 +239,10 @@ class MarketplaceCollectionService:
             warnings=tuple(dict.fromkeys(warnings)),
             observed_at=observation_time,
             job_id=job_id,
+            trigger=trigger,
+            error_summaries=error_summaries,
+            retry=run_retry,
+            idempotency_key=idempotency_key,
         )
         self._repository.save_run(run)
         self._log_summary(run)
@@ -234,6 +259,8 @@ class MarketplaceCollectionService:
         job_id: str | None = None,
         created_at: datetime | None = None,
         next_run_at: datetime | None = None,
+        name: str | None = None,
+        paused: bool = False,
     ) -> CollectionJob:
         cleaned = query.strip()
         if not cleaned:
@@ -257,6 +284,7 @@ class MarketplaceCollectionService:
             interval_seconds=interval_seconds,
             created_at=stamp,
         )
+        resolved_name = (name or cleaned).strip() or cleaned
         job = CollectionJob(
             job_id=resolved_id,
             query=cleaned,
@@ -267,6 +295,9 @@ class MarketplaceCollectionService:
             next_run_at=next_run_at or stamp,
             scenario=scenario,
             running=False,
+            name=resolved_name,
+            paused=paused,
+            updated_at=stamp,
         )
         return self._repository.save_job(job)
 
@@ -296,6 +327,7 @@ class MarketplaceCollectionService:
             observed_at=now,
             scenario=job.scenario,
             job_id=job.job_id,
+            trigger=CollectionTriggerType.SCHEDULED,
         )
 
     def _select_collectors(
@@ -390,6 +422,18 @@ class MarketplaceCollectionService:
         now = self._clock()
         message = str(last_error) if last_error else "Unknown collector failure"
         code = getattr(last_error, "code", "total_failure")
+        final_decision = self._retry_policy.decide(attempt=attempt, error_code=str(code))
+        retry_meta = RetryVisibility(
+            attempt=attempt,
+            max_attempts=self._retry_policy.max_attempts,
+            delay_seconds=final_decision.delay_seconds,
+            next_retry_at=(
+                now + timedelta(seconds=final_decision.delay_seconds)
+                if final_decision.should_retry
+                else None
+            ),
+            final_failure_reason=final_decision.reason if not final_decision.should_retry else None,
+        )
         return CollectionResult(
             run_id=f"{parent_run_id}:{collector.marketplace_name}",
             marketplace=collector.marketplace_name,
@@ -411,6 +455,7 @@ class MarketplaceCollectionService:
             ),
             status=CollectionStatus.FAILED,
             warnings=tuple(retry_warnings),
+            retry=retry_meta,
         )
 
     async def _store_listing_snapshot(
