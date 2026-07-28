@@ -5,6 +5,7 @@ from app.domain.interfaces.canonical_registry import (
     CanonicalProductRegistry,
     CanonicalProductStore,
 )
+from app.domain.interfaces.deal_score_engine import DealScoreEngine
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
@@ -14,6 +15,7 @@ __all__ = [
     "AIProvider",
     "CanonicalProductRegistry",
     "CanonicalProductStore",
+    "DealScoreEngine",
     "MarketplaceConnector",
     "ProductIntelligenceEngine",
     "ProductMatcher",

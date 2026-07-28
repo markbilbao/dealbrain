@@ -1,6 +1,17 @@
 """Domain entities and value objects for Product Identity."""
 
 from app.domain.entities.canonical_product import CanonicalProduct, ParseSignal
+from app.domain.entities.deal_score import (
+    DealListingAttributes,
+    DealRating,
+    DealScore,
+    DealScoreComponent,
+    DealScoreComponents,
+    ListingEvaluation,
+    RankingResult,
+    ScoreableListing,
+    rating_for_score,
+)
 from app.domain.entities.marketplace_listing import (
     AvailabilityStatus,
     MarketplaceListing,
@@ -28,8 +39,14 @@ __all__ = [
     "AvailabilityStatus",
     "CanonicalProduct",
     "CanonicalProductStatus",
+    "DealListingAttributes",
+    "DealRating",
+    "DealScore",
+    "DealScoreComponent",
+    "DealScoreComponents",
     "FieldCompareStatus",
     "FieldConflict",
+    "ListingEvaluation",
     "MarketplaceListing",
     "MarketplaceSearchResult",
     "MatchType",
@@ -38,7 +55,10 @@ __all__ = [
     "ProductMatchResult",
     "ProductRelation",
     "ProductRelationType",
+    "RankingResult",
     "RegisteredCanonicalProduct",
     "RegistryResolveResult",
     "RelationDirection",
+    "ScoreableListing",
+    "rating_for_score",
 ]

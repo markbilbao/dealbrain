@@ -10,6 +10,7 @@ from app.domain.interfaces.canonical_registry import (
     CanonicalProductRegistry,
     CanonicalProductStore,
 )
+from app.domain.interfaces.deal_score_engine import DealScoreEngine
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
@@ -22,9 +23,11 @@ from app.intelligence.canonical_registry import (
     CanonicalProductRegistryService,
     InMemoryCanonicalProductStore,
 )
+from app.intelligence.dealscore import WeightedDealScoreEngine
 from app.intelligence.marketplace import LazadaConnector, ShopeeConnector
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
+from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
@@ -102,3 +105,21 @@ def get_marketplace_intelligence_service(
 ) -> MarketplaceIntelligenceService:
     """Provide the Marketplace Intelligence orchestration service."""
     return MarketplaceIntelligenceService(connectors=connectors)
+
+
+def get_deal_score_engine() -> DealScoreEngine:
+    """Provide the deterministic weighted DealScore engine."""
+    return WeightedDealScoreEngine()
+
+
+def get_deal_recommendation_service(
+    marketplace_service: MarketplaceIntelligenceService = Depends(
+        get_marketplace_intelligence_service
+    ),
+    deal_score_engine: DealScoreEngine = Depends(get_deal_score_engine),
+) -> DealRecommendationService:
+    """Provide the DealScore recommendation orchestration service."""
+    return DealRecommendationService(
+        marketplace_service=marketplace_service,
+        deal_score_engine=deal_score_engine,
+    )

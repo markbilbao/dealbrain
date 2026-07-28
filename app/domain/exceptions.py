@@ -50,3 +50,15 @@ class UnsupportedProductError(Exception):
         self.title = title
         self.reason = reason
         super().__init__(reason)
+
+
+class DealScoreValidationError(Exception):
+    """Raised when DealScore inputs cannot be evaluated safely.
+
+    Typical causes: mixed currencies, empty result sets after validation,
+    or universally invalid listing inputs.
+    """
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)

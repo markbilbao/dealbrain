@@ -279,6 +279,89 @@
       color: var(--danger);
     }
 
+    .badge.recommended {
+      background: rgba(16, 185, 129, 0.18);
+      color: var(--emerald-dark);
+    }
+
+    .deal-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+      background: var(--surface);
+    }
+
+    .deal-card.recommended {
+      border-color: rgba(16, 185, 129, 0.55);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+    }
+
+    .deal-card-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .deal-card-title {
+      margin: 0;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--navy);
+    }
+
+    .deal-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin: 0.65rem 0 0.85rem;
+    }
+
+    .component-item {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.65rem;
+    }
+
+    .component-item .label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .component-item .value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-top: 0.2rem;
+    }
+
+    .warnings {
+      margin: 0.5rem 0 0;
+      padding-left: 1.1rem;
+      color: var(--danger);
+      line-height: 1.5;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      font-size: 0.95rem;
+      padding: 0.75rem 0;
+    }
+
     ul.explain {
       margin: 0;
       padding-left: 1.1rem;
@@ -320,7 +403,8 @@
     <h1>Product Intelligence Demo</h1>
     <p class="lede">
       Parse messy Apple listings into canonical products, compare exact variants,
-      and search mocked marketplace listings across Shopee and Lazada — no LLMs.
+      search mocked marketplace listings, and rank the best purchase with DealScore —
+      no LLMs.
     </p>
 
     <section class="panel" aria-label="Analyze listing">
@@ -395,9 +479,29 @@
       <section id="marketplace-results" class="results" aria-live="polite"></section>
     </section>
 
+    <section class="panel" aria-label="DealScore search">
+      <h2 class="panel-heading">DealScore Engine</h2>
+      <label for="dealscore_q">Search and rank deals</label>
+      <div class="row">
+        <input
+          id="dealscore_q"
+          type="text"
+          value="iPhone 17 Pro Max"
+          placeholder="e.g. iPhone 17 Pro Max"
+          autocomplete="off"
+        />
+        <button id="dealscore_search" type="button">Rank deals</button>
+      </div>
+      <p class="hint">
+        Deterministic DealScore · Try: AirPods · MacBook · Samsung Galaxy
+      </p>
+      <div id="dealscore-status" class="status" aria-live="polite"></div>
+      <section id="dealscore-results" class="results" aria-live="polite"></section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
-      GET /api/v1/marketplace/search
+      GET /api/v1/marketplace/search · GET /api/v1/dealscore/search
     </footer>
   </main>
 
@@ -417,6 +521,11 @@
     const marketplaceSearchBtn = document.getElementById("marketplace_search");
     const marketplaceStatusEl = document.getElementById("marketplace-status");
     const marketplaceResultsEl = document.getElementById("marketplace-results");
+
+    const dealscoreQueryInput = document.getElementById("dealscore_q");
+    const dealscoreSearchBtn = document.getElementById("dealscore_search");
+    const dealscoreStatusEl = document.getElementById("dealscore-status");
+    const dealscoreResultsEl = document.getElementById("dealscore-results");
 
     function showEl(el, html) {
       el.innerHTML = html;
@@ -725,6 +834,156 @@
     marketplaceSearchBtn.addEventListener("click", searchMarketplaces);
     marketplaceQueryInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") searchMarketplaces();
+    });
+
+    function formatComponentLabel(key) {
+      return key.replaceAll("_", " ").replace(" score", "");
+    }
+
+    function renderDealScoreResults(data) {
+      const results = data.results || [];
+      if (!results.length) {
+        dealscoreResultsEl.innerHTML =
+          '<p class="empty-state">No marketplace listings matched this query.</p>';
+        dealscoreResultsEl.classList.add("visible");
+        return;
+      }
+
+      const cards = results
+        .map((item) => {
+          const listing = item.listing || {};
+          const deal = item.deal_score || {};
+          const isRecommended = listing.product_id === data.recommended_listing_id;
+          const components = deal.components || {};
+          const componentHtml = Object.entries(components)
+            .map(
+              ([key, value]) => `<div class="component-item">
+                <div class="label">${escapeHtml(formatComponentLabel(key))}</div>
+                <div class="value">${escapeHtml(String(value))}</div>
+              </div>`
+            )
+            .join("");
+          const explanation = (deal.explanation || [])
+            .map((line) => `<li>${escapeHtml(line)}</li>`)
+            .join("");
+          const warnings = (deal.warnings || [])
+            .map((line) => `<li>${escapeHtml(line)}</li>`)
+            .join("");
+
+          return `<article class="deal-card ${isRecommended ? "recommended" : ""}">
+            <div class="deal-card-header">
+              <h3 class="deal-card-title">${escapeHtml(listing.title || "Untitled listing")}</h3>
+              <div class="deal-meta-row">
+                <span class="badge">Rank #${escapeHtml(String(item.rank))}</span>
+                ${isRecommended ? '<span class="badge recommended">Recommended</span>' : ""}
+                <span class="badge neutral">${escapeHtml(deal.rating || "—")}</span>
+                <span class="badge">${escapeHtml(listing.marketplace || "")}</span>
+              </div>
+            </div>
+            <div class="meta">
+              <div class="stat">
+                <div class="label">DealScore</div>
+                <div class="value emerald">${escapeHtml(String(deal.score ?? "—"))}</div>
+              </div>
+              <div class="stat">
+                <div class="label">Total cost</div>
+                <div class="value">${formatPrice(listing.total_cost ?? deal.total_cost, listing.currency)}</div>
+              </div>
+              <div class="stat">
+                <div class="label">Listing price</div>
+                <div class="value">${formatPrice(listing.price, listing.currency)}</div>
+              </div>
+              <div class="stat">
+                <div class="label">Shipping</div>
+                <div class="value">${
+                  listing.shipping_cost == null
+                    ? "—"
+                    : formatPrice(listing.shipping_cost, listing.currency)
+                }</div>
+              </div>
+            </div>
+            <h4 class="section-title">Component breakdown</h4>
+            <div class="component-grid">${componentHtml || '<p class="empty-state">No components</p>'}</div>
+            <h4 class="section-title">Explanation</h4>
+            <ul class="explain">${explanation || "<li>No explanation available.</li>"}</ul>
+            <h4 class="section-title">Warnings</h4>
+            ${
+              warnings
+                ? `<ul class="warnings">${warnings}</ul>`
+                : '<p class="empty-state">No warnings.</p>'
+            }
+          </article>`;
+        })
+        .join("");
+
+      dealscoreResultsEl.innerHTML = `
+        <div class="meta">
+          <div class="stat">
+            <div class="label">Query</div>
+            <div class="value">${escapeHtml(data.query || "")}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Currency</div>
+            <div class="value">${escapeHtml(data.currency || "—")}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Market avg total</div>
+            <div class="value">${formatPrice(data.market_average_total_cost, data.currency)}</div>
+          </div>
+          <div class="stat">
+            <div class="label">Recommended</div>
+            <div class="value">${escapeHtml(data.recommended_listing_id || "—")}</div>
+          </div>
+        </div>
+        <h3 class="section-title">Ranked listings</h3>
+        ${cards}
+      `;
+      dealscoreResultsEl.classList.add("visible");
+    }
+
+    async function searchDealScore() {
+      const q = dealscoreQueryInput.value.trim();
+      clearEl(dealscoreResultsEl);
+
+      if (!q) {
+        showEl(dealscoreStatusEl, '<div class="error">Please enter a search query.</div>');
+        return;
+      }
+
+      dealscoreSearchBtn.disabled = true;
+      showEl(
+        dealscoreStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Ranking deals…</div>'
+      );
+
+      try {
+        const response = await fetch(
+          `/api/v1/dealscore/search?q=${encodeURIComponent(q)}`,
+          { headers: { Accept: "application/json" } }
+        );
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          showEl(
+            dealscoreStatusEl,
+            `<div class="error">${escapeHtml(detailMessage(payload))}</div>`
+          );
+          return;
+        }
+        clearEl(dealscoreStatusEl);
+        renderDealScoreResults(payload);
+      } catch (err) {
+        showEl(
+          dealscoreStatusEl,
+          '<div class="error">Network error. Is the DealBrain API running?</div>'
+        );
+      } finally {
+        dealscoreSearchBtn.disabled = false;
+      }
+    }
+
+    dealscoreSearchBtn.addEventListener("click", searchDealScore);
+    dealscoreQueryInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") searchDealScore();
     });
   </script>
 </body>
