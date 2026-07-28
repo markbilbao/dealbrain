@@ -62,3 +62,15 @@ class DealScoreValidationError(Exception):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(message)
+
+
+class PriceHistoryValidationError(Exception):
+    """Raised when price history cannot be computed safely.
+
+    Typical causes: mixed currencies in one statistics request, empty
+    observation sets, or production attempts to load mock fixtures.
+    """
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)

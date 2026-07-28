@@ -41,6 +41,24 @@ class Settings(BaseSettings):
         alias="CANONICAL_REGISTRY_BACKEND",
     )
 
+    # Price history backend: "memory" (demo/default) or "sqlalchemy"
+    price_history_backend: Literal["memory", "sqlalchemy"] = Field(
+        default="memory",
+        alias="PRICE_HISTORY_BACKEND",
+    )
+
+    # Deterministic trend threshold (percent). See price_history statistics docs.
+    price_trend_threshold_percent: float = Field(
+        default=2.0,
+        alias="PRICE_TREND_THRESHOLD_PERCENT",
+    )
+
+    # Seed development-only iPhone mock history on price-history search (never in production).
+    price_history_seed_demo_mock: bool = Field(
+        default=True,
+        alias="PRICE_HISTORY_SEED_DEMO_MOCK",
+    )
+
     # CORS
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default=["http://localhost:3000", "http://localhost:8000"],
