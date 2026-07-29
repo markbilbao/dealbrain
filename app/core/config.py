@@ -65,6 +65,54 @@ class Settings(BaseSettings):
         alias="CORS_ORIGINS",
     )
 
+    # AI Review Summary — multi-model providers (disabled by default)
+    ai_review_enabled: bool = Field(default=False, alias="AI_REVIEW_ENABLED")
+    ai_review_mode: Literal["economy", "balanced", "maximum"] = Field(
+        default="economy",
+        alias="AI_REVIEW_MODE",
+    )
+    ai_review_allow_client_mode: bool = Field(
+        default=True,
+        alias="AI_REVIEW_ALLOW_CLIENT_MODE",
+    )
+    ai_primary_provider: Literal["openai", "anthropic", "gemini", "deterministic"] = Field(
+        default="openai",
+        alias="AI_PRIMARY_PROVIDER",
+    )
+    ai_secondary_provider: Literal["openai", "anthropic", "gemini", "deterministic"] = Field(
+        default="anthropic",
+        alias="AI_SECONDARY_PROVIDER",
+    )
+    ai_fallback_order: Annotated[list[str], NoDecode] = Field(
+        default=["openai", "anthropic", "gemini", "deterministic"],
+        alias="AI_FALLBACK_ORDER",
+    )
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
+    anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    anthropic_model: str = Field(default="claude-sonnet-4-20250514", alias="ANTHROPIC_MODEL")
+    gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-2.0-flash", alias="GEMINI_MODEL")
+    ai_provider_timeout_seconds: float = Field(
+        default=20.0,
+        alias="AI_PROVIDER_TIMEOUT_SECONDS",
+        gt=0,
+        le=120,
+    )
+    ai_max_review_input: int = Field(
+        default=40,
+        alias="AI_MAX_REVIEW_INPUT",
+        ge=1,
+        le=500,
+    )
+    ai_max_estimated_cost_per_request: float = Field(
+        default=0.05,
+        alias="AI_MAX_ESTIMATED_COST_PER_REQUEST",
+        ge=0,
+    )
+    # Live HTTP to external AI APIs — off unless explicitly enabled AND AI_REVIEW_ENABLED.
+    ai_review_live_http: bool = Field(default=False, alias="AI_REVIEW_LIVE_HTTP")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
@@ -72,9 +120,27 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
+    @field_validator("ai_fallback_order", mode="before")
+    @classmethod
+    def parse_fallback_order(cls, value: str | list[str]) -> list[str]:
+        allowed = {"openai", "anthropic", "gemini", "deterministic"}
+        if isinstance(value, str):
+            items = [part.strip().lower() for part in value.split(",") if part.strip()]
+        else:
+            items = [str(part).strip().lower() for part in value]
+        cleaned = [item for item in items if item in allowed]
+        if "deterministic" not in cleaned:
+            cleaned.append("deterministic")
+        return cleaned or ["deterministic"]
+
     @property
     def is_development(self) -> bool:
         return self.app_env == "development"
+
+    @property
+    def ai_external_calls_enabled(self) -> bool:
+        """True only when review AI is on AND live HTTP is explicitly enabled."""
+        return self.ai_review_enabled and self.ai_review_live_http
 
 
 @lru_cache

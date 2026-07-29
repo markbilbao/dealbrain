@@ -687,12 +687,56 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Review summary">
+      <h2 class="panel-heading">Review Summary</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Multi-model AI architecture · external providers disabled by default · deterministic fallback.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="rs_product_id" style="flex:1;min-width:12rem;">
+          Product ID
+          <input id="rs_product_id" type="text" value="00000000-0000-4000-8000-000000000017" />
+        </label>
+        <label for="rs_mode" style="flex:0.7;min-width:8rem;">
+          Mode request
+          <select id="rs_mode">
+            <option value="">Server default</option>
+            <option value="economy">economy</option>
+            <option value="balanced">balanced</option>
+            <option value="maximum">maximum</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="rs_load" type="button">Summarize Reviews</button>
+        <button id="rs_demo" type="button" style="background:#0F172A;">Load Demo</button>
+      </div>
+      <div id="rs-sentiment" class="meta" style="margin-top:1rem;"></div>
+      <div id="rs-meta" class="meta" style="margin-top:0.5rem;"></div>
+      <div id="rs-status" class="status" aria-live="polite"></div>
+      <section id="rs-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Summary</h3>
+        <div id="rs-summary-text"></div>
+        <h3 class="section-title">Top Pros</h3>
+        <div id="rs-pros"></div>
+        <h3 class="section-title">Top Cons</h3>
+        <div id="rs-cons"></div>
+        <h3 class="section-title">Warnings</h3>
+        <div id="rs-warnings"></div>
+        <h3 class="section-title">Recommendation</h3>
+        <div id="rs-recommendation"></div>
+        <h3 class="section-title">Model disagreements</h3>
+        <div id="rs-disagreements"></div>
+      </section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
       GET /api/v1/recommendations/search · GET /api/v1/price-history/search ·
       POST /api/v1/collections/run · GET /api/v1/collection-operations/status ·
-      POST /api/v1/watchlists/check-alerts · POST /api/v1/reviews/collect
+      POST /api/v1/watchlists/check-alerts · POST /api/v1/reviews/collect ·
+      GET /api/v1/review-summary/demo
     </footer>
   </main>
 
@@ -2464,6 +2508,138 @@
     rvRefreshBtn.addEventListener("click", refreshReviews);
     rvCompareBtn.addEventListener("click", compareReviews);
     refreshReviews();
+
+    const rsLoadBtn = document.getElementById("rs_load");
+    const rsDemoBtn = document.getElementById("rs_demo");
+    const rsProductIdInput = document.getElementById("rs_product_id");
+    const rsModeInput = document.getElementById("rs_mode");
+    const rsSentimentEl = document.getElementById("rs-sentiment");
+    const rsMetaEl = document.getElementById("rs-meta");
+    const rsStatusEl = document.getElementById("rs-status");
+    const rsSummaryTextEl = document.getElementById("rs-summary-text");
+    const rsProsEl = document.getElementById("rs-pros");
+    const rsConsEl = document.getElementById("rs-cons");
+    const rsWarningsEl = document.getElementById("rs-warnings");
+    const rsRecommendationEl = document.getElementById("rs-recommendation");
+    const rsDisagreementsEl = document.getElementById("rs-disagreements");
+
+    function sentimentStars(sentiment) {
+      const map = {
+        "Very Positive": "★★★★★",
+        "Positive": "★★★★☆",
+        "Mixed": "★★★☆☆",
+        "Negative": "★★☆☆☆",
+      };
+      return map[sentiment] || "★★★☆☆";
+    }
+
+    function renderBulletList(items, emptyLabel) {
+      if (!items || !items.length) {
+        return `<p class="empty-state">${emptyLabel}</p>`;
+      }
+      return `<ul style="margin:0;padding-left:1.2rem;">${items.map((item) =>
+        `<li>${escapeHtml(item)}</li>`
+      ).join("")}</ul>`;
+    }
+
+    function rsModeQuery() {
+      const mode = (rsModeInput.value || "").trim();
+      return mode ? `?mode=${encodeURIComponent(mode)}` : "";
+    }
+
+    function renderReviewSummary(body) {
+      rsSentimentEl.innerHTML = [
+        rvStat("Overall Sentiment", escapeHtml(body.overall_sentiment || "—"), true),
+        rvStat("Stars", sentimentStars(body.overall_sentiment || ""), true),
+        rvStat("Rating", body.average_rating != null ? Number(body.average_rating).toFixed(2) : "—"),
+        rvStat("Recommendation", escapeHtml(body.recommendation || "—"), true),
+      ].join("");
+      const providers = (body.providers_used || []).join(", ") || body.provider || "—";
+      const confidence = body.consensus_confidence != null
+        ? Number(body.consensus_confidence).toFixed(2)
+        : "—";
+      const agreement = body.agreement_score != null
+        ? Number(body.agreement_score).toFixed(2)
+        : "—";
+      rsMetaEl.innerHTML = [
+        rvStat("Analysis mode", escapeHtml(body.mode || "economy"), true),
+        rvStat("Providers used", escapeHtml(providers)),
+        rvStat("Confidence", confidence, true),
+        rvStat("Agreement", agreement),
+        rvStat("Fallback", body.fallback_used ? "Yes" : "No"),
+      ].join("");
+      rsSummaryTextEl.innerHTML = body.summary
+        ? `<p style="margin:0;line-height:1.55;">${escapeHtml(body.summary)}</p>`
+        : '<p class="empty-state">No summary paragraph.</p>';
+      rsProsEl.innerHTML = renderBulletList(body.pros || [], "No pros detected.");
+      rsConsEl.innerHTML = renderBulletList(body.cons || [], "No cons detected.");
+      rsWarningsEl.innerHTML = renderBulletList(body.warnings || [], "No warnings.");
+      rsRecommendationEl.innerHTML = body.recommendation
+        ? `<p style="margin:0;font-weight:700;color:var(--emerald-dark);">${escapeHtml(body.recommendation)}</p>`
+        : '<p class="empty-state">No recommendation.</p>';
+      const disagreements = body.disagreements || [];
+      if (!disagreements.length) {
+        rsDisagreementsEl.innerHTML = '<p class="empty-state">No model disagreements reported.</p>';
+      } else {
+        rsDisagreementsEl.innerHTML = `<ul style="margin:0;padding-left:1.2rem;">${
+          disagreements.map((d) =>
+            `<li><strong>${escapeHtml(d.field || "claim")}</strong>: ${escapeHtml(d.detail || "")}</li>`
+          ).join("")
+        }</ul>`;
+      }
+    }
+
+    async function loadReviewSummary(url) {
+      showEl(
+        rsStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Generating review summary…</div>'
+      );
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load review summary.");
+        }
+        const body = await response.json();
+        renderReviewSummary(body);
+        const fallbackNote = body.fallback_used
+          ? ` · fallback${body.fallback_reason ? ` (${escapeHtml(body.fallback_reason)})` : ""}`
+          : "";
+        showEl(
+          rsStatusEl,
+          `<div class="hint">Mode: ${escapeHtml(body.mode || "economy")} · providers: ${escapeHtml((body.providers_used || []).join(", ") || body.provider || "—")}${fallbackNote}</div>`
+        );
+      } catch (error) {
+        showEl(rsStatusEl, `<div class="error">${error.message || error}</div>`);
+      }
+    }
+
+    async function summarizeReviews() {
+      const productId = (rsProductIdInput.value || "").trim();
+      if (!productId) {
+        showEl(rsStatusEl, '<div class="error">Product ID is required.</div>');
+        return;
+      }
+      rsLoadBtn.disabled = true;
+      try {
+        await loadReviewSummary(`/api/v1/review-summary/${encodeURIComponent(productId)}${rsModeQuery()}`);
+      } finally {
+        rsLoadBtn.disabled = false;
+      }
+    }
+
+    async function loadDemoSummary() {
+      rsDemoBtn.disabled = true;
+      try {
+        await loadReviewSummary(`/api/v1/review-summary/demo${rsModeQuery()}`);
+      } finally {
+        rsDemoBtn.disabled = false;
+      }
+    }
+
+    rsLoadBtn.addEventListener("click", summarizeReviews);
+    rsDemoBtn.addEventListener("click", loadDemoSummary);
+    loadDemoSummary();
   </script>
 </body>
 </html>
