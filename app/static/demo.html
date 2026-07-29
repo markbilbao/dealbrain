@@ -730,13 +730,63 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Shopping assistant">
+      <h2 class="panel-heading">AI Shopping Assistant</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Evidence-first shopping Q&amp;A · mock/imported DealBrain data · external AI disabled by default.
+      </p>
+      <label for="sa_query" style="display:block;margin-top:0.75rem;">
+        Shopping question
+        <textarea id="sa_query" rows="2" style="width:100%;margin-top:0.35rem;">What is the best gaming laptop under ₱60,000?</textarea>
+      </label>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="sa_mode" style="flex:0.7;min-width:8rem;">
+          Mode request
+          <select id="sa_mode">
+            <option value="economy">economy</option>
+            <option value="balanced">balanced</option>
+            <option value="maximum">maximum</option>
+          </select>
+        </label>
+        <label for="sa_conversation_id" style="flex:1;min-width:12rem;">
+          Conversation ID (optional)
+          <input id="sa_conversation_id" type="text" placeholder="auto on first ask" />
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="sa_ask" type="button">Ask Assistant</button>
+        <button id="sa_demo" type="button" style="background:#0F172A;">Load Demo</button>
+      </div>
+      <div id="sa-examples" class="meta" style="margin-top:0.75rem;"></div>
+      <div id="sa-sentiment" class="meta" style="margin-top:0.75rem;"></div>
+      <div id="sa-meta" class="meta" style="margin-top:0.5rem;"></div>
+      <div id="sa-status" class="status" aria-live="polite"></div>
+      <section id="sa-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Answer</h3>
+        <div id="sa-answer"></div>
+        <h3 class="section-title">Top recommendation</h3>
+        <div id="sa-top"></div>
+        <h3 class="section-title">Alternatives</h3>
+        <div id="sa-alts"></div>
+        <h3 class="section-title">Comparison</h3>
+        <div id="sa-comparison"></div>
+        <h3 class="section-title">Evidence</h3>
+        <div id="sa-evidence"></div>
+        <h3 class="section-title">Warnings</h3>
+        <div id="sa-warnings"></div>
+        <h3 class="section-title">Model disagreements</h3>
+        <div id="sa-disagreements"></div>
+      </section>
+    </section>
+
     <footer>
       Internal demo · POST /api/v1/intelligence/parse · POST /api/v1/intelligence/match ·
       GET /api/v1/marketplace/search · GET /api/v1/dealscore/search ·
       GET /api/v1/recommendations/search · GET /api/v1/price-history/search ·
       POST /api/v1/collections/run · GET /api/v1/collection-operations/status ·
       POST /api/v1/watchlists/check-alerts · POST /api/v1/reviews/collect ·
-      GET /api/v1/review-summary/demo
+      GET /api/v1/review-summary/demo · POST /api/v1/shopping-assistant/query ·
+      GET /api/v1/shopping-assistant/demo
     </footer>
   </main>
 
@@ -2640,6 +2690,197 @@
     rsLoadBtn.addEventListener("click", summarizeReviews);
     rsDemoBtn.addEventListener("click", loadDemoSummary);
     loadDemoSummary();
+
+    const saAskBtn = document.getElementById("sa_ask");
+    const saDemoBtn = document.getElementById("sa_demo");
+    const saQueryInput = document.getElementById("sa_query");
+    const saModeInput = document.getElementById("sa_mode");
+    const saConversationInput = document.getElementById("sa_conversation_id");
+    const saExamplesEl = document.getElementById("sa-examples");
+    const saSentimentEl = document.getElementById("sa-sentiment");
+    const saMetaEl = document.getElementById("sa-meta");
+    const saStatusEl = document.getElementById("sa-status");
+    const saAnswerEl = document.getElementById("sa-answer");
+    const saTopEl = document.getElementById("sa-top");
+    const saAltsEl = document.getElementById("sa-alts");
+    const saComparisonEl = document.getElementById("sa-comparison");
+    const saEvidenceEl = document.getElementById("sa-evidence");
+    const saWarningsEl = document.getElementById("sa-warnings");
+    const saDisagreementsEl = document.getElementById("sa-disagreements");
+
+    function renderShoppingAssistant(body) {
+      const top = body.top_recommendation;
+      saSentimentEl.innerHTML = [
+        rvStat("Intent", escapeHtml(body.intent || "—"), true),
+        rvStat("Confidence", body.confidence ? `${escapeHtml(body.confidence.band)} (${Number(body.confidence.score).toFixed(2)})` : "—", true),
+        rvStat("Data status", escapeHtml(body.data_status || "mock"), true),
+        rvStat("Fallback", body.fallback_used ? "Yes" : "No"),
+      ].join("");
+      const providers = (body.providers_used || []).join(", ") || "—";
+      saMetaEl.innerHTML = [
+        rvStat("Mode", escapeHtml(body.mode || "economy"), true),
+        rvStat("Providers used", escapeHtml(providers)),
+        rvStat("Conversation", escapeHtml(body.conversation_id || "—")),
+        rvStat("Allowed modes", escapeHtml((body.allowed_modes || []).join(", ") || "economy")),
+      ].join("");
+      saAnswerEl.innerHTML = body.answer
+        ? `<p style="margin:0;line-height:1.55;">${escapeHtml(body.answer)}</p>`
+        : '<p class="empty-state">No answer.</p>';
+      if (top) {
+        saTopEl.innerHTML = [
+          rvStat("Product", escapeHtml(top.product_name), true),
+          rvStat("Price", top.known_price != null ? `${Number(top.known_price).toLocaleString()} ${escapeHtml(top.currency || "")}` : "—"),
+          rvStat("Marketplace", escapeHtml(top.marketplace || "—")),
+          rvStat("DealScore", top.deal_score != null ? Number(top.deal_score).toFixed(1) : "—", true),
+          `<p style="margin:0.75rem 0 0;line-height:1.5;">${escapeHtml(top.reason || "")}</p>`,
+        ].join("");
+      } else {
+        saTopEl.innerHTML = '<p class="empty-state">No top recommendation.</p>';
+      }
+      const alts = body.alternatives || [];
+      saAltsEl.innerHTML = alts.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${alts.map((item) =>
+          `<li><strong>${escapeHtml(item.product_name)}</strong> · DealScore ${item.deal_score != null ? Number(item.deal_score).toFixed(1) : "—"} · ${item.known_price != null ? Number(item.known_price).toLocaleString() + " " + escapeHtml(item.currency || "") : "—"}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No alternatives.</p>';
+      const comparison = body.comparison;
+      if (!comparison) {
+        saComparisonEl.innerHTML = '<p class="empty-state">No comparison for this query.</p>';
+      } else {
+        const winners = (comparison.category_winners || []).map((w) =>
+          `<tr><td>${escapeHtml(w.category)}</td><td>${escapeHtml(w.product_name)}</td><td>${escapeHtml(w.reason)}</td></tr>`
+        ).join("");
+        saComparisonEl.innerHTML = `
+          <p style="margin:0 0 0.5rem;line-height:1.5;">${escapeHtml(comparison.overall_recommendation || "")}</p>
+          <table style="width:100%;border-collapse:collapse;font-size:0.92rem;">
+            <thead><tr><th align="left">Category</th><th align="left">Winner</th><th align="left">Reason</th></tr></thead>
+            <tbody>${winners || '<tr><td colspan="3">No category winners.</td></tr>'}</tbody>
+          </table>
+          <p class="hint" style="margin-top:0.5rem;">${escapeHtml((comparison.unresolved_uncertainty || [])[0] || "")}</p>
+        `;
+      }
+      const evidence = body.evidence || [];
+      saEvidenceEl.innerHTML = evidence.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${evidence.slice(0, 12).map((item) =>
+          `<li><strong>${escapeHtml(item.type)}</strong>: ${escapeHtml(item.description)}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No evidence items.</p>';
+      const warnings = (body.warnings || []).map((w) => w.message || w);
+      saWarningsEl.innerHTML = renderBulletList(warnings, "No warnings.");
+      const disagreements = body.disagreements || [];
+      saDisagreementsEl.innerHTML = disagreements.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${disagreements.map((d) =>
+          `<li><strong>${escapeHtml(d.field || "claim")}</strong>: ${escapeHtml(d.detail || "")}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No model disagreements reported.</p>';
+      if (body.conversation_id) {
+        saConversationInput.value = body.conversation_id;
+      }
+    }
+
+    async function askShoppingAssistant(payload) {
+      showEl(
+        saStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Asking shopping assistant…</div>'
+      );
+      try {
+        const response = await fetch("/api/v1/shopping-assistant/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Shopping assistant request failed.");
+        }
+        const body = await response.json();
+        renderShoppingAssistant(body);
+        const fallbackNote = body.fallback_used
+          ? ` · fallback${body.fallback_reason ? ` (${escapeHtml(body.fallback_reason)})` : ""}`
+          : "";
+        showEl(
+          saStatusEl,
+          `<div class="hint">Mock/demo results · mode: ${escapeHtml(body.mode || "economy")} · providers: ${escapeHtml((body.providers_used || []).join(", ") || "—")}${fallbackNote}</div>`
+        );
+      } catch (error) {
+        showEl(saStatusEl, `<div class="error">${error.message || error}</div>`);
+      }
+    }
+
+    async function askFromForm() {
+      const query = (saQueryInput.value || "").trim();
+      if (!query) {
+        showEl(saStatusEl, '<div class="error">Query is required.</div>');
+        return;
+      }
+      saAskBtn.disabled = true;
+      try {
+        await askShoppingAssistant({
+          query,
+          mode: saModeInput.value || "economy",
+          conversation_id: (saConversationInput.value || "").trim() || null,
+        });
+      } finally {
+        saAskBtn.disabled = false;
+      }
+    }
+
+    async function loadShoppingDemo() {
+      saDemoBtn.disabled = true;
+      showEl(
+        saStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading demo…</div>'
+      );
+      try {
+        const mode = saModeInput.value || "economy";
+        const response = await fetch(`/api/v1/shopping-assistant/demo?mode=${encodeURIComponent(mode)}`);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load shopping demo.");
+        }
+        const body = await response.json();
+        saQueryInput.value = body.query || saQueryInput.value;
+        renderShoppingAssistant(body);
+        showEl(
+          saStatusEl,
+          `<div class="hint">Demo loaded · mock/imported data · mode: ${escapeHtml(body.mode || "economy")}</div>`
+        );
+      } catch (error) {
+        showEl(saStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        saDemoBtn.disabled = false;
+      }
+    }
+
+    async function loadShoppingMeta() {
+      try {
+        const response = await fetch("/api/v1/shopping-assistant/meta");
+        if (!response.ok) return;
+        const body = await response.json();
+        const examples = body.example_queries || [];
+        saExamplesEl.innerHTML = examples.length
+          ? `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${examples.slice(0, 6).map((q) =>
+            `<button type="button" class="sa-example" style="background:#E2E8F0;color:#0F172A;font-size:0.8rem;">${escapeHtml(q)}</button>`
+          ).join("")}</div>`
+          : "";
+        saExamplesEl.querySelectorAll(".sa-example").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            saQueryInput.value = btn.textContent || "";
+          });
+        });
+        const allowed = new Set(body.allowed_modes || ["economy"]);
+        Array.from(saModeInput.options).forEach((opt) => {
+          opt.disabled = !allowed.has(opt.value);
+        });
+      } catch (_error) {
+        // Meta is optional for the demo panel.
+      }
+    }
+
+    saAskBtn.addEventListener("click", askFromForm);
+    saDemoBtn.addEventListener("click", loadShoppingDemo);
+    loadShoppingMeta();
+    loadShoppingDemo();
   </script>
 </body>
 </html>

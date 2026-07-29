@@ -14,6 +14,7 @@ from app.api.v1.endpoints import (
     recommendations,
     review_summary,
     reviews,
+    shopping_assistant,
     watchlists,
 )
 
@@ -33,3 +34,4 @@ api_v1_router.include_router(watchlists.router, tags=["watchlists"])
 api_v1_router.include_router(watchlists.alerts_router, tags=["alerts"])
 api_v1_router.include_router(reviews.router, tags=["reviews"])
 api_v1_router.include_router(review_summary.router, tags=["review-summary"])
+api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])

@@ -113,6 +113,30 @@ class Settings(BaseSettings):
     # Live HTTP to external AI APIs — off unless explicitly enabled AND AI_REVIEW_ENABLED.
     ai_review_live_http: bool = Field(default=False, alias="AI_REVIEW_LIVE_HTTP")
 
+    # AI Shopping Assistant — reuses provider keys; disabled by default
+    ai_shopping_enabled: bool = Field(default=False, alias="AI_SHOPPING_ENABLED")
+    ai_shopping_mode: Literal["economy", "balanced", "maximum"] = Field(
+        default="economy",
+        alias="AI_SHOPPING_MODE",
+    )
+    ai_shopping_allow_client_mode: bool = Field(
+        default=True,
+        alias="AI_SHOPPING_ALLOW_CLIENT_MODE",
+    )
+    ai_shopping_max_query_length: int = Field(
+        default=500,
+        alias="AI_SHOPPING_MAX_QUERY_LENGTH",
+        ge=32,
+        le=2000,
+    )
+    ai_shopping_conversation_ttl_seconds: int = Field(
+        default=1800,
+        alias="AI_SHOPPING_CONVERSATION_TTL_SECONDS",
+        ge=60,
+        le=86400,
+    )
+    ai_shopping_live_http: bool = Field(default=False, alias="AI_SHOPPING_LIVE_HTTP")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
@@ -141,6 +165,11 @@ class Settings(BaseSettings):
     def ai_external_calls_enabled(self) -> bool:
         """True only when review AI is on AND live HTTP is explicitly enabled."""
         return self.ai_review_enabled and self.ai_review_live_http
+
+    @property
+    def ai_shopping_external_calls_enabled(self) -> bool:
+        """True only when shopping AI is on AND live HTTP is explicitly enabled."""
+        return self.ai_shopping_enabled and self.ai_shopping_live_http
 
 
 @lru_cache

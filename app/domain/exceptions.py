@@ -222,3 +222,19 @@ class AIProviderMalformedResponseError(AIProviderUnavailableError):
 
     def __init__(self, provider: str, detail: str) -> None:
         super().__init__(provider, detail, error_code="malformed")
+
+
+class ShoppingAssistantValidationError(Exception):
+    """Raised when shopping assistant inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class ShoppingAssistantNotFoundError(Exception):
+    """Raised when a shopping assistant conversation or resource is missing."""
+
+    def __init__(self, resource_id: str) -> None:
+        self.resource_id = resource_id
+        super().__init__(f"Shopping assistant resource not found: {resource_id}")
