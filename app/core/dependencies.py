@@ -127,6 +127,7 @@ from app.services.review_service import ReviewService
 from app.services.review_summary_service import ReviewSummaryService
 from app.services.shopping_assistant_service import ShoppingAssistantService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
+from app.services.user_platform_service import UserPlatformService
 from app.services.watchlist_service import WatchlistService
 
 # Process-scoped in-memory registry for demo / local runs without Postgres.
@@ -157,6 +158,8 @@ _KNOWLEDGE_GRAPH_SERVICE: KnowledgeGraphService | None = None
 _KNOWLEDGE_GRAPH_REPOSITORY = None
 _PERSONAL_AGENT_SERVICE: PersonalAgentService | None = None
 _PERSONAL_PROFILE_REPOSITORY = None
+_USER_PLATFORM_STORE = None
+_USER_PLATFORM_SERVICE: UserPlatformService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -824,18 +827,65 @@ def get_personal_agent_service(
     return _PERSONAL_AGENT_SERVICE
 
 
+def get_user_platform_store():
+    """Provide the process-scoped in-memory User Platform store, seeded with demo users."""
+    global _USER_PLATFORM_STORE
+    if _USER_PLATFORM_STORE is None:
+        from app.user.fixtures import seed_demo_users
+        from app.user.memory import InMemoryUserPlatformStore
+
+        _USER_PLATFORM_STORE = InMemoryUserPlatformStore()
+        seed_demo_users(_USER_PLATFORM_STORE)
+    return _USER_PLATFORM_STORE
+
+
+def get_user_platform_service() -> UserPlatformService:
+    """Provide the User Platform application facade (auth, profile, saved items)."""
+    global _USER_PLATFORM_SERVICE
+    if _USER_PLATFORM_SERVICE is None:
+        from app.auth.security import AuditLogger
+        from app.auth.service import AuthService
+        from app.profile.service import ProfileService
+        from app.session.service import SessionService
+
+        store = get_user_platform_store()
+        audit = AuditLogger(store.audit)
+        auth = AuthService(
+            users=store.users,
+            sessions=store.sessions,
+            profiles=store.profiles,
+            password_resets=store.password_resets,
+            email_verifications=store.email_verifications,
+            audit=audit,
+            enabled=settings.user_platform_enabled,
+        )
+        profiles = ProfileService(users=store.users, profiles=store.profiles)
+        sessions = SessionService(sessions=store.sessions, auth=auth)
+        _USER_PLATFORM_SERVICE = UserPlatformService(
+            auth=auth,
+            profiles=profiles,
+            sessions=sessions,
+            saved=store.saved,
+            audit=audit,
+            enabled=settings.user_platform_enabled,
+        )
+    return _USER_PLATFORM_SERVICE
+
+
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
     community_service: CommunityIntelligenceService = Depends(get_community_intelligence_service),
     knowledge_graph_service: KnowledgeGraphService = Depends(get_knowledge_graph_service),
     personal_agent_service: PersonalAgentService = Depends(get_personal_agent_service),
+    user_platform_service: UserPlatformService = Depends(get_user_platform_service),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
     community = community_service if settings.community_enabled else None
     graph = knowledge_graph_service if settings.knowledge_graph_enabled else None
     personal = personal_agent_service if settings.personal_agent_enabled else None
+    user_platform = user_platform_service if settings.user_platform_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
@@ -844,6 +894,7 @@ def get_shopping_assistant_service(
             community_service=community,
             knowledge_graph_service=graph,
             personal_agent_service=personal,
+            user_platform_service=user_platform,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
@@ -851,4 +902,5 @@ def get_shopping_assistant_service(
     _SHOPPING_ASSISTANT_SERVICE._community = community  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._knowledge_graph = graph  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._personal_agent = personal  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._user_platform = user_platform  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE

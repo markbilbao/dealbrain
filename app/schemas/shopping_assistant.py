@@ -18,6 +18,7 @@ class ShoppingAssistantQueryRequest(BaseModel):
     category: str | None = None
     products: list[str] = Field(default_factory=list)
     profile_id: str | None = Field(default=None, max_length=128)
+    user_id: str | None = Field(default=None, max_length=128)
 
 
 class EvidencePayload(BaseModel):

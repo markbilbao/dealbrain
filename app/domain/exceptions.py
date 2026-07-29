@@ -284,3 +284,43 @@ class PersonalAgentNotFoundError(Exception):
     def __init__(self, resource_id: str) -> None:
         self.resource_id = resource_id
         super().__init__(f"Personal agent resource not found: {resource_id}")
+
+
+class UserPlatformValidationError(Exception):
+    """Raised when user platform inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class UserPlatformNotFoundError(Exception):
+    """Raised when a user platform resource cannot be found."""
+
+    def __init__(self, resource_id: str) -> None:
+        self.resource_id = resource_id
+        super().__init__(f"User platform resource not found: {resource_id}")
+
+
+class UserPlatformAuthError(Exception):
+    """Raised when authentication or authorization fails."""
+
+    def __init__(self, message: str = "Authentication required.") -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class UserPlatformConflictError(Exception):
+    """Raised when a unique constraint (e.g. email) would be violated."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class UserPlatformRateLimitError(Exception):
+    """Raised when a rate-limiting hook rejects an action."""
+
+    def __init__(self, message: str = "Rate limit exceeded.") -> None:
+        self.message = message
+        super().__init__(message)

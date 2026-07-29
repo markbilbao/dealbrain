@@ -821,6 +821,44 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="User platform">
+      <h2 class="panel-heading">User Platform &amp; Authentication</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Demo accounts · hashed passwords · session tokens · saved products / history · in-memory only · no OAuth / MFA / email.
+      </p>
+      <label for="up_email" style="display:block;margin-top:0.75rem;">
+        Demo user
+        <select id="up_email" style="width:100%;margin-top:0.35rem;">
+          <option value="student@example.com">student@example.com</option>
+          <option value="creator@example.com">creator@example.com</option>
+          <option value="traveler@example.com">traveler@example.com</option>
+        </select>
+      </label>
+      <label for="up_password" style="display:block;margin-top:0.75rem;">
+        Password
+        <input id="up_password" type="password" value="DemoPass123!" style="width:100%;margin-top:0.35rem;" />
+      </label>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="up_login" type="button" style="background:#0F172A;">Login</button>
+        <button id="up_logout" type="button">Logout</button>
+        <button id="up_me" type="button">Me / Profile</button>
+        <button id="up_saved" type="button">Saved Products</button>
+        <button id="up_history" type="button">History</button>
+      </div>
+      <div id="up-meta" class="meta" style="margin-top:0.75rem;"></div>
+      <div id="up-status" class="status" aria-live="polite"></div>
+      <section id="up-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Session</h3>
+        <div id="up-session"></div>
+        <h3 class="section-title">Profile</h3>
+        <div id="up-profile"></div>
+        <h3 class="section-title">Saved / History</h3>
+        <div id="up-saved-list"></div>
+        <h3 class="section-title">Limitations</h3>
+        <div id="up-limitations"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Personal shopping agent">
       <h2 class="panel-heading">Personal AI Shopping Agent</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
@@ -915,7 +953,8 @@
       GET /api/v1/review-summary/demo · POST /api/v1/shopping-assistant/query ·
       GET /api/v1/shopping-assistant/demo · GET /api/v1/community/demo ·
       GET /api/v1/community/product/{id} · GET /api/v1/personal/demo ·
-      GET /api/v1/personal/deals · GET /api/v1/graph/demo
+      GET /api/v1/personal/deals · GET /api/v1/graph/demo ·
+      POST /api/v1/auth/login · GET /api/v1/profile · GET /api/v1/user/saved-products
     </footer>
   </main>
 
@@ -3506,6 +3545,146 @@
     kgLoadBtn.addEventListener("click", loadKgProduct);
     kgDemoBtn.addEventListener("click", loadKgDemo);
     loadKgDemo();
+
+    // --- User Platform panel ---
+    let upAccessToken = null;
+    let upUserId = null;
+    const upEmail = document.getElementById("up_email");
+    const upPassword = document.getElementById("up_password");
+    const upLoginBtn = document.getElementById("up_login");
+    const upLogoutBtn = document.getElementById("up_logout");
+    const upMeBtn = document.getElementById("up_me");
+    const upSavedBtn = document.getElementById("up_saved");
+    const upHistoryBtn = document.getElementById("up_history");
+    const upStatusEl = document.getElementById("up-status");
+    const upSessionEl = document.getElementById("up-session");
+    const upProfileEl = document.getElementById("up-profile");
+    const upSavedListEl = document.getElementById("up-saved-list");
+    const upMetaEl = document.getElementById("up-meta");
+    const upLimitationsEl = document.getElementById("up-limitations");
+
+    function upAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (upAccessToken) headers["Authorization"] = `Bearer ${upAccessToken}`;
+      return headers;
+    }
+
+    async function loadUserPlatformMeta() {
+      try {
+        const response = await fetch("/api/v1/auth/demo");
+        if (!response.ok) return;
+        const body = await response.json();
+        upMetaEl.innerHTML = `Demo users: ${(body.demo_users || []).map((u) => escapeHtml(u.email)).join(", ")} · persistence=${escapeHtml(body.persistence || "memory")}`;
+        upLimitationsEl.innerHTML = `<ul>${(body.limitations || []).map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`;
+      } catch (_err) {
+        /* ignore */
+      }
+    }
+
+    async function upLogin() {
+      upStatusEl.innerHTML = '<div class="loading"><span class="spinner" aria-hidden="true"></span> Logging in…</div>';
+      try {
+        const response = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: upEmail.value,
+            password: upPassword.value,
+            remember_me: true,
+          }),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Login failed");
+        upAccessToken = body.access_token;
+        upUserId = body.user && body.user.user_id;
+        upSessionEl.innerHTML = `${escapeHtml(body.user.display_name)} · ${escapeHtml(body.user.email)} · expires ${escapeHtml(body.expires_at || "")}`;
+        upStatusEl.innerHTML = `<div class="hint">Logged in as ${escapeHtml(body.user.email)}</div>`;
+        await upLoadProfile();
+        await upLoadSaved();
+      } catch (err) {
+        upStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function upLogout() {
+      try {
+        await fetch("/api/v1/auth/logout", { method: "POST", headers: upAuthHeaders() });
+      } catch (_err) {
+        /* ignore */
+      }
+      upAccessToken = null;
+      upUserId = null;
+      upSessionEl.innerHTML = "";
+      upProfileEl.innerHTML = "";
+      upSavedListEl.innerHTML = "";
+      upStatusEl.innerHTML = '<div class="hint">Logged out.</div>';
+    }
+
+    async function upLoadProfile() {
+      const response = await fetch("/api/v1/profile", { headers: upAuthHeaders() });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || "Profile failed");
+      upProfileEl.innerHTML = `
+        <div><strong>${escapeHtml(body.display_name || "")}</strong></div>
+        <div>Budget ${body.budget != null ? body.budget : "—"} ${escapeHtml(body.currency || "")} · ${escapeHtml(body.country || "")}</div>
+        <div>Modes: student=${body.student_mode} creator=${body.creator_mode} gaming=${body.gaming_mode} business=${body.business_mode}</div>
+        <div>Linked personal profile: ${escapeHtml(body.personal_profile_id || "—")}</div>
+      `;
+    }
+
+    async function upLoadSaved() {
+      const response = await fetch("/api/v1/user/saved-products", { headers: upAuthHeaders() });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || "Saved products failed");
+      const items = Array.isArray(body) ? body : (body.items || body.saved_products || []);
+      if (!items.length) {
+        upSavedListEl.innerHTML = '<p class="empty-state">No saved products.</p>';
+        return;
+      }
+      upSavedListEl.innerHTML = items.map((item) =>
+        `<div class="card-line"><strong>${escapeHtml(item.product_name)}</strong> · ${escapeHtml(item.product_id)} · ${item.price != null ? item.price : "—"} ${escapeHtml(item.currency || "")}</div>`
+      ).join("");
+    }
+
+    async function upLoadHistory() {
+      const response = await fetch("/api/v1/user/history", { headers: upAuthHeaders() });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.detail || "History failed");
+      const items = Array.isArray(body) ? body : (body.items || body.history || []);
+      upSavedListEl.innerHTML = items.length
+        ? items.map((item) =>
+            `<div class="card-line"><strong>${escapeHtml(item.query)}</strong><div>${escapeHtml(item.recommendation_summary || "")}</div></div>`
+          ).join("")
+        : '<p class="empty-state">No recommendation history.</p>';
+    }
+
+    upLoginBtn.addEventListener("click", upLogin);
+    upLogoutBtn.addEventListener("click", upLogout);
+    upMeBtn.addEventListener("click", async () => {
+      try {
+        await upLoadProfile();
+        upStatusEl.innerHTML = '<div class="hint">Profile refreshed.</div>';
+      } catch (err) {
+        upStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    upSavedBtn.addEventListener("click", async () => {
+      try {
+        await upLoadSaved();
+        upStatusEl.innerHTML = '<div class="hint">Saved products loaded.</div>';
+      } catch (err) {
+        upStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    upHistoryBtn.addEventListener("click", async () => {
+      try {
+        await upLoadHistory();
+        upStatusEl.innerHTML = '<div class="hint">History loaded.</div>';
+      } catch (err) {
+        upStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    loadUserPlatformMeta();
   </script>
 </body>
 </html>
