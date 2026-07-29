@@ -115,6 +115,11 @@ from app.intelligence.shopping_assistant import (
 from app.intelligence.watchlists import (
     MockNotificationService,
 )
+from app.launch.cache import TtlCache
+from app.launch.feature_flags import FeatureFlagRegistry, get_feature_flags
+from app.launch.fixtures import DemoLauncherState
+from app.launch.memory import InMemoryLaunchStore
+from app.launch.rate_limit import ConfigurableRateLimiter, RateLimitRule
 from app.marketplace import (
     FixtureMarketplaceConnector,
     ImportedMarketplaceConnector,
@@ -137,6 +142,11 @@ from app.services.collection_operations_service import CollectionOperationsServi
 from app.services.community_intelligence_service import CommunityIntelligenceService
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.knowledge_graph_service import KnowledgeGraphService
+from app.services.launch_config_service import LaunchConfigService
+from app.services.launch_dashboard_service import LaunchDashboardService
+from app.services.launch_demo_service import LaunchDemoService
+from app.services.launch_health_service import LaunchHealthService
+from app.services.launch_performance_service import LaunchPerformanceService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_data_service import MarketplaceDataService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
@@ -224,6 +234,35 @@ _USER_PLATFORM_SERVICE: UserPlatformService | None = None
 _MARKETPLACE_DATA_REPOSITORY = InMemoryMarketplaceDataRepository()
 _MARKETPLACE_DATA_SERVICE: MarketplaceDataService | None = None
 _MARKETPLACE_CONNECTOR_REGISTRY: MarketplaceConnectorRegistry | None = None
+
+# Sprint 22 — launch readiness
+_LAUNCH_STORE = InMemoryLaunchStore()
+_DEMO_LAUNCHER_STATE = DemoLauncherState()
+_PERFORMANCE_CACHE = TtlCache(
+    default_ttl_seconds=settings.performance_cache_ttl_seconds,
+    enabled=settings.performance_cache_enabled,
+)
+_RATE_LIMITER = ConfigurableRateLimiter(
+    {
+        "default": RateLimitRule("default", settings.rate_limit_default_per_minute, 60),
+        "login": RateLimitRule("login", settings.rate_limit_login_per_minute, 60),
+        "registration": RateLimitRule(
+            "registration", settings.rate_limit_registration_per_minute, 60
+        ),
+        "affiliate": RateLimitRule("affiliate", settings.rate_limit_affiliate_per_minute, 60),
+        "merchant": RateLimitRule("merchant", settings.rate_limit_merchant_per_minute, 60),
+        "search": RateLimitRule("search", settings.rate_limit_search_per_minute, 60),
+        "recommendations": RateLimitRule(
+            "recommendations", settings.rate_limit_recommendations_per_minute, 60
+        ),
+    },
+    enabled=settings.rate_limiting_enabled,
+)
+_LAUNCH_HEALTH_SERVICE: LaunchHealthService | None = None
+_LAUNCH_DASHBOARD_SERVICE: LaunchDashboardService | None = None
+_LAUNCH_DEMO_SERVICE: LaunchDemoService | None = None
+_LAUNCH_CONFIG_SERVICE: LaunchConfigService | None = None
+_LAUNCH_PERFORMANCE_SERVICE: LaunchPerformanceService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -1398,3 +1437,105 @@ def get_shopping_assistant_service(
     _SHOPPING_ASSISTANT_SERVICE._alert_evaluation_service = alert_evaluation  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._affiliate_link_service = affiliate_links  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE
+
+
+# ---------------------------------------------------------------------------
+# Sprint 22 — Launch readiness providers
+# ---------------------------------------------------------------------------
+
+
+def get_rate_limiter() -> ConfigurableRateLimiter:
+    """Provide the process-scoped HTTP rate limiter."""
+    return _RATE_LIMITER
+
+
+def get_performance_cache() -> TtlCache:
+    """Provide the process-scoped performance TTL cache."""
+    return _PERFORMANCE_CACHE
+
+
+def get_launch_store() -> InMemoryLaunchStore:
+    return _LAUNCH_STORE
+
+
+def get_feature_flag_registry() -> FeatureFlagRegistry:
+    return get_feature_flags()
+
+
+def get_launch_health_service() -> LaunchHealthService:
+    global _LAUNCH_HEALTH_SERVICE
+    if _LAUNCH_HEALTH_SERVICE is None:
+        _LAUNCH_HEALTH_SERVICE = LaunchHealthService(cache=_PERFORMANCE_CACHE)
+    return _LAUNCH_HEALTH_SERVICE
+
+
+def get_launch_performance_service() -> LaunchPerformanceService:
+    global _LAUNCH_PERFORMANCE_SERVICE
+    if _LAUNCH_PERFORMANCE_SERVICE is None:
+        _LAUNCH_PERFORMANCE_SERVICE = LaunchPerformanceService(_PERFORMANCE_CACHE)
+    return _LAUNCH_PERFORMANCE_SERVICE
+
+
+def get_launch_demo_service() -> LaunchDemoService:
+    global _LAUNCH_DEMO_SERVICE
+    if _LAUNCH_DEMO_SERVICE is None:
+        _LAUNCH_DEMO_SERVICE = LaunchDemoService(_DEMO_LAUNCHER_STATE)
+    return _LAUNCH_DEMO_SERVICE
+
+
+def get_launch_config_service() -> LaunchConfigService:
+    global _LAUNCH_CONFIG_SERVICE
+    if _LAUNCH_CONFIG_SERVICE is None:
+        _LAUNCH_CONFIG_SERVICE = LaunchConfigService(_LAUNCH_STORE)
+    return _LAUNCH_CONFIG_SERVICE
+
+
+def get_launch_dashboard_service() -> LaunchDashboardService:
+    """Aggregate demo metrics for the launch admin dashboard."""
+    global _LAUNCH_DASHBOARD_SERVICE
+    if _LAUNCH_DASHBOARD_SERVICE is None:
+
+        def _users() -> int:
+            store = get_user_platform_store()
+            return len(store.users.list_users())
+
+        def _watchlists() -> int:
+            return len(_MEMORY_WATCHLIST_REPOSITORY.list_watchlists())
+
+        def _merchants() -> int:
+            return len(_MEMORY_MERCHANT_REPOSITORY.list_organizations())
+
+        def _affiliate_clicks() -> int:
+            return len(_MEMORY_AFFILIATE_REPOSITORY.list_clicks(limit=10_000))
+
+        def _alerts() -> int:
+            return len(_MEMORY_ALERT_RULE_REPOSITORY.list_rules())
+
+        def _notifications() -> int:
+            return len(_MEMORY_NOTIFICATION_CENTER_REPOSITORY._notifications)  # noqa: SLF001
+
+        def _products() -> int:
+            return len(_MEMORY_MERCHANT_REPOSITORY.list_product_submissions(limit=10_000))
+
+        def _offers() -> int:
+            return len(_MEMORY_MERCHANT_REPOSITORY.list_offer_submissions(limit=10_000))
+
+        def _campaigns() -> int:
+            return len(_MEMORY_MERCHANT_REPOSITORY.list_campaigns(limit=10_000))
+
+        _LAUNCH_DASHBOARD_SERVICE = LaunchDashboardService(
+            health_service=get_launch_health_service(),
+            feature_flags=get_feature_flag_registry(),
+            store=_LAUNCH_STORE,
+            cache=_PERFORMANCE_CACHE,
+            user_counter=_users,
+            watchlist_counter=_watchlists,
+            merchant_counter=_merchants,
+            affiliate_click_counter=_affiliate_clicks,
+            alert_counter=_alerts,
+            notification_counter=_notifications,
+            product_counter=_products,
+            offer_counter=_offers,
+            campaign_counter=_campaigns,
+        )
+    return _LAUNCH_DASHBOARD_SERVICE

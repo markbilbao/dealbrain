@@ -30,14 +30,22 @@ COPY uv.lock* ./
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
+COPY docs ./docs
+COPY .env.example ./.env.example
+COPY .env.staging.example ./.env.staging.example
+COPY .env.production.example ./.env.production.example
 
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH" \
+    APP_ENV=production \
+    APP_DEBUG=false \
+    PRICE_HISTORY_SEED_DEMO_MOCK=false
 
 USER dealbrain
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" || exit 1
+# Liveness probe — process up (readiness is checked separately by orchestrators)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/live')" || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

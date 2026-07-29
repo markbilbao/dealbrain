@@ -4,10 +4,29 @@ from collections.abc import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from app.core.dependencies import get_db
+from app.core.dependencies import get_db, get_performance_cache, get_rate_limiter
 from app.main import create_app
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+@pytest.fixture(autouse=True)
+def _isolate_launch_middleware_state() -> Generator[None, None, None]:
+    """Disable process-scoped rate limits and clear caches between tests.
+
+    The HTTP rate limiter is shared across the pytest process; leaving it
+    enabled would eventually 429 prior-sprint suites that share one client IP.
+    """
+    limiter = get_rate_limiter()
+    cache = get_performance_cache()
+    previous = limiter.enabled
+    limiter.set_enabled(False)
+    limiter.reset()
+    cache.clear()
+    yield
+    limiter.reset()
+    limiter.set_enabled(previous)
+    cache.clear()
 
 
 @pytest.fixture

@@ -1,4 +1,4 @@
-.PHONY: install dev run test lint migrate docker-up docker-down
+.PHONY: install dev run test lint migrate docker-up docker-down format
 
 install:
 	uv sync
@@ -15,6 +15,10 @@ test:
 lint:
 	uv run ruff check app tests
 	uv run ruff format --check app tests
+
+format:
+	uv run ruff format app tests
+	uv run ruff check --fix app tests
 
 migrate:
 	uv run alembic upgrade head
