@@ -1187,6 +1187,35 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Affiliate revenue engine">
+      <h2 class="panel-heading">Affiliate Revenue Engine</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Sprint 20 · placeholder merchants only · affiliate links applied <strong>after</strong> recommendation
+        selection · DealScore never sees commission · no real APIs, commissions, conversions, billing, or payouts.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="aff_refresh" type="button">Load affiliate dashboard</button>
+        <button id="aff_gen_link" type="button" style="background:#0F172A;">Generate demo link</button>
+        <button id="aff_track_click" type="button" style="background:#475569;">Track demo click</button>
+      </div>
+      <div id="aff-summary" class="meta" style="margin-top:1rem;"></div>
+      <div id="aff-status" class="status" aria-live="polite"></div>
+      <section id="aff-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Revenue snapshot</h3>
+        <div id="aff-report"></div>
+        <h3 class="section-title">Merchants &amp; commission table</h3>
+        <div id="aff-merchants"></div>
+        <h3 class="section-title">Top converting products</h3>
+        <div id="aff-top-products"></div>
+        <h3 class="section-title">Generated affiliate links</h3>
+        <div id="aff-links"></div>
+        <h3 class="section-title">Recent clicks</h3>
+        <div id="aff-clicks"></div>
+        <h3 class="section-title">Disclosure</h3>
+        <div id="aff-disclosure"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
@@ -4361,6 +4390,179 @@
       loadPersonalDemo(paProfileSelect.value || null);
     });
     loadPersonalDemo();
+
+    // ---------------------------------------------------------- Sprint 20: Affiliate Revenue Engine
+    const affRefreshBtn = document.getElementById("aff_refresh");
+    const affGenLinkBtn = document.getElementById("aff_gen_link");
+    const affTrackClickBtn = document.getElementById("aff_track_click");
+    const affSummaryEl = document.getElementById("aff-summary");
+    const affStatusEl = document.getElementById("aff-status");
+    const affReportEl = document.getElementById("aff-report");
+    const affMerchantsEl = document.getElementById("aff-merchants");
+    const affTopProductsEl = document.getElementById("aff-top-products");
+    const affLinksEl = document.getElementById("aff-links");
+    const affClicksEl = document.getElementById("aff-clicks");
+    const affDisclosureEl = document.getElementById("aff-disclosure");
+
+    function affPct(value) {
+      return `${((Number(value) || 0) * 100).toFixed(2)}%`;
+    }
+
+    function affMoney(value, currency) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return "—";
+      return `${n.toFixed(2)} ${escapeHtml(currency || "USD")}`;
+    }
+
+    function renderAffBuckets(buckets) {
+      if (!buckets || !buckets.length) return '<p class="empty-state">No data.</p>';
+      return buckets.map((b) =>
+        `<div class="card-line"><strong>${escapeHtml(b.label || b.key)}</strong> · ` +
+        `${b.clicks} clicks · ${b.conversions} conv · CTR/CVR ${affPct(b.conversion_rate)} · ` +
+        `est. ${affMoney(b.estimated_commission, b.currency)}</div>`
+      ).join("");
+    }
+
+    async function affRefresh() {
+      affStatusEl.textContent = "Loading affiliate dashboard…";
+      try {
+        const [reportRes, merchantsRes, linksRes, clicksRes, disclosureRes] = await Promise.all([
+          fetch("/api/v1/affiliate/report"),
+          fetch("/api/v1/affiliate/merchant"),
+          fetch("/api/v1/affiliate/link?limit=20"),
+          fetch("/api/v1/affiliate/click?limit=20"),
+          fetch("/api/v1/affiliate/disclosure/resolve?region=US"),
+        ]);
+        const report = await reportRes.json();
+        const merchantsBody = await merchantsRes.json();
+        const linksBody = await linksRes.json();
+        const clicksBody = await clicksRes.json();
+        const disclosure = await disclosureRes.json();
+        if (!reportRes.ok) throw new Error(report.detail || "Report failed");
+        if (!merchantsRes.ok) throw new Error(merchantsBody.detail || "Merchants failed");
+
+        affSummaryEl.innerHTML =
+          `<div><strong>Clicks</strong> ${report.total_clicks} · <strong>CTR</strong> ${affPct(report.ctr)} · ` +
+          `<strong>Conv rate</strong> ${affPct(report.conversion_rate)}</div>` +
+          `<div><strong>Est. commission</strong> ${affMoney(report.estimated_commission, report.currency)} · ` +
+          `<strong>Revenue</strong> ${affMoney(report.total_revenue, report.currency)} · ` +
+          `<strong>Impressions</strong> ${report.impressions}</div>` +
+          `<div class="hint">${escapeHtml(report.disclaimer || "")}</div>`;
+
+        affReportEl.innerHTML =
+          `<div class="card-line"><strong>By merchant</strong></div>${renderAffBuckets(report.by_merchant)}` +
+          `<div class="card-line" style="margin-top:0.75rem;"><strong>By category</strong></div>${renderAffBuckets(report.by_category)}` +
+          `<div class="card-line" style="margin-top:0.75rem;"><strong>Top converting merchants</strong></div>${renderAffBuckets(report.top_converting_merchants)}`;
+
+        const merchants = merchantsBody.merchants || [];
+        affMerchantsEl.innerHTML = merchants.length
+          ? `<table style="width:100%;border-collapse:collapse;font-size:0.92rem;">
+              <thead><tr>
+                <th align="left">Merchant</th><th align="left">Marketplace</th>
+                <th align="left">Commission</th><th align="left">Status</th>
+                <th align="left">Health</th><th align="right">Priority</th>
+              </tr></thead>
+              <tbody>${merchants.map((m) =>
+                `<tr>
+                  <td>${escapeHtml(m.merchant_name)}</td>
+                  <td>${escapeHtml(m.marketplace)}</td>
+                  <td>${escapeHtml(String(m.commission_value))}${m.commission_type === "percent" ? "%" : " fixed"} / ${m.cookie_days}d</td>
+                  <td>${escapeHtml(m.status)}</td>
+                  <td>${escapeHtml(m.health_status)}</td>
+                  <td align="right">${m.priority}</td>
+                </tr>`
+              ).join("")}</tbody></table>`
+          : '<p class="empty-state">No merchants.</p>';
+
+        affTopProductsEl.innerHTML = renderAffBuckets(report.top_converting_products);
+
+        const links = linksBody.links || [];
+        affLinksEl.innerHTML = links.length
+          ? links.map((l) =>
+              `<div class="card-line"><strong>${escapeHtml(l.product_name)}</strong> · ${escapeHtml(l.marketplace)}` +
+              `<div style="word-break:break-all;opacity:0.85;">${escapeHtml(l.affiliate_url)}</div></div>`
+            ).join("")
+          : '<p class="empty-state">No generated links yet.</p>';
+
+        const clicks = clicksBody.clicks || [];
+        affClicksEl.innerHTML = clicks.length
+          ? clicks.map((c) =>
+              `<div class="card-line"><strong>${escapeHtml(c.click_id)}</strong> · ${escapeHtml(c.product_name || c.product_id)}` +
+              ` · ${escapeHtml(c.source)} · ${escapeHtml(c.conversion_status)} · est. ${affMoney(c.estimated_commission, c.currency)}</div>`
+            ).join("")
+          : '<p class="empty-state">No clicks yet.</p>';
+
+        affDisclosureEl.innerHTML =
+          `<div class="card-line">${escapeHtml(disclosure.combined_text || "")}</div>` +
+          `<div class="hint">${escapeHtml(disclosure.disclaimer || "")}</div>`;
+
+        affStatusEl.innerHTML = '<div class="hint">Affiliate dashboard loaded (demo data only).</div>';
+      } catch (err) {
+        affStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function affGenerateLink() {
+      affStatusEl.textContent = "Generating demo affiliate link…";
+      try {
+        const response = await fetch("/api/v1/affiliate/link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: "prod-iphone-17-pro",
+            product_name: "iPhone 17 Pro",
+            marketplace: "shopee",
+            country: "PH",
+            category: "smartphones",
+            campaign_id: "demo-ui",
+            sub_id: "dashboard",
+            order_value: 899,
+          }),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Link generation failed");
+        affStatusEl.innerHTML = `<div class="hint">Generated link <code>${escapeHtml(body.link_id)}</code></div>`;
+        await affRefresh();
+      } catch (err) {
+        affStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function affTrackClick() {
+      affStatusEl.textContent = "Tracking demo click…";
+      try {
+        const linksRes = await fetch("/api/v1/affiliate/link?limit=1");
+        const linksBody = await linksRes.json();
+        const link = (linksBody.links || [])[0];
+        const payload = link
+          ? { link_id: link.link_id, source: "affiliate_dashboard", device: "desktop", country: "PH" }
+          : {
+              merchant_id: "merchant-shopee-ph",
+              product_id: "prod-iphone-17-pro",
+              product_name: "iPhone 17 Pro",
+              category: "smartphones",
+              source: "affiliate_dashboard",
+              device: "desktop",
+              country: "PH",
+              estimated_commission: 49.45,
+            };
+        const response = await fetch("/api/v1/affiliate/click", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Click tracking failed");
+        affStatusEl.innerHTML = `<div class="hint">Tracked click <code>${escapeHtml(body.click_id)}</code></div>`;
+        await affRefresh();
+      } catch (err) {
+        affStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    if (affRefreshBtn) affRefreshBtn.addEventListener("click", affRefresh);
+    if (affGenLinkBtn) affGenLinkBtn.addEventListener("click", affGenerateLink);
+    if (affTrackClickBtn) affTrackClickBtn.addEventListener("click", affTrackClick);
 
     const saAskBtn = document.getElementById("sa_ask");
     const saDemoBtn = document.getElementById("sa_demo");
