@@ -1,5 +1,13 @@
 """Watchlists & Price Alerts — Sprint 10.
 
+NOTE (Sprint 19): The authenticated, ownership-aware, multi-user platform
+built on top of this Sprint 10 foundation (auth, per-owner watchlists,
+pause/resume/archive lifecycle, default watchlist, offer tracking, and
+history) is documented separately in ``WATCHLISTS.md``. This document
+remains accurate for the original anonymous/in-memory Sprint 10 behavior,
+which is preserved unmodified and still exercised directly when
+``WATCHLISTS_REQUIRE_AUTH=false``.
+
 Status: implemented (in-memory + mock notifications only)
 Date: 2026-07-28
 

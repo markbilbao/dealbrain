@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
 from app.domain.entities.watchlist import (
@@ -45,6 +46,11 @@ class AlertService:
         deal_recommendation_service: DealRecommendationService | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
+        # Sprint 19 additions — both optional and duck-typed so every
+        # Sprint 10 call site (positional repo/alert_repository, keyword
+        # everything else) keeps working unchanged.
+        marketplace_data_service: Any | None = None,
+        notification_center_service: Any | None = None,
     ) -> None:
         self._repository = repository
         self._alerts = alert_repository
@@ -53,6 +59,8 @@ class AlertService:
         self._deal_recommendation = deal_recommendation_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
+        self._marketplace_data = marketplace_data_service
+        self._notification_center = notification_center_service
 
     def get_alert(self, alert_id: str) -> Alert:
         alert = self._alerts.get_alert(alert_id)
@@ -136,6 +144,7 @@ class AlertService:
                     saved = self._alerts.save_alert(notified)
                     created.append(saved)
                     notifications.append(receipt)
+                    self._notify_notification_center(saved)
 
         return AlertEvaluationResult(
             watchlist_ids=tuple(watchlist_ids),
@@ -158,9 +167,7 @@ class AlertService:
         observation_count = 0
 
         try:
-            history = await self._price_history.get_product_history(
-                item.canonical_product_id
-            )
+            history = await self._price_history.get_product_history(item.canonical_product_id)
         except PriceHistoryValidationError:
             history = None
 
@@ -174,10 +181,7 @@ class AlertService:
         current_dealscore = await self._resolve_dealscore(item)
 
         if current_price is not None:
-            if (
-                item.last_known_price is not None
-                and current_price < item.last_known_price
-            ):
+            if item.last_known_price is not None and current_price < item.last_known_price:
                 drop = round(item.last_known_price - current_price, 2)
                 alerts.append(
                     self._build_alert(
@@ -222,10 +226,7 @@ class AlertService:
                     or current_price < item.last_historical_low
                     or (
                         current_price == historical_low
-                        and (
-                            item.last_known_price is None
-                            or current_price < item.last_known_price
-                        )
+                        and (item.last_known_price is None or current_price < item.last_known_price)
                     )
                 )
                 if is_new_low:
@@ -267,6 +268,24 @@ class AlertService:
                 )
             )
 
+        freshness_status, age_hours = self._freshness_observation(item)
+        if freshness_status == "stale":
+            alerts.append(
+                self._build_alert(
+                    item,
+                    alert_type=AlertType.STALE_DATA,
+                    message=(
+                        "Marketplace data for this item is stale"
+                        + (f" ({age_hours:.1f}h old)." if age_hours is not None else ".")
+                    ),
+                    previous_value=None,
+                    current_value=age_hours,
+                    currency=currency,
+                    dealscore=current_dealscore,
+                    created_at=evaluated_at,
+                )
+            )
+
         # Persist baseline for the next evaluation pass.
         self._repository.save_item(
             replace(
@@ -280,14 +299,71 @@ class AlertService:
                     else item.last_known_dealscore
                 ),
                 last_historical_low=(
-                    historical_low
-                    if historical_low is not None
-                    else item.last_historical_low
+                    historical_low if historical_low is not None else item.last_historical_low
                 ),
                 updated_at=evaluated_at,
             )
         )
         return alerts
+
+    def _notify_notification_center(self, alert: Alert) -> None:
+        """Best-effort fan-out to an optional Sprint 19 Notification Center.
+
+        Never raises — a missing/misbehaving notification center collaborator
+        must not break Sprint 10 alert evaluation.
+        """
+        if self._notification_center is None:
+            return
+        create = getattr(self._notification_center, "create_notification", None)
+        if not callable(create):
+            return
+        try:
+            from app.domain.entities.notifications import NotificationSeverity, NotificationType
+
+            type_map = {
+                AlertType.PRICE_DROP: NotificationType.PRICE_DROP,
+                AlertType.PRICE_INCREASE: NotificationType.PRICE_INCREASE,
+                AlertType.TARGET_PRICE_REACHED: NotificationType.PRICE_DROP,
+                AlertType.HISTORICAL_LOW: NotificationType.PRICE_DROP,
+                AlertType.DEALSCORE_IMPROVED: NotificationType.DEALSCORE_THRESHOLD,
+                AlertType.DEALSCORE_THRESHOLD: NotificationType.DEALSCORE_THRESHOLD,
+                AlertType.RESTOCKED: NotificationType.RESTOCK,
+                AlertType.UNAVAILABLE: NotificationType.OUT_OF_STOCK,
+                AlertType.LOW_INVENTORY: NotificationType.LOW_INVENTORY,
+                AlertType.BETTER_OFFER: NotificationType.BETTER_OFFER,
+                AlertType.STALE_DATA: NotificationType.FRESHNESS_WARNING,
+                AlertType.FRESHNESS_RESTORED: NotificationType.FRESHNESS_WARNING,
+            }
+            create(
+                user_id="",  # Sprint 10 Alert/WatchlistItem carry no user_id;
+                # callers wanting per-user routing should prefer
+                # AlertEvaluationService, which has one.
+                title=f"Alert: {alert.alert_type.value}",
+                body=alert.message,
+                type=type_map.get(alert.alert_type, NotificationType.SYSTEM),
+                severity=NotificationSeverity.INFO,
+                watchlist_id=alert.watchlist_id,
+                alert_id=alert.alert_id,
+            )
+        except Exception:  # noqa: BLE001 - never let notification fan-out break alerting.
+            return
+
+    def _freshness_observation(self, item: WatchlistItem) -> tuple[str | None, float | None]:
+        """Return ``(freshness_status, age_hours)`` from an optional marketplace collaborator.
+
+        Returns ``(None, None)`` when no marketplace data service is wired,
+        the item tracks no specific offer, or the lookup fails — evaluation
+        never depends on this signal being present.
+        """
+        if self._marketplace_data is None or not item.marketplace_offer_id:
+            return None, None
+        try:
+            offer = self._marketplace_data.get_offer(item.marketplace_offer_id)
+        except Exception:  # noqa: BLE001 - freshness enrichment is best-effort
+            return None, None
+        if offer.freshness is None:
+            return None, None
+        return offer.freshness.status.value, offer.freshness.age_hours
 
     async def _resolve_dealscore(self, item: WatchlistItem) -> float | None:
         if self._deal_recommendation is None:

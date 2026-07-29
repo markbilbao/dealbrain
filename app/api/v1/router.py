@@ -3,16 +3,19 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    alert_rules,
     auth,
     collection_operations,
     collections,
     community,
+    dashboard,
     dealscore,
     graph,
     health,
     intelligence,
     marketplace,
     marketplace_data,
+    notifications,
     personal,
     price_history,
     products,
@@ -38,7 +41,16 @@ api_v1_router.include_router(price_history.router, tags=["price-history"])
 api_v1_router.include_router(collections.router, tags=["collections"])
 api_v1_router.include_router(collection_operations.router, tags=["collection-operations"])
 api_v1_router.include_router(watchlists.router, tags=["watchlists"])
+# Sprint 19 alert-rules/evaluate/events routes must be registered BEFORE the
+# Sprint 10 ``watchlists.alerts_router`` (``/alerts/{alert_id}``), otherwise
+# FastAPI would match ``/alerts/rules`` and ``/alerts/evaluate`` against the
+# Sprint 10 ``{alert_id}`` path parameter first.
+api_v1_router.include_router(alert_rules.rules_router, tags=["alert-rules"])
+api_v1_router.include_router(alert_rules.evaluate_router, tags=["alert-rules"])
 api_v1_router.include_router(watchlists.alerts_router, tags=["alerts"])
+api_v1_router.include_router(notifications.router, tags=["notifications"])
+api_v1_router.include_router(notifications.preferences_router, tags=["notifications"])
+api_v1_router.include_router(dashboard.router, tags=["dashboard"])
 api_v1_router.include_router(reviews.router, tags=["reviews"])
 api_v1_router.include_router(review_summary.router, tags=["review-summary"])
 api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])

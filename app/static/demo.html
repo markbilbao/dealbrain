@@ -636,12 +636,40 @@
     <section class="panel" aria-label="Watchlists and price alerts">
       <h2 class="panel-heading">Watchlists &amp; Price Alerts</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
-        Track products · evaluate alerts on demand · mock notifications only (queued, never sent).
+        Track products · evaluate alerts on demand · Sprint 19 adds Bearer-token auth, pause/resume/archive,
+        preferred sellers/marketplaces, in-app notifications, and simulated email digests — no real
+        email/SMS/push is ever sent.
       </p>
+      <p id="wl-auth-hint" class="hint" style="margin-top:0.35rem;"></p>
       <div class="row" style="margin-top: 0.75rem;">
         <button id="wl_refresh" type="button" style="background:#475569;">Refresh</button>
         <button id="wl_seed" type="button">Seed demo watchlist</button>
         <button id="wl_check" type="button" style="background:#0F172A;">Check Alerts</button>
+        <button id="wl_pause" type="button" style="background:#475569;">Pause</button>
+        <button id="wl_resume" type="button" style="background:#475569;">Resume</button>
+        <button id="wl_archive" type="button" style="background:#DC2626;">Archive</button>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="wl_add_product_id" style="flex:2;min-width:14rem;">
+          Add to watchlist — Product ID
+          <input id="wl_add_product_id" type="text" value="00000000-0000-4000-8000-000000000017" style="margin-top:0.35rem;" />
+        </label>
+        <label for="wl_add_target_price" style="flex:1;min-width:8rem;">
+          Target price
+          <input id="wl_add_target_price" type="text" value="74000" style="margin-top:0.35rem;" />
+        </label>
+        <button id="wl_add_item" type="button" style="align-self:flex-end;">Add item</button>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="wl_preferred_sellers" style="flex:1;min-width:14rem;">
+          Preferred sellers (comma-separated)
+          <input id="wl_preferred_sellers" type="text" placeholder="Apple Authorized PH, Lazada Apple Store" style="margin-top:0.35rem;" />
+        </label>
+        <label for="wl_preferred_marketplaces" style="flex:1;min-width:14rem;">
+          Preferred marketplaces (comma-separated)
+          <input id="wl_preferred_marketplaces" type="text" placeholder="shopee, lazada" style="margin-top:0.35rem;" />
+        </label>
+        <button id="wl_save_preferences" type="button" style="align-self:flex-end;background:#475569;">Save preferences</button>
       </div>
       <div id="wl-summary" class="meta" style="margin-top:1rem;"></div>
       <div id="wl-status" class="status" aria-live="polite"></div>
@@ -652,6 +680,222 @@
         <div id="wl-items"></div>
         <h3 class="section-title">Recent alerts</h3>
         <div id="wl-alerts"></div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Alert rules and evaluation">
+      <h2 class="panel-heading">Alert Rules &amp; Evaluation</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        User-owned, rule-driven alerting (Sprint 19) · requires login via User Platform below ·
+        notifications remain mock/simulated only.
+      </p>
+      <p id="ar-auth-hint" class="hint" style="margin-top:0.35rem;"></p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="ar_refresh" type="button" style="background:#475569;">Refresh rules</button>
+        <button id="ar_evaluate_all" type="button" style="background:#0F172A;">Evaluate my rules</button>
+        <button id="ar_events" type="button" style="background:#475569;">Refresh events</button>
+      </div>
+      <h3 class="section-title" style="margin-top:1.25rem;">Create rule</h3>
+      <div class="row">
+        <label for="ar_name" style="flex:1;min-width:12rem;">
+          Rule name
+          <input id="ar_name" type="text" value="Demo price rule" style="margin-top:0.35rem;" />
+        </label>
+        <label for="ar_condition_type" style="flex:1;min-width:14rem;">
+          Condition type
+          <select id="ar_condition_type" style="width:100%;margin-top:0.35rem;">
+            <option value="price_drop">price_drop</option>
+            <option value="percentage_price_decrease">percentage_price_decrease</option>
+            <option value="absolute_price_decrease">absolute_price_decrease</option>
+            <option value="price_increase">price_increase</option>
+            <option value="restocked">restocked</option>
+            <option value="unavailable">unavailable</option>
+            <option value="low_inventory">low_inventory</option>
+            <option value="better_offer">better_offer</option>
+            <option value="preferred_seller_available">preferred_seller_available</option>
+            <option value="stale_data">stale_data</option>
+            <option value="freshness_restored">freshness_restored</option>
+            <option value="dealscore_threshold">dealscore_threshold</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="ar_threshold_value" style="flex:1;min-width:9rem;">
+          Threshold value
+          <input id="ar_threshold_value" type="text" placeholder="e.g. 2000" style="margin-top:0.35rem;" />
+        </label>
+        <label for="ar_threshold_percent" style="flex:1;min-width:9rem;">
+          Threshold percent
+          <input id="ar_threshold_percent" type="text" placeholder="e.g. 5" style="margin-top:0.35rem;" />
+        </label>
+        <label for="ar_comparison" style="flex:1;min-width:9rem;">
+          Comparison
+          <select id="ar_comparison" style="width:100%;margin-top:0.35rem;">
+            <option value="">(default)</option>
+            <option value="gte">gte</option>
+            <option value="lte">lte</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="ar_watchlist_id" style="flex:1;min-width:12rem;">
+          Watchlist ID (optional — scopes rule)
+          <input id="ar_watchlist_id" type="text" placeholder="leave blank for account-wide" style="margin-top:0.35rem;" />
+        </label>
+        <label for="ar_item_id" style="flex:1;min-width:12rem;">
+          Item ID (optional — scopes rule)
+          <input id="ar_item_id" type="text" placeholder="leave blank for whole watchlist" style="margin-top:0.35rem;" />
+        </label>
+        <button id="ar_create" type="button" style="align-self:flex-end;">Create rule</button>
+      </div>
+      <div id="ar-status" class="status" aria-live="polite"></div>
+      <section id="ar-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Rules</h3>
+        <div id="ar-rules"></div>
+        <h3 class="section-title">Evaluation result</h3>
+        <div id="ar-evaluation"></div>
+        <h3 class="section-title">Events</h3>
+        <div id="ar-events"></div>
+      </section>
+      <h3 class="section-title">Deterministic demo scenarios</h3>
+      <p class="hint" style="margin-top:0;">
+        Each button seeds fixture data and/or a scoped rule, then calls the real
+        <code>POST /api/v1/alerts/evaluate</code> endpoint. Scenarios marked <strong>SIMULATED</strong> in
+        their result explain a real backend limitation rather than fabricating a fake trigger — see the
+        note printed under each result.
+      </p>
+      <div class="row" style="margin-top: 0.5rem;">
+        <button id="ar_scenario_price_drop" type="button" style="background:#0F172A;">Price drop</button>
+        <button id="ar_scenario_restock" type="button" style="background:#0F172A;">Restock</button>
+        <button id="ar_scenario_out_of_stock" type="button" style="background:#0F172A;">Out of stock</button>
+        <button id="ar_scenario_better_offer" type="button" style="background:#0F172A;">Better offer</button>
+      </div>
+      <div class="row" style="margin-top: 0.5rem;">
+        <button id="ar_scenario_stale_data" type="button" style="background:#0F172A;">Stale data</button>
+        <button id="ar_scenario_freshness_restored" type="button" style="background:#0F172A;">Freshness restored</button>
+        <button id="ar_scenario_dealscore" type="button" style="background:#0F172A;">DealScore improvement</button>
+      </div>
+      <div id="ar-scenario-status" class="status" aria-live="polite"></div>
+      <div id="ar-scenario-result" class="results" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" aria-label="Notification center">
+      <h2 class="panel-heading">Notification Center <span id="nc-unread-badge" class="badge" style="display:none;"></span></h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        In-app notification inbox (Sprint 19) · requires login via User Platform below · all delivery is
+        mock/simulated — <strong>SIMULATED EMAIL — NO REAL MESSAGE SENT</strong> for any email-channel entry.
+      </p>
+      <p id="nc-auth-hint" class="hint" style="margin-top:0.35rem;"></p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="nc_type_filter" style="flex:1;min-width:12rem;">
+          Filter by type
+          <select id="nc_type_filter" style="width:100%;margin-top:0.35rem;">
+            <option value="">All types</option>
+            <option value="price_drop">price_drop</option>
+            <option value="price_increase">price_increase</option>
+            <option value="restock">restock</option>
+            <option value="out_of_stock">out_of_stock</option>
+            <option value="low_inventory">low_inventory</option>
+            <option value="better_offer">better_offer</option>
+            <option value="dealscore_threshold">dealscore_threshold</option>
+            <option value="freshness_warning">freshness_warning</option>
+            <option value="availability_change">availability_change</option>
+            <option value="seller_change">seller_change</option>
+            <option value="system">system</option>
+            <option value="digest">digest</option>
+          </select>
+        </label>
+        <button id="nc_refresh" type="button" style="align-self:flex-end;background:#475569;">Refresh</button>
+        <button id="nc_mark_all_read" type="button" style="align-self:flex-end;">Mark all read</button>
+      </div>
+      <div id="nc-status" class="status" aria-live="polite"></div>
+      <section id="nc-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Notifications</h3>
+        <div id="nc-list"></div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Notification preferences">
+      <h2 class="panel-heading">Notification Preferences</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Per-user delivery preferences (Sprint 19) · requires login via User Platform below · marketing
+        notifications are disabled by default and shown here as off/disabled.
+      </p>
+      <p id="np-auth-hint" class="hint" style="margin-top:0.35rem;"></p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="np_refresh" type="button" style="background:#475569;">Load preferences</button>
+        <button id="np_save" type="button">Save preferences</button>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;flex-wrap:wrap;">
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_in_app_enabled" type="checkbox" checked /> In-app
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_email_enabled" type="checkbox" /> Email (simulated)
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_immediate_alerts" type="checkbox" checked /> Immediate alerts
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_daily_digest" type="checkbox" /> Daily digest
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_weekly_digest" type="checkbox" /> Weekly digest
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;flex-wrap:wrap;">
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_price_alerts" type="checkbox" checked /> Price alerts
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_stock_alerts" type="checkbox" checked /> Stock alerts
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;">
+          <input id="np_freshness_warnings" type="checkbox" checked /> Freshness warnings
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:0.4rem;margin:0;font-weight:600;opacity:0.6;">
+          <input id="np_marketing_enabled" type="checkbox" disabled /> Marketing (disabled by default)
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="np_quiet_hours_start" style="flex:1;min-width:8rem;">
+          Quiet hours start
+          <input id="np_quiet_hours_start" type="text" placeholder="HH:MM" style="margin-top:0.35rem;" />
+        </label>
+        <label for="np_quiet_hours_end" style="flex:1;min-width:8rem;">
+          Quiet hours end
+          <input id="np_quiet_hours_end" type="text" placeholder="HH:MM" style="margin-top:0.35rem;" />
+        </label>
+        <label for="np_timezone" style="flex:1;min-width:8rem;">
+          Timezone
+          <input id="np_timezone" type="text" value="UTC" style="margin-top:0.35rem;" />
+        </label>
+      </div>
+      <div id="np-status" class="status" aria-live="polite"></div>
+      <section id="np-results" class="results visible" aria-live="polite">
+        <div id="np-current"></div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Personalized dashboard">
+      <h2 class="panel-heading">Personalized Dashboard</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Read-only aggregation of watchlists, alert rules, and notifications (Sprint 19) · requires login via
+        User Platform below · figures only ever summarize fixture/imported data, never claimed as live.
+      </p>
+      <p id="db-auth-hint" class="hint" style="margin-top:0.35rem;"></p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="db_refresh" type="button">Load dashboard</button>
+      </div>
+      <div id="db-summary" class="meta" style="margin-top:1rem;"></div>
+      <div id="db-status" class="status" aria-live="polite"></div>
+      <section id="db-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Freshness &amp; personalization</h3>
+        <div id="db-freshness"></div>
+        <h3 class="section-title">Cards</h3>
+        <div id="db-cards"></div>
+        <h3 class="section-title">Recent activity</h3>
+        <div id="db-activity"></div>
       </section>
     </section>
 
@@ -2385,8 +2629,34 @@
     const wlListsEl = document.getElementById("wl-lists");
     const wlItemsEl = document.getElementById("wl-items");
     const wlAlertsEl = document.getElementById("wl-alerts");
+    const wlAuthHintEl = document.getElementById("wl-auth-hint");
+    const wlPauseBtn = document.getElementById("wl_pause");
+    const wlResumeBtn = document.getElementById("wl_resume");
+    const wlArchiveBtn = document.getElementById("wl_archive");
+    const wlAddItemBtn = document.getElementById("wl_add_item");
+    const wlAddProductIdInput = document.getElementById("wl_add_product_id");
+    const wlAddTargetPriceInput = document.getElementById("wl_add_target_price");
+    const wlPreferredSellersInput = document.getElementById("wl_preferred_sellers");
+    const wlPreferredMarketplacesInput = document.getElementById("wl_preferred_marketplaces");
+    const wlSavePreferencesBtn = document.getElementById("wl_save_preferences");
     const WL_DEMO_PRODUCT_ID = "00000000-0000-4000-8000-000000000017";
     let wlActiveId = null;
+
+    function wlAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        headers["Authorization"] = `Bearer ${upAccessToken}`;
+      }
+      return headers;
+    }
+
+    function wlUpdateAuthHint() {
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        wlAuthHintEl.innerHTML = `<span style="color:var(--emerald-dark);font-weight:650;">Authenticated as ${escapeHtml(upUserId || "")} — watchlists persist for this account.</span>`;
+      } else {
+        wlAuthHintEl.innerHTML = `Not logged in — <strong>log in via the User Platform panel below</strong> for persistent, owner-scoped watchlists. Sprint 19 requires a Bearer token by default (<code>WATCHLISTS_REQUIRE_AUTH</code>); anonymous requests will be rejected with 401 until you log in.`;
+      }
+    }
 
     function wlStat(label, value, emerald) {
       return `<div class="stat"><div class="label">${label}</div><div class="value${emerald ? " emerald" : ""}">${value}</div></div>`;
@@ -2459,6 +2729,7 @@
     }
 
     async function refreshWatchlists() {
+      wlUpdateAuthHint();
       wlRefreshBtn.disabled = true;
       showEl(
         wlStatusEl,
@@ -2466,9 +2737,20 @@
       );
       try {
         const [listsRes, alertsRes] = await Promise.all([
-          fetch("/api/v1/watchlists"),
+          fetch("/api/v1/watchlists", { headers: wlAuthHeaders() }),
           fetch("/api/v1/alerts?limit=20"),
         ]);
+        if (listsRes.status === 401) {
+          wlListsEl.innerHTML = "";
+          wlItemsEl.innerHTML = "";
+          wlAlertsEl.innerHTML = "";
+          wlSummaryEl.innerHTML = "";
+          showEl(
+            wlStatusEl,
+            '<div class="error">Authentication required — log in via the User Platform panel below, then click Refresh again.</div>'
+          );
+          return;
+        }
         if (!listsRes.ok || !alertsRes.ok) {
           throw new Error("Failed to load watchlists or alerts.");
         }
@@ -2478,20 +2760,29 @@
           wlActiveId = lists[0].watchlist_id;
         }
         let items = [];
+        let activeWatchlist = null;
         if (wlActiveId) {
-          const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/items`);
+          const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/items`, {
+            headers: wlAuthHeaders(),
+          });
           if (itemsRes.ok) {
             items = (await itemsRes.json()).items || [];
           }
+          activeWatchlist = lists.find((wl) => wl.watchlist_id === wlActiveId) || null;
         }
         wlSummaryEl.innerHTML = [
           wlStat("Watchlists", lists.length, true),
           wlStat("Tracked", items.length),
           wlStat("Alerts", alerts.length, alerts.length > 0),
+          wlStat("Active status", activeWatchlist ? activeWatchlist.status : "—"),
         ].join("");
         wlListsEl.innerHTML = renderWatchlists(lists);
         wlItemsEl.innerHTML = renderWatchlistItems(items);
         wlAlertsEl.innerHTML = renderWatchlistAlerts(alerts);
+        if (activeWatchlist) {
+          wlPreferredSellersInput.value = (activeWatchlist.preferred_sellers || []).join(", ");
+          wlPreferredMarketplacesInput.value = (activeWatchlist.preferred_marketplaces || []).join(", ");
+        }
         clearEl(wlStatusEl);
       } catch (error) {
         showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
@@ -2510,7 +2801,7 @@
         await ensureDemoPriceHistory();
         const created = await fetch("/api/v1/watchlists", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: wlAuthHeaders(),
           body: JSON.stringify({
             name: "Demo phone watchlist",
             owner_id: "demo-user",
@@ -2520,7 +2811,11 @@
         });
         if (!created.ok) {
           const detail = await created.json().catch(() => ({}));
-          throw new Error(detail.detail || "Failed to create watchlist.");
+          throw new Error(
+            created.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : detail.detail || "Failed to create watchlist."
+          );
         }
         const watchlist = await created.json();
         wlActiveId = watchlist.watchlist_id;
@@ -2528,7 +2823,7 @@
           `/api/v1/watchlists/${encodeURIComponent(watchlist.watchlist_id)}/items`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: wlAuthHeaders(),
             body: JSON.stringify({
               canonical_product_id: WL_DEMO_PRODUCT_ID,
               product_label: "iPhone 17 Pro Max 256GB",
@@ -2565,10 +2860,14 @@
         const url = wlActiveId
           ? `/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/check-alerts`
           : "/api/v1/watchlists/check-alerts";
-        const response = await fetch(url, { method: "POST" });
+        const response = await fetch(url, { method: "POST", headers: wlAuthHeaders() });
         if (!response.ok) {
           const detail = await response.json().catch(() => ({}));
-          throw new Error(detail.detail || "Alert check failed.");
+          throw new Error(
+            response.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : detail.detail || "Alert check failed."
+          );
         }
         const payload = await response.json();
         showEl(
@@ -2586,6 +2885,129 @@
       }
     }
 
+    async function wlLifecycleAction(action) {
+      if (!wlActiveId) {
+        showEl(wlStatusEl, '<div class="error">Select or seed a watchlist first.</div>');
+        return;
+      }
+      showEl(
+        wlStatusEl,
+        `<div class="loading"><span class="spinner" aria-hidden="true"></span> ${action[0].toUpperCase()}${action.slice(1)}ing watchlist…</div>`
+      );
+      try {
+        const response = await fetch(
+          `/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/${action}`,
+          { method: "POST", headers: wlAuthHeaders() }
+        );
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : body.detail || `Failed to ${action} watchlist.`
+          );
+        }
+        showEl(
+          wlStatusEl,
+          `<div class="hint" style="color:var(--emerald-dark);font-weight:650;">Watchlist now ${escapeHtml(body.status)}.</div>`
+        );
+        await refreshWatchlists();
+      } catch (error) {
+        showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
+      }
+    }
+
+    async function wlAddItemToActive() {
+      if (!wlActiveId) {
+        showEl(wlStatusEl, '<div class="error">Select or seed a watchlist first.</div>');
+        return;
+      }
+      wlAddItemBtn.disabled = true;
+      showEl(
+        wlStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Adding item…</div>'
+      );
+      try {
+        const productId = wlAddProductIdInput.value.trim();
+        const targetPriceRaw = wlAddTargetPriceInput.value.trim();
+        const targetPrice = targetPriceRaw === "" ? null : Number(targetPriceRaw);
+        if (!productId) throw new Error("Product ID is required.");
+        const response = await fetch(
+          `/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/items`,
+          {
+            method: "POST",
+            headers: wlAuthHeaders(),
+            body: JSON.stringify({
+              canonical_product_id: productId,
+              target_price: targetPrice != null && Number.isFinite(targetPrice) ? targetPrice : null,
+              currency: "PHP",
+            }),
+          }
+        );
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : body.detail || "Failed to add item."
+          );
+        }
+        clearEl(wlStatusEl);
+        await refreshWatchlists();
+      } catch (error) {
+        showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        wlAddItemBtn.disabled = false;
+      }
+    }
+
+    async function wlSavePreferredSellersAndMarketplaces() {
+      if (!wlActiveId) {
+        showEl(wlStatusEl, '<div class="error">Select or seed a watchlist first.</div>');
+        return;
+      }
+      wlSavePreferencesBtn.disabled = true;
+      showEl(
+        wlStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Saving preferences…</div>'
+      );
+      try {
+        const sellers = wlPreferredSellersInput.value
+          .split(",").map((s) => s.trim()).filter(Boolean);
+        const marketplaces = wlPreferredMarketplacesInput.value
+          .split(",").map((s) => s.trim()).filter(Boolean);
+        const [sellersRes, marketplacesRes] = await Promise.all([
+          fetch(`/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/preferred-sellers`, {
+            method: "PUT",
+            headers: wlAuthHeaders(),
+            body: JSON.stringify({ sellers }),
+          }),
+          fetch(`/api/v1/watchlists/${encodeURIComponent(wlActiveId)}/preferred-marketplaces`, {
+            method: "PUT",
+            headers: wlAuthHeaders(),
+            body: JSON.stringify({ marketplaces }),
+          }),
+        ]);
+        if (!sellersRes.ok || !marketplacesRes.ok) {
+          const detail = await (sellersRes.ok ? marketplacesRes : sellersRes).json().catch(() => ({}));
+          throw new Error(
+            sellersRes.status === 401 || marketplacesRes.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : detail.detail || "Failed to save preferences."
+          );
+        }
+        showEl(
+          wlStatusEl,
+          '<div class="hint" style="color:var(--emerald-dark);font-weight:650;">Preferred sellers/marketplaces saved.</div>'
+        );
+        await refreshWatchlists();
+      } catch (error) {
+        showEl(wlStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        wlSavePreferencesBtn.disabled = false;
+      }
+    }
+
     document.getElementById("wl-lists").addEventListener("click", async (event) => {
       const btn = event.target.closest("[data-wl-select]");
       if (!btn) return;
@@ -2596,7 +3018,867 @@
     wlRefreshBtn.addEventListener("click", refreshWatchlists);
     wlSeedBtn.addEventListener("click", seedWatchlist);
     wlCheckBtn.addEventListener("click", checkWatchlistAlerts);
+    wlPauseBtn.addEventListener("click", () => wlLifecycleAction("pause"));
+    wlResumeBtn.addEventListener("click", () => wlLifecycleAction("resume"));
+    wlArchiveBtn.addEventListener("click", () => wlLifecycleAction("archive"));
+    wlAddItemBtn.addEventListener("click", wlAddItemToActive);
+    wlSavePreferencesBtn.addEventListener("click", wlSavePreferredSellersAndMarketplaces);
+    wlUpdateAuthHint();
     refreshWatchlists();
+
+    // ================================================================
+    // Sprint 19 — Alert Rules & Evaluation
+    // ================================================================
+    const arAuthHintEl = document.getElementById("ar-auth-hint");
+    const arRefreshBtn = document.getElementById("ar_refresh");
+    const arEvaluateAllBtn = document.getElementById("ar_evaluate_all");
+    const arEventsBtn = document.getElementById("ar_events");
+    const arNameInput = document.getElementById("ar_name");
+    const arConditionTypeSelect = document.getElementById("ar_condition_type");
+    const arThresholdValueInput = document.getElementById("ar_threshold_value");
+    const arThresholdPercentInput = document.getElementById("ar_threshold_percent");
+    const arComparisonSelect = document.getElementById("ar_comparison");
+    const arWatchlistIdInput = document.getElementById("ar_watchlist_id");
+    const arItemIdInput = document.getElementById("ar_item_id");
+    const arCreateBtn = document.getElementById("ar_create");
+    const arStatusEl = document.getElementById("ar-status");
+    const arRulesEl = document.getElementById("ar-rules");
+    const arEvaluationEl = document.getElementById("ar-evaluation");
+    const arEventsEl = document.getElementById("ar-events");
+    const arScenarioStatusEl = document.getElementById("ar-scenario-status");
+    const arScenarioResultEl = document.getElementById("ar-scenario-result");
+
+    function arAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        headers["Authorization"] = `Bearer ${upAccessToken}`;
+      }
+      return headers;
+    }
+
+    function arUpdateAuthHint() {
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        arAuthHintEl.innerHTML = `<span style="color:var(--emerald-dark);font-weight:650;">Authenticated as ${escapeHtml(upUserId || "")}.</span>`;
+      } else {
+        arAuthHintEl.innerHTML = `Not logged in — <strong>log in via the User Platform panel below</strong> first. Alert rules always require a Bearer token.`;
+      }
+    }
+
+    function arRenderRules(rules) {
+      if (!rules.length) {
+        return '<p class="empty-state">No alert rules yet. Create one above or run a demo scenario.</p>';
+      }
+      const rows = rules.map((rule) => `<tr>
+        <td>${escapeHtml(rule.name)}<div class="hint" style="margin:0.25rem 0 0;"><code>${rule.rule_id.slice(0, 12)}…</code></div></td>
+        <td>${rule.conditions.map((c) => `<span class="badge">${escapeHtml(c.condition_type)}</span>`).join(" ")}</td>
+        <td><span class="badge">${escapeHtml(rule.status)}</span> ${rule.enabled ? "" : "<span class=\"badge danger\">disabled</span>"}</td>
+        <td>${rule.watchlist_id ? "watchlist" : rule.item_id ? "item" : "account-wide"}</td>
+        <td>${formatTs(rule.last_triggered_at)}</td>
+        <td><button type="button" data-ar-evaluate="${rule.rule_id}" style="padding:0.35rem 0.65rem;font-size:0.8rem;background:#0F172A;">Evaluate</button></td>
+      </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Rule</th><th>Conditions</th><th>Status</th><th>Scope</th><th>Last triggered</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    function arRenderEvents(events) {
+      if (!events.length) {
+        return '<p class="empty-state">No alert events yet. Evaluate a rule or run a demo scenario.</p>';
+      }
+      const rows = events.map((event) => `<tr>
+        <td><span class="badge">${escapeHtml(event.event_type)}</span></td>
+        <td><span class="badge">${escapeHtml(event.severity)}</span></td>
+        <td><pre style="white-space:pre-wrap;margin:0;font-size:0.82rem;">${escapeHtml(JSON.stringify(event.payload))}</pre></td>
+        <td>${formatTs(event.created_at)}</td>
+      </tr>`).join("");
+      return `<table>
+        <thead><tr><th>Type</th><th>Severity</th><th>Payload</th><th>Created</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }
+
+    async function arRefreshRules() {
+      arUpdateAuthHint();
+      arRefreshBtn.disabled = true;
+      showEl(arStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading rules…</div>');
+      try {
+        const response = await fetch("/api/v1/alerts/rules", { headers: arAuthHeaders() });
+        if (response.status === 401) {
+          arRulesEl.innerHTML = "";
+          showEl(arStatusEl, '<div class="error">Authentication required — log in via the User Platform panel below.</div>');
+          return;
+        }
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Failed to load rules.");
+        arRulesEl.innerHTML = arRenderRules(body.rules || []);
+        clearEl(arStatusEl);
+      } catch (error) {
+        showEl(arStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        arRefreshBtn.disabled = false;
+      }
+    }
+
+    async function arRefreshEvents() {
+      try {
+        const response = await fetch("/api/v1/alerts/events?limit=30", { headers: arAuthHeaders() });
+        if (response.status === 401) {
+          arEventsEl.innerHTML = "";
+          return;
+        }
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Failed to load events.");
+        arEventsEl.innerHTML = arRenderEvents(body.events || []);
+      } catch (error) {
+        showEl(arStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      }
+    }
+
+    function arBuildConditionPayload() {
+      const conditionType = arConditionTypeSelect.value;
+      const thresholdValue = arThresholdValueInput.value.trim();
+      const thresholdPercent = arThresholdPercentInput.value.trim();
+      const comparison = arComparisonSelect.value;
+      return {
+        condition_type: conditionType,
+        threshold_value: thresholdValue === "" ? null : Number(thresholdValue),
+        threshold_percent: thresholdPercent === "" ? null : Number(thresholdPercent),
+        comparison: comparison === "" ? null : comparison,
+      };
+    }
+
+    async function arCreateRule() {
+      arCreateBtn.disabled = true;
+      showEl(arStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Creating rule…</div>');
+      try {
+        const response = await fetch("/api/v1/alerts/rules", {
+          method: "POST",
+          headers: arAuthHeaders(),
+          body: JSON.stringify({
+            name: arNameInput.value.trim() || "Demo rule",
+            conditions: [arBuildConditionPayload()],
+            watchlist_id: arWatchlistIdInput.value.trim() || null,
+            item_id: arItemIdInput.value.trim() || null,
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : body.detail || "Failed to create rule."
+          );
+        }
+        showEl(arStatusEl, `<div class="hint" style="color:var(--emerald-dark);font-weight:650;">Rule "${escapeHtml(body.name)}" created.</div>`);
+        await arRefreshRules();
+      } catch (error) {
+        showEl(arStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        arCreateBtn.disabled = false;
+      }
+    }
+
+    async function arEvaluate(scope) {
+      showEl(arStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Evaluating…</div>');
+      try {
+        const response = await fetch("/api/v1/alerts/evaluate", {
+          method: "POST",
+          headers: arAuthHeaders(),
+          body: JSON.stringify(scope || {}),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : body.detail || "Evaluation failed."
+          );
+        }
+        arEvaluationEl.innerHTML = `
+          <div class="meta">
+            ${wlStat("Rules evaluated", body.rules_evaluated)}
+            ${wlStat("Triggered", body.triggered_count, body.triggered_count > 0)}
+            ${wlStat("Events created", (body.events_created || []).length)}
+          </div>
+          <div class="hint">${escapeHtml(body.disclaimer || "")}</div>
+          ${(body.failures || []).length ? `<div class="error">${(body.failures || []).map(escapeHtml).join("<br/>")}</div>` : ""}
+        `;
+        clearEl(arStatusEl);
+        await arRefreshRules();
+        await arRefreshEvents();
+        return body;
+      } catch (error) {
+        showEl(arStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+        return null;
+      }
+    }
+
+    arRefreshBtn.addEventListener("click", arRefreshRules);
+    arEventsBtn.addEventListener("click", arRefreshEvents);
+    arEvaluateAllBtn.addEventListener("click", () => arEvaluate({}));
+    arCreateBtn.addEventListener("click", arCreateRule);
+    arRulesEl.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-ar-evaluate]");
+      if (!btn) return;
+      arEvaluate({ rule_id: btn.getAttribute("data-ar-evaluate") });
+    });
+    arRefreshRules();
+    arRefreshEvents();
+
+    // ---------------------------------------------------------------
+    // Deterministic demo scenarios.
+    //
+    // Each scenario creates/reuses a dedicated demo watchlist item and a
+    // scoped alert rule, then calls the real POST /api/v1/alerts/evaluate
+    // endpoint. Where the real AlertEvaluationService can genuinely be
+    // driven to trigger (price_drop, restock/out-of-stock via a real
+    // marketplace-offer re-point, low_inventory, preferred_seller_available,
+    // stale_data via a demo-only 0h threshold, dealscore_threshold), the
+    // scenario produces a real triggered event. Two conditions
+    // (better_offer, freshness_restored) have documented backend gaps —
+    // see the inline notes below and the result panel's "Simulated" text.
+    // ---------------------------------------------------------------
+    let arScenarioWatchlistId = null;
+
+    async function arEnsureScenarioWatchlist() {
+      if (arScenarioWatchlistId) return arScenarioWatchlistId;
+      const listRes = await fetch("/api/v1/watchlists", { headers: arAuthHeaders() });
+      if (listRes.status === 401) throw new Error("Authentication required — log in via the User Platform panel below.");
+      const listBody = await listRes.json().catch(() => ({}));
+      const existing = (listBody.watchlists || []).find((wl) => wl.name === "Alert Rules Demo");
+      if (existing) {
+        arScenarioWatchlistId = existing.watchlist_id;
+        return arScenarioWatchlistId;
+      }
+      const created = await fetch("/api/v1/watchlists", {
+        method: "POST",
+        headers: arAuthHeaders(),
+        body: JSON.stringify({ name: "Alert Rules Demo", description: "Sprint 19 scenario fixtures", enabled: true }),
+      });
+      const body = await created.json().catch(() => ({}));
+      if (!created.ok) throw new Error(body.detail || "Failed to create scenario watchlist.");
+      arScenarioWatchlistId = body.watchlist_id;
+      return arScenarioWatchlistId;
+    }
+
+    async function arImportOffer(row) {
+      const header = "marketplace_product_id,title,brand,model,category,sku,upc,currency,regular_price,sale_price,shipping_cost,availability,inventory_quantity,seller_name,seller_rating,marketplace_url";
+      const csv = `${header}\n${row}`;
+      const response = await fetch("/api/v1/marketplaces/imports", {
+        method: "POST",
+        headers: arAuthHeaders(),
+        body: JSON.stringify({ filename: "ar-scenario.csv", content: csv, content_type: "text/csv" }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.detail || "Scenario offer import failed.");
+      const mpid = row.split(",")[0];
+      const offersRes = await fetch("/api/v1/marketplaces/offers?marketplace=imported&limit=200");
+      const offersBody = await offersRes.json().catch(() => ({}));
+      const matches = (offersBody.offers || []).filter((o) => o.marketplace_product_id === mpid);
+      const match = matches[matches.length - 1];
+      if (!match) throw new Error("Could not locate imported scenario offer.");
+      return match;
+    }
+
+    async function arAttachOffer(watchlistId, offerId, canonicalProductId, label) {
+      const response = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/offers`, {
+        method: "POST",
+        headers: arAuthHeaders(),
+        body: JSON.stringify({
+          marketplace_offer_id: offerId,
+          canonical_product_id: canonicalProductId,
+          product_label: label,
+          currency: "PHP",
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.detail || "Failed to attach scenario offer.");
+      return body;
+    }
+
+    async function arEnsurePriceItem(canonicalProductId, label, lastKnownPrice, lastKnownDealscore) {
+      const watchlistId = await arEnsureScenarioWatchlist();
+      const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items?enrich=false`, {
+        headers: arAuthHeaders(),
+      });
+      const itemsBody = await itemsRes.json().catch(() => ({}));
+      const existing = (itemsBody.items || []).find((i) => i.canonical_product_id === canonicalProductId);
+      if (existing) {
+        return { watchlistId, itemId: existing.item_id };
+      }
+      const created = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items`, {
+        method: "POST",
+        headers: arAuthHeaders(),
+        body: JSON.stringify({
+          canonical_product_id: canonicalProductId,
+          product_label: label,
+          currency: "PHP",
+          last_known_price: lastKnownPrice,
+          last_known_dealscore: lastKnownDealscore,
+        }),
+      });
+      const body = await created.json().catch(() => ({}));
+      if (!created.ok) throw new Error(body.detail || "Failed to create scenario item.");
+      return { watchlistId, itemId: body.item_id };
+    }
+
+    async function arEnsureRule(name, itemId, condition) {
+      const response = await fetch("/api/v1/alerts/rules", {
+        method: "POST",
+        headers: arAuthHeaders(),
+        body: JSON.stringify({ name, conditions: [condition], item_id: itemId, cooldown_seconds: 0 }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.detail || "Failed to create scenario rule.");
+      return body.rule_id;
+    }
+
+    function arRenderScenario(title, note, evalResult) {
+      const triggered = evalResult && evalResult.triggered_count > 0;
+      const outcomeReasons = ((evalResult && evalResult.events_created) || [])
+        .map((e) => `${e.event_type}: ${JSON.stringify(e.payload)}`);
+      arScenarioResultEl.classList.add("visible");
+      arScenarioResultEl.innerHTML = `
+        <h3 class="section-title">${escapeHtml(title)}</h3>
+        <div class="meta">
+          ${wlStat("Triggered", triggered ? "yes" : "no", triggered)}
+          ${wlStat("Events", (evalResult && evalResult.events_created || []).length)}
+        </div>
+        ${outcomeReasons.length ? `<p class="hint">${outcomeReasons.map(escapeHtml).join("<br/>")}</p>` : ""}
+        <p class="hint" style="color:var(--emerald-dark);font-weight:650;">${escapeHtml(note)}</p>
+      `;
+    }
+
+    async function arRunScenario(fn, btn) {
+      btn.disabled = true;
+      showEl(arScenarioStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Running scenario…</div>');
+      try {
+        await fn();
+        clearEl(arScenarioStatusEl);
+      } catch (error) {
+        showEl(arScenarioStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function arScenarioPriceDrop() {
+      // REAL trigger: the iPhone 17 Pro Max demo product has genuine seeded
+      // price-history fixture data; setting last_known_price above the real
+      // recorded price makes price_drop fire for real, no fabrication.
+      await ensureDemoPriceHistory();
+      const productId = "00000000-0000-4000-8000-000000000017";
+      const { itemId } = await arEnsurePriceItem(productId, "iPhone 17 Pro Max 256GB (price drop demo)", 82000, null);
+      const ruleId = await arEnsureRule("Demo: price drop", itemId, { condition_type: "price_drop" });
+      const result = await arEvaluate({ rule_id: ruleId });
+      if (!result) return;
+      arRenderScenario(
+        "Price drop",
+        "REAL: uses genuine iPhone 17 Pro Max price-history fixture data (last_known_price set above the actual recorded price).",
+        result
+      );
+    }
+
+    async function arScenarioDealscore() {
+      // REAL trigger: dealscore_threshold compares an absolute value, no
+      // delta needed — item.last_known_dealscore is used as-is when no
+      // search_query is set, so this is fully controllable and genuine.
+      const productId = "00000000-0000-4000-8000-0000000000a6";
+      const { itemId } = await arEnsurePriceItem(productId, "DealScore improvement demo item", 50000, 88);
+      const ruleId = await arEnsureRule("Demo: DealScore improvement", itemId, {
+        condition_type: "dealscore_threshold",
+        threshold_value: 75,
+        comparison: "gte",
+      });
+      const result = await arEvaluate({ rule_id: ruleId });
+      if (!result) return;
+      arRenderScenario(
+        "DealScore improvement",
+        "REAL: dealscore_threshold triggers on item.last_known_dealscore (88) vs. threshold (75, gte) — a genuine engine result.",
+        result
+      );
+    }
+
+    async function arScenarioStaleData() {
+      // REAL trigger with a documented demo-only threshold: a freshly
+      // imported offer's age_hours is always >= 0, so threshold_value=0
+      // reliably triggers stale_data without waiting for real staleness
+      // (production rules would use a meaningful threshold, e.g. 72h).
+      const watchlistId = await arEnsureScenarioWatchlist();
+      const offer = await arImportOffer(
+        "ar-demo-stale,Stale Data Demo Item,Generic,Demo,Accessories,SKU-STALE,000000000001,PHP,1999,1899,50,in_stock,10,Demo Seller,4.2,https://demo.dealbrain.local/stale"
+      );
+      const productId = "00000000-0000-4000-8000-0000000000a4";
+      await arAttachOffer(watchlistId, offer.offer_id, productId, "Stale data demo item");
+      const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items?enrich=false`, { headers: arAuthHeaders() });
+      const itemsBody = await itemsRes.json().catch(() => ({}));
+      const item = (itemsBody.items || []).find((i) => i.canonical_product_id === productId);
+      const ruleId = await arEnsureRule("Demo: stale data", item.item_id, {
+        condition_type: "stale_data",
+        threshold_value: 0,
+      });
+      const result = await arEvaluate({ rule_id: ruleId });
+      if (!result) return;
+      arRenderScenario(
+        "Stale data",
+        "REAL call with a demo-only threshold_value=0h (any real data age triggers immediately) — production rules would use a meaningful threshold such as 72h.",
+        result
+      );
+    }
+
+    async function arScenarioFreshnessRestored() {
+      // SIMULATED / documented limitation: freshness_restored needs a real
+      // stale -> fresh transition (freshness is computed from real elapsed
+      // wall-clock time since import, thresholded at 72h by default). The
+      // demo API surface cannot fast-forward server time or backdate
+      // ingested_at, so a genuine trigger cannot be forced here. We still
+      // create the rule and call the real evaluate endpoint to show the
+      // exact request/response contract.
+      const watchlistId = await arEnsureScenarioWatchlist();
+      const offer = await arImportOffer(
+        "ar-demo-fresh,Freshness Restored Demo Item,Generic,Demo,Accessories,SKU-FRESH,000000000002,PHP,1999,1899,50,in_stock,10,Demo Seller,4.2,https://demo.dealbrain.local/fresh"
+      );
+      const productId = "00000000-0000-4000-8000-0000000000a5";
+      await arAttachOffer(watchlistId, offer.offer_id, productId, "Freshness restored demo item");
+      const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items?enrich=false`, { headers: arAuthHeaders() });
+      const itemsBody = await itemsRes.json().catch(() => ({}));
+      const item = (itemsBody.items || []).find((i) => i.canonical_product_id === productId);
+      const ruleId = await arEnsureRule("Demo: freshness restored", item.item_id, { condition_type: "freshness_restored" });
+      const result = await arEvaluate({ rule_id: ruleId });
+      if (!result) return;
+      arRenderScenario(
+        "Freshness restored",
+        "SIMULATED (documented backend limitation): freshness_restored requires a genuine stale→fresh transition based on real elapsed time (72h+ by default). The demo cannot fast-forward server time, so this call is expected to report \"no condition matched\" — the rule + real evaluate call above show the exact contract a live sync would exercise.",
+        result
+      );
+    }
+
+    async function arScenarioBetterOffer() {
+      // SIMULATED / documented backend limitation: AlertEvaluationService
+      // currently hardcodes observation["better_offer_price"] = None (see
+      // app/services/alert_evaluation_service.py::_apply_marketplace_offer),
+      // i.e. no competing-offer detection is wired up yet. This scenario
+      // still creates a real rule and calls the real evaluate endpoint to
+      // demonstrate the contract, but a trigger is not currently possible.
+      const watchlistId = await arEnsureScenarioWatchlist();
+      const offer = await arImportOffer(
+        "ar-demo-better,Better Offer Demo Item,Generic,Demo,Accessories,SKU-BETTER,000000000003,PHP,1999,1899,50,in_stock,10,Demo Seller,4.2,https://demo.dealbrain.local/better"
+      );
+      const productId = "00000000-0000-4000-8000-0000000000a3";
+      await arAttachOffer(watchlistId, offer.offer_id, productId, "Better offer demo item");
+      const itemsRes = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items?enrich=false`, { headers: arAuthHeaders() });
+      const itemsBody = await itemsRes.json().catch(() => ({}));
+      const item = (itemsBody.items || []).find((i) => i.canonical_product_id === productId);
+      const ruleId = await arEnsureRule("Demo: better offer", item.item_id, { condition_type: "better_offer" });
+      const result = await arEvaluate({ rule_id: ruleId });
+      if (!result) return;
+      arRenderScenario(
+        "Better offer",
+        "SIMULATED (documented backend limitation): AlertEvaluationService always sets better_offer_price=None (no competing-offer detection wired up yet), so this condition cannot trigger via the current backend. This call still exercises the real rule + evaluate contract.",
+        result
+      );
+    }
+
+    async function arScenarioRestock() {
+      // REAL trigger: import an out_of_stock offer, attach + evaluate once
+      // (baseline observation), then import an in_stock offer with a new
+      // marketplace_product_id and re-attach via POST /offers — add_offer
+      // re-points the SAME item's marketplace_offer_id — then evaluate
+      // again. The engine's own previous-observation cache genuinely
+      // reports a real out_of_stock -> in_stock transition.
+      const watchlistId = await arEnsureScenarioWatchlist();
+      const productId = "00000000-0000-4000-8000-0000000000a1";
+      const outOffer = await arImportOffer(
+        "ar-demo-restock-out,Restock Demo Item,Generic,Demo,Accessories,SKU-RESTOCK,000000000004,PHP,1999,1899,50,out_of_stock,0,Demo Seller,4.2,https://demo.dealbrain.local/restock"
+      );
+      await arAttachOffer(watchlistId, outOffer.offer_id, productId, "Restock demo item");
+      const itemsRes1 = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items?enrich=false`, { headers: arAuthHeaders() });
+      const itemsBody1 = await itemsRes1.json().catch(() => ({}));
+      const item = (itemsBody1.items || []).find((i) => i.canonical_product_id === productId);
+      const ruleId = await arEnsureRule("Demo: restocked", item.item_id, { condition_type: "restocked" });
+      await arEvaluate({ rule_id: ruleId }); // baseline pass — caches out_of_stock, will not trigger yet
+      const inOffer = await arImportOffer(
+        "ar-demo-restock-in,Restock Demo Item,Generic,Demo,Accessories,SKU-RESTOCK,000000000004,PHP,1999,1899,50,in_stock,8,Demo Seller,4.2,https://demo.dealbrain.local/restock"
+      );
+      await arAttachOffer(watchlistId, inOffer.offer_id, productId, "Restock demo item");
+      const result = await arEvaluate({ rule_id: ruleId }); // second pass — real out_of_stock -> in_stock transition
+      if (!result) return;
+      arRenderScenario(
+        "Restock",
+        "REAL: two genuine evaluate passes — an out_of_stock offer is attached and observed first, then re-pointed to a real in_stock offer. The engine's own previous-observation cache reports the real transition.",
+        result
+      );
+    }
+
+    async function arScenarioOutOfStock() {
+      // REAL trigger — mirror of Restock: start in_stock, then re-point to
+      // a real out_of_stock offer.
+      const watchlistId = await arEnsureScenarioWatchlist();
+      const productId = "00000000-0000-4000-8000-0000000000a2";
+      const inOffer = await arImportOffer(
+        "ar-demo-oos-in,Out of Stock Demo Item,Generic,Demo,Accessories,SKU-OOS,000000000005,PHP,1999,1899,50,in_stock,8,Demo Seller,4.2,https://demo.dealbrain.local/oos"
+      );
+      await arAttachOffer(watchlistId, inOffer.offer_id, productId, "Out of stock demo item");
+      const itemsRes1 = await fetch(`/api/v1/watchlists/${encodeURIComponent(watchlistId)}/items?enrich=false`, { headers: arAuthHeaders() });
+      const itemsBody1 = await itemsRes1.json().catch(() => ({}));
+      const item = (itemsBody1.items || []).find((i) => i.canonical_product_id === productId);
+      const ruleId = await arEnsureRule("Demo: unavailable", item.item_id, { condition_type: "unavailable" });
+      await arEvaluate({ rule_id: ruleId }); // baseline pass — caches in_stock
+      const outOffer = await arImportOffer(
+        "ar-demo-oos-out,Out of Stock Demo Item,Generic,Demo,Accessories,SKU-OOS,000000000005,PHP,1999,1899,50,out_of_stock,0,Demo Seller,4.2,https://demo.dealbrain.local/oos"
+      );
+      await arAttachOffer(watchlistId, outOffer.offer_id, productId, "Out of stock demo item");
+      const result = await arEvaluate({ rule_id: ruleId }); // second pass — real in_stock -> out_of_stock transition
+      if (!result) return;
+      arRenderScenario(
+        "Out of stock",
+        "REAL: two genuine evaluate passes — an in_stock offer is observed first, then re-pointed to a real out_of_stock offer, producing a genuine unavailable trigger.",
+        result
+      );
+    }
+
+    document.getElementById("ar_scenario_price_drop").addEventListener("click", (e) => arRunScenario(arScenarioPriceDrop, e.currentTarget));
+    document.getElementById("ar_scenario_restock").addEventListener("click", (e) => arRunScenario(arScenarioRestock, e.currentTarget));
+    document.getElementById("ar_scenario_out_of_stock").addEventListener("click", (e) => arRunScenario(arScenarioOutOfStock, e.currentTarget));
+    document.getElementById("ar_scenario_better_offer").addEventListener("click", (e) => arRunScenario(arScenarioBetterOffer, e.currentTarget));
+    document.getElementById("ar_scenario_stale_data").addEventListener("click", (e) => arRunScenario(arScenarioStaleData, e.currentTarget));
+    document.getElementById("ar_scenario_freshness_restored").addEventListener("click", (e) => arRunScenario(arScenarioFreshnessRestored, e.currentTarget));
+    document.getElementById("ar_scenario_dealscore").addEventListener("click", (e) => arRunScenario(arScenarioDealscore, e.currentTarget));
+
+    // ================================================================
+    // Sprint 19 — Notification Center
+    // ================================================================
+    const ncAuthHintEl = document.getElementById("nc-auth-hint");
+    const ncUnreadBadgeEl = document.getElementById("nc-unread-badge");
+    const ncTypeFilterSelect = document.getElementById("nc_type_filter");
+    const ncRefreshBtn = document.getElementById("nc_refresh");
+    const ncMarkAllReadBtn = document.getElementById("nc_mark_all_read");
+    const ncStatusEl = document.getElementById("nc-status");
+    const ncListEl = document.getElementById("nc-list");
+
+    function ncAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        headers["Authorization"] = `Bearer ${upAccessToken}`;
+      }
+      return headers;
+    }
+
+    function ncUpdateAuthHint() {
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        ncAuthHintEl.innerHTML = `<span style="color:var(--emerald-dark);font-weight:650;">Authenticated as ${escapeHtml(upUserId || "")}.</span>`;
+      } else {
+        ncAuthHintEl.innerHTML = `Not logged in — <strong>log in via the User Platform panel below</strong> first. The Notification Center always requires a Bearer token.`;
+      }
+    }
+
+    function ncRenderNotification(n) {
+      const isEmail = n.channel === "email";
+      const readBadge = n.is_read ? '<span class="badge">read</span>' : '<span class="badge recommended">unread</span>';
+      const archivedBadge = n.is_archived ? '<span class="badge danger">archived</span>' : "";
+      return `<div style="margin:0.5rem 0;padding:0.65rem 0;border-bottom:1px solid var(--border);">
+        <div><strong>${escapeHtml(n.title)}</strong> <span class="badge">${escapeHtml(n.type)}</span> <span class="badge">${escapeHtml(n.severity)}</span> ${readBadge} ${archivedBadge}</div>
+        <div class="hint" style="margin:0.25rem 0;">${escapeHtml(n.body)}</div>
+        ${isEmail ? '<div class="hint" style="color:var(--danger);font-weight:700;">SIMULATED EMAIL — NO REAL MESSAGE SENT</div>' : ""}
+        <div class="hint">${formatTs(n.created_at)}</div>
+        <div class="row" style="margin-top:0.4rem;">
+          ${!n.is_read ? `<button type="button" data-nc-read="${n.notification_id}" style="padding:0.35rem 0.65rem;font-size:0.8rem;background:#475569;">Mark read</button>` : ""}
+          ${!n.is_archived ? `<button type="button" data-nc-archive="${n.notification_id}" style="padding:0.35rem 0.65rem;font-size:0.8rem;background:#DC2626;">Archive</button>` : ""}
+        </div>
+      </div>`;
+    }
+
+    async function ncRefreshUnreadCount() {
+      try {
+        const response = await fetch("/api/v1/notifications/unread-count", { headers: ncAuthHeaders() });
+        if (!response.ok) {
+          ncUnreadBadgeEl.style.display = "none";
+          return;
+        }
+        const body = await response.json();
+        if (body.unread_count > 0) {
+          ncUnreadBadgeEl.textContent = String(body.unread_count);
+          ncUnreadBadgeEl.style.display = "inline-block";
+        } else {
+          ncUnreadBadgeEl.style.display = "none";
+        }
+      } catch (_err) {
+        ncUnreadBadgeEl.style.display = "none";
+      }
+    }
+
+    async function ncRefreshList() {
+      ncUpdateAuthHint();
+      ncRefreshBtn.disabled = true;
+      showEl(ncStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading notifications…</div>');
+      try {
+        const typeParam = ncTypeFilterSelect.value ? `&type=${encodeURIComponent(ncTypeFilterSelect.value)}` : "";
+        const response = await fetch(`/api/v1/notifications?limit=50${typeParam}`, { headers: ncAuthHeaders() });
+        if (response.status === 401) {
+          ncListEl.innerHTML = "";
+          showEl(ncStatusEl, '<div class="error">Authentication required — log in via the User Platform panel below.</div>');
+          return;
+        }
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Failed to load notifications.");
+        const notifications = body.notifications || [];
+        ncListEl.innerHTML = notifications.length
+          ? notifications.map(ncRenderNotification).join("")
+          : '<p class="empty-state">No notifications yet. Trigger an alert scenario above to generate some.</p>';
+        clearEl(ncStatusEl);
+        await ncRefreshUnreadCount();
+      } catch (error) {
+        showEl(ncStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        ncRefreshBtn.disabled = false;
+      }
+    }
+
+    async function ncMarkAllRead() {
+      try {
+        const response = await fetch("/api/v1/notifications/read-all", { method: "POST", headers: ncAuthHeaders() });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.detail || "Failed to mark all read.");
+        showEl(ncStatusEl, `<div class="hint" style="color:var(--emerald-dark);font-weight:650;">Marked ${body.marked_read} notification(s) read.</div>`);
+        await ncRefreshList();
+      } catch (error) {
+        showEl(ncStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      }
+    }
+
+    ncRefreshBtn.addEventListener("click", ncRefreshList);
+    ncMarkAllReadBtn.addEventListener("click", ncMarkAllRead);
+    ncTypeFilterSelect.addEventListener("change", ncRefreshList);
+    ncListEl.addEventListener("click", async (event) => {
+      const readBtn = event.target.closest("[data-nc-read]");
+      const archiveBtn = event.target.closest("[data-nc-archive]");
+      try {
+        if (readBtn) {
+          await fetch(`/api/v1/notifications/${encodeURIComponent(readBtn.getAttribute("data-nc-read"))}/read`, {
+            method: "POST", headers: ncAuthHeaders(),
+          });
+          await ncRefreshList();
+        } else if (archiveBtn) {
+          await fetch(`/api/v1/notifications/${encodeURIComponent(archiveBtn.getAttribute("data-nc-archive"))}/archive`, {
+            method: "POST", headers: ncAuthHeaders(),
+          });
+          await ncRefreshList();
+        }
+      } catch (error) {
+        showEl(ncStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      }
+    });
+    ncRefreshList();
+
+    // ================================================================
+    // Sprint 19 — Notification Preferences
+    // ================================================================
+    const npAuthHintEl = document.getElementById("np-auth-hint");
+    const npRefreshBtn = document.getElementById("np_refresh");
+    const npSaveBtn = document.getElementById("np_save");
+    const npStatusEl = document.getElementById("np-status");
+    const npCurrentEl = document.getElementById("np-current");
+    const npInAppEnabled = document.getElementById("np_in_app_enabled");
+    const npEmailEnabled = document.getElementById("np_email_enabled");
+    const npImmediateAlerts = document.getElementById("np_immediate_alerts");
+    const npDailyDigest = document.getElementById("np_daily_digest");
+    const npWeeklyDigest = document.getElementById("np_weekly_digest");
+    const npPriceAlerts = document.getElementById("np_price_alerts");
+    const npStockAlerts = document.getElementById("np_stock_alerts");
+    const npFreshnessWarnings = document.getElementById("np_freshness_warnings");
+    const npMarketingEnabled = document.getElementById("np_marketing_enabled");
+    const npQuietHoursStart = document.getElementById("np_quiet_hours_start");
+    const npQuietHoursEnd = document.getElementById("np_quiet_hours_end");
+    const npTimezone = document.getElementById("np_timezone");
+
+    function npAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        headers["Authorization"] = `Bearer ${upAccessToken}`;
+      }
+      return headers;
+    }
+
+    function npUpdateAuthHint() {
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        npAuthHintEl.innerHTML = `<span style="color:var(--emerald-dark);font-weight:650;">Authenticated as ${escapeHtml(upUserId || "")}.</span>`;
+      } else {
+        npAuthHintEl.innerHTML = `Not logged in — <strong>log in via the User Platform panel below</strong> first. Notification Preferences always require a Bearer token.`;
+      }
+    }
+
+    function npApplyToForm(prefs) {
+      npInAppEnabled.checked = !!prefs.in_app_enabled;
+      npEmailEnabled.checked = !!prefs.email_enabled;
+      npImmediateAlerts.checked = !!prefs.immediate_alerts;
+      npDailyDigest.checked = !!prefs.daily_digest;
+      npWeeklyDigest.checked = !!prefs.weekly_digest;
+      npPriceAlerts.checked = !!prefs.price_alerts;
+      npStockAlerts.checked = !!prefs.stock_alerts;
+      npFreshnessWarnings.checked = !!prefs.freshness_warnings;
+      npMarketingEnabled.checked = !!prefs.marketing_enabled;
+      npQuietHoursStart.value = prefs.quiet_hours_start || "";
+      npQuietHoursEnd.value = prefs.quiet_hours_end || "";
+      npTimezone.value = prefs.timezone || "UTC";
+    }
+
+    async function npRefresh() {
+      npUpdateAuthHint();
+      npRefreshBtn.disabled = true;
+      showEl(npStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading preferences…</div>');
+      try {
+        const response = await fetch("/api/v1/notification-preferences", { headers: npAuthHeaders() });
+        if (response.status === 401) {
+          npCurrentEl.innerHTML = "";
+          showEl(npStatusEl, '<div class="error">Authentication required — log in via the User Platform panel below.</div>');
+          return;
+        }
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Failed to load preferences.");
+        npApplyToForm(body);
+        npCurrentEl.innerHTML = `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        clearEl(npStatusEl);
+      } catch (error) {
+        showEl(npStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        npRefreshBtn.disabled = false;
+      }
+    }
+
+    async function npSave() {
+      npSaveBtn.disabled = true;
+      showEl(npStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Saving preferences…</div>');
+      try {
+        const response = await fetch("/api/v1/notification-preferences", {
+          method: "PUT",
+          headers: npAuthHeaders(),
+          body: JSON.stringify({
+            in_app_enabled: npInAppEnabled.checked,
+            email_enabled: npEmailEnabled.checked,
+            immediate_alerts: npImmediateAlerts.checked,
+            daily_digest: npDailyDigest.checked,
+            weekly_digest: npWeeklyDigest.checked,
+            price_alerts: npPriceAlerts.checked,
+            stock_alerts: npStockAlerts.checked,
+            freshness_warnings: npFreshnessWarnings.checked,
+            marketing_enabled: false,
+            quiet_hours_start: npQuietHoursStart.value.trim() || null,
+            clear_quiet_hours_start: npQuietHoursStart.value.trim() === "",
+            quiet_hours_end: npQuietHoursEnd.value.trim() || null,
+            clear_quiet_hours_end: npQuietHoursEnd.value.trim() === "",
+            timezone: npTimezone.value.trim() || "UTC",
+          }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(
+            response.status === 401
+              ? "Authentication required — log in via the User Platform panel below."
+              : body.detail || "Failed to save preferences."
+          );
+        }
+        npApplyToForm(body);
+        npCurrentEl.innerHTML = `<pre style="white-space:pre-wrap;">${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        showEl(npStatusEl, '<div class="hint" style="color:var(--emerald-dark);font-weight:650;">Preferences saved. Marketing remains disabled by default.</div>');
+      } catch (error) {
+        showEl(npStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        npSaveBtn.disabled = false;
+      }
+    }
+
+    npRefreshBtn.addEventListener("click", npRefresh);
+    npSaveBtn.addEventListener("click", npSave);
+    npRefresh();
+
+    // ================================================================
+    // Sprint 19 — Personalized Dashboard
+    // ================================================================
+    const dbAuthHintEl = document.getElementById("db-auth-hint");
+    const dbRefreshBtn = document.getElementById("db_refresh");
+    const dbStatusEl = document.getElementById("db-status");
+    const dbSummaryEl = document.getElementById("db-summary");
+    const dbFreshnessEl = document.getElementById("db-freshness");
+    const dbCardsEl = document.getElementById("db-cards");
+    const dbActivityEl = document.getElementById("db-activity");
+
+    function dbAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        headers["Authorization"] = `Bearer ${upAccessToken}`;
+      }
+      return headers;
+    }
+
+    function dbUpdateAuthHint() {
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        dbAuthHintEl.innerHTML = `<span style="color:var(--emerald-dark);font-weight:650;">Authenticated as ${escapeHtml(upUserId || "")}.</span>`;
+      } else {
+        dbAuthHintEl.innerHTML = `Not logged in — <strong>log in via the User Platform panel below</strong> first. The dashboard always requires a Bearer token.`;
+      }
+    }
+
+    function dbRenderCard(card) {
+      const items = card.items || [];
+      return `<div style="margin:0.5rem 0;padding:0.65rem 0;border-bottom:1px solid var(--border);">
+        <div><strong>${escapeHtml(card.title)}</strong> <span class="badge">${escapeHtml(card.card_type)}</span>
+          ${card.source_mode_label ? `<span class="badge neutral">${escapeHtml(card.source_mode_label)}</span>` : ""}
+        </div>
+        ${card.summary ? `<div class="hint" style="margin:0.25rem 0;">${escapeHtml(card.summary)}</div>` : ""}
+        ${card.freshness_label ? `<div class="hint" style="color:var(--danger);font-weight:650;">${escapeHtml(card.freshness_label)}</div>` : ""}
+        <div class="hint">${items.length} item(s)</div>
+        ${items.length ? `<pre style="white-space:pre-wrap;font-size:0.78rem;max-height:10rem;overflow:auto;">${escapeHtml(JSON.stringify(items.slice(0, 5), null, 2))}</pre>` : ""}
+      </div>`;
+    }
+
+    async function dbRefresh() {
+      dbUpdateAuthHint();
+      dbRefreshBtn.disabled = true;
+      showEl(dbStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading dashboard…</div>');
+      try {
+        const response = await fetch("/api/v1/dashboard?currency=PHP", { headers: dbAuthHeaders() });
+        if (response.status === 401) {
+          dbSummaryEl.innerHTML = "";
+          dbFreshnessEl.innerHTML = "";
+          dbCardsEl.innerHTML = "";
+          dbActivityEl.innerHTML = "";
+          showEl(dbStatusEl, '<div class="error">Authentication required — log in via the User Platform panel below.</div>');
+          return;
+        }
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Failed to load dashboard.");
+        const s = body.summary || {};
+        dbSummaryEl.innerHTML = [
+          wlStat("Watched products", s.watched_products || 0, true),
+          wlStat("Active rules", s.active_alert_rules || 0),
+          wlStat("Price drops", s.recent_price_drops || 0),
+          wlStat("Restocks", s.restocked_items || 0),
+          wlStat("Better offers", s.better_offers || 0),
+          wlStat("Unread", s.unread_notifications || 0, (s.unread_notifications || 0) > 0),
+          wlStat("Stale data", s.stale_data_count || 0),
+          wlStat("Potential savings", `${s.potential_savings_currency || "PHP"} ${Number(s.potential_savings || 0).toLocaleString()}`, true),
+        ].join("");
+        dbFreshnessEl.innerHTML = `
+          <p class="hint">${escapeHtml(s.savings_freshness_note || body.limitations || "")}</p>
+          <p class="hint">Personalization: <code>${escapeHtml(JSON.stringify(body.personalization || {}))}</code></p>
+        `;
+        const cards = body.cards || [];
+        dbCardsEl.innerHTML = cards.length ? cards.map(dbRenderCard).join("") : '<p class="empty-state">No cards yet.</p>';
+        const activity = body.recent_activity || [];
+        dbActivityEl.innerHTML = activity.length
+          ? `<ul>${activity.map((a) => `<li>${formatTs(a.created_at)} — ${escapeHtml(a.message)}</li>`).join("")}</ul>`
+          : '<p class="empty-state">No recent activity.</p>';
+        clearEl(dbStatusEl);
+      } catch (error) {
+        showEl(dbStatusEl, `<div class="error">${escapeHtml(error.message || String(error))}</div>`);
+      } finally {
+        dbRefreshBtn.disabled = false;
+      }
+    }
+
+    dbRefreshBtn.addEventListener("click", dbRefresh);
+    dbRefresh();
 
     const rvCollectBtn = document.getElementById("rv_collect");
     const rvRefreshBtn = document.getElementById("rv_refresh");
@@ -3840,6 +5122,7 @@
         upStatusEl.innerHTML = `<div class="hint">Logged in as ${escapeHtml(body.user.email)}</div>`;
         await upLoadProfile();
         await upLoadSaved();
+        sprint19RefreshAfterAuthChange();
       } catch (err) {
         upStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
       }
@@ -3857,6 +5140,18 @@
       upProfileEl.innerHTML = "";
       upSavedListEl.innerHTML = "";
       upStatusEl.innerHTML = '<div class="hint">Logged out.</div>';
+      sprint19RefreshAfterAuthChange();
+    }
+
+    // Re-fetch every Sprint 19 panel that depends on upAccessToken after a
+    // login/logout transition, so auth hints and data flip immediately.
+    function sprint19RefreshAfterAuthChange() {
+      refreshWatchlists();
+      arRefreshRules();
+      arRefreshEvents();
+      ncRefreshList();
+      npRefresh();
+      dbRefresh();
     }
 
     async function upLoadProfile() {

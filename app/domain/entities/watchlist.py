@@ -2,6 +2,12 @@
 
 Identifiers and timestamps are injected by callers — core types never generate
 random UUIDs or wall-clock times.
+
+Sprint 10 established the base Watchlist / WatchlistItem / Alert / mock
+notification types; existing callers and tests continue to work unmodified.
+Sprint 19 extends these types with status lifecycles, richer item metadata,
+a wider alert taxonomy, additional (still mock-only) notification channels,
+and watchlist history tracking.
 """
 
 from __future__ import annotations
@@ -13,12 +19,29 @@ from typing import Any
 
 
 class AlertType(StrEnum):
-    """Kinds of price / deal alerts that can be raised."""
+    """Kinds of price / deal alerts that can be raised.
+
+    The first four values are Sprint 10 originals and must not change.
+    """
 
     PRICE_DROP = "price_drop"
     TARGET_PRICE_REACHED = "target_price_reached"
     DEALSCORE_IMPROVED = "dealscore_improved"
     HISTORICAL_LOW = "historical_low"
+
+    # Sprint 19 additions.
+    PERCENTAGE_PRICE_DECREASE = "percentage_price_decrease"
+    ABSOLUTE_PRICE_DECREASE = "absolute_price_decrease"
+    PRICE_INCREASE = "price_increase"
+    RESTOCKED = "restocked"
+    UNAVAILABLE = "unavailable"
+    LOW_INVENTORY = "low_inventory"
+    BETTER_OFFER = "better_offer"
+    PREFERRED_SELLER_AVAILABLE = "preferred_seller_available"
+    PREFERRED_MARKETPLACE_AVAILABLE = "preferred_marketplace_available"
+    STALE_DATA = "stale_data"
+    FRESHNESS_RESTORED = "freshness_restored"
+    DEALSCORE_THRESHOLD = "dealscore_threshold"
 
 
 class AlertStatus(StrEnum):
@@ -31,16 +54,47 @@ class AlertStatus(StrEnum):
 
 
 class NotificationStatus(StrEnum):
-    """Outcome of a mock notification attempt."""
+    """Outcome of a mock notification attempt.
+
+    ``QUEUED`` and ``SKIPPED`` are Sprint 10 originals.
+    """
 
     QUEUED = "queued"
     SKIPPED = "skipped"
 
+    # Sprint 19 additions.
+    DELIVERED = "delivered"
+    FAILED = "failed"
+    SIMULATED = "simulated"
+
 
 class NotificationChannel(StrEnum):
-    """Notification delivery channel (mock only in Sprint 10)."""
+    """Notification delivery channel.
+
+    All channels remain mock/simulated only — no real email/SMS/push is sent.
+    ``MOCK`` is the Sprint 10 original default.
+    """
 
     MOCK = "mock"
+
+    # Sprint 19 additions (still simulated — see NotificationDelivery.simulated).
+    IN_APP = "in_app"
+    EMAIL = "email"
+
+
+class WatchlistStatus(StrEnum):
+    """Lifecycle status of a watchlist."""
+
+    ACTIVE = "active"
+    PAUSED = "paused"
+    ARCHIVED = "archived"
+
+
+class ItemKind(StrEnum):
+    """What a watchlist item tracks — a canonical product or a specific offer."""
+
+    PRODUCT = "product"
+    OFFER = "offer"
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +109,14 @@ class Watchlist:
     enabled: bool = True
     updated_at: datetime | None = None
 
+    # Sprint 19 additions.
+    is_default: bool = False
+    status: WatchlistStatus = WatchlistStatus.ACTIVE
+    paused_at: datetime | None = None
+    archived_at: datetime | None = None
+    preferred_sellers: tuple[str, ...] = ()
+    preferred_marketplaces: tuple[str, ...] = ()
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "watchlist_id": self.watchlist_id,
@@ -64,12 +126,18 @@ class Watchlist:
             "enabled": self.enabled,
             "created_at": self.created_at.isoformat(),
             "updated_at": (self.updated_at or self.created_at).isoformat(),
+            "is_default": self.is_default,
+            "status": self.status.value,
+            "paused_at": self.paused_at.isoformat() if self.paused_at else None,
+            "archived_at": self.archived_at.isoformat() if self.archived_at else None,
+            "preferred_sellers": list(self.preferred_sellers),
+            "preferred_marketplaces": list(self.preferred_marketplaces),
         }
 
 
 @dataclass(frozen=True, slots=True)
 class WatchlistItem:
-    """A tracked canonical product within a watchlist."""
+    """A tracked canonical product (or marketplace offer) within a watchlist."""
 
     item_id: str
     watchlist_id: str
@@ -84,6 +152,14 @@ class WatchlistItem:
     last_historical_low: float | None = None
     enabled: bool = True
     updated_at: datetime | None = None
+
+    # Sprint 19 additions.
+    marketplace_offer_id: str | None = None
+    notes: str | None = None
+    item_kind: ItemKind = ItemKind.PRODUCT
+    monitoring_paused: bool = False
+    preferred_sellers: tuple[str, ...] = ()
+    preferred_marketplaces: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -100,6 +176,12 @@ class WatchlistItem:
             "enabled": self.enabled,
             "created_at": self.created_at.isoformat(),
             "updated_at": (self.updated_at or self.created_at).isoformat(),
+            "marketplace_offer_id": self.marketplace_offer_id,
+            "notes": self.notes,
+            "item_kind": self.item_kind.value,
+            "monitoring_paused": self.monitoring_paused,
+            "preferred_sellers": list(self.preferred_sellers),
+            "preferred_marketplaces": list(self.preferred_marketplaces),
         }
 
 
@@ -206,4 +288,35 @@ class AlertEvaluationResult:
             "notifications": [note.to_dict() for note in self.notifications],
             "alerts_count": len(self.alerts_created),
             "evaluated_at": self.evaluated_at.isoformat(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class WatchlistHistoryEntry:
+    """Audit trail entry for a watchlist lifecycle or membership change.
+
+    Covers status transitions (pause/resume/archive), item add/remove, and
+    preference edits — used to power an activity feed without mutating the
+    watchlist itself.
+    """
+
+    history_id: str
+    watchlist_id: str
+    event_type: str
+    description: str
+    created_at: datetime
+    actor_id: str | None = None
+    item_id: str | None = None
+    metadata: dict[str, Any] | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "history_id": self.history_id,
+            "watchlist_id": self.watchlist_id,
+            "event_type": self.event_type,
+            "description": self.description,
+            "created_at": self.created_at.isoformat(),
+            "actor_id": self.actor_id,
+            "item_id": self.item_id,
+            "metadata": dict(self.metadata) if self.metadata else {},
         }
