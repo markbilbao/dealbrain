@@ -17,6 +17,7 @@ class ShoppingAssistantQueryRequest(BaseModel):
     use_cases: list[str] = Field(default_factory=list)
     category: str | None = None
     products: list[str] = Field(default_factory=list)
+    profile_id: str | None = Field(default=None, max_length=128)
 
 
 class EvidencePayload(BaseModel):
@@ -104,10 +105,13 @@ class ShoppingAssistantResponse(BaseModel):
     processing: dict[str, Any] = Field(default_factory=dict)
     generated_at: str | None = None
     allowed_modes: list[str] = Field(default_factory=list)
+    personal_recommendation: dict[str, Any] | None = None
+    profile_id: str | None = None
     disclaimer: str = (
         "Shopping assistant answers are evidence-grounded over DealBrain mock/imported "
         "data by default. External AI providers are disabled unless enabled server-side. "
-        "The assistant cannot guarantee prices, authenticity, or future price changes."
+        "The assistant cannot guarantee prices, authenticity, or future price changes. "
+        "Personalization uses fixture profiles only when a profile_id is provided."
     )
 
 

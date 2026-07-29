@@ -199,6 +199,13 @@ class Settings(BaseSettings):
         le=100,
     )
 
+    # Personal AI Shopping Agent — fixture profiles, no auth / payment / external DB
+    personal_agent_enabled: bool = Field(default=True, alias="PERSONAL_AGENT_ENABLED")
+    personal_agent_default_profile_id: str = Field(
+        default="profile-budget-student",
+        alias="PERSONAL_AGENT_DEFAULT_PROFILE_ID",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:

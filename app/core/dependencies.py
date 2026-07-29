@@ -119,6 +119,7 @@ from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
+from app.services.personal_agent_service import PersonalAgentService
 from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
@@ -154,6 +155,8 @@ _SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
 _COMMUNITY_INTELLIGENCE_SERVICE: CommunityIntelligenceService | None = None
 _KNOWLEDGE_GRAPH_SERVICE: KnowledgeGraphService | None = None
 _KNOWLEDGE_GRAPH_REPOSITORY = None
+_PERSONAL_AGENT_SERVICE: PersonalAgentService | None = None
+_PERSONAL_PROFILE_REPOSITORY = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -784,16 +787,55 @@ def get_knowledge_graph_service(
     return _KNOWLEDGE_GRAPH_SERVICE
 
 
+def get_personal_profile_repository():
+    """Provide the process-scoped fixture profile repository."""
+    global _PERSONAL_PROFILE_REPOSITORY
+    if _PERSONAL_PROFILE_REPOSITORY is None:
+        from app.intelligence.personal.memory import InMemoryCustomerProfileRepository
+
+        _PERSONAL_PROFILE_REPOSITORY = InMemoryCustomerProfileRepository(
+            default_profile_id=settings.personal_agent_default_profile_id,
+        )
+    return _PERSONAL_PROFILE_REPOSITORY
+
+
+def get_personal_agent_service(
+    community_service: CommunityIntelligenceService = Depends(get_community_intelligence_service),
+    knowledge_graph_service: KnowledgeGraphService = Depends(get_knowledge_graph_service),
+) -> PersonalAgentService:
+    """Provide the Personal AI Shopping Agent application service."""
+    global _PERSONAL_AGENT_SERVICE
+    from app.intelligence.personal.profile_manager import ProfileManager
+
+    community = community_service if settings.community_enabled else None
+    graph = knowledge_graph_service if settings.knowledge_graph_enabled else None
+    repository = get_personal_profile_repository()
+    if _PERSONAL_AGENT_SERVICE is None:
+        _PERSONAL_AGENT_SERVICE = PersonalAgentService(
+            profile_manager=ProfileManager(repository),
+            enabled=settings.personal_agent_enabled,
+            community_service=community,
+            knowledge_graph_service=graph,
+        )
+        return _PERSONAL_AGENT_SERVICE
+    _PERSONAL_AGENT_SERVICE._enabled = settings.personal_agent_enabled  # noqa: SLF001
+    _PERSONAL_AGENT_SERVICE._community = community  # noqa: SLF001
+    _PERSONAL_AGENT_SERVICE._knowledge_graph = graph  # noqa: SLF001
+    return _PERSONAL_AGENT_SERVICE
+
+
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
     community_service: CommunityIntelligenceService = Depends(get_community_intelligence_service),
     knowledge_graph_service: KnowledgeGraphService = Depends(get_knowledge_graph_service),
+    personal_agent_service: PersonalAgentService = Depends(get_personal_agent_service),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
     community = community_service if settings.community_enabled else None
     graph = knowledge_graph_service if settings.knowledge_graph_enabled else None
+    personal = personal_agent_service if settings.personal_agent_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
@@ -801,10 +843,12 @@ def get_shopping_assistant_service(
             max_query_length=settings.ai_shopping_max_query_length,
             community_service=community,
             knowledge_graph_service=graph,
+            personal_agent_service=personal,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._conversations = conversations  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._community = community  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._knowledge_graph = graph  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._personal_agent = personal  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE

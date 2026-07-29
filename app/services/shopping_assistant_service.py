@@ -55,6 +55,7 @@ class ShoppingAssistantService:
         confidence_calculator: ConfidenceCalculator | None = None,
         community_service: Any | None = None,
         knowledge_graph_service: Any | None = None,
+        personal_agent_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -73,6 +74,7 @@ class ShoppingAssistantService:
         self._confidence = confidence_calculator or ConfidenceCalculator()
         self._community = community_service
         self._knowledge_graph = knowledge_graph_service
+        self._personal_agent = personal_agent_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -111,6 +113,12 @@ class ShoppingAssistantService:
         if shopping_query.products:
             overrides["products"] = shopping_query.products
 
+        # Profile overrides fill gaps only — explicit query fields win.
+        profile_overrides = self._personal_overrides(shopping_query.profile_id)
+        for key, value in profile_overrides.items():
+            if key not in overrides or overrides[key] in (None, (), [], ""):
+                overrides[key] = value
+
         intent = self._intent_service.parse(
             cleaned,
             overrides=overrides or None,
@@ -137,6 +145,10 @@ class ShoppingAssistantService:
         )
         evidence = list(evidence) + self._graph_evidence_for(
             [item.product_id for item in candidates[:5]]
+        )
+        evidence = list(evidence) + self._personal_evidence_for(
+            [item.product_id for item in candidates[:5]],
+            profile_id=shopping_query.profile_id,
         )
         recommendations = self._recommendation_service.rank(
             candidates,
@@ -258,6 +270,30 @@ class ShoppingAssistantService:
                 )
             )
 
+        personal_payload = self._personal_recommendation_payload(
+            shopping_query.profile_id,
+            [item.product_id for item in candidates[:3]],
+        )
+        if shopping_query.profile_id and personal_payload is None and self._personal_agent is None:
+            warnings.append(
+                AssistantWarning(
+                    message=(
+                        "Personal profile was requested but the personal agent was unavailable; "
+                        "fell back to generic recommendations."
+                    ),
+                    code="personal_profile_unavailable",
+                )
+            )
+        elif shopping_query.profile_id and personal_payload is None:
+            warnings.append(
+                AssistantWarning(
+                    message=(
+                        "Requested profile could not be applied; fell back to generic mode."
+                    ),
+                    code="personal_profile_unavailable",
+                )
+            )
+
         if conversation_id is None and self._conversations is not None:
             created = getattr(self._conversations, "create", None)
             conversation_id = created().conversation_id if callable(created) else self._id_factory()
@@ -295,6 +331,29 @@ class ShoppingAssistantService:
         elif candidates and any(item.data_status == "live" for item in candidates[:3]):
             data_status = "live"
 
+        # Prefer personalized top recommendation when profile personalization succeeded.
+        if personal_payload and personal_payload.get("recommendation"):
+            personal_rec = personal_payload["recommendation"]
+            # Re-order generic top if personal agent ranked a different product higher
+            # among candidates — keep evidence-grounded SA ranking unless personal top
+            # is among candidates.
+            personal_pid = personal_rec.get("product_id")
+            if personal_pid and top is not None and personal_pid != top.product_id:
+                match = next(
+                    (item for item in recommendations if item.product_id == personal_pid),
+                    None,
+                )
+                if match is not None:
+                    alternatives = tuple(
+                        [top] + [item for item in alternatives if item.product_id != personal_pid]
+                    )[:2]
+                    top = match
+                    answer_prefix = (
+                        f"Personal recommendation for {personal_payload.get('profile_name')}: "
+                    )
+                    explained = dict(explained)
+                    explained["answer"] = answer_prefix + str(explained.get("answer") or "")
+
         response = ShoppingAssistantResponse(
             query=cleaned,
             intent=intent.intent,
@@ -321,8 +380,21 @@ class ShoppingAssistantService:
                 "candidate_count": len(candidates),
                 "community_integrated": self._community is not None,
                 "knowledge_graph_integrated": self._knowledge_graph is not None,
+                "personal_agent_integrated": self._personal_agent is not None,
+                "personalization_mode": "personal" if personal_payload else "generic",
+                "profile_id": (
+                    personal_payload.get("profile_id")
+                    if personal_payload
+                    else shopping_query.profile_id
+                ),
             },
             generated_at=self._clock(),
+            personal_recommendation=personal_payload,
+            profile_id=(
+                personal_payload.get("profile_id")
+                if personal_payload
+                else shopping_query.profile_id
+            ),
         )
         return self._validator.validate(response, evidence=evidence)
 
@@ -383,6 +455,57 @@ class ShoppingAssistantService:
             )
         return mapped
 
+    def _personal_overrides(self, profile_id: str | None) -> dict[str, Any]:
+        if self._personal_agent is None:
+            return {}
+        try:
+            return dict(self._personal_agent.shopping_assistant_overrides(profile_id) or {})
+        except Exception:  # noqa: BLE001
+            return {}
+
+    def _personal_evidence_for(
+        self,
+        product_ids: list[str],
+        *,
+        profile_id: str | None,
+    ) -> list[ShoppingEvidence]:
+        if self._personal_agent is None or not product_ids:
+            return []
+        try:
+            items = self._personal_agent.shopping_assistant_evidence(
+                product_ids, profile_id=profile_id
+            )
+        except Exception:  # noqa: BLE001
+            return []
+        mapped: list[ShoppingEvidence] = []
+        for item in items:
+            mapped.append(
+                ShoppingEvidence(
+                    evidence_id=str(item.get("evidence_id") or self._id_factory()),
+                    type="recommendation",
+                    source_id="personal_agent",
+                    description=str(item.get("description") or "Personal preference evidence"),
+                    product_id=item.get("product_id"),
+                    value=item.get("value"),
+                )
+            )
+        return mapped
+
+    def _personal_recommendation_payload(
+        self,
+        profile_id: str | None,
+        product_ids: list[str],
+    ) -> dict[str, Any] | None:
+        if self._personal_agent is None:
+            return None
+        try:
+            return self._personal_agent.shopping_assistant_personalize(
+                profile_id=profile_id,
+                product_ids=product_ids,
+            )
+        except Exception:  # noqa: BLE001
+            return None
+
     def demo(self, *, mode: str | None = None) -> ShoppingAssistantResponse:
         return self.query(
             ShoppingQuery(
@@ -424,6 +547,7 @@ class ShoppingAssistantService:
             use_cases=tuple(use_cases),
             category=request.get("category"),
             products=tuple(products),
+            profile_id=request.get("profile_id"),
         )
 
     def _require_query(self, query: str) -> str:
