@@ -58,6 +58,15 @@ class ShoppingAssistantService:
         personal_agent_service: Any | None = None,
         user_platform_service: Any | None = None,
         marketplace_data_service: Any | None = None,
+        # Sprint 19 additions — Watchlists/Alerts/Notification Center
+        # collaborators, all optional and duck-typed to avoid import cycles.
+        # Anonymous callers (no user_id) only ever get informational reads
+        # through these; every persistent write path below requires an
+        # authenticated user_id.
+        watchlist_service: Any | None = None,
+        alert_rule_service: Any | None = None,
+        notification_center_service: Any | None = None,
+        alert_evaluation_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -79,6 +88,10 @@ class ShoppingAssistantService:
         self._personal_agent = personal_agent_service
         self._user_platform = user_platform_service
         self._marketplace_data = marketplace_data_service
+        self._watchlist_service = watchlist_service
+        self._alert_rule_service = alert_rule_service
+        self._notification_center = notification_center_service
+        self._alert_evaluation_service = alert_evaluation_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -676,6 +689,161 @@ class ShoppingAssistantService:
             )
         except Exception:  # noqa: BLE001
             return
+
+    # ---------------------------------------------------------- Sprint 19: watchlists/alerts
+    async def add_to_watchlist(
+        self,
+        *,
+        user_id: str | None,
+        canonical_product_id: str,
+        watchlist_id: str | None = None,
+        product_label: str | None = None,
+        target_price: float | None = None,
+        currency: str = "PHP",
+    ) -> dict[str, Any]:
+        """Track a product from the assistant conversation. Requires ``user_id``.
+
+        Anonymous callers (``user_id`` falsy) never reach a persistent write —
+        this raises before touching the watchlist collaborator.
+        """
+        if not user_id:
+            raise ShoppingAssistantValidationError(
+                "Adding items to a watchlist requires an authenticated user_id."
+            )
+        if self._watchlist_service is None:
+            return {
+                "added": False,
+                "reason": "watchlist_service_unavailable",
+                "message": "Watchlists are not available in this deployment.",
+            }
+
+        target = self._resolve_or_create_watchlist(watchlist_id, user_id=user_id)
+        add_idempotent = getattr(self._watchlist_service, "add_item_idempotent", None)
+        if callable(add_idempotent):
+            item = await add_idempotent(
+                target.watchlist_id,
+                canonical_product_id=canonical_product_id,
+                product_label=product_label,
+                target_price=target_price,
+                currency=currency,
+            )
+        else:
+            item = await self._watchlist_service.add_item(
+                target.watchlist_id,
+                canonical_product_id=canonical_product_id,
+                product_label=product_label,
+                target_price=target_price,
+                currency=currency,
+            )
+        return {"added": True, "watchlist_id": target.watchlist_id, "item": item.to_dict()}
+
+    def _resolve_or_create_watchlist(self, watchlist_id: str | None, *, user_id: str) -> Any:
+        if watchlist_id:
+            return self._watchlist_service.get_watchlist(watchlist_id)
+        try:
+            existing = self._watchlist_service.list_watchlists(owner_id=user_id)
+        except TypeError:
+            existing = [
+                w for w in self._watchlist_service.list_watchlists() if w.owner_id == user_id
+            ]
+        if existing:
+            default = next((w for w in existing if getattr(w, "is_default", False)), None)
+            return default or existing[0]
+        create = self._watchlist_service.create_watchlist
+        try:
+            return create(name="My Watchlist", owner_id=user_id, is_default=True)
+        except TypeError:
+            return create(name="My Watchlist", owner_id=user_id)
+
+    def describe_active_alert_rules(self, user_id: str | None) -> list[dict[str, Any]]:
+        """List a user's currently-enabled alert rules. Anonymous users get none."""
+        if not user_id or self._alert_rule_service is None:
+            return []
+        try:
+            rules = self._alert_rule_service.list_rules(user_id=user_id, enabled=True)
+        except Exception:  # noqa: BLE001
+            return []
+        return [rule.to_dict() for rule in rules]
+
+    def summarize_recent_alerts(self, user_id: str | None, *, limit: int = 10) -> dict[str, Any]:
+        """Summarize a user's recent notifications. Anonymous users get an empty summary."""
+        if not user_id or self._notification_center is None:
+            return {"count": 0, "notifications": [], "available": False}
+        try:
+            notifications = self._notification_center.list_notifications(user_id, limit=limit)
+        except Exception:  # noqa: BLE001
+            return {"count": 0, "notifications": [], "available": False}
+        return {
+            "count": len(notifications),
+            "notifications": [n.to_dict() for n in notifications],
+            "available": True,
+        }
+
+    def explain_alert_trigger(
+        self, *, user_id: str | None, notification_id: str
+    ) -> dict[str, Any]:
+        """Explain why a specific notification/alert fired, from its stored metadata."""
+        if not user_id or self._notification_center is None:
+            return {"explained": False, "reason": "notification_center_unavailable"}
+        try:
+            notification = self._notification_center.get_notification(
+                notification_id, user_id=user_id
+            )
+        except Exception:  # noqa: BLE001
+            return {"explained": False, "reason": "notification_not_found"}
+        return {
+            "explained": True,
+            "title": notification.title,
+            "body": notification.body,
+            "type": notification.type.value,
+            "severity": notification.severity.value,
+            "metadata": dict(notification.metadata),
+        }
+
+    def recent_price_changes(self, user_id: str | None, *, limit: int = 10) -> list[dict[str, Any]]:
+        """Recent price-drop/price-increase notifications for a user."""
+        return self._notifications_by_types(
+            user_id, {"price_drop", "price_increase", "better_offer"}, limit=limit
+        )
+
+    def freshness_warnings(self, user_id: str | None, *, limit: int = 10) -> list[dict[str, Any]]:
+        """Recent data-freshness warning notifications for a user."""
+        return self._notifications_by_types(user_id, {"freshness_warning"}, limit=limit)
+
+    def _notifications_by_types(
+        self, user_id: str | None, types: set[str], *, limit: int
+    ) -> list[dict[str, Any]]:
+        if not user_id or self._notification_center is None:
+            return []
+        try:
+            notifications = self._notification_center.list_notifications(user_id, limit=200)
+        except Exception:  # noqa: BLE001
+            return []
+        matched = [n for n in notifications if n.type.value in types][:limit]
+        return [n.to_dict() for n in matched]
+
+    def recommend_buy_or_wait(self, product_name: str) -> dict[str, Any]:
+        """Informational buy-now/wait/keep-watching guidance for one product.
+
+        Read-only and available to anonymous callers — reuses the same
+        candidate lookup and evidence pipeline as :meth:`query`, without
+        persisting anything.
+        """
+        intent = self._intent_service.parse(product_name, overrides={"products": [product_name]})
+        candidates = self._candidate_service.find_candidates(intent)
+        if not candidates:
+            return {
+                "recommendation": None,
+                "message": f"No catalog match found for '{product_name}'.",
+            }
+        candidate = candidates[0]
+        evidence = self._evidence_service.build_for_candidates([candidate])
+        guidance = build_buy_now_or_wait(candidate, evidence)
+        return {
+            "product_id": candidate.product_id,
+            "product_name": candidate.product_name,
+            "guidance": guidance,
+        }
 
     def demo(self, *, mode: str | None = None) -> ShoppingAssistantResponse:
         return self.query(

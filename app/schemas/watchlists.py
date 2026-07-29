@@ -1,6 +1,15 @@
-"""Watchlists & Price Alerts API request and response schemas."""
+"""Watchlists & Price Alerts API request and response schemas.
+
+Sprint 10 schemas are kept unchanged in shape (new fields are additive with
+safe defaults) so existing clients/tests continue to decode responses and
+build requests unmodified. Sprint 19 adds owner-scoped lifecycle
+(default/pause/resume/archive), marketplace-offer items, preferred
+seller/marketplace tagging, item notes, and watchlist history.
+"""
 
 from __future__ import annotations
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +19,7 @@ class WatchlistCreateRequest(BaseModel):
     owner_id: str | None = None
     description: str | None = None
     enabled: bool = True
+    is_default: bool = False
 
 
 class WatchlistUpdateRequest(BaseModel):
@@ -17,6 +27,14 @@ class WatchlistUpdateRequest(BaseModel):
     owner_id: str | None = None
     description: str | None = None
     enabled: bool | None = None
+
+
+class WatchlistPreferredSellersRequest(BaseModel):
+    sellers: list[str] = Field(default_factory=list)
+
+
+class WatchlistPreferredMarketplacesRequest(BaseModel):
+    marketplaces: list[str] = Field(default_factory=list)
 
 
 class WatchlistPayload(BaseModel):
@@ -28,6 +46,14 @@ class WatchlistPayload(BaseModel):
     created_at: str
     updated_at: str
     item_count: int = 0
+
+    # Sprint 19 additions.
+    is_default: bool = False
+    status: str = "active"
+    paused_at: str | None = None
+    archived_at: str | None = None
+    preferred_sellers: list[str] = Field(default_factory=list)
+    preferred_marketplaces: list[str] = Field(default_factory=list)
 
 
 class WatchlistListResponse(BaseModel):
@@ -45,6 +71,10 @@ class WatchlistItemCreateRequest(BaseModel):
     last_known_dealscore: float | None = Field(default=None, ge=0, le=100)
     last_historical_low: float | None = Field(default=None, ge=0)
 
+    # Sprint 19 additions.
+    notes: str | None = None
+    marketplace_offer_id: str | None = None
+
 
 class WatchlistItemUpdateRequest(BaseModel):
     product_label: str | None = None
@@ -53,6 +83,10 @@ class WatchlistItemUpdateRequest(BaseModel):
     currency: str | None = None
     search_query: str | None = None
     enabled: bool | None = None
+
+    # Sprint 19 additions.
+    notes: str | None = None
+    clear_notes: bool = False
 
 
 class WatchlistItemPayload(BaseModel):
@@ -76,9 +110,51 @@ class WatchlistItemPayload(BaseModel):
     observation_count: int = 0
     price_available: bool = False
 
+    # Sprint 19 additions.
+    marketplace_offer_id: str | None = None
+    notes: str | None = None
+    item_kind: str = "product"
+    monitoring_paused: bool = False
+    preferred_sellers: list[str] = Field(default_factory=list)
+    preferred_marketplaces: list[str] = Field(default_factory=list)
+
 
 class WatchlistItemListResponse(BaseModel):
     items: list[WatchlistItemPayload] = Field(default_factory=list)
+
+
+class WatchlistItemPreferredSellersRequest(BaseModel):
+    sellers: list[str] = Field(default_factory=list)
+
+
+class WatchlistItemPreferredMarketplacesRequest(BaseModel):
+    marketplaces: list[str] = Field(default_factory=list)
+
+
+class WatchlistOfferCreateRequest(BaseModel):
+    """Track a specific marketplace offer on a watchlist (Sprint 19)."""
+
+    marketplace_offer_id: str = Field(..., min_length=1)
+    canonical_product_id: str | None = None
+    product_label: str | None = None
+    target_price: float | None = Field(default=None, ge=0)
+    currency: str = "PHP"
+    notes: str | None = None
+
+
+class WatchlistHistoryEntryPayload(BaseModel):
+    history_id: str
+    watchlist_id: str
+    event_type: str
+    description: str
+    created_at: str
+    actor_id: str | None = None
+    item_id: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class WatchlistHistoryListResponse(BaseModel):
+    history: list[WatchlistHistoryEntryPayload] = Field(default_factory=list)
 
 
 class AlertPayload(BaseModel):

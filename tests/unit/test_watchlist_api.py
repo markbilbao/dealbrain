@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
+from app.core.config import settings
 from app.core.dependencies import (
     get_alert_repository,
     get_alert_service,
@@ -35,7 +36,13 @@ PRODUCT_ID = IPHONE_DEMO_CANONICAL_PRODUCT_ID
 
 
 @pytest.fixture
-async def wl_client() -> AsyncGenerator[AsyncClient, None]:
+async def wl_client(monkeypatch: pytest.MonkeyPatch) -> AsyncGenerator[AsyncClient, None]:
+    # Sprint 19 adds Bearer-auth + ownership enforcement to these endpoints,
+    # gated by ``settings.watchlists_require_auth`` (default True). These
+    # Sprint 10 tests exercise the API without any Authorization header, so
+    # disable the requirement here to keep them green without weakening the
+    # production default.
+    monkeypatch.setattr(settings, "watchlists_require_auth", False)
     repo = InMemoryWatchlistRepository()
     store = InMemoryPriceHistoryStore()
     price = PriceHistoryService(store, app_env="development")

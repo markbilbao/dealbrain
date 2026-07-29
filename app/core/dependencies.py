@@ -5,7 +5,9 @@ from collections.abc import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.alerts.memory import InMemoryAlertRuleRepository
 from app.core.config import settings
+from app.domain.interfaces.alert_rule_repository import AlertEventRepository, AlertRuleRepository
 from app.domain.interfaces.canonical_registry import (
     CanonicalProductRegistry,
     CanonicalProductStore,
@@ -16,6 +18,7 @@ from app.domain.interfaces.deal_score_engine import DealScoreEngine
 from app.domain.interfaces.marketplace_collector import MarketplaceCollector
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.marketplace_rate_limiter import MarketplaceRateLimiter
+from app.domain.interfaces.notification_center_repository import NotificationCenterRepository
 from app.domain.interfaces.notification_service import NotificationService
 from app.domain.interfaces.price_history_store import PriceHistoryStore
 from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
@@ -109,7 +112,6 @@ from app.intelligence.shopping_assistant import (
     ShoppingExplanationRegistry,
 )
 from app.intelligence.watchlists import (
-    InMemoryWatchlistRepository,
     MockNotificationService,
 )
 from app.marketplace import (
@@ -119,6 +121,10 @@ from app.marketplace import (
     MarketplaceConnectorRegistry,
     MockLiveMarketplaceConnector,
 )
+from app.notifications.delivery import EnhancedNotificationService
+from app.notifications.memory import InMemoryNotificationCenterRepository
+from app.services.alert_evaluation_service import AlertEvaluationService
+from app.services.alert_rule_service import AlertRuleService
 from app.services.alert_service import AlertService
 from app.services.collection_operations_service import CollectionOperationsService
 from app.services.community_intelligence_service import CommunityIntelligenceService
@@ -127,6 +133,8 @@ from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_data_service import MarketplaceDataService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
+from app.services.notification_center_service import NotificationCenterService
+from app.services.notification_preference_service import NotificationPreferenceService
 from app.services.personal_agent_service import PersonalAgentService
 from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
@@ -135,8 +143,12 @@ from app.services.review_service import ReviewService
 from app.services.review_summary_service import ReviewSummaryService
 from app.services.shopping_assistant_service import ShoppingAssistantService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
+from app.services.user_dashboard_service import UserDashboardService
 from app.services.user_platform_service import UserPlatformService
 from app.services.watchlist_service import WatchlistService
+from app.services.watchlist_service_ext import ExtendedWatchlistService
+from app.watchlists.memory import InMemoryWatchlistStore
+from app.watchlists.security import WatchlistAuditLogger
 
 # Process-scoped in-memory registry for demo / local runs without Postgres.
 _MEMORY_CANONICAL_STORE = InMemoryCanonicalProductStore()
@@ -146,7 +158,10 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
     max_requests=100,
     window_seconds=60.0,
 )
-_MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistRepository()
+_MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistStore()
+_MEMORY_ALERT_RULE_REPOSITORY = InMemoryAlertRuleRepository()
+_MEMORY_NOTIFICATION_CENTER_REPOSITORY = InMemoryNotificationCenterRepository()
+_WATCHLIST_AUDIT_LOGGER = WatchlistAuditLogger()
 _MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
 _MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
 _MEMORY_SHOPPING_CONVERSATION_REPOSITORY = InMemoryConversationRepository(
@@ -158,6 +173,12 @@ _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
 _COLLECTION_OPERATIONS_SERVICE: CollectionOperationsService | None = None
 _WATCHLIST_SERVICE: WatchlistService | None = None
 _ALERT_SERVICE: AlertService | None = None
+_ALERT_RULE_SERVICE: AlertRuleService | None = None
+_ALERT_EVALUATION_SERVICE: AlertEvaluationService | None = None
+_NOTIFICATION_CENTER_SERVICE: NotificationCenterService | None = None
+_NOTIFICATION_PREFERENCE_SERVICE: NotificationPreferenceService | None = None
+_ENHANCED_NOTIFICATION_SERVICE: EnhancedNotificationService | None = None
+_USER_DASHBOARD_SERVICE: UserDashboardService | None = None
 _REVIEW_SERVICE: ReviewService | None = None
 _REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
 _SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
@@ -454,6 +475,11 @@ def get_notification_service() -> NotificationService:
     return _MOCK_NOTIFICATION_SERVICE
 
 
+def get_watchlist_audit_logger() -> WatchlistAuditLogger:
+    """Provide the process-scoped watchlist audit logger (Sprint 19)."""
+    return _WATCHLIST_AUDIT_LOGGER
+
+
 def get_watchlist_service(
     repository: WatchlistRepository = Depends(get_watchlist_repository),
     price_history_service: PriceHistoryService = Depends(get_price_history_service),
@@ -461,15 +487,17 @@ def get_watchlist_service(
         get_deal_recommendation_service
     ),
     registry: CanonicalProductRegistry = Depends(get_canonical_product_registry),
+    audit_logger: WatchlistAuditLogger = Depends(get_watchlist_audit_logger),
 ) -> WatchlistService:
-    """Provide the Watchlist orchestration service."""
+    """Provide the Watchlist orchestration service (Sprint 19-extended)."""
     global _WATCHLIST_SERVICE
     if _WATCHLIST_SERVICE is None:
-        _WATCHLIST_SERVICE = WatchlistService(
+        _WATCHLIST_SERVICE = ExtendedWatchlistService(
             repository,
             price_history_service=price_history_service,
             deal_recommendation_service=deal_recommendation_service,
             canonical_registry=registry,
+            audit_logger=audit_logger,
         )
         return _WATCHLIST_SERVICE
 
@@ -477,6 +505,135 @@ def get_watchlist_service(
     _WATCHLIST_SERVICE._deal_recommendation = deal_recommendation_service  # noqa: SLF001
     _WATCHLIST_SERVICE._registry = registry  # noqa: SLF001
     return _WATCHLIST_SERVICE
+
+
+def get_extended_watchlist_service(
+    service: WatchlistService = Depends(get_watchlist_service),
+) -> ExtendedWatchlistService:
+    """Provide the Watchlist service, typed as its Sprint 19 extension.
+
+    ``get_watchlist_service`` always constructs an :class:`ExtendedWatchlistService`
+    (see above); this alias exists for call sites that want that Sprint
+    19-specific type in their signature.
+    """
+    assert isinstance(service, ExtendedWatchlistService)  # noqa: S101 - DI wiring invariant
+    return service
+
+
+def get_alert_rule_repository() -> AlertRuleRepository:
+    """Provide the process-scoped in-memory alert rule repository (Sprint 19)."""
+    return _MEMORY_ALERT_RULE_REPOSITORY
+
+
+def get_alert_event_repository() -> AlertEventRepository:
+    """Provide the process-scoped in-memory alert event repository (Sprint 19).
+
+    Backed by the same store as :func:`get_alert_rule_repository` —
+    :class:`InMemoryAlertRuleRepository` implements both ports.
+    """
+    return _MEMORY_ALERT_RULE_REPOSITORY
+
+
+def get_notification_center_repository() -> NotificationCenterRepository:
+    """Provide the process-scoped in-memory Notification Center repository (Sprint 19)."""
+    return _MEMORY_NOTIFICATION_CENTER_REPOSITORY
+
+
+def get_notification_preference_service(
+    repository: NotificationCenterRepository = Depends(get_notification_center_repository),
+) -> NotificationPreferenceService:
+    """Provide the Notification Preference service (Sprint 19)."""
+    global _NOTIFICATION_PREFERENCE_SERVICE
+    if _NOTIFICATION_PREFERENCE_SERVICE is None:
+        _NOTIFICATION_PREFERENCE_SERVICE = NotificationPreferenceService(repository)
+    return _NOTIFICATION_PREFERENCE_SERVICE
+
+
+def get_notification_center_service(
+    repository: NotificationCenterRepository = Depends(get_notification_center_repository),
+    preference_service: NotificationPreferenceService = Depends(
+        get_notification_preference_service
+    ),
+) -> NotificationCenterService:
+    """Provide the Notification Center application service (Sprint 19)."""
+    global _NOTIFICATION_CENTER_SERVICE
+    if _NOTIFICATION_CENTER_SERVICE is None:
+        _NOTIFICATION_CENTER_SERVICE = NotificationCenterService(
+            repository, preference_service=preference_service
+        )
+        return _NOTIFICATION_CENTER_SERVICE
+    _NOTIFICATION_CENTER_SERVICE._preferences = preference_service  # noqa: SLF001
+    return _NOTIFICATION_CENTER_SERVICE
+
+
+def get_enhanced_notification_service(
+    notification_center_service: NotificationCenterService = Depends(
+        get_notification_center_service
+    ),
+) -> EnhancedNotificationService:
+    """Provide the Sprint 19 notification adapter, fanning out to the Notification Center."""
+    global _ENHANCED_NOTIFICATION_SERVICE
+    center = notification_center_service if settings.watchlists_alerts_enabled else None
+    if _ENHANCED_NOTIFICATION_SERVICE is None:
+        _ENHANCED_NOTIFICATION_SERVICE = EnhancedNotificationService(
+            notification_center_service=center
+        )
+        return _ENHANCED_NOTIFICATION_SERVICE
+    _ENHANCED_NOTIFICATION_SERVICE._notification_center = center  # noqa: SLF001
+    return _ENHANCED_NOTIFICATION_SERVICE
+
+
+def get_alert_rule_service(
+    repository: AlertRuleRepository = Depends(get_alert_rule_repository),
+    watchlist_repository: WatchlistRepository = Depends(get_watchlist_repository),
+) -> AlertRuleService:
+    """Provide the Alert Rule CRUD service (Sprint 19)."""
+    global _ALERT_RULE_SERVICE
+    if _ALERT_RULE_SERVICE is None:
+        _ALERT_RULE_SERVICE = AlertRuleService(
+            repository, watchlist_repository=watchlist_repository
+        )
+    return _ALERT_RULE_SERVICE
+
+
+def get_alert_evaluation_service(
+    rule_repository: AlertRuleRepository = Depends(get_alert_rule_repository),
+    watchlist_repository: WatchlistRepository = Depends(get_watchlist_repository),
+    event_repository: AlertEventRepository = Depends(get_alert_event_repository),
+    alert_repository: AlertRepository = Depends(get_alert_repository),
+    notification_service: EnhancedNotificationService = Depends(get_enhanced_notification_service),
+    notification_center_service: NotificationCenterService = Depends(
+        get_notification_center_service
+    ),
+    price_history_service: PriceHistoryService = Depends(get_price_history_service),
+    deal_recommendation_service: DealRecommendationService = Depends(
+        get_deal_recommendation_service
+    ),
+    marketplace_data_service: MarketplaceDataService = Depends(get_marketplace_data_service),
+) -> AlertEvaluationService:
+    """Provide the rule-driven Alert Evaluation orchestration service (Sprint 19)."""
+    global _ALERT_EVALUATION_SERVICE
+    center = notification_center_service if settings.watchlists_alerts_enabled else None
+    market_data = marketplace_data_service if settings.marketplace_data_enabled else None
+    if _ALERT_EVALUATION_SERVICE is None:
+        _ALERT_EVALUATION_SERVICE = AlertEvaluationService(
+            rule_repository,
+            watchlist_repository,
+            event_repository=event_repository,
+            alert_repository=alert_repository,
+            notification_service=notification_service,
+            notification_center_service=center,
+            price_history_service=price_history_service,
+            deal_recommendation_service=deal_recommendation_service,
+            marketplace_data_service=market_data,
+        )
+        return _ALERT_EVALUATION_SERVICE
+
+    _ALERT_EVALUATION_SERVICE._price_history = price_history_service  # noqa: SLF001
+    _ALERT_EVALUATION_SERVICE._deal_recommendation = deal_recommendation_service  # noqa: SLF001
+    _ALERT_EVALUATION_SERVICE._marketplace_data = market_data  # noqa: SLF001
+    _ALERT_EVALUATION_SERVICE._notification_center = center  # noqa: SLF001
+    return _ALERT_EVALUATION_SERVICE
 
 
 def get_alert_service(
@@ -487,9 +644,15 @@ def get_alert_service(
     deal_recommendation_service: DealRecommendationService = Depends(
         get_deal_recommendation_service
     ),
+    notification_center_service: NotificationCenterService = Depends(
+        get_notification_center_service
+    ),
+    marketplace_data_service: MarketplaceDataService = Depends(get_marketplace_data_service),
 ) -> AlertService:
     """Provide the Alert evaluation service."""
     global _ALERT_SERVICE
+    center = notification_center_service if settings.watchlists_alerts_enabled else None
+    market_data = marketplace_data_service if settings.marketplace_data_enabled else None
     if _ALERT_SERVICE is None:
         _ALERT_SERVICE = AlertService(
             repository,
@@ -497,12 +660,16 @@ def get_alert_service(
             price_history_service=price_history_service,
             notification_service=notification_service,
             deal_recommendation_service=deal_recommendation_service,
+            notification_center_service=center,
+            marketplace_data_service=market_data,
         )
         return _ALERT_SERVICE
 
     _ALERT_SERVICE._price_history = price_history_service  # noqa: SLF001
     _ALERT_SERVICE._notifications = notification_service  # noqa: SLF001
     _ALERT_SERVICE._deal_recommendation = deal_recommendation_service  # noqa: SLF001
+    _ALERT_SERVICE._notification_center = center  # noqa: SLF001
+    _ALERT_SERVICE._marketplace_data = market_data  # noqa: SLF001
     return _ALERT_SERVICE
 
 
@@ -922,6 +1089,41 @@ def get_user_platform_service() -> UserPlatformService:
     return _USER_PLATFORM_SERVICE
 
 
+def get_user_dashboard_service(
+    watchlist_service: WatchlistService = Depends(get_watchlist_service),
+    alert_rule_service: AlertRuleService = Depends(get_alert_rule_service),
+    alert_repository: AlertRepository = Depends(get_alert_repository),
+    alert_event_repository: AlertEventRepository = Depends(get_alert_event_repository),
+    notification_center_service: NotificationCenterService = Depends(
+        get_notification_center_service
+    ),
+    marketplace_data_service: MarketplaceDataService = Depends(get_marketplace_data_service),
+    user_platform_service: UserPlatformService = Depends(get_user_platform_service),
+) -> UserDashboardService:
+    """Provide the User Dashboard aggregation service (Sprint 19)."""
+    global _USER_DASHBOARD_SERVICE
+    market_data = marketplace_data_service if settings.marketplace_data_enabled else None
+    user_platform = user_platform_service if settings.user_platform_enabled else None
+    if _USER_DASHBOARD_SERVICE is None:
+        _USER_DASHBOARD_SERVICE = UserDashboardService(
+            watchlist_service,
+            alert_rule_service=alert_rule_service,
+            alert_repository=alert_repository,
+            alert_event_repository=alert_event_repository,
+            notification_center_service=notification_center_service,
+            marketplace_data_service=market_data,
+            user_platform_service=user_platform,
+        )
+        return _USER_DASHBOARD_SERVICE
+
+    _USER_DASHBOARD_SERVICE._watchlist_service = watchlist_service  # noqa: SLF001
+    _USER_DASHBOARD_SERVICE._alert_rules = alert_rule_service  # noqa: SLF001
+    _USER_DASHBOARD_SERVICE._notification_center = notification_center_service  # noqa: SLF001
+    _USER_DASHBOARD_SERVICE._marketplace_data = market_data  # noqa: SLF001
+    _USER_DASHBOARD_SERVICE._user_platform = user_platform  # noqa: SLF001
+    return _USER_DASHBOARD_SERVICE
+
+
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
@@ -930,6 +1132,12 @@ def get_shopping_assistant_service(
     personal_agent_service: PersonalAgentService = Depends(get_personal_agent_service),
     user_platform_service: UserPlatformService = Depends(get_user_platform_service),
     marketplace_data_service: MarketplaceDataService = Depends(get_marketplace_data_service),
+    watchlist_service: WatchlistService = Depends(get_watchlist_service),
+    alert_rule_service: AlertRuleService = Depends(get_alert_rule_service),
+    notification_center_service: NotificationCenterService = Depends(
+        get_notification_center_service
+    ),
+    alert_evaluation_service: AlertEvaluationService = Depends(get_alert_evaluation_service),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
@@ -938,6 +1146,12 @@ def get_shopping_assistant_service(
     personal = personal_agent_service if settings.personal_agent_enabled else None
     user_platform = user_platform_service if settings.user_platform_enabled else None
     marketplace_data = marketplace_data_service if settings.marketplace_data_enabled else None
+    watchlists = watchlist_service if settings.watchlists_alerts_enabled else None
+    alert_rules = alert_rule_service if settings.watchlists_alerts_enabled else None
+    notification_center = (
+        notification_center_service if settings.watchlists_alerts_enabled else None
+    )
+    alert_evaluation = alert_evaluation_service if settings.watchlists_alerts_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
@@ -948,6 +1162,10 @@ def get_shopping_assistant_service(
             personal_agent_service=personal,
             user_platform_service=user_platform,
             marketplace_data_service=marketplace_data,
+            watchlist_service=watchlists,
+            alert_rule_service=alert_rules,
+            notification_center_service=notification_center,
+            alert_evaluation_service=alert_evaluation,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
@@ -957,4 +1175,8 @@ def get_shopping_assistant_service(
     _SHOPPING_ASSISTANT_SERVICE._personal_agent = personal  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._user_platform = user_platform  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._marketplace_data = marketplace_data  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._watchlist_service = watchlists  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._alert_rule_service = alert_rules  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._notification_center = notification_center  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._alert_evaluation_service = alert_evaluation  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE

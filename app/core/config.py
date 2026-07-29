@@ -216,6 +216,16 @@ class Settings(BaseSettings):
         alias="MARKETPLACE_DATA_REQUIRE_AUTH",
     )
 
+    # Watchlists, Alert Rules, Notification Center & Dashboard — Sprint 19
+    watchlists_alerts_enabled: bool = Field(
+        default=True,
+        alias="WATCHLISTS_ALERTS_ENABLED",
+    )
+    watchlists_require_auth: bool = Field(
+        default=True,
+        alias="WATCHLISTS_REQUIRE_AUTH",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:

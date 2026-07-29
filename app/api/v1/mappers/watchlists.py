@@ -7,6 +7,7 @@ from app.domain.entities.watchlist import (
     AlertEvaluationResult,
     NotificationReceipt,
     Watchlist,
+    WatchlistHistoryEntry,
     WatchlistItem,
     WatchlistItemSnapshot,
 )
@@ -14,6 +15,7 @@ from app.schemas.watchlists import (
     AlertEvaluationResponse,
     AlertPayload,
     NotificationReceiptPayload,
+    WatchlistHistoryEntryPayload,
     WatchlistItemPayload,
     WatchlistPayload,
 )
@@ -29,6 +31,25 @@ def to_watchlist_payload(watchlist: Watchlist, *, item_count: int = 0) -> Watchl
         created_at=watchlist.created_at.isoformat(),
         updated_at=(watchlist.updated_at or watchlist.created_at).isoformat(),
         item_count=item_count,
+        is_default=watchlist.is_default,
+        status=watchlist.status.value,
+        paused_at=watchlist.paused_at.isoformat() if watchlist.paused_at else None,
+        archived_at=watchlist.archived_at.isoformat() if watchlist.archived_at else None,
+        preferred_sellers=list(watchlist.preferred_sellers),
+        preferred_marketplaces=list(watchlist.preferred_marketplaces),
+    )
+
+
+def to_history_payload(entry: WatchlistHistoryEntry) -> WatchlistHistoryEntryPayload:
+    return WatchlistHistoryEntryPayload(
+        history_id=entry.history_id,
+        watchlist_id=entry.watchlist_id,
+        event_type=entry.event_type,
+        description=entry.description,
+        created_at=entry.created_at.isoformat(),
+        actor_id=entry.actor_id,
+        item_id=entry.item_id,
+        metadata=dict(entry.metadata) if entry.metadata else {},
     )
 
 
@@ -63,6 +84,12 @@ def to_item_payload(
         observed_currency=observed_currency,
         observation_count=observation_count,
         price_available=price_available,
+        marketplace_offer_id=item.marketplace_offer_id,
+        notes=item.notes,
+        item_kind=item.item_kind.value,
+        monitoring_paused=item.monitoring_paused,
+        preferred_sellers=list(item.preferred_sellers),
+        preferred_marketplaces=list(item.preferred_marketplaces),
     )
 
 

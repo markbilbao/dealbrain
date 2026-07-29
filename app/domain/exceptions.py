@@ -364,3 +364,52 @@ class MarketplaceDataRateLimitError(Exception):
     def __init__(self, message: str = "Marketplace connector rate limit exceeded.") -> None:
         self.message = message
         super().__init__(message)
+
+
+class AlertRuleNotFoundError(Exception):
+    """Raised when an alert rule cannot be found."""
+
+    def __init__(self, rule_id: str) -> None:
+        self.rule_id = rule_id
+        super().__init__(f"Alert rule not found: {rule_id}")
+
+
+class AlertRuleValidationError(Exception):
+    """Raised when alert rule inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class NotificationNotFoundError(Exception):
+    """Raised when a notification cannot be found."""
+
+    def __init__(self, notification_id: str) -> None:
+        self.notification_id = notification_id
+        super().__init__(f"Notification not found: {notification_id}")
+
+
+class NotificationValidationError(Exception):
+    """Raised when notification center inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class DashboardValidationError(Exception):
+    """Raised when dashboard aggregation inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class WatchlistOwnershipError(Exception):
+    """Raised when a user attempts to access a watchlist they do not own."""
+
+    def __init__(self, watchlist_id: str, owner_id: str | None = None) -> None:
+        self.watchlist_id = watchlist_id
+        self.owner_id = owner_id
+        super().__init__(f"Watchlist {watchlist_id} is not owned by the requesting user.")
