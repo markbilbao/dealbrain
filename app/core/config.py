@@ -137,6 +137,29 @@ class Settings(BaseSettings):
     )
     ai_shopping_live_http: bool = Field(default=False, alias="AI_SHOPPING_LIVE_HTTP")
 
+    # Community Intelligence Platform — connectors + AI summarization (disabled by default)
+    community_enabled: bool = Field(default=True, alias="COMMUNITY_ENABLED")
+    community_reddit_enabled: bool = Field(default=True, alias="COMMUNITY_REDDIT_ENABLED")
+    community_youtube_enabled: bool = Field(default=False, alias="COMMUNITY_YOUTUBE_ENABLED")
+    community_amazon_qa_enabled: bool = Field(default=False, alias="COMMUNITY_AMAZON_QA_ENABLED")
+    community_marketplace_qa_enabled: bool = Field(
+        default=False,
+        alias="COMMUNITY_MARKETPLACE_QA_ENABLED",
+    )
+    community_forums_enabled: bool = Field(default=False, alias="COMMUNITY_FORUMS_ENABLED")
+    community_discord_enabled: bool = Field(default=False, alias="COMMUNITY_DISCORD_ENABLED")
+    community_use_fixtures: bool = Field(default=True, alias="COMMUNITY_USE_FIXTURES")
+    ai_community_enabled: bool = Field(default=False, alias="AI_COMMUNITY_ENABLED")
+    ai_community_mode: Literal["economy", "balanced", "maximum"] = Field(
+        default="economy",
+        alias="AI_COMMUNITY_MODE",
+    )
+    ai_community_allow_client_mode: bool = Field(
+        default=True,
+        alias="AI_COMMUNITY_ALLOW_CLIENT_MODE",
+    )
+    ai_community_live_http: bool = Field(default=False, alias="AI_COMMUNITY_LIVE_HTTP")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
@@ -170,6 +193,11 @@ class Settings(BaseSettings):
     def ai_shopping_external_calls_enabled(self) -> bool:
         """True only when shopping AI is on AND live HTTP is explicitly enabled."""
         return self.ai_shopping_enabled and self.ai_shopping_live_http
+
+    @property
+    def ai_community_external_calls_enabled(self) -> bool:
+        """True only when community AI is on AND live HTTP is explicitly enabled."""
+        return self.ai_community_enabled and self.ai_community_live_http
 
 
 @lru_cache

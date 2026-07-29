@@ -16,6 +16,7 @@ from app.domain.entities.shopping_assistant import (
     AssistantWarning,
     ConversationTurn,
     ShoppingAssistantResponse,
+    ShoppingEvidence,
     ShoppingQuery,
 )
 from app.domain.exceptions import ShoppingAssistantValidationError
@@ -52,6 +53,7 @@ class ShoppingAssistantService:
         orchestrator: ShoppingAssistantOrchestrator | None = None,
         conversation_repository: ConversationRepository | None = None,
         confidence_calculator: ConfidenceCalculator | None = None,
+        community_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -68,6 +70,7 @@ class ShoppingAssistantService:
         self._orchestrator = orchestrator
         self._conversations = conversation_repository
         self._confidence = confidence_calculator or ConfidenceCalculator()
+        self._community = community_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -127,6 +130,9 @@ class ShoppingAssistantService:
 
         candidates = self._candidate_service.find_candidates(intent)
         evidence = self._evidence_service.build_for_candidates(candidates[:5])
+        evidence = list(evidence) + self._community_evidence_for(
+            [item.product_id for item in candidates[:5]]
+        )
         recommendations = self._recommendation_service.rank(
             candidates,
             evidence,
@@ -299,10 +305,36 @@ class ShoppingAssistantService:
                 "secrets_included": False,
                 "prompts_included": False,
                 "candidate_count": len(candidates),
+                "community_integrated": self._community is not None,
             },
             generated_at=self._clock(),
         )
         return self._validator.validate(response, evidence=evidence)
+
+    def _community_evidence_for(self, product_ids: list[str]) -> list[ShoppingEvidence]:
+        """Map provider-neutral community evidence into shopping evidence items."""
+        if self._community is None or not product_ids:
+            return []
+        try:
+            community_items = self._community.shopping_assistant_evidence(product_ids)
+        except Exception:  # noqa: BLE001
+            return []
+        mapped: list[ShoppingEvidence] = []
+        for item in community_items:
+            mapped.append(
+                ShoppingEvidence(
+                    evidence_id=item.evidence_id,
+                    type="community",
+                    source_id="community_intelligence",
+                    description=(
+                        f"Community {item.topic}: {item.title or item.body[:120]} "
+                        f"({item.sentiment.label})"
+                    ),
+                    product_id=item.product_id,
+                    value=item.topic,
+                )
+            )
+        return mapped
 
     def demo(self, *, mode: str | None = None) -> ShoppingAssistantResponse:
         return self.query(
