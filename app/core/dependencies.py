@@ -31,6 +31,12 @@ from app.domain.interfaces.watchlist_repository import (
     AlertRepository,
     WatchlistRepository,
 )
+from app.infrastructure.ai.community_providers import (
+    ClaudeCommunityProvider,
+    DeterministicCommunityProviderAdapter,
+    GeminiCommunityProvider,
+    OpenAICommunityProvider,
+)
 from app.infrastructure.ai.review_providers import (
     ClaudeReviewProvider,
     DeterministicReviewProvider,
@@ -44,6 +50,15 @@ from app.infrastructure.ai.shopping_providers import (
     OpenAIShoppingProvider,
 )
 from app.infrastructure.ai.transports import DisabledTransport
+from app.infrastructure.community import (
+    AmazonQACommunityProvider,
+    DiscordCommunityProvider,
+    ManufacturerForumsCommunityProvider,
+    MarketplaceQuestionsCommunityProvider,
+    MockCommunityTransport,
+    RedditCommunityProvider,
+    YouTubeCommunityProvider,
+)
 from app.infrastructure.database.repositories.canonical_product_repository import (
     SqlAlchemyCanonicalProductStore,
 )
@@ -62,6 +77,12 @@ from app.intelligence.collection import (
     InMemoryMarketplaceRateLimiter,
     MockLazadaCollector,
     MockShopeeCollector,
+)
+from app.intelligence.community import (
+    CommunityAIOrchestrator,
+    CommunityOrchestrator,
+    CommunityRegistry,
+    CommunitySummaryRegistry,
 )
 from app.intelligence.dealscore import WeightedDealScoreEngine
 from app.intelligence.marketplace import LazadaConnector, ShopeeConnector
@@ -82,27 +103,6 @@ from app.intelligence.reviews import (
     MockShopeeReviewCollector,
     MockTikTokShopReviewCollector,
 )
-from app.infrastructure.ai.community_providers import (
-    ClaudeCommunityProvider,
-    DeterministicCommunityProviderAdapter,
-    GeminiCommunityProvider,
-    OpenAICommunityProvider,
-)
-from app.infrastructure.community import (
-    AmazonQACommunityProvider,
-    DiscordCommunityProvider,
-    ManufacturerForumsCommunityProvider,
-    MarketplaceQuestionsCommunityProvider,
-    MockCommunityTransport,
-    RedditCommunityProvider,
-    YouTubeCommunityProvider,
-)
-from app.intelligence.community import (
-    CommunityAIOrchestrator,
-    CommunityOrchestrator,
-    CommunityRegistry,
-    CommunitySummaryRegistry,
-)
 from app.intelligence.shopping_assistant import (
     InMemoryConversationRepository,
     ShoppingAssistantOrchestrator,
@@ -116,6 +116,7 @@ from app.services.alert_service import AlertService
 from app.services.collection_operations_service import CollectionOperationsService
 from app.services.community_intelligence_service import CommunityIntelligenceService
 from app.services.deal_recommendation_service import DealRecommendationService
+from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
 from app.services.price_history_service import PriceHistoryService
@@ -151,6 +152,8 @@ _REVIEW_SERVICE: ReviewService | None = None
 _REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
 _SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
 _COMMUNITY_INTELLIGENCE_SERVICE: CommunityIntelligenceService | None = None
+_KNOWLEDGE_GRAPH_SERVICE: KnowledgeGraphService | None = None
+_KNOWLEDGE_GRAPH_REPOSITORY = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -355,9 +358,7 @@ def get_collection_scheduler(
 
 
 def get_collection_operations_service(
-    collection_service: MarketplaceCollectionService = Depends(
-        get_marketplace_collection_service
-    ),
+    collection_service: MarketplaceCollectionService = Depends(get_marketplace_collection_service),
     repository: CollectionJobRepository = Depends(get_collection_job_repository),
     scheduler: CollectionScheduler = Depends(get_collection_scheduler),
     collectors: list[MarketplaceCollector] = Depends(get_marketplace_collectors),
@@ -725,25 +726,85 @@ def get_community_intelligence_service(
     return _COMMUNITY_INTELLIGENCE_SERVICE
 
 
+def get_knowledge_graph_repository():
+    """Provide the process-scoped in-memory knowledge graph repository."""
+    global _KNOWLEDGE_GRAPH_REPOSITORY
+    if _KNOWLEDGE_GRAPH_REPOSITORY is None:
+        from app.intelligence.knowledge_graph.memory import InMemoryKnowledgeGraphRepository
+
+        _KNOWLEDGE_GRAPH_REPOSITORY = InMemoryKnowledgeGraphRepository(
+            schema_version=settings.knowledge_graph_snapshot_schema_version,
+        )
+    return _KNOWLEDGE_GRAPH_REPOSITORY
+
+
+def get_knowledge_graph_engine(
+    repository=Depends(get_knowledge_graph_repository),
+):
+    """Provide the Knowledge Graph engine with server-enforced limits."""
+    from app.domain.entities.knowledge_graph import GraphLimits
+    from app.intelligence.knowledge_graph.engine import KnowledgeGraphEngine
+
+    return KnowledgeGraphEngine(
+        repository,
+        limits=GraphLimits(
+            max_depth=settings.knowledge_graph_max_depth,
+            max_nodes=settings.knowledge_graph_max_nodes,
+            max_edges=settings.knowledge_graph_max_edges,
+            max_paths=settings.knowledge_graph_max_paths,
+            min_confidence=settings.knowledge_graph_min_confidence,
+        ),
+    )
+
+
+def get_knowledge_graph_service(
+    engine=Depends(get_knowledge_graph_engine),
+    community_service: CommunityIntelligenceService = Depends(get_community_intelligence_service),
+) -> KnowledgeGraphService:
+    """Provide the Knowledge Graph application service."""
+    global _KNOWLEDGE_GRAPH_SERVICE
+    from app.intelligence.knowledge_graph.adapters import CommunityEvidenceAdapter
+    from app.intelligence.knowledge_graph.aggregator import KnowledgeGraphAggregator
+
+    community = community_service if settings.community_enabled else None
+    aggregator = KnowledgeGraphAggregator(
+        engine,
+        community_adapter=CommunityEvidenceAdapter(community),
+    )
+    if _KNOWLEDGE_GRAPH_SERVICE is None:
+        _KNOWLEDGE_GRAPH_SERVICE = KnowledgeGraphService(
+            engine,
+            aggregator=aggregator,
+            enabled=settings.knowledge_graph_enabled,
+        )
+        return _KNOWLEDGE_GRAPH_SERVICE
+    _KNOWLEDGE_GRAPH_SERVICE._engine = engine  # noqa: SLF001
+    _KNOWLEDGE_GRAPH_SERVICE._aggregator = aggregator  # noqa: SLF001
+    _KNOWLEDGE_GRAPH_SERVICE._enabled = settings.knowledge_graph_enabled  # noqa: SLF001
+    return _KNOWLEDGE_GRAPH_SERVICE
+
+
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
-    community_service: CommunityIntelligenceService = Depends(
-        get_community_intelligence_service
-    ),
+    community_service: CommunityIntelligenceService = Depends(get_community_intelligence_service),
+    knowledge_graph_service: KnowledgeGraphService = Depends(get_knowledge_graph_service),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
     community = community_service if settings.community_enabled else None
+    graph = knowledge_graph_service if settings.knowledge_graph_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
             conversation_repository=conversations,
             max_query_length=settings.ai_shopping_max_query_length,
             community_service=community,
+            knowledge_graph_service=graph,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._conversations = conversations  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._community = community  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._knowledge_graph = graph  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE

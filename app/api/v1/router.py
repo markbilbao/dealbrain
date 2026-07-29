@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     collections,
     community,
     dealscore,
+    graph,
     health,
     intelligence,
     marketplace,
@@ -28,12 +29,11 @@ api_v1_router.include_router(dealscore.router, tags=["dealscore"])
 api_v1_router.include_router(recommendations.router, tags=["recommendations"])
 api_v1_router.include_router(price_history.router, tags=["price-history"])
 api_v1_router.include_router(collections.router, tags=["collections"])
-api_v1_router.include_router(
-    collection_operations.router, tags=["collection-operations"]
-)
+api_v1_router.include_router(collection_operations.router, tags=["collection-operations"])
 api_v1_router.include_router(watchlists.router, tags=["watchlists"])
 api_v1_router.include_router(watchlists.alerts_router, tags=["alerts"])
 api_v1_router.include_router(reviews.router, tags=["reviews"])
 api_v1_router.include_router(review_summary.router, tags=["review-summary"])
 api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])
 api_v1_router.include_router(community.router, tags=["community"])
+api_v1_router.include_router(graph.router, tags=["knowledge-graph"])
