@@ -122,6 +122,7 @@ from app.marketplace import (
     MarketplaceConnectorRegistry,
     MockLiveMarketplaceConnector,
 )
+from app.merchant.memory import InMemoryMerchantRepository
 from app.notifications.delivery import EnhancedNotificationService
 from app.notifications.memory import InMemoryNotificationCenterRepository
 from app.services.affiliate_disclosure_service import AffiliateDisclosureService
@@ -139,6 +140,15 @@ from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_data_service import MarketplaceDataService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
+from app.services.merchant_admin_service import MerchantAdminService
+from app.services.merchant_analytics_service import MerchantAnalyticsService
+from app.services.merchant_auth_service import MerchantAuthService
+from app.services.merchant_campaign_service import MerchantCampaignService
+from app.services.merchant_membership_service import MerchantMembershipService
+from app.services.merchant_offer_service import MerchantOfferService
+from app.services.merchant_organization_service import MerchantOrganizationService
+from app.services.merchant_product_service import MerchantProductService
+from app.services.merchant_promotion_service import MerchantPromotionService
 from app.services.notification_center_service import NotificationCenterService
 from app.services.notification_preference_service import NotificationPreferenceService
 from app.services.personal_agent_service import PersonalAgentService
@@ -168,6 +178,7 @@ _MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistStore()
 _MEMORY_ALERT_RULE_REPOSITORY = InMemoryAlertRuleRepository()
 _MEMORY_NOTIFICATION_CENTER_REPOSITORY = InMemoryNotificationCenterRepository()
 _MEMORY_AFFILIATE_REPOSITORY = InMemoryAffiliateRepository()
+_MEMORY_MERCHANT_REPOSITORY = InMemoryMerchantRepository()
 _WATCHLIST_AUDIT_LOGGER = WatchlistAuditLogger()
 _MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
 _MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
@@ -191,6 +202,15 @@ _AFFILIATE_LINK_SERVICE: AffiliateLinkService | None = None
 _AFFILIATE_TRACKING_SERVICE: AffiliateTrackingService | None = None
 _AFFILIATE_REPORTING_SERVICE: AffiliateReportingService | None = None
 _AFFILIATE_DISCLOSURE_SERVICE: AffiliateDisclosureService | None = None
+_MERCHANT_AUTH_SERVICE: MerchantAuthService | None = None
+_MERCHANT_ORGANIZATION_SERVICE: MerchantOrganizationService | None = None
+_MERCHANT_MEMBERSHIP_SERVICE: MerchantMembershipService | None = None
+_MERCHANT_PRODUCT_SERVICE: MerchantProductService | None = None
+_MERCHANT_OFFER_SERVICE: MerchantOfferService | None = None
+_MERCHANT_PROMOTION_SERVICE: MerchantPromotionService | None = None
+_MERCHANT_CAMPAIGN_SERVICE: MerchantCampaignService | None = None
+_MERCHANT_ANALYTICS_SERVICE: MerchantAnalyticsService | None = None
+_MERCHANT_ADMIN_SERVICE: MerchantAdminService | None = None
 _REVIEW_SERVICE: ReviewService | None = None
 _REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
 _SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
@@ -1203,6 +1223,119 @@ def get_affiliate_disclosure_service(
     if _AFFILIATE_DISCLOSURE_SERVICE is None:
         _AFFILIATE_DISCLOSURE_SERVICE = AffiliateDisclosureService(repository)
     return _AFFILIATE_DISCLOSURE_SERVICE
+
+
+def get_merchant_repository() -> InMemoryMerchantRepository:
+    """Provide the process-scoped in-memory Merchant Platform store (Sprint 21)."""
+    return _MEMORY_MERCHANT_REPOSITORY
+
+
+def get_merchant_auth_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantAuthService:
+    """Provide merchant actor resolution (Sprint 21)."""
+    global _MERCHANT_AUTH_SERVICE
+    if _MERCHANT_AUTH_SERVICE is None:
+        _MERCHANT_AUTH_SERVICE = MerchantAuthService(repository, repository)
+    return _MERCHANT_AUTH_SERVICE
+
+
+def get_merchant_organization_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantOrganizationService:
+    """Provide merchant organization management (Sprint 21)."""
+    global _MERCHANT_ORGANIZATION_SERVICE
+    if _MERCHANT_ORGANIZATION_SERVICE is None:
+        _MERCHANT_ORGANIZATION_SERVICE = MerchantOrganizationService(
+            repository, repository, repository
+        )
+    return _MERCHANT_ORGANIZATION_SERVICE
+
+
+def get_merchant_membership_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantMembershipService:
+    """Provide merchant membership / invitation management (Sprint 21)."""
+    global _MERCHANT_MEMBERSHIP_SERVICE
+    if _MERCHANT_MEMBERSHIP_SERVICE is None:
+        _MERCHANT_MEMBERSHIP_SERVICE = MerchantMembershipService(repository, repository, repository)
+    return _MERCHANT_MEMBERSHIP_SERVICE
+
+
+def get_merchant_product_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantProductService:
+    """Provide merchant product submission service (Sprint 21)."""
+    global _MERCHANT_PRODUCT_SERVICE
+    if _MERCHANT_PRODUCT_SERVICE is None:
+        _MERCHANT_PRODUCT_SERVICE = MerchantProductService(
+            repository, repository, matcher=repository.matcher
+        )
+    return _MERCHANT_PRODUCT_SERVICE
+
+
+def get_merchant_offer_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantOfferService:
+    """Provide merchant offer submission service (Sprint 21)."""
+    global _MERCHANT_OFFER_SERVICE
+    if _MERCHANT_OFFER_SERVICE is None:
+        _MERCHANT_OFFER_SERVICE = MerchantOfferService(repository, repository)
+    return _MERCHANT_OFFER_SERVICE
+
+
+def get_merchant_promotion_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantPromotionService:
+    """Provide merchant promotion management (Sprint 21)."""
+    global _MERCHANT_PROMOTION_SERVICE
+    if _MERCHANT_PROMOTION_SERVICE is None:
+        _MERCHANT_PROMOTION_SERVICE = MerchantPromotionService(repository, repository)
+    return _MERCHANT_PROMOTION_SERVICE
+
+
+def get_merchant_campaign_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantCampaignService:
+    """Provide sponsored campaign draft management (Sprint 21)."""
+    global _MERCHANT_CAMPAIGN_SERVICE
+    if _MERCHANT_CAMPAIGN_SERVICE is None:
+        _MERCHANT_CAMPAIGN_SERVICE = MerchantCampaignService(repository, repository)
+    return _MERCHANT_CAMPAIGN_SERVICE
+
+
+def get_merchant_analytics_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    affiliate_repo: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+) -> MerchantAnalyticsService:
+    """Provide merchant analytics + ranking explanations (Sprint 21)."""
+    global _MERCHANT_ANALYTICS_SERVICE
+    if _MERCHANT_ANALYTICS_SERVICE is None:
+        _MERCHANT_ANALYTICS_SERVICE = MerchantAnalyticsService(
+            repository,
+            repository,
+            repository,
+            repository,
+            repository,
+            affiliate_click_lister=affiliate_repo.list_clicks,
+        )
+        return _MERCHANT_ANALYTICS_SERVICE
+    _MERCHANT_ANALYTICS_SERVICE._affiliate_click_lister = (  # noqa: SLF001
+        affiliate_repo.list_clicks
+    )
+    return _MERCHANT_ANALYTICS_SERVICE
+
+
+def get_merchant_admin_service(
+    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+) -> MerchantAdminService:
+    """Provide internal admin review workflows (Sprint 21)."""
+    global _MERCHANT_ADMIN_SERVICE
+    if _MERCHANT_ADMIN_SERVICE is None:
+        _MERCHANT_ADMIN_SERVICE = MerchantAdminService(
+            repository, repository, repository, repository
+        )
+    return _MERCHANT_ADMIN_SERVICE
 
 
 def get_shopping_assistant_service(

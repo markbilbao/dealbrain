@@ -1216,6 +1216,68 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Merchant platform">
+      <h2 class="panel-heading">Merchant Platform</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Sprint 21 · demo merchants only · merchant-submitted data is <strong>not</strong> live verified ·
+        sponsored campaigns are drafts (no billing) · merchants cannot alter organic DealScore or ranking ·
+        analytics are demo/simulated.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="mp_org" style="flex:1;min-width:12rem;">
+          Merchant organization
+          <select id="mp_org">
+            <option value="org-techhaven">TechHaven (US)</option>
+            <option value="org-gadgetgrove">GadgetGrove (PH)</option>
+          </select>
+        </label>
+        <label for="mp_token" style="flex:1.4;min-width:14rem;">
+          Demo actor token
+          <select id="mp_token">
+            <option value="demo-token-techhaven-owner">TechHaven Owner</option>
+            <option value="demo-token-techhaven-editor">TechHaven Editor</option>
+            <option value="demo-token-gadgetgrove-owner">GadgetGrove Owner</option>
+            <option value="demo-token-internal-admin">Internal Admin</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="mp_refresh" type="button">Load merchant dashboard</button>
+        <button id="mp_submit_product" type="button" style="background:#0F172A;">Submit demo product</button>
+        <button id="mp_admin_review" type="button" style="background:#475569;">Admin review panel</button>
+      </div>
+      <div id="mp-summary" class="meta" style="margin-top:1rem;"></div>
+      <div id="mp-status" class="status" aria-live="polite"></div>
+      <section id="mp-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Merchant profile</h3>
+        <div id="mp-profile"></div>
+        <h3 class="section-title">Team members &amp; roles</h3>
+        <div id="mp-members"></div>
+        <h3 class="section-title">Product submissions</h3>
+        <div id="mp-products"></div>
+        <h3 class="section-title">Offer management</h3>
+        <div id="mp-offers"></div>
+        <h3 class="section-title">Promotions</h3>
+        <div id="mp-promotions"></div>
+        <h3 class="section-title">Campaign drafts (sponsored)</h3>
+        <div id="mp-campaigns"></div>
+        <h3 class="section-title">Analytics dashboard (demo)</h3>
+        <div id="mp-analytics"></div>
+        <h3 class="section-title">Affiliate performance (read-only)</h3>
+        <div id="mp-affiliate"></div>
+        <h3 class="section-title">DealScore / ranking explanation</h3>
+        <div id="mp-ranking"></div>
+        <h3 class="section-title">Product matching confidence</h3>
+        <div id="mp-matching"></div>
+        <h3 class="section-title">Audit history</h3>
+        <div id="mp-audit"></div>
+        <h3 class="section-title">Admin review panel</h3>
+        <div id="mp-admin"></div>
+        <h3 class="section-title">Limitations</h3>
+        <div id="mp-limitations"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
@@ -5421,6 +5483,128 @@
       }
     });
     loadUserPlatformMeta();
+
+    // ---------------------------------------------------------- Sprint 21: Merchant Platform
+    const mpOrgEl = document.getElementById("mp_org");
+    const mpTokenEl = document.getElementById("mp_token");
+    const mpRefreshBtn = document.getElementById("mp_refresh");
+    const mpSubmitBtn = document.getElementById("mp_submit_product");
+    const mpAdminBtn = document.getElementById("mp_admin_review");
+    const mpSummaryEl = document.getElementById("mp-summary");
+    const mpStatusEl = document.getElementById("mp-status");
+
+    function mpHeaders() {
+      return { "Authorization": "Bearer " + mpTokenEl.value, "Content-Type": "application/json" };
+    }
+    function mpOrg() { return mpOrgEl.value; }
+    function mpSet(id, html) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+    function mpJsonTable(rows) {
+      if (!rows || !rows.length) return '<div class="hint">No items.</div>';
+      return '<pre style="white-space:pre-wrap;font-size:0.85rem;">' + escapeHtml(JSON.stringify(rows, null, 2)) + '</pre>';
+    }
+
+    async function mpLoadDashboard() {
+      mpStatusEl.innerHTML = '<div class="hint">Loading merchant dashboard…</div>';
+      const org = mpOrg();
+      const headers = mpHeaders();
+      try {
+        const [meta, profile, members, products, offers, promotions, campaigns, analytics, audit] = await Promise.all([
+          fetch("/api/v1/merchants/meta/demo").then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/members`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/products`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/offers`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/promotions`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/campaigns`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/analytics`, { headers }).then(r => r.json()),
+          fetch(`/api/v1/merchants/${org}/audit-log`, { headers }).then(r => r.json()),
+        ]);
+
+        mpSummaryEl.innerHTML = `<div class="hint"><strong>${escapeHtml(profile.profile?.display_name || org)}</strong> · status ${escapeHtml(profile.status || "?")} · verification ${escapeHtml(profile.profile?.verification_status || "?")} · affiliate link ${escapeHtml(profile.affiliate_merchant_id || "none")}</div>`;
+        mpSet("mp-profile", mpJsonTable([profile]));
+        mpSet("mp-members", mpJsonTable(members.items || []));
+        mpSet("mp-products", mpJsonTable((products.items || []).map(p => ({
+          submission_id: p.submission_id, title: p.title, status: p.status,
+          source_mode: p.source_mode, source_label: p.source_label,
+          match: p.match_result, matched_product_id: p.matched_product_id,
+          validation_errors: p.validation_errors
+        }))));
+        mpSet("mp-offers", mpJsonTable(offers.items || []));
+        mpSet("mp-promotions", mpJsonTable((promotions.items || []).map(p => ({
+          ...p, note: p.note || "Promotions do not automatically increase DealScore."
+        }))));
+        mpSet("mp-campaigns", mpJsonTable((campaigns.items || []).map(c => ({
+          campaign_id: c.campaign_id, name: c.name, status: c.status,
+          sponsored_label: c.sponsored_label,
+          organic_ranking_independent: c.organic_ranking_independent,
+          billing: c.billing, placements: c.placements
+        }))));
+        mpSet("mp-analytics", `<div class="hint" style="color:var(--emerald-dark);font-weight:650;">${escapeHtml(analytics.label || "Demo analytics")}</div>` + mpJsonTable([analytics]));
+        mpSet("mp-affiliate", mpJsonTable([analytics.affiliate || { read_only: true, simulated: true }]));
+
+        const productId = (products.items || []).find(p => p.matched_product_id)?.matched_product_id || "prod-laptop-x1";
+        try {
+          const ranking = await fetch(`/api/v1/merchants/${org}/products/${productId}/ranking-explanation`, { headers }).then(r => r.json());
+          mpSet("mp-ranking", mpJsonTable([ranking]));
+        } catch (e) {
+          mpSet("mp-ranking", `<div class="hint">${escapeHtml(String(e))}</div>`);
+        }
+
+        const matchRows = (products.items || []).map(p => ({
+          submission_id: p.submission_id,
+          title: p.title,
+          match_result: p.match_result,
+          matched_product_id: p.matched_product_id,
+          note: "Low-confidence matches are never silently merged."
+        }));
+        mpSet("mp-matching", mpJsonTable(matchRows));
+        mpSet("mp-audit", mpJsonTable(audit.items || []));
+        mpSet("mp-limitations", '<ul>' + (meta.limitations || []).map(l => `<li>${escapeHtml(l)}</li>`).join("") + '</ul>');
+        mpSet("mp-admin", '<div class="hint">Use Internal Admin token + “Admin review panel” to load pending submissions.</div>');
+        mpStatusEl.innerHTML = '<div class="hint">Merchant dashboard loaded. Labels: demo analytics · simulated conversions · draft sponsored campaigns · merchant-submitted / unverified data.</div>';
+      } catch (err) {
+        mpStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    mpRefreshBtn.addEventListener("click", () => mpLoadDashboard());
+    mpSubmitBtn.addEventListener("click", async () => {
+      const org = mpOrg();
+      const headers = mpHeaders();
+      try {
+        const created = await fetch(`/api/v1/merchants/${org}/products`, {
+          method: "POST", headers,
+          body: JSON.stringify({
+            title: "NovaTech X1 Pro 14-inch Laptop — Merchant Demo",
+            brand: "NovaTech", model: "X1 Pro", sku: "NT-X1PRO-14",
+            upc: "012345678901", merchant_product_id: "mp-x1-001",
+            image_urls: ["https://cdn.techhaven.demo/products/x1-demo.png"],
+            description: "Demo merchant product submission for matching.",
+            warranty: "1 year limited"
+          })
+        }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.detail || r.statusText); return j; });
+        const submitted = await fetch(`/api/v1/merchants/${org}/products/${created.submission_id}/submit`, {
+          method: "POST", headers
+        }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.detail || r.statusText); return j; });
+        mpStatusEl.innerHTML = `<div class="hint">Submitted ${escapeHtml(submitted.submission_id)} · match ${escapeHtml(JSON.stringify(submitted.match_result))} · source ${escapeHtml(submitted.source_mode)}</div>`;
+        await mpLoadDashboard();
+      } catch (err) {
+        mpStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    mpAdminBtn.addEventListener("click", async () => {
+      const headers = { "Authorization": "Bearer demo-token-internal-admin", "Content-Type": "application/json" };
+      try {
+        const subs = await fetch("/api/v1/admin/merchant-submissions", { headers }).then(r => r.json());
+        mpSet("mp-admin", '<div class="hint">INTERNAL_ADMIN review — approve/reject only; never changes organic ranking.</div>' + mpJsonTable(subs.items || []));
+        mpStatusEl.innerHTML = '<div class="hint">Admin review panel loaded.</div>';
+      } catch (err) {
+        mpStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
   </script>
 </body>
 </html>
