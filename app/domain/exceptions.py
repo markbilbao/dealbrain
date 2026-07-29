@@ -171,3 +171,54 @@ class ReviewNotFoundError(Exception):
     def __init__(self, product_id: str) -> None:
         self.product_id = product_id
         super().__init__(f"No review snapshots found for product: {product_id}")
+
+
+class ReviewSummaryValidationError(Exception):
+    """Raised when review summary inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class ReviewSummaryNotFoundError(Exception):
+    """Raised when no review summary exists for a product."""
+
+    def __init__(self, product_id: str) -> None:
+        self.product_id = product_id
+        super().__init__(f"No review summary found for product: {product_id}")
+
+
+class AIProviderUnavailableError(Exception):
+    """Raised when an AI review provider cannot serve a request."""
+
+    def __init__(self, provider: str, reason: str, *, error_code: str = "unavailable") -> None:
+        self.provider = provider
+        self.reason = reason
+        self.error_code = error_code
+        super().__init__(f"AI provider {provider} unavailable: {reason}")
+
+
+class AIProviderTimeoutError(AIProviderUnavailableError):
+    """Raised when a provider exceeds the configured timeout."""
+
+    def __init__(self, provider: str, timeout_seconds: float) -> None:
+        super().__init__(
+            provider,
+            f"timed out after {timeout_seconds}s",
+            error_code="timeout",
+        )
+
+
+class AIProviderRateLimitError(AIProviderUnavailableError):
+    """Raised when a provider reports rate limiting."""
+
+    def __init__(self, provider: str) -> None:
+        super().__init__(provider, "rate limited", error_code="rate_limited")
+
+
+class AIProviderMalformedResponseError(AIProviderUnavailableError):
+    """Raised when provider output fails structural parsing."""
+
+    def __init__(self, provider: str, detail: str) -> None:
+        super().__init__(provider, detail, error_code="malformed")

@@ -1,7 +1,8 @@
 """Base AI provider adapter.
 
-Concrete providers (OpenAI, Anthropic, local models) should subclass
-``app.domain.interfaces.ai_provider.AIProvider`` and live in this package.
+Generic ``AIProvider`` remains for future LLM modules. Review-summary adapters
+live under ``app.infrastructure.ai.review_providers`` and implement
+``AIReviewProvider``.
 """
 
 from app.domain.interfaces.ai_provider import AIProvider

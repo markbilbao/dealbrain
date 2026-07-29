@@ -22,10 +22,21 @@ from app.domain.interfaces.product_intelligence import ProductIntelligenceEngine
 from app.domain.interfaces.product_matcher import ProductMatcher
 from app.domain.interfaces.recommendation_engine import RecommendationEngine
 from app.domain.interfaces.review_repository import ReviewCollector, ReviewRepository
+from app.domain.interfaces.review_summary_repository import (
+    ReviewSummarizer,
+    ReviewSummaryRepository,
+)
 from app.domain.interfaces.watchlist_repository import (
     AlertRepository,
     WatchlistRepository,
 )
+from app.infrastructure.ai.review_providers import (
+    ClaudeReviewProvider,
+    DeterministicReviewProvider,
+    GeminiReviewProvider,
+    OpenAIReviewProvider,
+)
+from app.infrastructure.ai.transports import DisabledTransport
 from app.infrastructure.database.repositories.canonical_product_repository import (
     SqlAlchemyCanonicalProductStore,
 )
@@ -51,6 +62,12 @@ from app.intelligence.price_history import InMemoryPriceHistoryStore
 from app.intelligence.product_matcher import ExactVariantProductMatcher
 from app.intelligence.product_parser import RuleBasedProductParser
 from app.intelligence.recommendation import RuleBasedRecommendationEngine
+from app.intelligence.review_summary import (
+    DeterministicMockReviewSummarizer,
+    InMemoryReviewSummaryRepository,
+)
+from app.intelligence.review_summary.orchestrator import MultiModelReviewOrchestrator
+from app.intelligence.review_summary.registry import AIProviderRegistry
 from app.intelligence.reviews import (
     InMemoryReviewRepository,
     MockAmazonReviewCollector,
@@ -71,6 +88,7 @@ from app.services.price_history_service import PriceHistoryService
 from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
 from app.services.review_service import ReviewService
+from app.services.review_summary_service import ReviewSummaryService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
 from app.services.watchlist_service import WatchlistService
 
@@ -84,6 +102,7 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
 )
 _MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistRepository()
 _MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
+_MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
 _MOCK_NOTIFICATION_SERVICE = MockNotificationService()
 _COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
 _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
@@ -91,6 +110,7 @@ _COLLECTION_OPERATIONS_SERVICE: CollectionOperationsService | None = None
 _WATCHLIST_SERVICE: WatchlistService | None = None
 _ALERT_SERVICE: AlertService | None = None
 _REVIEW_SERVICE: ReviewService | None = None
+_REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -416,3 +436,84 @@ def get_review_service(
     # Keep the process-scoped service; refresh collectors if DI rebuilds them.
     _REVIEW_SERVICE._collectors = list(collectors)  # noqa: SLF001
     return _REVIEW_SERVICE
+
+
+def get_review_summary_repository() -> ReviewSummaryRepository:
+    """Provide the process-scoped in-memory review summary repository."""
+    return _MEMORY_REVIEW_SUMMARY_REPOSITORY
+
+
+def get_review_summarizer() -> ReviewSummarizer:
+    """Provide the deterministic mock summarizer (no external AI)."""
+    return DeterministicMockReviewSummarizer()
+
+
+def get_ai_provider_registry() -> AIProviderRegistry:
+    """Build the AI review provider registry from settings (no live HTTP by default)."""
+    live = settings.ai_external_calls_enabled
+    enabled = settings.ai_review_enabled
+    transport = DisabledTransport()
+    providers = [
+        OpenAIReviewProvider(
+            api_key=settings.openai_api_key,
+            model=settings.openai_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_review_enabled=enabled,
+        ),
+        ClaudeReviewProvider(
+            api_key=settings.anthropic_api_key,
+            model=settings.anthropic_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_review_enabled=enabled,
+        ),
+        GeminiReviewProvider(
+            api_key=settings.gemini_api_key,
+            model=settings.gemini_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_review_enabled=enabled,
+        ),
+        DeterministicReviewProvider(DeterministicMockReviewSummarizer()),
+    ]
+    return AIProviderRegistry(providers, fallback_order=settings.ai_fallback_order)
+
+
+def get_multi_model_review_orchestrator(
+    registry: AIProviderRegistry = Depends(get_ai_provider_registry),
+) -> MultiModelReviewOrchestrator:
+    """Provide the multi-model review orchestrator."""
+    return MultiModelReviewOrchestrator(
+        registry,
+        ai_review_enabled=settings.ai_review_enabled,
+        configured_mode=settings.ai_review_mode,
+        allow_client_mode=settings.ai_review_allow_client_mode,
+        primary_provider=settings.ai_primary_provider,
+        secondary_provider=settings.ai_secondary_provider,
+        max_estimated_cost=settings.ai_max_estimated_cost_per_request,
+    )
+
+
+def get_review_summary_service(
+    repository: ReviewSummaryRepository = Depends(get_review_summary_repository),
+    summarizer: ReviewSummarizer = Depends(get_review_summarizer),
+    review_service: ReviewService = Depends(get_review_service),
+    orchestrator: MultiModelReviewOrchestrator = Depends(get_multi_model_review_orchestrator),
+) -> ReviewSummaryService:
+    """Provide the AI Review Summary orchestration service."""
+    global _REVIEW_SUMMARY_SERVICE
+    if _REVIEW_SUMMARY_SERVICE is None:
+        _REVIEW_SUMMARY_SERVICE = ReviewSummaryService(
+            repository,
+            summarizer,
+            review_service,
+            orchestrator=orchestrator,
+            max_review_input=settings.ai_max_review_input,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        )
+        return _REVIEW_SUMMARY_SERVICE
+    _REVIEW_SUMMARY_SERVICE._summarizer = summarizer  # noqa: SLF001
+    _REVIEW_SUMMARY_SERVICE._review_service = review_service  # noqa: SLF001
+    _REVIEW_SUMMARY_SERVICE._orchestrator = orchestrator  # noqa: SLF001
+    return _REVIEW_SUMMARY_SERVICE
