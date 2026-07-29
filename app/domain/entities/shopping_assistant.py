@@ -34,6 +34,12 @@ EvidenceType = Literal[
     "seller",
     "watchlist",
     "community",
+    "graph_path",
+    "related_product",
+    "cross_source_support",
+    "contradiction",
+    "compatibility",
+    "community_topic",
 ]
 
 DataStatus = Literal["mock", "imported", "live"]

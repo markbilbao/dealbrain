@@ -20,9 +20,7 @@ class InsufficientCanonicalIdentityError(Exception):
     def __init__(self, missing_fields: list[str]) -> None:
         self.missing_fields = missing_fields
         fields = ", ".join(missing_fields)
-        super().__init__(
-            f"Cannot register canonical product; missing required fields: {fields}"
-        )
+        super().__init__(f"Cannot register canonical product; missing required fields: {fields}")
 
 
 class CanonicalProductNotFoundError(Exception):
@@ -254,3 +252,19 @@ class CommunityIntelligenceNotFoundError(Exception):
     def __init__(self, resource_id: str) -> None:
         self.resource_id = resource_id
         super().__init__(f"Community intelligence resource not found: {resource_id}")
+
+
+class KnowledgeGraphValidationError(Exception):
+    """Raised when knowledge graph inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class KnowledgeGraphNotFoundError(Exception):
+    """Raised when a knowledge graph node, edge, or path resource is missing."""
+
+    def __init__(self, resource_id: str) -> None:
+        self.resource_id = resource_id
+        super().__init__(f"Knowledge graph resource not found: {resource_id}")

@@ -780,10 +780,51 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Knowledge graph">
+      <h2 class="panel-heading">Knowledge Graph &amp; Intelligence Engine</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Product-centered evidence graph · fixture/mock data · no external graph database · bounded traversal.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="kg_product_id" style="flex:1;min-width:12rem;">
+          Product ID
+          <input id="kg_product_id" type="text" value="sa-laptop-tuf-a15" />
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="kg_load" type="button">Load Product Graph</button>
+        <button id="kg_demo" type="button" style="background:#0F172A;">Load Demo</button>
+      </div>
+      <div id="kg-meta" class="meta" style="margin-top:0.75rem;"></div>
+      <div id="kg-status" class="status" aria-live="polite"></div>
+      <section id="kg-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Graph summary</h3>
+        <div id="kg-summary"></div>
+        <h3 class="section-title">Node counts</h3>
+        <div id="kg-node-counts"></div>
+        <h3 class="section-title">Edge counts</h3>
+        <div id="kg-edge-counts"></div>
+        <h3 class="section-title">Connected sellers &amp; marketplaces</h3>
+        <div id="kg-sellers"></div>
+        <h3 class="section-title">Reviews &amp; community evidence</h3>
+        <div id="kg-evidence"></div>
+        <h3 class="section-title">Topics, brands, categories</h3>
+        <div id="kg-topics"></div>
+        <h3 class="section-title">Similar products</h3>
+        <div id="kg-similar"></div>
+        <h3 class="section-title">Contradictions</h3>
+        <div id="kg-contradictions"></div>
+        <h3 class="section-title">Explorer (SVG)</h3>
+        <div id="kg-viz"></div>
+        <h3 class="section-title">Warnings</h3>
+        <div id="kg-warnings"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
-        Evidence-first shopping Q&amp;A · includes Community Intelligence · mock/imported DealBrain data · external AI disabled by default.
+        Evidence-first shopping Q&amp;A · includes Community Intelligence + Knowledge Graph · mock/imported DealBrain data · external AI disabled by default.
       </p>
       <label for="sa_query" style="display:block;margin-top:0.75rem;">
         Shopping question
@@ -3080,6 +3121,170 @@
     ciLoadBtn.addEventListener("click", loadCommunityProduct);
     ciDemoBtn.addEventListener("click", loadCommunityDemo);
     loadCommunityDemo();
+
+    // --- Knowledge Graph panel ---
+    const kgProductInput = document.getElementById("kg_product_id");
+    const kgLoadBtn = document.getElementById("kg_load");
+    const kgDemoBtn = document.getElementById("kg_demo");
+    const kgMetaEl = document.getElementById("kg-meta");
+    const kgStatusEl = document.getElementById("kg-status");
+    const kgSummaryEl = document.getElementById("kg-summary");
+    const kgNodeCountsEl = document.getElementById("kg-node-counts");
+    const kgEdgeCountsEl = document.getElementById("kg-edge-counts");
+    const kgSellersEl = document.getElementById("kg-sellers");
+    const kgEvidenceEl = document.getElementById("kg-evidence");
+    const kgTopicsEl = document.getElementById("kg-topics");
+    const kgSimilarEl = document.getElementById("kg-similar");
+    const kgContradictionsEl = document.getElementById("kg-contradictions");
+    const kgVizEl = document.getElementById("kg-viz");
+    const kgWarningsEl = document.getElementById("kg-warnings");
+
+    function renderCountMap(map) {
+      const entries = Object.entries(map || {});
+      if (!entries.length) return '<p class="empty-state">None.</p>';
+      return `<ul style="margin:0;padding-left:1.2rem;">${entries.map(([k, v]) =>
+        `<li><strong>${escapeHtml(k)}</strong>: ${escapeHtml(String(v))}</li>`
+      ).join("")}</ul>`;
+    }
+
+    function renderKgViz(body) {
+      const root = body.root_node;
+      const nodes = (body.nodes || []).slice(0, 18);
+      if (!root || !nodes.length) {
+        kgVizEl.innerHTML = '<p class="empty-state">No graph nodes to visualize.</p>';
+        return;
+      }
+      const width = 640;
+      const height = 320;
+      const cx = width / 2;
+      const cy = height / 2;
+      const radius = 120;
+      const others = nodes.filter((n) => n.node_id !== root.node_id);
+      const points = others.map((node, index) => {
+        const angle = (Math.PI * 2 * index) / Math.max(others.length, 1) - Math.PI / 2;
+        return {
+          ...node,
+          x: cx + radius * Math.cos(angle),
+          y: cy + radius * Math.sin(angle),
+        };
+      });
+      const lines = points.map((p) =>
+        `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#94a3b8" stroke-width="1.5" />`
+      ).join("");
+      const circles = points.map((p) =>
+        `<g>
+          <circle cx="${p.x}" cy="${p.y}" r="10" fill="#0d9488" />
+          <title>${escapeHtml(p.label)} (${escapeHtml(p.node_type)})</title>
+        </g>`
+      ).join("");
+      kgVizEl.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" role="img" aria-label="Knowledge graph explorer">
+          ${lines}
+          <circle cx="${cx}" cy="${cy}" r="16" fill="#0f172a" />
+          <text x="${cx}" y="${cy + 36}" text-anchor="middle" font-size="12" fill="#0f172a">${escapeHtml(root.label.slice(0, 42))}</text>
+          ${circles}
+        </svg>
+        <p class="hint">Lightweight SVG explorer · fixture data · truncated to ${nodes.length} nodes</p>
+      `;
+    }
+
+    function renderKnowledgeGraph(body) {
+      const summary = body.summary || {};
+      const root = body.root_node || {};
+      kgMetaEl.innerHTML = `
+        <span class="pill">data_status: ${escapeHtml(body.data_status || "mock")}</span>
+        <span class="pill">truncated: ${body.truncated ? "yes" : "no"}</span>
+        <span class="pill">nodes: ${(body.nodes || []).length}</span>
+        <span class="pill">edges: ${(body.edges || []).length}</span>
+        <span class="pill">confidence method: min edge</span>
+      `;
+      kgSummaryEl.innerHTML = `
+        <p style="margin:0;line-height:1.5;"><strong>${escapeHtml(root.label || "Product")}</strong>
+        · type ${escapeHtml(root.node_type || "product")}
+        · confidence ${escapeHtml(String(root.confidence ?? "—"))}</p>
+      `;
+      kgNodeCountsEl.innerHTML = renderCountMap(summary.node_counts || {});
+      kgEdgeCountsEl.innerHTML = renderCountMap(summary.edge_counts || {});
+      kgSellersEl.innerHTML = renderBulletList(
+        [
+          ...((summary.sellers || []).map((s) => `Seller: ${s}`)),
+          ...((summary.marketplaces || []).map((m) => `Marketplace: ${m}`)),
+          ...((summary.price_history || []).map((p) => `Price history: ${p}`)),
+        ],
+        "No sellers/marketplaces linked."
+      );
+      kgEvidenceEl.innerHTML = renderBulletList(
+        [
+          ...((summary.reviews || []).map((r) => `Review: ${r}`)),
+          ...((summary.community_evidence || []).map((c) => `Community: ${c}`)),
+          ...((summary.ai_summaries || []).map((a) => `AI summary: ${a}`)),
+        ],
+        "No review/community evidence."
+      );
+      kgTopicsEl.innerHTML = renderBulletList(
+        [
+          ...((summary.topics || []).map((t) => `Topic: ${t}`)),
+          ...((summary.brands || []).map((b) => `Brand: ${b}`)),
+          ...((summary.categories || []).map((c) => `Category: ${c}`)),
+        ],
+        "No topics/brands/categories."
+      );
+      kgSimilarEl.innerHTML = renderBulletList(summary.similar_products || [], "No similar products.");
+      const contradictions = body.contradictions || [];
+      kgContradictionsEl.innerHTML = contradictions.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${contradictions.map((c) =>
+          `<li>${escapeHtml(c.other_label || c.edge_id || "contradiction")} · confidence ${escapeHtml(String(c.confidence ?? "—"))}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No contradictions detected.</p>';
+      renderKgViz(body);
+      kgWarningsEl.innerHTML = renderBulletList(body.warnings || [], "No warnings.");
+    }
+
+    async function loadKnowledgeGraph(url, label) {
+      showEl(kgStatusEl, `<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading ${escapeHtml(label)}…</div>`);
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || `Failed to load ${label}.`);
+        }
+        const body = await response.json();
+        renderKnowledgeGraph(body);
+        showEl(
+          kgStatusEl,
+          `<div class="hint">Fixture/mock graph · data_status: ${escapeHtml(body.data_status || "mock")} · ${(body.nodes || []).length} nodes</div>`
+        );
+      } catch (error) {
+        showEl(kgStatusEl, `<div class="error">${error.message || error}</div>`);
+      }
+    }
+
+    async function loadKgDemo() {
+      kgDemoBtn.disabled = true;
+      try {
+        await loadKnowledgeGraph("/api/v1/graph/demo", "knowledge graph demo");
+      } finally {
+        kgDemoBtn.disabled = false;
+      }
+    }
+
+    async function loadKgProduct() {
+      const productId = (kgProductInput.value || "").trim();
+      if (!productId) {
+        showEl(kgStatusEl, '<div class="error">Product ID is required.</div>');
+        return;
+      }
+      kgLoadBtn.disabled = true;
+      try {
+        await loadKnowledgeGraph(`/api/v1/graph/product/${encodeURIComponent(productId)}`, "product graph");
+      } finally {
+        kgLoadBtn.disabled = false;
+      }
+    }
+
+    kgLoadBtn.addEventListener("click", loadKgProduct);
+    kgDemoBtn.addEventListener("click", loadKgDemo);
+    loadKgDemo();
   </script>
 </body>
 </html>

@@ -160,6 +160,45 @@ class Settings(BaseSettings):
     )
     ai_community_live_http: bool = Field(default=False, alias="AI_COMMUNITY_LIVE_HTTP")
 
+    # Knowledge Graph — in-memory, provider-neutral (no external graph DB)
+    knowledge_graph_enabled: bool = Field(default=True, alias="KNOWLEDGE_GRAPH_ENABLED")
+    knowledge_graph_max_depth: int = Field(
+        default=3,
+        alias="KNOWLEDGE_GRAPH_MAX_DEPTH",
+        ge=1,
+        le=10,
+    )
+    knowledge_graph_max_nodes: int = Field(
+        default=100,
+        alias="KNOWLEDGE_GRAPH_MAX_NODES",
+        ge=1,
+        le=1000,
+    )
+    knowledge_graph_max_edges: int = Field(
+        default=200,
+        alias="KNOWLEDGE_GRAPH_MAX_EDGES",
+        ge=1,
+        le=2000,
+    )
+    knowledge_graph_max_paths: int = Field(
+        default=20,
+        alias="KNOWLEDGE_GRAPH_MAX_PATHS",
+        ge=1,
+        le=100,
+    )
+    knowledge_graph_min_confidence: float = Field(
+        default=0.0,
+        alias="KNOWLEDGE_GRAPH_MIN_CONFIDENCE",
+        ge=0.0,
+        le=1.0,
+    )
+    knowledge_graph_snapshot_schema_version: int = Field(
+        default=1,
+        alias="KNOWLEDGE_GRAPH_SNAPSHOT_SCHEMA_VERSION",
+        ge=1,
+        le=100,
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:

@@ -54,6 +54,7 @@ class ShoppingAssistantService:
         conversation_repository: ConversationRepository | None = None,
         confidence_calculator: ConfidenceCalculator | None = None,
         community_service: Any | None = None,
+        knowledge_graph_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -71,6 +72,7 @@ class ShoppingAssistantService:
         self._conversations = conversation_repository
         self._confidence = confidence_calculator or ConfidenceCalculator()
         self._community = community_service
+        self._knowledge_graph = knowledge_graph_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -131,6 +133,9 @@ class ShoppingAssistantService:
         candidates = self._candidate_service.find_candidates(intent)
         evidence = self._evidence_service.build_for_candidates(candidates[:5])
         evidence = list(evidence) + self._community_evidence_for(
+            [item.product_id for item in candidates[:5]]
+        )
+        evidence = list(evidence) + self._graph_evidence_for(
             [item.product_id for item in candidates[:5]]
         )
         recommendations = self._recommendation_service.rank(
@@ -243,6 +248,15 @@ class ShoppingAssistantService:
                     code="no_candidates",
                 )
             )
+        if self._knowledge_graph is None:
+            warnings.append(
+                AssistantWarning(
+                    message=(
+                        "Knowledge graph evidence was unavailable; used existing assistant flow."
+                    ),
+                    code="graph_unavailable",
+                )
+            )
 
         if conversation_id is None and self._conversations is not None:
             created = getattr(self._conversations, "create", None)
@@ -306,6 +320,7 @@ class ShoppingAssistantService:
                 "prompts_included": False,
                 "candidate_count": len(candidates),
                 "community_integrated": self._community is not None,
+                "knowledge_graph_integrated": self._knowledge_graph is not None,
             },
             generated_at=self._clock(),
         )
@@ -332,6 +347,38 @@ class ShoppingAssistantService:
                     ),
                     product_id=item.product_id,
                     value=item.topic,
+                )
+            )
+        return mapped
+
+    def _graph_evidence_for(self, product_ids: list[str]) -> list[ShoppingEvidence]:
+        """Map knowledge-graph evidence into shopping evidence items."""
+        if self._knowledge_graph is None or not product_ids:
+            return []
+        try:
+            graph_items = self._knowledge_graph.shopping_assistant_evidence(product_ids)
+        except Exception:  # noqa: BLE001
+            return []
+        mapped: list[ShoppingEvidence] = []
+        for item in graph_items:
+            evidence_type = str(item.get("type") or "graph_path")
+            if evidence_type not in {
+                "graph_path",
+                "related_product",
+                "cross_source_support",
+                "contradiction",
+                "compatibility",
+                "community_topic",
+            }:
+                evidence_type = "graph_path"
+            mapped.append(
+                ShoppingEvidence(
+                    evidence_id=str(item.get("evidence_id") or self._id_factory()),
+                    type=evidence_type,  # type: ignore[arg-type]
+                    source_id="knowledge_graph",
+                    description=str(item.get("description") or "Knowledge graph evidence"),
+                    product_id=item.get("product_id"),
+                    value=item.get("value"),
                 )
             )
         return mapped
