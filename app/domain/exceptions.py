@@ -413,3 +413,52 @@ class WatchlistOwnershipError(Exception):
         self.watchlist_id = watchlist_id
         self.owner_id = owner_id
         super().__init__(f"Watchlist {watchlist_id} is not owned by the requesting user.")
+
+
+class AffiliateValidationError(Exception):
+    """Raised when affiliate inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class AffiliateNotFoundError(Exception):
+    """Raised when an affiliate resource cannot be found."""
+
+    def __init__(self, resource_type: str, resource_id: str) -> None:
+        self.resource_type = resource_type
+        self.resource_id = resource_id
+        super().__init__(f"Affiliate {resource_type} not found: {resource_id}")
+
+
+class AffiliateMerchantNotFoundError(AffiliateNotFoundError):
+    """Raised when a merchant registry entry cannot be found."""
+
+    def __init__(self, merchant_id: str) -> None:
+        super().__init__("merchant", merchant_id)
+        self.merchant_id = merchant_id
+
+
+class AffiliateLinkNotFoundError(AffiliateNotFoundError):
+    """Raised when a generated affiliate link cannot be found."""
+
+    def __init__(self, link_id: str) -> None:
+        super().__init__("link", link_id)
+        self.link_id = link_id
+
+
+class AffiliateClickNotFoundError(AffiliateNotFoundError):
+    """Raised when a tracked click cannot be found."""
+
+    def __init__(self, click_id: str) -> None:
+        super().__init__("click", click_id)
+        self.click_id = click_id
+
+
+class AffiliateDisclosureNotFoundError(AffiliateNotFoundError):
+    """Raised when a disclosure record cannot be found."""
+
+    def __init__(self, disclosure_id: str) -> None:
+        super().__init__("disclosure", disclosure_id)
+        self.disclosure_id = disclosure_id

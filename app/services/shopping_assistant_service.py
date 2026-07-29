@@ -67,6 +67,9 @@ class ShoppingAssistantService:
         alert_rule_service: Any | None = None,
         notification_center_service: Any | None = None,
         alert_evaluation_service: Any | None = None,
+        # Sprint 20 — Affiliate link generation AFTER recommendation selection.
+        # Never consulted during ranking / DealScore. Optional collaborator.
+        affiliate_link_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -92,6 +95,7 @@ class ShoppingAssistantService:
         self._alert_rule_service = alert_rule_service
         self._notification_center = notification_center_service
         self._alert_evaluation_service = alert_evaluation_service
+        self._affiliate_link_service = affiliate_link_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -448,12 +452,21 @@ class ShoppingAssistantService:
                 "profile_id": (
                     personal_payload.get("profile_id") if personal_payload else effective_profile_id
                 ),
+                "affiliate_integrated": self._affiliate_link_service is not None,
             },
             generated_at=self._clock(),
             personal_recommendation=personal_payload,
             profile_id=(
                 personal_payload.get("profile_id") if personal_payload else effective_profile_id
             ),
+        )
+        # Sprint 20: affiliate link generation happens ONLY after the top
+        # recommendation has already been selected. Commission never feeds
+        # DealScore or the ranking key above.
+        response = self._attach_affiliate_links(
+            response,
+            user_id=shopping_query.user_id,
+            country=intent.constraints.location,
         )
         return self._validator.validate(response, evidence=evidence)
 
@@ -691,6 +704,89 @@ class ShoppingAssistantService:
             return
 
     # ---------------------------------------------------------- Sprint 19: watchlists/alerts
+    def _attach_affiliate_links(
+        self,
+        response: ShoppingAssistantResponse,
+        *,
+        user_id: str | None = None,
+        country: str | None = None,
+    ) -> ShoppingAssistantResponse:
+        """Attach affiliate links AFTER recommendation selection.
+
+        Never mutates DealScore, never reorders recommendations, never consults
+        commission for ranking. Failures degrade to no affiliate payload.
+        """
+        if self._affiliate_link_service is None:
+            return response
+
+        generate = getattr(self._affiliate_link_service, "generate_for_recommendation", None)
+        if not callable(generate):
+            return response
+
+        affiliate_payload: dict[str, Any] = {
+            "applied_after_ranking": True,
+            "dealscore_independent": True,
+            "simulated": True,
+            "top_link": None,
+            "alternative_links": [],
+            "disclaimer": (
+                "Affiliate links are generated after recommendation selection. "
+                "Commission never changes DealScore or ranking."
+            ),
+        }
+        try:
+            top_link = generate(
+                response.top_recommendation,
+                campaign_id="shopping-assistant",
+                user_id=user_id,
+                country=country,
+            )
+            if top_link is not None:
+                affiliate_payload["top_link"] = (
+                    top_link.to_dict() if hasattr(top_link, "to_dict") else dict(top_link)
+                )
+            alt_links: list[dict[str, Any]] = []
+            for alt in response.alternatives[:2]:
+                link = generate(
+                    alt,
+                    campaign_id="shopping-assistant",
+                    user_id=user_id,
+                    country=country,
+                )
+                if link is not None:
+                    alt_links.append(link.to_dict() if hasattr(link, "to_dict") else dict(link))
+            affiliate_payload["alternative_links"] = alt_links
+        except Exception:  # noqa: BLE001 — never break the shopping answer path
+            affiliate_payload["error"] = "affiliate_link_generation_failed"
+            return response
+
+        processing = dict(response.processing)
+        processing["affiliate"] = affiliate_payload
+        # ShoppingAssistantResponse is frozen; rebuild via constructor fields.
+        return ShoppingAssistantResponse(
+            query=response.query,
+            intent=response.intent,
+            answer=response.answer,
+            top_recommendation=response.top_recommendation,
+            alternatives=response.alternatives,
+            evidence=response.evidence,
+            warnings=response.warnings,
+            data_status=response.data_status,
+            providers_used=response.providers_used,
+            fallback_used=response.fallback_used,
+            confidence=response.confidence,
+            mode=response.mode,
+            comparison=response.comparison,
+            conversation_id=response.conversation_id,
+            disagreements=response.disagreements,
+            fallback_reason=response.fallback_reason,
+            buy_now_or_wait=response.buy_now_or_wait,
+            processing=processing,
+            generated_at=response.generated_at,
+            personal_recommendation=response.personal_recommendation,
+            profile_id=response.profile_id,
+        )
+
     async def add_to_watchlist(
         self,
         *,

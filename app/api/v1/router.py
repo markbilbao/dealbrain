@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    affiliate,
     alert_rules,
     auth,
     collection_operations,
@@ -51,6 +52,12 @@ api_v1_router.include_router(watchlists.alerts_router, tags=["alerts"])
 api_v1_router.include_router(notifications.router, tags=["notifications"])
 api_v1_router.include_router(notifications.preferences_router, tags=["notifications"])
 api_v1_router.include_router(dashboard.router, tags=["dashboard"])
+# Sprint 20 Affiliate Revenue Engine — post-recommendation monetization only.
+api_v1_router.include_router(affiliate.link_router, tags=["affiliate"])
+api_v1_router.include_router(affiliate.click_router, tags=["affiliate"])
+api_v1_router.include_router(affiliate.report_router, tags=["affiliate"])
+api_v1_router.include_router(affiliate.merchant_router, tags=["affiliate"])
+api_v1_router.include_router(affiliate.disclosure_router, tags=["affiliate"])
 api_v1_router.include_router(reviews.router, tags=["reviews"])
 api_v1_router.include_router(review_summary.router, tags=["review-summary"])
 api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])

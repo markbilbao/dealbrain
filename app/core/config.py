@@ -226,6 +226,9 @@ class Settings(BaseSettings):
         alias="WATCHLISTS_REQUIRE_AUTH",
     )
 
+    # Affiliate Revenue Engine — Sprint 20 (demo/placeholder merchants only)
+    affiliate_enabled: bool = Field(default=True, alias="AFFILIATE_ENABLED")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:

@@ -5,6 +5,7 @@ from collections.abc import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.affiliate.memory import InMemoryAffiliateRepository
 from app.alerts.memory import InMemoryAlertRuleRepository
 from app.core.config import settings
 from app.domain.interfaces.alert_rule_repository import AlertEventRepository, AlertRuleRepository
@@ -123,6 +124,11 @@ from app.marketplace import (
 )
 from app.notifications.delivery import EnhancedNotificationService
 from app.notifications.memory import InMemoryNotificationCenterRepository
+from app.services.affiliate_disclosure_service import AffiliateDisclosureService
+from app.services.affiliate_link_service import AffiliateLinkService
+from app.services.affiliate_merchant_service import AffiliateMerchantService
+from app.services.affiliate_reporting_service import AffiliateReportingService
+from app.services.affiliate_tracking_service import AffiliateTrackingService
 from app.services.alert_evaluation_service import AlertEvaluationService
 from app.services.alert_rule_service import AlertRuleService
 from app.services.alert_service import AlertService
@@ -161,6 +167,7 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
 _MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistStore()
 _MEMORY_ALERT_RULE_REPOSITORY = InMemoryAlertRuleRepository()
 _MEMORY_NOTIFICATION_CENTER_REPOSITORY = InMemoryNotificationCenterRepository()
+_MEMORY_AFFILIATE_REPOSITORY = InMemoryAffiliateRepository()
 _WATCHLIST_AUDIT_LOGGER = WatchlistAuditLogger()
 _MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
 _MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
@@ -179,6 +186,11 @@ _NOTIFICATION_CENTER_SERVICE: NotificationCenterService | None = None
 _NOTIFICATION_PREFERENCE_SERVICE: NotificationPreferenceService | None = None
 _ENHANCED_NOTIFICATION_SERVICE: EnhancedNotificationService | None = None
 _USER_DASHBOARD_SERVICE: UserDashboardService | None = None
+_AFFILIATE_MERCHANT_SERVICE: AffiliateMerchantService | None = None
+_AFFILIATE_LINK_SERVICE: AffiliateLinkService | None = None
+_AFFILIATE_TRACKING_SERVICE: AffiliateTrackingService | None = None
+_AFFILIATE_REPORTING_SERVICE: AffiliateReportingService | None = None
+_AFFILIATE_DISCLOSURE_SERVICE: AffiliateDisclosureService | None = None
 _REVIEW_SERVICE: ReviewService | None = None
 _REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
 _SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
@@ -1124,6 +1136,75 @@ def get_user_dashboard_service(
     return _USER_DASHBOARD_SERVICE
 
 
+def get_affiliate_repository() -> InMemoryAffiliateRepository:
+    """Provide the process-scoped in-memory Affiliate Revenue Engine store (Sprint 20)."""
+    return _MEMORY_AFFILIATE_REPOSITORY
+
+
+def get_affiliate_merchant_service(
+    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+) -> AffiliateMerchantService:
+    """Provide the Affiliate Merchant registry service (Sprint 20)."""
+    global _AFFILIATE_MERCHANT_SERVICE
+    if _AFFILIATE_MERCHANT_SERVICE is None:
+        _AFFILIATE_MERCHANT_SERVICE = AffiliateMerchantService(repository)
+    return _AFFILIATE_MERCHANT_SERVICE
+
+
+def get_affiliate_link_service(
+    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    merchant_service: AffiliateMerchantService = Depends(get_affiliate_merchant_service),
+) -> AffiliateLinkService:
+    """Provide the Affiliate Link generation service (Sprint 20)."""
+    global _AFFILIATE_LINK_SERVICE
+    if _AFFILIATE_LINK_SERVICE is None:
+        _AFFILIATE_LINK_SERVICE = AffiliateLinkService(
+            repository,
+            repository,
+            merchant_service=merchant_service,
+        )
+        return _AFFILIATE_LINK_SERVICE
+    _AFFILIATE_LINK_SERVICE._merchant_service = merchant_service  # noqa: SLF001
+    return _AFFILIATE_LINK_SERVICE
+
+
+def get_affiliate_tracking_service(
+    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+) -> AffiliateTrackingService:
+    """Provide the Affiliate click tracking / attribution service (Sprint 20)."""
+    global _AFFILIATE_TRACKING_SERVICE
+    if _AFFILIATE_TRACKING_SERVICE is None:
+        _AFFILIATE_TRACKING_SERVICE = AffiliateTrackingService(
+            repository,
+            link_repository=repository,
+            merchant_repository=repository,
+            attribution_repository=repository,
+        )
+    return _AFFILIATE_TRACKING_SERVICE
+
+
+def get_affiliate_reporting_service(
+    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+) -> AffiliateReportingService:
+    """Provide the Affiliate revenue reporting service (Sprint 20)."""
+    global _AFFILIATE_REPORTING_SERVICE
+    if _AFFILIATE_REPORTING_SERVICE is None:
+        _AFFILIATE_REPORTING_SERVICE = AffiliateReportingService(
+            repository, impression_store=repository
+        )
+    return _AFFILIATE_REPORTING_SERVICE
+
+
+def get_affiliate_disclosure_service(
+    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+) -> AffiliateDisclosureService:
+    """Provide the Affiliate disclosure service (Sprint 20)."""
+    global _AFFILIATE_DISCLOSURE_SERVICE
+    if _AFFILIATE_DISCLOSURE_SERVICE is None:
+        _AFFILIATE_DISCLOSURE_SERVICE = AffiliateDisclosureService(repository)
+    return _AFFILIATE_DISCLOSURE_SERVICE
+
+
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
@@ -1138,6 +1219,7 @@ def get_shopping_assistant_service(
         get_notification_center_service
     ),
     alert_evaluation_service: AlertEvaluationService = Depends(get_alert_evaluation_service),
+    affiliate_link_service: AffiliateLinkService = Depends(get_affiliate_link_service),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
@@ -1152,6 +1234,7 @@ def get_shopping_assistant_service(
         notification_center_service if settings.watchlists_alerts_enabled else None
     )
     alert_evaluation = alert_evaluation_service if settings.watchlists_alerts_enabled else None
+    affiliate_links = affiliate_link_service if settings.affiliate_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
@@ -1166,6 +1249,7 @@ def get_shopping_assistant_service(
             alert_rule_service=alert_rules,
             notification_center_service=notification_center,
             alert_evaluation_service=alert_evaluation,
+            affiliate_link_service=affiliate_links,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
@@ -1179,4 +1263,5 @@ def get_shopping_assistant_service(
     _SHOPPING_ASSISTANT_SERVICE._alert_rule_service = alert_rules  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._notification_center = notification_center  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._alert_evaluation_service = alert_evaluation  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._affiliate_link_service = affiliate_links  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE
