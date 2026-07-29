@@ -206,6 +206,9 @@ class Settings(BaseSettings):
         alias="PERSONAL_AGENT_DEFAULT_PROFILE_ID",
     )
 
+    # User Platform — demo/in-memory accounts, no OAuth / MFA / email delivery
+    user_platform_enabled: bool = Field(default=True, alias="USER_PLATFORM_ENABLED")
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:

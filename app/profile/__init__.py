@@ -1,0 +1,5 @@
+"""User profile bounded context."""
+
+from app.profile.service import ProfileService
+
+__all__ = ["ProfileService"]

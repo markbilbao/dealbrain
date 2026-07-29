@@ -117,6 +117,7 @@ class ShoppingQuery:
     category: str | None = None
     products: tuple[str, ...] = ()
     profile_id: str | None = None
+    user_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -130,6 +131,7 @@ class ShoppingQuery:
             "category": self.category,
             "products": list(self.products),
             "profile_id": self.profile_id,
+            "user_id": self.user_id,
         }
 
 

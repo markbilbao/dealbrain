@@ -56,6 +56,7 @@ class ShoppingAssistantService:
         community_service: Any | None = None,
         knowledge_graph_service: Any | None = None,
         personal_agent_service: Any | None = None,
+        user_platform_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -75,6 +76,7 @@ class ShoppingAssistantService:
         self._community = community_service
         self._knowledge_graph = knowledge_graph_service
         self._personal_agent = personal_agent_service
+        self._user_platform = user_platform_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -113,8 +115,26 @@ class ShoppingAssistantService:
         if shopping_query.products:
             overrides["products"] = shopping_query.products
 
+        # User platform (authenticated account) overrides fill gaps first; personal
+        # profile overrides may then refine further. Explicit query fields always win.
+        user_platform_context = self._user_platform_context(shopping_query.user_id)
+        user_platform_overrides = dict(user_platform_context.get("overrides") or {})
+        for key, value in user_platform_overrides.items():
+            if key == "profile_id":
+                continue
+            if key not in overrides or overrides[key] in (None, (), [], ""):
+                overrides[key] = value
+
+        # Authenticated accounts may link a Personal AI fixture profile when the
+        # personal agent collaborator is available.
+        effective_profile_id = shopping_query.profile_id
+        if not effective_profile_id and self._personal_agent is not None:
+            effective_profile_id = user_platform_context.get(
+                "personal_profile_id"
+            ) or user_platform_overrides.get("profile_id")
+
         # Profile overrides fill gaps only — explicit query fields win.
-        profile_overrides = self._personal_overrides(shopping_query.profile_id)
+        profile_overrides = self._personal_overrides(effective_profile_id)
         for key, value in profile_overrides.items():
             if key not in overrides or overrides[key] in (None, (), [], ""):
                 overrides[key] = value
@@ -148,7 +168,7 @@ class ShoppingAssistantService:
         )
         evidence = list(evidence) + self._personal_evidence_for(
             [item.product_id for item in candidates[:5]],
-            profile_id=shopping_query.profile_id,
+            profile_id=effective_profile_id,
         )
         recommendations = self._recommendation_service.rank(
             candidates,
@@ -271,10 +291,10 @@ class ShoppingAssistantService:
             )
 
         personal_payload = self._personal_recommendation_payload(
-            shopping_query.profile_id,
+            effective_profile_id,
             [item.product_id for item in candidates[:3]],
         )
-        if shopping_query.profile_id and personal_payload is None and self._personal_agent is None:
+        if effective_profile_id and personal_payload is None and self._personal_agent is None:
             warnings.append(
                 AssistantWarning(
                     message=(
@@ -284,13 +304,22 @@ class ShoppingAssistantService:
                     code="personal_profile_unavailable",
                 )
             )
-        elif shopping_query.profile_id and personal_payload is None:
+        elif effective_profile_id and personal_payload is None:
+            warnings.append(
+                AssistantWarning(
+                    message=("Requested profile could not be applied; fell back to generic mode."),
+                    code="personal_profile_unavailable",
+                )
+            )
+
+        if shopping_query.user_id and not user_platform_context.get("authenticated"):
             warnings.append(
                 AssistantWarning(
                     message=(
-                        "Requested profile could not be applied; fell back to generic mode."
+                        "A user account was referenced but could not be authenticated; "
+                        "fell back to anonymous personalization."
                     ),
-                    code="personal_profile_unavailable",
+                    code="user_platform_unavailable",
                 )
             )
 
@@ -306,6 +335,15 @@ class ShoppingAssistantService:
         elif top is not None:
             product_ids = (top.product_id,)
             product_names = (top.product_name,)
+
+        if self._user_platform is not None and shopping_query.user_id:
+            self._record_user_platform_history(
+                shopping_query.user_id,
+                query=cleaned,
+                summary=str(explained.get("answer") or ""),
+                product_ids=product_ids,
+                profile_id=effective_profile_id,
+            )
 
         if self._conversations is not None and conversation_id:
             now = self._clock()
@@ -381,19 +419,23 @@ class ShoppingAssistantService:
                 "community_integrated": self._community is not None,
                 "knowledge_graph_integrated": self._knowledge_graph is not None,
                 "personal_agent_integrated": self._personal_agent is not None,
-                "personalization_mode": "personal" if personal_payload else "generic",
-                "profile_id": (
-                    personal_payload.get("profile_id")
+                "user_platform_integrated": self._user_platform is not None,
+                "authenticated": bool(user_platform_context.get("authenticated")),
+                "personalization_mode": (
+                    "personal"
                     if personal_payload
-                    else shopping_query.profile_id
+                    else (
+                        "authenticated" if user_platform_context.get("authenticated") else "generic"
+                    )
+                ),
+                "profile_id": (
+                    personal_payload.get("profile_id") if personal_payload else effective_profile_id
                 ),
             },
             generated_at=self._clock(),
             personal_recommendation=personal_payload,
             profile_id=(
-                personal_payload.get("profile_id")
-                if personal_payload
-                else shopping_query.profile_id
+                personal_payload.get("profile_id") if personal_payload else effective_profile_id
             ),
         )
         return self._validator.validate(response, evidence=evidence)
@@ -506,6 +548,36 @@ class ShoppingAssistantService:
         except Exception:  # noqa: BLE001
             return None
 
+    def _user_platform_context(self, user_id: str | None) -> dict[str, Any]:
+        """Return authenticated-account personalization context, or {} when unavailable."""
+        if self._user_platform is None or not user_id:
+            return {}
+        try:
+            return dict(self._user_platform.shopping_assistant_context(user_id) or {})
+        except Exception:  # noqa: BLE001
+            return {}
+
+    def _record_user_platform_history(
+        self,
+        user_id: str,
+        *,
+        query: str,
+        summary: str,
+        product_ids: tuple[str, ...],
+        profile_id: str | None,
+    ) -> None:
+        """Best-effort recommendation history recording — never raises."""
+        try:
+            self._user_platform.record_shopping_recommendation(
+                user_id,
+                query=query,
+                summary=summary,
+                product_ids=product_ids,
+                profile_id=profile_id,
+            )
+        except Exception:  # noqa: BLE001
+            return
+
     def demo(self, *, mode: str | None = None) -> ShoppingAssistantResponse:
         return self.query(
             ShoppingQuery(
@@ -548,6 +620,7 @@ class ShoppingAssistantService:
             category=request.get("category"),
             products=tuple(products),
             profile_id=request.get("profile_id"),
+            user_id=request.get("user_id"),
         )
 
     def _require_query(self, query: str) -> str:

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    auth,
     collection_operations,
     collections,
     community,
@@ -14,10 +15,12 @@ from app.api.v1.endpoints import (
     personal,
     price_history,
     products,
+    profile,
     recommendations,
     review_summary,
     reviews,
     shopping_assistant,
+    user,
     watchlists,
 )
 
@@ -39,3 +42,6 @@ api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistan
 api_v1_router.include_router(community.router, tags=["community"])
 api_v1_router.include_router(graph.router, tags=["knowledge-graph"])
 api_v1_router.include_router(personal.router, tags=["personal-agent"])
+api_v1_router.include_router(auth.router, tags=["user-platform-auth"])
+api_v1_router.include_router(profile.router, tags=["user-platform-profile"])
+api_v1_router.include_router(user.router, tags=["user-platform-saved-items"])
