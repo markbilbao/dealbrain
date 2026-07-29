@@ -26,6 +26,7 @@ from app.domain.interfaces.review_summary_repository import (
     ReviewSummarizer,
     ReviewSummaryRepository,
 )
+from app.domain.interfaces.shopping_assistant_repository import ConversationRepository
 from app.domain.interfaces.watchlist_repository import (
     AlertRepository,
     WatchlistRepository,
@@ -35,6 +36,12 @@ from app.infrastructure.ai.review_providers import (
     DeterministicReviewProvider,
     GeminiReviewProvider,
     OpenAIReviewProvider,
+)
+from app.infrastructure.ai.shopping_providers import (
+    ClaudeShoppingProvider,
+    DeterministicShoppingProviderAdapter,
+    GeminiShoppingProvider,
+    OpenAIShoppingProvider,
 )
 from app.infrastructure.ai.transports import DisabledTransport
 from app.infrastructure.database.repositories.canonical_product_repository import (
@@ -75,6 +82,11 @@ from app.intelligence.reviews import (
     MockShopeeReviewCollector,
     MockTikTokShopReviewCollector,
 )
+from app.intelligence.shopping_assistant import (
+    InMemoryConversationRepository,
+    ShoppingAssistantOrchestrator,
+    ShoppingExplanationRegistry,
+)
 from app.intelligence.watchlists import (
     InMemoryWatchlistRepository,
     MockNotificationService,
@@ -89,6 +101,7 @@ from app.services.product_intelligence_service import ProductIntelligenceService
 from app.services.product_service import ProductService
 from app.services.review_service import ReviewService
 from app.services.review_summary_service import ReviewSummaryService
+from app.services.shopping_assistant_service import ShoppingAssistantService
 from app.services.shopping_recommendation_service import ShoppingRecommendationService
 from app.services.watchlist_service import WatchlistService
 
@@ -103,6 +116,9 @@ _MEMORY_COLLECTION_RATE_LIMITER = InMemoryMarketplaceRateLimiter(
 _MEMORY_WATCHLIST_REPOSITORY = InMemoryWatchlistRepository()
 _MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
 _MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
+_MEMORY_SHOPPING_CONVERSATION_REPOSITORY = InMemoryConversationRepository(
+    ttl_seconds=settings.ai_shopping_conversation_ttl_seconds,
+)
 _MOCK_NOTIFICATION_SERVICE = MockNotificationService()
 _COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
 _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
@@ -111,6 +127,7 @@ _WATCHLIST_SERVICE: WatchlistService | None = None
 _ALERT_SERVICE: AlertService | None = None
 _REVIEW_SERVICE: ReviewService | None = None
 _REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
+_SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -517,3 +534,79 @@ def get_review_summary_service(
     _REVIEW_SUMMARY_SERVICE._review_service = review_service  # noqa: SLF001
     _REVIEW_SUMMARY_SERVICE._orchestrator = orchestrator  # noqa: SLF001
     return _REVIEW_SUMMARY_SERVICE
+
+
+def get_shopping_conversation_repository() -> ConversationRepository:
+    """Provide the process-scoped in-memory shopping conversation repository."""
+    return _MEMORY_SHOPPING_CONVERSATION_REPOSITORY
+
+
+def get_shopping_explanation_registry() -> ShoppingExplanationRegistry:
+    """Build shopping explanation providers from settings (no live HTTP by default)."""
+    live = settings.ai_shopping_external_calls_enabled
+    enabled = settings.ai_shopping_enabled
+    transport = DisabledTransport()
+    providers = [
+        OpenAIShoppingProvider(
+            api_key=settings.openai_api_key,
+            model=settings.openai_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_enabled=enabled,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        ),
+        ClaudeShoppingProvider(
+            api_key=settings.anthropic_api_key,
+            model=settings.anthropic_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_enabled=enabled,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        ),
+        GeminiShoppingProvider(
+            api_key=settings.gemini_api_key,
+            model=settings.gemini_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_enabled=enabled,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        ),
+        DeterministicShoppingProviderAdapter(),
+    ]
+    return ShoppingExplanationRegistry(
+        providers,
+        fallback_order=settings.ai_fallback_order,
+    )
+
+
+def get_shopping_assistant_orchestrator(
+    registry: ShoppingExplanationRegistry = Depends(get_shopping_explanation_registry),
+) -> ShoppingAssistantOrchestrator:
+    """Provide the shopping assistant multi-model orchestrator."""
+    return ShoppingAssistantOrchestrator(
+        registry,
+        ai_enabled=settings.ai_shopping_enabled,
+        configured_mode=settings.ai_shopping_mode,
+        allow_client_mode=settings.ai_shopping_allow_client_mode,
+        primary_provider=settings.ai_primary_provider,
+        secondary_provider=settings.ai_secondary_provider,
+        max_estimated_cost=settings.ai_max_estimated_cost_per_request,
+    )
+
+
+def get_shopping_assistant_service(
+    conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
+    orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
+) -> ShoppingAssistantService:
+    """Provide the AI Shopping Assistant orchestration service."""
+    global _SHOPPING_ASSISTANT_SERVICE
+    if _SHOPPING_ASSISTANT_SERVICE is None:
+        _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
+            orchestrator=orchestrator,
+            conversation_repository=conversations,
+            max_query_length=settings.ai_shopping_max_query_length,
+        )
+        return _SHOPPING_ASSISTANT_SERVICE
+    _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._conversations = conversations  # noqa: SLF001
+    return _SHOPPING_ASSISTANT_SERVICE
