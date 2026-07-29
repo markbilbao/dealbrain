@@ -821,6 +821,63 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Marketplace data sync">
+      <h2 class="panel-heading">Marketplace Data &amp; Synchronization</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Fixture · imported · simulated-live connectors · CSV/JSON import · freshness · provenance ·
+        <strong>SIMULATED LIVE — NOT A REAL MARKETPLACE CONNECTION</strong>
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="md_sources" type="button">Sources</button>
+        <button id="md_connectors" type="button">Connectors</button>
+        <button id="md_seed" type="button" style="background:#0F172A;">Seed Demo Sync</button>
+        <button id="md_offers" type="button">Offers</button>
+      </div>
+      <label for="md_connector" style="display:block;margin-top:0.75rem;">
+        Connector
+        <select id="md_connector" style="width:100%;margin-top:0.35rem;">
+          <option value="fixture-marketplace">fixture-marketplace</option>
+          <option value="imported-marketplace">imported-marketplace</option>
+          <option value="mock-live-marketplace">mock-live-marketplace (SIMULATED)</option>
+        </select>
+      </label>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="md_test" type="button">Test Connection</button>
+        <button id="md_health" type="button">Health</button>
+        <button id="md_sync" type="button">Run Sync</button>
+      </div>
+      <label for="md_import" style="display:block;margin-top:0.75rem;">
+        Import CSV/JSON
+        <textarea id="md_import" rows="4" style="width:100%;margin-top:0.35rem;font-family:ui-monospace,monospace;font-size:0.85rem;" placeholder="Paste CSV or JSON…"></textarea>
+      </label>
+      <div class="row" style="margin-top: 0.5rem;">
+        <button id="md_import_csv" type="button">Import as CSV</button>
+        <button id="md_import_json" type="button">Import as JSON</button>
+        <button id="md_load_sample" type="button">Load sample CSV</button>
+      </div>
+      <label for="md_product_id" style="display:block;margin-top:0.75rem;">
+        Product ID (history)
+        <input id="md_product_id" type="text" value="canon-iphone-15-pro-256" style="width:100%;margin-top:0.35rem;" />
+      </label>
+      <div class="row" style="margin-top: 0.5rem;">
+        <button id="md_price_hist" type="button">Price History</button>
+        <button id="md_inv_hist" type="button">Inventory History</button>
+      </div>
+      <div id="md-status" class="status" aria-live="polite"></div>
+      <section id="md-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Sources / Connectors</h3>
+        <div id="md-sources"></div>
+        <h3 class="section-title">Health / Sync / Import</h3>
+        <div id="md-ops"></div>
+        <h3 class="section-title">Normalized Offers</h3>
+        <div id="md-offers"></div>
+        <h3 class="section-title">History / Provenance</h3>
+        <div id="md-history"></div>
+        <h3 class="section-title">Notice</h3>
+        <div id="md-notice">Login via User Platform first for sync/import/test. Secrets are never shown.</div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="User platform">
       <h2 class="panel-heading">User Platform &amp; Authentication</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
@@ -954,7 +1011,10 @@
       GET /api/v1/shopping-assistant/demo · GET /api/v1/community/demo ·
       GET /api/v1/community/product/{id} · GET /api/v1/personal/demo ·
       GET /api/v1/personal/deals · GET /api/v1/graph/demo ·
-      POST /api/v1/auth/login · GET /api/v1/profile · GET /api/v1/user/saved-products
+      POST /api/v1/auth/login · GET /api/v1/profile · GET /api/v1/user/saved-products ·
+      GET /api/v1/marketplaces/sources · GET /api/v1/marketplaces/connectors ·
+      POST /api/v1/marketplaces/sync · POST /api/v1/marketplaces/imports ·
+      GET /api/v1/marketplaces/offers
     </footer>
   </main>
 
@@ -3546,9 +3606,188 @@
     kgDemoBtn.addEventListener("click", loadKgDemo);
     loadKgDemo();
 
-    // --- User Platform panel ---
+    // Shared auth token for User Platform + Marketplace Data ops
     let upAccessToken = null;
     let upUserId = null;
+
+    // --- Marketplace Data panel ---
+    const mdStatusEl = document.getElementById("md-status");
+    const mdSourcesEl = document.getElementById("md-sources");
+    const mdOpsEl = document.getElementById("md-ops");
+    const mdOffersEl = document.getElementById("md-offers");
+    const mdHistoryEl = document.getElementById("md-history");
+    const mdConnector = document.getElementById("md_connector");
+    const mdImport = document.getElementById("md_import");
+    const mdProductId = document.getElementById("md_product_id");
+    const MD_SAMPLE_CSV = "marketplace_product_id,title,brand,model,category,sku,upc,currency,regular_price,sale_price,shipping_cost,availability,inventory_quantity,seller_name,seller_rating,marketplace_url\\nimp-demo-1,Apple iPhone 15 Pro 256GB Import,Apple,iPhone 15 Pro,Smartphones,IP15PRO-256,194253431413,PHP,71000,69500,50,in_stock,5,Import Seller PH,4.5,https://imported.dealbrain.local/iphone";
+
+    function mdAuthHeaders() {
+      const headers = { "Content-Type": "application/json" };
+      if (typeof upAccessToken !== "undefined" && upAccessToken) {
+        headers["Authorization"] = `Bearer ${upAccessToken}`;
+      }
+      return headers;
+    }
+
+    function mdRenderOffer(o) {
+      const freshness = o.freshness ? `${o.freshness.status}` : "unknown";
+      const match = o.match_confidence != null ? Number(o.match_confidence).toFixed(2) : "n/a";
+      return `<div style="margin:0.4rem 0;padding:0.5rem 0;border-bottom:1px solid #e2e8f0;">
+        <strong>${escapeHtml(o.title)}</strong><br/>
+        mode=<code>${escapeHtml(o.source_mode)}</code>
+        · freshness=<code>${escapeHtml(freshness)}</code>
+        · match=${escapeHtml(match)} (${escapeHtml(o.match_ambiguity || "")})
+        · ${escapeHtml(String(o.total_price))} ${escapeHtml(o.currency)}
+        <div class="hint">${escapeHtml(o.label || "")}</div>
+        <div class="hint">${escapeHtml((o.freshness && o.freshness.warning) || "")}</div>
+        <div class="hint">reasons: ${escapeHtml((o.match_reasons || []).join("; "))}</div>
+      </div>`;
+    }
+
+    async function mdLoadSources() {
+      mdStatusEl.innerHTML = '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading sources…</div>';
+      try {
+        const [sourcesRes, connectorsRes] = await Promise.all([
+          fetch("/api/v1/marketplaces/sources"),
+          fetch("/api/v1/marketplaces/connectors?include_stubs=true"),
+        ]);
+        const sources = await sourcesRes.json();
+        const connectors = await connectorsRes.json();
+        mdSourcesEl.innerHTML = `
+          <div><strong>Sources</strong><ul>${(sources.sources || []).map((s) =>
+            `<li>${escapeHtml(s.name)} · <code>${escapeHtml(s.source_mode)}</code> · ${escapeHtml(s.label || "")}</li>`
+          ).join("")}</ul></div>
+          <div><strong>Connectors</strong><ul>${(connectors.connectors || []).map((c) =>
+            `<li>${escapeHtml(c.name)} · caps=${escapeHtml((c.capabilities || []).slice(0,4).join(", "))}
+            ${c.simulated ? " · <strong>SIMULATED LIVE</strong>" : ""} · enabled=${c.enabled}</li>`
+          ).join("")}</ul></div>`;
+        mdStatusEl.innerHTML = `<div class="hint">${sources.count || 0} sources · ${connectors.count || 0} connectors</div>`;
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdSeed() {
+      mdStatusEl.innerHTML = '<div class="loading"><span class="spinner" aria-hidden="true"></span> Seeding demo sync…</div>';
+      try {
+        const response = await fetch("/api/v1/marketplaces/demo/seed", {
+          method: "POST",
+          headers: mdAuthHeaders(),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Seed failed — login via User Platform first");
+        mdOpsEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>
+          <div class="hint"><strong>${escapeHtml(body.label || "")}</strong></div>`;
+        mdStatusEl.innerHTML = `<div class="hint">Seeded · offers=${body.offers}</div>`;
+        await mdLoadOffers();
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdLoadOffers() {
+      try {
+        const response = await fetch("/api/v1/marketplaces/offers?limit=20");
+        const body = await response.json();
+        mdOffersEl.innerHTML = (body.offers || []).map(mdRenderOffer).join("") || "<div class='hint'>No offers yet — seed or import.</div>";
+      } catch (err) {
+        mdOffersEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdTest() {
+      try {
+        const response = await fetch(`/api/v1/marketplaces/connectors/${encodeURIComponent(mdConnector.value)}/test`, {
+          method: "POST",
+          headers: mdAuthHeaders(),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Test failed");
+        mdOpsEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        mdStatusEl.innerHTML = `<div class="hint">${body.ok ? "OK" : "Failed"} · ${escapeHtml(body.label || body.message || "")}</div>`;
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdHealth() {
+      try {
+        const response = await fetch(`/api/v1/marketplaces/connectors/${encodeURIComponent(mdConnector.value)}/health`);
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Health failed");
+        mdOpsEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        mdStatusEl.innerHTML = `<div class="hint">Health: ${escapeHtml(body.status)}</div>`;
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdSync() {
+      try {
+        const response = await fetch("/api/v1/marketplaces/sync", {
+          method: "POST",
+          headers: mdAuthHeaders(),
+          body: JSON.stringify({ connector_id: mdConnector.value, mode: "full" }),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Sync failed");
+        mdOpsEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        mdStatusEl.innerHTML = `<div class="hint">Sync ${escapeHtml(body.status)} · ${escapeHtml(body.summary || "")}</div>`;
+        await mdLoadOffers();
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdDoImport(filename, contentType) {
+      try {
+        const response = await fetch("/api/v1/marketplaces/imports", {
+          method: "POST",
+          headers: mdAuthHeaders(),
+          body: JSON.stringify({
+            filename,
+            content: mdImport.value,
+            content_type: contentType,
+          }),
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Import failed");
+        mdOpsEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        mdStatusEl.innerHTML = `<div class="hint">${escapeHtml(body.summary || body.status)}</div>`;
+        await mdLoadOffers();
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    async function mdHistory(kind) {
+      try {
+        const pid = mdProductId.value.trim();
+        const response = await fetch(`/api/v1/products/${encodeURIComponent(pid)}/${kind}`);
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "History failed");
+        mdHistoryEl.innerHTML = `<pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>`;
+        mdStatusEl.innerHTML = `<div class="hint">${kind}: ${body.count || 0} snapshots</div>`;
+      } catch (err) {
+        mdStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+
+    document.getElementById("md_sources").addEventListener("click", mdLoadSources);
+    document.getElementById("md_connectors").addEventListener("click", mdLoadSources);
+    document.getElementById("md_seed").addEventListener("click", mdSeed);
+    document.getElementById("md_offers").addEventListener("click", mdLoadOffers);
+    document.getElementById("md_test").addEventListener("click", mdTest);
+    document.getElementById("md_health").addEventListener("click", mdHealth);
+    document.getElementById("md_sync").addEventListener("click", mdSync);
+    document.getElementById("md_import_csv").addEventListener("click", () => mdDoImport("import.csv", "text/csv"));
+    document.getElementById("md_import_json").addEventListener("click", () => mdDoImport("import.json", "application/json"));
+    document.getElementById("md_load_sample").addEventListener("click", () => { mdImport.value = MD_SAMPLE_CSV.replace(/\\\\n/g, "\\n"); });
+    document.getElementById("md_price_hist").addEventListener("click", () => mdHistory("price-history"));
+    document.getElementById("md_inv_hist").addEventListener("click", () => mdHistory("inventory-history"));
+    mdLoadSources();
+
+    // --- User Platform panel ---
     const upEmail = document.getElementById("up_email");
     const upPassword = document.getElementById("up_password");
     const upLoginBtn = document.getElementById("up_login");

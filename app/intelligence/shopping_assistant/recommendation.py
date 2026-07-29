@@ -33,6 +33,7 @@ class ShoppingRecommendationRanker:
             candidates,
             key=lambda item: (
                 item.match_score,
+                {"live": 2, "imported": 1, "mock": 0}.get(item.data_status, 0),
                 item.deal_score or 0.0,
                 item.rating or 0.0,
                 item.review_count,

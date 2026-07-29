@@ -209,6 +209,13 @@ class Settings(BaseSettings):
     # User Platform — demo/in-memory accounts, no OAuth / MFA / email delivery
     user_platform_enabled: bool = Field(default=True, alias="USER_PLATFORM_ENABLED")
 
+    # Marketplace Data Synchronization — connectors/imports/sync (no real marketplace HTTP)
+    marketplace_data_enabled: bool = Field(default=True, alias="MARKETPLACE_DATA_ENABLED")
+    marketplace_data_require_auth: bool = Field(
+        default=True,
+        alias="MARKETPLACE_DATA_REQUIRE_AUTH",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
