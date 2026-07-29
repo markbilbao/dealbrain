@@ -239,6 +239,117 @@ class Settings(BaseSettings):
         alias="MERCHANT_PLATFORM_REQUIRE_AUTH",
     )
 
+    # ------------------------------------------------------------------
+    # Launch readiness & production preparation — Sprint 22
+    # ------------------------------------------------------------------
+    launch_readiness_enabled: bool = Field(
+        default=True,
+        alias="LAUNCH_READINESS_ENABLED",
+    )
+    launch_strict_startup: bool = Field(
+        default=False,
+        alias="LAUNCH_STRICT_STARTUP",
+    )
+    rate_limiting_enabled: bool = Field(
+        default=True,
+        alias="RATE_LIMITING_ENABLED",
+    )
+    security_headers_enabled: bool = Field(
+        default=True,
+        alias="SECURITY_HEADERS_ENABLED",
+    )
+    structured_logging_enabled: bool = Field(
+        default=True,
+        alias="STRUCTURED_LOGGING_ENABLED",
+    )
+    demo_launcher_enabled: bool = Field(
+        default=True,
+        alias="DEMO_LAUNCHER_ENABLED",
+    )
+    performance_cache_enabled: bool = Field(
+        default=True,
+        alias="PERFORMANCE_CACHE_ENABLED",
+    )
+    performance_cache_ttl_seconds: float = Field(
+        default=30.0,
+        alias="PERFORMANCE_CACHE_TTL_SECONDS",
+        ge=0,
+        le=3600,
+    )
+    openapi_public_docs: bool = Field(
+        default=False,
+        alias="OPENAPI_PUBLIC_DOCS",
+    )
+
+    # Rate limits (requests per window; window = 60s)
+    rate_limit_default_per_minute: int = Field(
+        default=120,
+        alias="RATE_LIMIT_DEFAULT_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_login_per_minute: int = Field(
+        default=10,
+        alias="RATE_LIMIT_LOGIN_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_registration_per_minute: int = Field(
+        default=5,
+        alias="RATE_LIMIT_REGISTRATION_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_affiliate_per_minute: int = Field(
+        default=60,
+        alias="RATE_LIMIT_AFFILIATE_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_merchant_per_minute: int = Field(
+        default=60,
+        alias="RATE_LIMIT_MERCHANT_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_search_per_minute: int = Field(
+        default=60,
+        alias="RATE_LIMIT_SEARCH_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_recommendations_per_minute: int = Field(
+        default=60,
+        alias="RATE_LIMIT_RECOMMENDATIONS_PER_MINUTE",
+        ge=1,
+    )
+
+    # Security headers
+    security_csp: str = Field(
+        default=(
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
+        ),
+        alias="SECURITY_CSP",
+    )
+    security_hsts_max_age: int = Field(
+        default=31536000,
+        alias="SECURITY_HSTS_MAX_AGE",
+        ge=0,
+    )
+    security_frame_options: str = Field(
+        default="DENY",
+        alias="SECURITY_FRAME_OPTIONS",
+    )
+    security_referrer_policy: str = Field(
+        default="strict-origin-when-cross-origin",
+        alias="SECURITY_REFERRER_POLICY",
+    )
+    security_permissions_policy: str = Field(
+        default="camera=(), microphone=(), geolocation=(), payment=()",
+        alias="SECURITY_PERMISSIONS_POLICY",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
@@ -262,6 +373,19 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.app_env == "development"
+
+    @property
+    def is_staging(self) -> bool:
+        return self.app_env == "staging"
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == "production"
+
+    @property
+    def docs_enabled(self) -> bool:
+        """Swagger/ReDoc available in development, staging, or when explicitly public."""
+        return self.is_development or self.is_staging or self.openapi_public_docs
 
     @property
     def ai_external_calls_enabled(self) -> bool:

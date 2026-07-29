@@ -1,4 +1,8 @@
-"""Health, readiness, and liveness probes (Sprint 22 enhancements)."""
+"""Root-level health probes for orchestrators (Sprint 22).
+
+Docker/Kubernetes-style probes at /health, /ready, /live in addition to
+versioned /api/v1/* endpoints.
+"""
 
 from __future__ import annotations
 
@@ -13,7 +17,7 @@ from app.schemas.health import ServiceStatus
 from app.schemas.launch import EnhancedHealthResponse, LiveResponse, ReadyResponse
 from app.services.launch_health_service import LaunchHealthService
 
-router = APIRouter()
+router = APIRouter(tags=["probes"])
 
 
 async def _probe_database(db: AsyncSession) -> tuple[ServiceStatus, float | None]:
@@ -25,34 +29,31 @@ async def _probe_database(db: AsyncSession) -> tuple[ServiceStatus, float | None
         return ServiceStatus.DOWN, (time.perf_counter() - started) * 1000.0
 
 
-@router.get(
-    "/health",
-    response_model=EnhancedHealthResponse,
-    summary="Application health with dependency checks",
-    responses={
-        200: {
-            "description": "Health report (may be degraded)",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "status": "up",
-                        "service": "DealBrain",
-                        "environment": "development",
-                        "database": "up",
-                        "cache": "up",
-                        "version": "1.0.0",
-                        "uptime_seconds": 12.5,
-                    }
-                }
-            },
-        }
-    },
-)
-async def health_check(
+@router.get("/live", response_model=LiveResponse, summary="Liveness probe")
+async def root_live(
+    health: LaunchHealthService = Depends(get_launch_health_service),
+) -> LiveResponse:
+    return LiveResponse(**health.live())
+
+
+@router.get("/ready", response_model=ReadyResponse, summary="Readiness probe")
+async def root_ready(
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    health: LaunchHealthService = Depends(get_launch_health_service),
+) -> ReadyResponse:
+    db_status, _ = await _probe_database(db)
+    payload = health.ready(database_status=db_status)
+    if not payload["ready"]:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    return ReadyResponse(**payload)
+
+
+@router.get("/health", response_model=EnhancedHealthResponse, summary="Health probe")
+async def root_health(
     db: AsyncSession = Depends(get_db),
     health: LaunchHealthService = Depends(get_launch_health_service),
 ) -> EnhancedHealthResponse:
-    """Return application and dependency health status."""
     db_status, latency = await _probe_database(db)
     report = health.health(database_status=db_status, db_latency_ms=latency)
     return EnhancedHealthResponse(
@@ -75,31 +76,3 @@ async def health_check(
         ],
         checks=dict(report.checks),
     )
-
-
-@router.get(
-    "/ready",
-    response_model=ReadyResponse,
-    summary="Readiness probe — safe to receive traffic",
-)
-async def readiness_check(
-    response: Response,
-    db: AsyncSession = Depends(get_db),
-    health: LaunchHealthService = Depends(get_launch_health_service),
-) -> ReadyResponse:
-    db_status, _ = await _probe_database(db)
-    payload = health.ready(database_status=db_status)
-    if not payload["ready"]:
-        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    return ReadyResponse(**payload)
-
-
-@router.get(
-    "/live",
-    response_model=LiveResponse,
-    summary="Liveness probe — process is running",
-)
-async def liveness_check(
-    health: LaunchHealthService = Depends(get_launch_health_service),
-) -> LiveResponse:
-    return LiveResponse(**health.live())

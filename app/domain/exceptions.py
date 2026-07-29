@@ -556,3 +556,58 @@ class MerchantIsolationError(Exception):
         self.organization_id = organization_id
         self.message = message
         super().__init__(message)
+
+
+# ---------------------------------------------------------------------------
+# Launch readiness (Sprint 22)
+# ---------------------------------------------------------------------------
+
+
+class LaunchValidationError(Exception):
+    """Raised when launch/ops input fails validation."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class LaunchNotFoundError(Exception):
+    """Raised when a launch resource cannot be found."""
+
+    def __init__(self, resource_type: str, resource_id: str) -> None:
+        self.resource_type = resource_type
+        self.resource_id = resource_id
+        super().__init__(f"Launch {resource_type} not found: {resource_id}")
+
+
+class LaunchAuthorizationError(Exception):
+    """Raised when a launch admin action is not authorized."""
+
+    def __init__(self, message: str = "Not authorized for this launch action.") -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class LaunchRateLimitError(Exception):
+    """Raised when an HTTP rate limit is exceeded."""
+
+    def __init__(
+        self,
+        message: str = "Rate limit exceeded.",
+        *,
+        retry_after_seconds: int = 60,
+        bucket: str = "default",
+    ) -> None:
+        self.message = message
+        self.retry_after_seconds = retry_after_seconds
+        self.bucket = bucket
+        super().__init__(message)
+
+
+class ConfigurationValidationError(Exception):
+    """Raised when environment / startup configuration is invalid."""
+
+    def __init__(self, errors: list[str]) -> None:
+        self.errors = errors
+        joined = "; ".join(errors)
+        super().__init__(f"Configuration validation failed: {joined}")

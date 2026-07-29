@@ -12,9 +12,15 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from app.api.v1.endpoints.auth import extract_bearer_token
 from app.api.v1.mappers.dashboard import to_dashboard_response
 from app.core.config import settings
-from app.core.dependencies import get_user_dashboard_service, get_user_platform_service
+from app.core.dependencies import (
+    get_launch_performance_service,
+    get_user_dashboard_service,
+    get_user_platform_service,
+)
 from app.domain.exceptions import DashboardValidationError, UserPlatformAuthError
+from app.launch.cache import cache_key
 from app.schemas.dashboard import UserDashboardResponse
+from app.services.launch_performance_service import LaunchPerformanceService
 from app.services.user_dashboard_service import UserDashboardService
 from app.services.user_platform_service import UserPlatformService
 
@@ -52,14 +58,23 @@ async def get_dashboard(
     authorization: str | None = Header(default=None),
     service: UserDashboardService = Depends(get_user_dashboard_service),
     user_platform: UserPlatformService = Depends(get_user_platform_service),
+    performance: LaunchPerformanceService = Depends(get_launch_performance_service),
 ) -> UserDashboardResponse:
     actor = _resolve_actor(authorization, user_platform, fallback_user_id=user_id)
     if not actor:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required."
         )
+
+    # Sync cache around async dashboard aggregation (identical actor+currency).
+    key = cache_key("dashboard", actor, currency)
+    cached = performance.cache.get(key)
+    if cached is not None:
+        return cached  # type: ignore[no-any-return]
     try:
         payload = await service.get_dashboard_dict(actor, currency=currency)
     except DashboardValidationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.message) from exc
-    return to_dashboard_response(payload)
+    result = to_dashboard_response(payload)
+    performance.cache.set(key, result)
+    return result

@@ -1278,6 +1278,95 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Demo launcher">
+      <h2 class="panel-heading">Demo Launcher</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Sprint 22 · switch persona · seeded demo data · anonymous / registered / merchant / admin.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="dl_persona" style="flex:1;min-width:12rem;">
+          Persona
+          <select id="dl_persona">
+            <option value="anonymous">Anonymous User</option>
+            <option value="registered">Registered User</option>
+            <option value="merchant">Merchant</option>
+            <option value="admin">Admin</option>
+          </select>
+        </label>
+        <button id="dl_switch" type="button">Switch persona</button>
+        <button id="dl_refresh" type="button" style="background:#0F172A;">Refresh status</button>
+      </div>
+      <div id="dl-status" class="status" aria-live="polite"></div>
+      <section id="dl-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Active persona</h3>
+        <div id="dl-active"></div>
+        <h3 class="section-title">Capabilities &amp; seeded hints</h3>
+        <div id="dl-hints"></div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="System status">
+      <h2 class="panel-heading">System Status</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Sprint 22 · /live · /ready · /health · feature flags · no secrets in payloads.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="ss_probes" type="button">Check probes</button>
+        <button id="ss_flags" type="button" style="background:#0F172A;">Feature flags</button>
+        <button id="ss_settings" type="button" style="background:#475569;">Production settings</button>
+      </div>
+      <div id="ss-status" class="status" aria-live="polite"></div>
+      <section id="ss-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Probes</h3>
+        <div id="ss-probes"></div>
+        <h3 class="section-title">Feature flags</h3>
+        <div id="ss-flags"></div>
+        <h3 class="section-title">Production settings</h3>
+        <div id="ss-settings"></div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Launch checklist">
+      <h2 class="panel-heading">Launch Checklist</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Sprint 22 · beta go-live checklist · toggle items with admin token.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="lc_load" type="button">Load checklist</button>
+        <button id="lc_toggle" type="button" style="background:#0F172A;">Toggle first incomplete (admin)</button>
+      </div>
+      <div id="lc-status" class="status" aria-live="polite"></div>
+      <section id="lc-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Progress</h3>
+        <div id="lc-summary"></div>
+        <h3 class="section-title">Items</h3>
+        <div id="lc-items"></div>
+      </section>
+    </section>
+
+    <section class="panel" aria-label="Admin monitoring">
+      <h2 class="panel-heading">Admin Monitoring</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Sprint 22 · launch dashboard · metrics · API health · cache · config export (redacted).
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="am_dashboard" type="button">Load launch dashboard</button>
+        <button id="am_perf" type="button" style="background:#0F172A;">Performance cache</button>
+        <button id="am_export" type="button" style="background:#475569;">Export config</button>
+      </div>
+      <div id="am-status" class="status" aria-live="polite"></div>
+      <section id="am-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Metrics</h3>
+        <div id="am-metrics"></div>
+        <h3 class="section-title">System &amp; API health</h3>
+        <div id="am-health"></div>
+        <h3 class="section-title">Performance</h3>
+        <div id="am-perf"></div>
+        <h3 class="section-title">Config export</h3>
+        <div id="am-export"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
@@ -1349,7 +1438,9 @@
       POST /api/v1/auth/login · GET /api/v1/profile · GET /api/v1/user/saved-products ·
       GET /api/v1/marketplaces/sources · GET /api/v1/marketplaces/connectors ·
       POST /api/v1/marketplaces/sync · POST /api/v1/marketplaces/imports ·
-      GET /api/v1/marketplaces/offers
+      GET /api/v1/marketplaces/offers ·
+      GET /health · GET /ready · GET /live ·
+      GET /api/v1/launch/dashboard · POST /api/v1/launch/demo/switch
     </footer>
   </main>
 
@@ -5603,6 +5694,176 @@
         mpStatusEl.innerHTML = '<div class="hint">Admin review panel loaded.</div>';
       } catch (err) {
         mpStatusEl.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+
+    // ---------------------------------------------------------- Sprint 22: Launch Readiness
+    const ADMIN_H = { "Authorization": "Bearer demo-token-internal-admin", "Content-Type": "application/json" };
+    function launchTable(rows) {
+      if (!rows || !rows.length) return '<div class="hint">No rows.</div>';
+      return mpJsonTable(rows);
+    }
+    function showLaunch(elId, html) {
+      const el = document.getElementById(elId);
+      if (el) el.innerHTML = html;
+    }
+
+    async function dlRefresh() {
+      const st = document.getElementById("dl-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/demo").then(r => r.json());
+        showLaunch("dl-active", launchTable([{
+          persona: data.active_persona, label: data.label,
+          auth_header: data.auth_header, organization_id: data.organization_id,
+          user_email: data.user_email
+        }]));
+        showLaunch("dl-hints", '<ul>' + (data.seeded_hints || []).map(h => `<li>${escapeHtml(h)}</li>`).join("") +
+          '</ul><div class="hint">Capabilities: ' + escapeHtml((data.capabilities || []).join(", ")) + '</div>');
+        st.innerHTML = '<div class="hint">Demo launcher ready · seeded data from prior sprints.</div>';
+        if (data.active_persona) document.getElementById("dl_persona").value = data.active_persona;
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    }
+    document.getElementById("dl_refresh").addEventListener("click", dlRefresh);
+    document.getElementById("dl_switch").addEventListener("click", async () => {
+      const st = document.getElementById("dl-status");
+      st.style.display = "block";
+      try {
+        const persona = document.getElementById("dl_persona").value;
+        await fetch("/api/v1/launch/demo/switch", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ persona })
+        }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.detail || j.message || r.statusText); return j; });
+        await dlRefresh();
+        st.innerHTML = `<div class="hint">Switched to ${escapeHtml(persona)}.</div>`;
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+
+    document.getElementById("ss_probes").addEventListener("click", async () => {
+      const st = document.getElementById("ss-status");
+      st.style.display = "block";
+      try {
+        const [live, ready, health] = await Promise.all([
+          fetch("/live").then(r => r.json()),
+          fetch("/ready").then(r => r.json()),
+          fetch("/health").then(r => r.json())
+        ]);
+        showLaunch("ss-probes", launchTable([
+          { probe: "live", ...live },
+          { probe: "ready", ...ready },
+          { probe: "health", status: health.status, database: health.database, cache: health.cache, version: health.version, uptime_seconds: health.uptime_seconds }
+        ]));
+        st.innerHTML = '<div class="hint">Probes loaded from /live · /ready · /health.</div>';
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    document.getElementById("ss_flags").addEventListener("click", async () => {
+      const st = document.getElementById("ss-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/feature-flags").then(r => r.json());
+        showLaunch("ss-flags", launchTable(data.flags || []));
+        st.innerHTML = '<div class="hint">Feature flags loaded.</div>';
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    document.getElementById("ss_settings").addEventListener("click", async () => {
+      const st = document.getElementById("ss-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/system-status").then(r => r.json());
+        showLaunch("ss-settings", launchTable([data]));
+        st.innerHTML = '<div class="hint">Production settings snapshot (secrets excluded).</div>';
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+
+    async function lcLoad() {
+      const st = document.getElementById("lc-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/checklist").then(r => r.json());
+        showLaunch("lc-summary", launchTable([{
+          total: data.total, completed: data.completed, remaining: data.remaining, percent_complete: data.percent_complete
+        }]));
+        showLaunch("lc-items", launchTable(data.items || []));
+        st.innerHTML = '<div class="hint">Launch checklist loaded.</div>';
+        return data;
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+        return null;
+      }
+    }
+    document.getElementById("lc_load").addEventListener("click", () => lcLoad());
+    document.getElementById("lc_toggle").addEventListener("click", async () => {
+      const st = document.getElementById("lc-status");
+      st.style.display = "block";
+      try {
+        const data = await lcLoad();
+        const item = (data?.items || []).find(i => !i.completed);
+        if (!item) { st.innerHTML = '<div class="hint">All checklist items already complete.</div>'; return; }
+        await fetch(`/api/v1/launch/checklist/${item.item_id}`, {
+          method: "PATCH", headers: ADMIN_H,
+          body: JSON.stringify({ completed: true, notes: "Marked from demo UI" })
+        }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.detail || j.message || r.statusText); return j; });
+        await lcLoad();
+        st.innerHTML = `<div class="hint">Completed ${escapeHtml(item.item_id)}.</div>`;
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+
+    document.getElementById("am_dashboard").addEventListener("click", async () => {
+      const st = document.getElementById("am-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/dashboard", { headers: ADMIN_H }).then(async r => {
+          const j = await r.json(); if (!r.ok) throw new Error(j.detail || j.message || r.statusText); return j;
+        });
+        showLaunch("am-metrics", launchTable([data.metrics || {}]));
+        showLaunch("am-health", launchTable([{
+          ...(data.api_health || {}),
+          ...(data.system_status || {}),
+          environment: data.environment,
+          uptime_seconds: data.uptime_seconds
+        }]));
+        st.innerHTML = '<div class="hint">Launch dashboard loaded · demo metrics only · ranking unchanged.</div>';
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    document.getElementById("am_perf").addEventListener("click", async () => {
+      const st = document.getElementById("am-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/performance").then(r => r.json());
+        showLaunch("am-perf", launchTable([data]));
+        st.innerHTML = '<div class="hint">Performance cache stats · memoizes identical reads only.</div>';
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
+      }
+    });
+    document.getElementById("am_export").addEventListener("click", async () => {
+      const st = document.getElementById("am-status");
+      st.style.display = "block";
+      try {
+        const data = await fetch("/api/v1/launch/config/export", { method: "POST", headers: ADMIN_H }).then(async r => {
+          const j = await r.json(); if (!r.ok) throw new Error(j.detail || j.message || r.statusText); return j;
+        });
+        showLaunch("am-export", launchTable([{
+          snapshot_id: data.snapshot_id, environment: data.environment, label: data.label,
+          note: data.note, keys: Object.keys(data.payload || {}).length
+        }]));
+        st.innerHTML = '<div class="hint">Config exported · secrets redacted.</div>';
+      } catch (err) {
+        st.innerHTML = `<div class="error">${escapeHtml(err.message || String(err))}</div>`;
       }
     });
   </script>

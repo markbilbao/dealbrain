@@ -14,6 +14,7 @@ from app.api.v1.endpoints import (
     graph,
     health,
     intelligence,
+    launch,
     marketplace,
     marketplace_data,
     merchant,
@@ -32,6 +33,8 @@ from app.api.v1.endpoints import (
 
 api_v1_router = APIRouter(prefix="/v1")
 api_v1_router.include_router(health.router, tags=["health"])
+# Sprint 22 launch readiness — dashboard, demo launcher, config export
+api_v1_router.include_router(launch.router)
 api_v1_router.include_router(products.router, tags=["products"])
 api_v1_router.include_router(intelligence.router, tags=["intelligence"])
 api_v1_router.include_router(marketplace.router, tags=["marketplace"])
