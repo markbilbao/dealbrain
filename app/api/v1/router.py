@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     health,
     intelligence,
     marketplace,
+    personal,
     price_history,
     products,
     recommendations,
@@ -37,3 +38,4 @@ api_v1_router.include_router(review_summary.router, tags=["review-summary"])
 api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])
 api_v1_router.include_router(community.router, tags=["community"])
 api_v1_router.include_router(graph.router, tags=["knowledge-graph"])
+api_v1_router.include_router(personal.router, tags=["personal-agent"])

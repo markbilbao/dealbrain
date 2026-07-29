@@ -821,10 +821,37 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Personal shopping agent">
+      <h2 class="panel-heading">Personal AI Shopping Agent</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Fixture customer profiles · PersonalDealScore · Buying Advisor · no login / payment / cloud sync.
+      </p>
+      <label for="pa_profile" style="display:block;margin-top:0.75rem;">
+        Demo profile
+        <select id="pa_profile" style="width:100%;margin-top:0.35rem;"></select>
+      </label>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="pa_switch" type="button">Switch Profile</button>
+        <button id="pa_demo" type="button" style="background:#0F172A;">Load Personal Demo</button>
+        <button id="pa_deals" type="button">Refresh Deals</button>
+      </div>
+      <div id="pa-meta" class="meta" style="margin-top:0.75rem;"></div>
+      <div id="pa-profile-card" class="meta" style="margin-top:0.5rem;"></div>
+      <div id="pa-status" class="status" aria-live="polite"></div>
+      <section id="pa-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Personalized deals</h3>
+        <div id="pa-deals-list"></div>
+        <h3 class="section-title">Buying advice (top deal)</h3>
+        <div id="pa-advice"></div>
+        <h3 class="section-title">Limitations</h3>
+        <div id="pa-limitations"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
-        Evidence-first shopping Q&amp;A · includes Community Intelligence + Knowledge Graph · mock/imported DealBrain data · external AI disabled by default.
+        Evidence-first shopping Q&amp;A · Community + Knowledge Graph + Personal Agent · mock/imported DealBrain data · external AI disabled by default.
       </p>
       <label for="sa_query" style="display:block;margin-top:0.75rem;">
         Shopping question
@@ -843,6 +870,13 @@
           Conversation ID (optional)
           <input id="sa_conversation_id" type="text" placeholder="auto on first ask" />
         </label>
+        <label for="sa_use_profile" style="flex:0.8;min-width:10rem;">
+          Use personal profile
+          <select id="sa_use_profile">
+            <option value="1">Yes (active profile)</option>
+            <option value="0">No (generic)</option>
+          </select>
+        </label>
       </div>
       <div class="row" style="margin-top: 0.75rem;">
         <button id="sa_ask" type="button">Ask Assistant</button>
@@ -855,6 +889,8 @@
       <section id="sa-results" class="results visible" aria-live="polite">
         <h3 class="section-title">Answer</h3>
         <div id="sa-answer"></div>
+        <h3 class="section-title">Personal recommendation</h3>
+        <div id="sa-personal"></div>
         <h3 class="section-title">Top recommendation</h3>
         <div id="sa-top"></div>
         <h3 class="section-title">Alternatives</h3>
@@ -878,7 +914,8 @@
       POST /api/v1/watchlists/check-alerts · POST /api/v1/reviews/collect ·
       GET /api/v1/review-summary/demo · POST /api/v1/shopping-assistant/query ·
       GET /api/v1/shopping-assistant/demo · GET /api/v1/community/demo ·
-      GET /api/v1/community/product/{id}
+      GET /api/v1/community/product/{id} · GET /api/v1/personal/demo ·
+      GET /api/v1/personal/deals · GET /api/v1/graph/demo
     </footer>
   </main>
 
@@ -2783,16 +2820,179 @@
     rsDemoBtn.addEventListener("click", loadDemoSummary);
     loadDemoSummary();
 
+    // --- Personal AI Shopping Agent panel ---
+    const paProfileSelect = document.getElementById("pa_profile");
+    const paSwitchBtn = document.getElementById("pa_switch");
+    const paDemoBtn = document.getElementById("pa_demo");
+    const paDealsBtn = document.getElementById("pa_deals");
+    const paMetaEl = document.getElementById("pa-meta");
+    const paProfileCardEl = document.getElementById("pa-profile-card");
+    const paStatusEl = document.getElementById("pa-status");
+    const paDealsListEl = document.getElementById("pa-deals-list");
+    const paAdviceEl = document.getElementById("pa-advice");
+    const paLimitationsEl = document.getElementById("pa-limitations");
+    let activePersonalProfileId = null;
+
+    function renderPersonalProfileCard(profile) {
+      if (!profile) {
+        paProfileCardEl.innerHTML = '<p class="empty-state">No profile loaded.</p>';
+        return;
+      }
+      paProfileCardEl.innerHTML = [
+        rvStat("Profile", escapeHtml(profile.display_name), true),
+        rvStat("Persona", escapeHtml(profile.persona), true),
+        rvStat("Budget", profile.budget != null ? `${Number(profile.budget).toLocaleString()} ${escapeHtml(profile.currency || "")}` : "—", true),
+        rvStat("Brands", escapeHtml((profile.favorite_brands || []).join(", ") || "—")),
+        rvStat("Use cases", escapeHtml((profile.use_cases || []).join(", ") || "—")),
+        `<p style="margin:0.75rem 0 0;line-height:1.5;">${escapeHtml(profile.description || "")}</p>`,
+      ].join("");
+    }
+
+    function renderPersonalDeals(deals) {
+      const recs = (deals && deals.recommendations) || [];
+      if (!recs.length) {
+        paDealsListEl.innerHTML = '<p class="empty-state">No personalized deals.</p>';
+        paAdviceEl.innerHTML = '<p class="empty-state">No advice.</p>';
+        return;
+      }
+      paDealsListEl.innerHTML = `<ul style="margin:0;padding-left:1.2rem;">${recs.map((item) =>
+        `<li style="margin-bottom:0.55rem;">
+          <strong>${escapeHtml(item.product_name)}</strong>
+          · PersonalDealScore ${Number(item.personal_deal_score).toFixed(1)}
+          · pref ${Number(item.preference_score).toFixed(2)}
+          · ${item.known_price != null ? Number(item.known_price).toLocaleString() + " " + escapeHtml(item.currency || "") : "—"}
+          <div class="hint" style="margin-top:0.25rem;">${escapeHtml(item.reason || "")}</div>
+        </li>`
+      ).join("")}</ul>`;
+      const advice = recs[0].advice;
+      if (!advice) {
+        paAdviceEl.innerHTML = '<p class="empty-state">No buying advice.</p>';
+      } else {
+        paAdviceEl.innerHTML = [
+          rvStat("Verdict", escapeHtml(advice.label), true),
+          rvStat("PersonalDealScore", advice.personal_deal_score != null ? Number(advice.personal_deal_score).toFixed(1) : "—", true),
+          `<p style="margin:0.5rem 0 0;line-height:1.5;"><strong>${escapeHtml(advice.summary || "")}</strong></p>`,
+          `<p style="margin:0.35rem 0 0;line-height:1.5;">${escapeHtml(advice.explanation || "")}</p>`,
+        ].join("");
+      }
+    }
+
+    function fillPersonalProfileSelect(profiles, activeId) {
+      const options = (profiles || []).map((p) =>
+        `<option value="${escapeHtml(p.profile_id)}" ${p.profile_id === activeId ? "selected" : ""}>${escapeHtml(p.display_name)}</option>`
+      ).join("");
+      paProfileSelect.innerHTML = options || '<option value="">No profiles</option>';
+      activePersonalProfileId = activeId || (profiles[0] && profiles[0].profile_id) || null;
+    }
+
+    async function loadPersonalDemo(profileId) {
+      showEl(
+        paStatusEl,
+        '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading personal demo…</div>'
+      );
+      try {
+        const qs = profileId ? `?profile_id=${encodeURIComponent(profileId)}` : "";
+        const response = await fetch(`/api/v1/personal/demo${qs}`);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load personal demo.");
+        }
+        const body = await response.json();
+        fillPersonalProfileSelect(body.profiles || [], body.active_profile && body.active_profile.profile_id);
+        renderPersonalProfileCard(body.active_profile);
+        renderPersonalDeals(body.deals);
+        paLimitationsEl.innerHTML = renderBulletList(body.limitations || [], "No limitations listed.");
+        paMetaEl.innerHTML = [
+          rvStat("Active profile", escapeHtml(body.active_profile.display_name), true),
+          rvStat("Profiles", String((body.profiles || []).length), true),
+          rvStat("Auth", "None"),
+          rvStat("Data", escapeHtml((body.deals && body.deals.data_status) || "mock")),
+        ].join("");
+        showEl(
+          paStatusEl,
+          `<div class="hint">Personal demo ready · ${escapeHtml(body.active_profile.display_name)} · recommendations update instantly on profile switch</div>`
+        );
+      } catch (error) {
+        showEl(paStatusEl, `<div class="error">${error.message || error}</div>`);
+      }
+    }
+
+    async function switchPersonalProfile() {
+      const profileId = paProfileSelect.value;
+      if (!profileId) return;
+      paSwitchBtn.disabled = true;
+      try {
+        const response = await fetch("/api/v1/personal/profile/switch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ profile_id: profileId }),
+        });
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to switch profile.");
+        }
+        await loadPersonalDemo(profileId);
+        // Instantly refresh shopping assistant with the new profile when enabled
+        const saUseProfile = document.getElementById("sa_use_profile");
+        if (saUseProfile && saUseProfile.value === "1") {
+          const query = (document.getElementById("sa_query").value || "").trim();
+          if (query) {
+            await askShoppingAssistant({
+              query,
+              mode: document.getElementById("sa_mode").value || "economy",
+              conversation_id: (document.getElementById("sa_conversation_id").value || "").trim() || null,
+              profile_id: profileId,
+            });
+          }
+        }
+      } catch (error) {
+        showEl(paStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        paSwitchBtn.disabled = false;
+      }
+    }
+
+    async function refreshPersonalDeals() {
+      const profileId = paProfileSelect.value || activePersonalProfileId;
+      paDealsBtn.disabled = true;
+      try {
+        const qs = profileId ? `?profile_id=${encodeURIComponent(profileId)}&limit=5` : "?limit=5";
+        const response = await fetch(`/api/v1/personal/deals${qs}`);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load deals.");
+        }
+        const body = await response.json();
+        renderPersonalDeals(body);
+        showEl(paStatusEl, `<div class="hint">Deals refreshed for ${escapeHtml(profileId || "active profile")}</div>`);
+      } catch (error) {
+        showEl(paStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        paDealsBtn.disabled = false;
+      }
+    }
+
+    paSwitchBtn.addEventListener("click", switchPersonalProfile);
+    paDemoBtn.addEventListener("click", () => loadPersonalDemo(paProfileSelect.value || null));
+    paDealsBtn.addEventListener("click", refreshPersonalDeals);
+    paProfileSelect.addEventListener("change", () => {
+      // Instant preview on select change
+      loadPersonalDemo(paProfileSelect.value || null);
+    });
+    loadPersonalDemo();
+
     const saAskBtn = document.getElementById("sa_ask");
     const saDemoBtn = document.getElementById("sa_demo");
     const saQueryInput = document.getElementById("sa_query");
     const saModeInput = document.getElementById("sa_mode");
     const saConversationInput = document.getElementById("sa_conversation_id");
+    const saUseProfileInput = document.getElementById("sa_use_profile");
     const saExamplesEl = document.getElementById("sa-examples");
     const saSentimentEl = document.getElementById("sa-sentiment");
     const saMetaEl = document.getElementById("sa-meta");
     const saStatusEl = document.getElementById("sa-status");
     const saAnswerEl = document.getElementById("sa-answer");
+    const saPersonalEl = document.getElementById("sa-personal");
     const saTopEl = document.getElementById("sa-top");
     const saAltsEl = document.getElementById("sa-alts");
     const saComparisonEl = document.getElementById("sa-comparison");
@@ -2809,8 +3009,11 @@
         rvStat("Fallback", body.fallback_used ? "Yes" : "No"),
       ].join("");
       const providers = (body.providers_used || []).join(", ") || "—";
+      const personalMode = (body.processing && body.processing.personalization_mode) || "generic";
       saMetaEl.innerHTML = [
         rvStat("Mode", escapeHtml(body.mode || "economy"), true),
+        rvStat("Personalization", escapeHtml(personalMode), true),
+        rvStat("Profile", escapeHtml(body.profile_id || "—")),
         rvStat("Providers used", escapeHtml(providers)),
         rvStat("Conversation", escapeHtml(body.conversation_id || "—")),
         rvStat("Allowed modes", escapeHtml((body.allowed_modes || []).join(", ") || "economy")),
@@ -2818,6 +3021,20 @@
       saAnswerEl.innerHTML = body.answer
         ? `<p style="margin:0;line-height:1.55;">${escapeHtml(body.answer)}</p>`
         : '<p class="empty-state">No answer.</p>';
+      const personal = body.personal_recommendation;
+      if (personal && personal.recommendation) {
+        const rec = personal.recommendation;
+        const advice = personal.advice || rec.advice;
+        saPersonalEl.innerHTML = [
+          rvStat("Profile", escapeHtml(personal.profile_name || personal.profile_id || "—"), true),
+          rvStat("Product", escapeHtml(rec.product_name || "—"), true),
+          rvStat("PersonalDealScore", rec.personal_deal_score != null ? Number(rec.personal_deal_score).toFixed(1) : "—", true),
+          rvStat("Advisor", escapeHtml((advice && advice.label) || "—")),
+          `<p style="margin:0.75rem 0 0;line-height:1.5;">${escapeHtml(rec.explanation || rec.reason || "")}</p>`,
+        ].join("");
+      } else {
+        saPersonalEl.innerHTML = '<p class="empty-state">Generic mode — no personal profile applied.</p>';
+      }
       if (top) {
         saTopEl.innerHTML = [
           rvStat("Product", escapeHtml(top.product_name), true),
@@ -2907,11 +3124,15 @@
       }
       saAskBtn.disabled = true;
       try {
-        await askShoppingAssistant({
+        const payload = {
           query,
           mode: saModeInput.value || "economy",
           conversation_id: (saConversationInput.value || "").trim() || null,
-        });
+        };
+        if (saUseProfileInput && saUseProfileInput.value === "1") {
+          payload.profile_id = paProfileSelect.value || activePersonalProfileId || null;
+        }
+        await askShoppingAssistant(payload);
       } finally {
         saAskBtn.disabled = false;
       }

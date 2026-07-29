@@ -268,3 +268,19 @@ class KnowledgeGraphNotFoundError(Exception):
     def __init__(self, resource_id: str) -> None:
         self.resource_id = resource_id
         super().__init__(f"Knowledge graph resource not found: {resource_id}")
+
+
+class PersonalAgentValidationError(Exception):
+    """Raised when personal shopping agent inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class PersonalAgentNotFoundError(Exception):
+    """Raised when a customer profile or personal recommendation resource is missing."""
+
+    def __init__(self, resource_id: str) -> None:
+        self.resource_id = resource_id
+        super().__init__(f"Personal agent resource not found: {resource_id}")

@@ -151,6 +151,8 @@ class ShoppingResponseValidator:
             buy_now_or_wait=response.buy_now_or_wait,
             processing=processing,
             generated_at=response.generated_at,
+            personal_recommendation=response.personal_recommendation,
+            profile_id=response.profile_id,
         )
 
     @staticmethod

@@ -127,4 +127,6 @@ def to_assistant_response(
         processing=_sanitize_processing(dict(response.processing)),
         generated_at=response.generated_at.isoformat() if response.generated_at else None,
         allowed_modes=list(allowed_modes or response.processing.get("allowed_modes") or []),
+        personal_recommendation=response.personal_recommendation,
+        profile_id=response.profile_id,
     )

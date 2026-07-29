@@ -116,6 +116,7 @@ class ShoppingQuery:
     use_cases: tuple[str, ...] = ()
     category: str | None = None
     products: tuple[str, ...] = ()
+    profile_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -128,6 +129,7 @@ class ShoppingQuery:
             "use_cases": list(self.use_cases),
             "category": self.category,
             "products": list(self.products),
+            "profile_id": self.profile_id,
         }
 
 
@@ -403,6 +405,8 @@ class ShoppingAssistantResponse:
     buy_now_or_wait: str | None = None
     processing: dict[str, Any] = field(default_factory=dict)
     generated_at: datetime | None = None
+    personal_recommendation: dict[str, Any] | None = None
+    profile_id: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -427,4 +431,6 @@ class ShoppingAssistantResponse:
             "buy_now_or_wait": self.buy_now_or_wait,
             "processing": dict(self.processing),
             "generated_at": self.generated_at.isoformat() if self.generated_at else None,
+            "personal_recommendation": self.personal_recommendation,
+            "profile_id": self.profile_id,
         }
