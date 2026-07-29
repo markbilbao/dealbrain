@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     health,
     intelligence,
     marketplace,
+    marketplace_data,
     personal,
     price_history,
     products,
@@ -29,6 +30,8 @@ api_v1_router.include_router(health.router, tags=["health"])
 api_v1_router.include_router(products.router, tags=["products"])
 api_v1_router.include_router(intelligence.router, tags=["intelligence"])
 api_v1_router.include_router(marketplace.router, tags=["marketplace"])
+api_v1_router.include_router(marketplace_data.router, tags=["marketplace-data"])
+api_v1_router.include_router(marketplace_data.history_router, tags=["marketplace-data"])
 api_v1_router.include_router(dealscore.router, tags=["dealscore"])
 api_v1_router.include_router(recommendations.router, tags=["recommendations"])
 api_v1_router.include_router(price_history.router, tags=["price-history"])

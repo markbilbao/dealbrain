@@ -57,6 +57,7 @@ class ShoppingAssistantService:
         knowledge_graph_service: Any | None = None,
         personal_agent_service: Any | None = None,
         user_platform_service: Any | None = None,
+        marketplace_data_service: Any | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
@@ -77,6 +78,7 @@ class ShoppingAssistantService:
         self._knowledge_graph = knowledge_graph_service
         self._personal_agent = personal_agent_service
         self._user_platform = user_platform_service
+        self._marketplace_data = marketplace_data_service
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
@@ -159,6 +161,7 @@ class ShoppingAssistantService:
             injection_warning = None
 
         candidates = self._candidate_service.find_candidates(intent)
+        candidates, marketplace_warnings = self._apply_marketplace_data_provenance(candidates)
         evidence = self._evidence_service.build_for_candidates(candidates[:5])
         evidence = list(evidence) + self._community_evidence_for(
             [item.product_id for item in candidates[:5]]
@@ -273,6 +276,7 @@ class ShoppingAssistantService:
         ]
         if injection_warning is not None:
             warnings.append(injection_warning)
+        warnings.extend(marketplace_warnings)
         if not candidates:
             warnings.append(
                 AssistantWarning(
@@ -556,6 +560,101 @@ class ShoppingAssistantService:
             return dict(self._user_platform.shopping_assistant_context(user_id) or {})
         except Exception:  # noqa: BLE001
             return {}
+
+    def _apply_marketplace_data_provenance(
+        self, candidates: list[Any]
+    ) -> tuple[list[Any], list[AssistantWarning]]:
+        """Attach source-mode / freshness labels without excluding non-live offers."""
+        from app.domain.entities.shopping_assistant import ShoppingCandidate
+
+        warnings: list[AssistantWarning] = []
+        if self._marketplace_data is None or not candidates:
+            return candidates, warnings
+        try:
+            enrichments = self._marketplace_data.shopping_enrichment()
+        except Exception:  # noqa: BLE001
+            return candidates, warnings
+        if not enrichments:
+            return candidates, warnings
+
+        by_title: dict[str, dict[str, Any]] = {}
+        for item in enrichments:
+            key = str(item.get("title") or "").strip().lower()
+            if key and key not in by_title:
+                by_title[key] = item
+
+        updated: list[Any] = []
+        seen_warnings: set[str] = set()
+        for candidate in candidates:
+            match = by_title.get(candidate.product_name.strip().lower())
+            if match is None:
+                for title, item in by_title.items():
+                    name = candidate.product_name.lower()
+                    if title in name or name in title:
+                        match = item
+                        break
+            if match is None:
+                updated.append(candidate)
+                continue
+
+            data_status = match.get("data_status") or candidate.data_status
+            freshness_warning = match.get("freshness_warning")
+            notes = list(match.get("notes") or [])
+            boost = 0.0
+            if data_status == "live" and match.get("is_current_live_price"):
+                boost = 0.15
+            elif data_status == "live":
+                boost = 0.08
+            elif data_status == "imported":
+                boost = 0.03
+
+            updated.append(
+                ShoppingCandidate(
+                    product_id=candidate.product_id,
+                    product_name=candidate.product_name,
+                    category=candidate.category,
+                    known_price=candidate.known_price,
+                    currency=candidate.currency,
+                    marketplace=candidate.marketplace,
+                    deal_score=candidate.deal_score,
+                    rating=candidate.rating,
+                    review_count=candidate.review_count,
+                    brand=candidate.brand,
+                    use_cases=candidate.use_cases,
+                    features=candidate.features,
+                    seller_name=candidate.seller_name,
+                    seller_trust_score=candidate.seller_trust_score,
+                    price_near_low=candidate.price_near_low,
+                    recent_price_direction=candidate.recent_price_direction,
+                    complaints=candidate.complaints,
+                    strengths=candidate.strengths,
+                    data_status=data_status,  # type: ignore[arg-type]
+                    match_score=float(candidate.match_score) + boost,
+                )
+            )
+            for note in notes[:2]:
+                if note and note not in seen_warnings:
+                    seen_warnings.add(note)
+                    warnings.append(
+                        AssistantWarning(message=str(note), code="marketplace_data_provenance")
+                    )
+            if freshness_warning and freshness_warning not in seen_warnings:
+                seen_warnings.add(freshness_warning)
+                warnings.append(
+                    AssistantWarning(
+                        message=str(freshness_warning),
+                        code="marketplace_data_freshness",
+                    )
+                )
+            if data_status != "live" or not match.get("is_current_live_price"):
+                msg = (
+                    "Never claim a price is currently available unless "
+                    "supported by fresh live data."
+                )
+                if msg not in seen_warnings:
+                    seen_warnings.add(msg)
+                    warnings.append(AssistantWarning(message=msg, code="non_live_price_claim"))
+        return updated, warnings
 
     def _record_user_platform_history(
         self,

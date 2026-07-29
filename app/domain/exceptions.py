@@ -324,3 +324,43 @@ class UserPlatformRateLimitError(Exception):
     def __init__(self, message: str = "Rate limit exceeded.") -> None:
         self.message = message
         super().__init__(message)
+
+
+class MarketplaceDataValidationError(Exception):
+    """Raised when marketplace data sync inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class MarketplaceDataNotFoundError(Exception):
+    """Raised when a marketplace data resource cannot be found."""
+
+    def __init__(self, resource_id: str) -> None:
+        self.resource_id = resource_id
+        super().__init__(f"Marketplace data resource not found: {resource_id}")
+
+
+class MarketplaceDataAuthError(Exception):
+    """Raised when marketplace data configuration/ops authorization fails."""
+
+    def __init__(self, message: str = "Authentication required.") -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class MarketplaceDataConflictError(Exception):
+    """Raised when an idempotent marketplace data operation conflicts."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class MarketplaceDataRateLimitError(Exception):
+    """Raised when a marketplace connector reports rate limiting."""
+
+    def __init__(self, message: str = "Marketplace connector rate limit exceeded.") -> None:
+        self.message = message
+        super().__init__(message)

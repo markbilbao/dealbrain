@@ -112,12 +112,20 @@ from app.intelligence.watchlists import (
     InMemoryWatchlistRepository,
     MockNotificationService,
 )
+from app.marketplace import (
+    FixtureMarketplaceConnector,
+    ImportedMarketplaceConnector,
+    InMemoryMarketplaceDataRepository,
+    MarketplaceConnectorRegistry,
+    MockLiveMarketplaceConnector,
+)
 from app.services.alert_service import AlertService
 from app.services.collection_operations_service import CollectionOperationsService
 from app.services.community_intelligence_service import CommunityIntelligenceService
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
+from app.services.marketplace_data_service import MarketplaceDataService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
 from app.services.personal_agent_service import PersonalAgentService
 from app.services.price_history_service import PriceHistoryService
@@ -160,6 +168,9 @@ _PERSONAL_AGENT_SERVICE: PersonalAgentService | None = None
 _PERSONAL_PROFILE_REPOSITORY = None
 _USER_PLATFORM_STORE = None
 _USER_PLATFORM_SERVICE: UserPlatformService | None = None
+_MARKETPLACE_DATA_REPOSITORY = InMemoryMarketplaceDataRepository()
+_MARKETPLACE_DATA_SERVICE: MarketplaceDataService | None = None
+_MARKETPLACE_CONNECTOR_REGISTRY: MarketplaceConnectorRegistry | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -238,16 +249,55 @@ def get_deal_score_engine() -> DealScoreEngine:
     return WeightedDealScoreEngine()
 
 
+def get_marketplace_connector_registry() -> MarketplaceConnectorRegistry:
+    """Provide the process-scoped marketplace data connector registry."""
+    global _MARKETPLACE_CONNECTOR_REGISTRY
+    if _MARKETPLACE_CONNECTOR_REGISTRY is None:
+        registry = MarketplaceConnectorRegistry(register_stubs=True)
+        registry.register(FixtureMarketplaceConnector())
+        registry.register(
+            ImportedMarketplaceConnector(
+                lambda: _MARKETPLACE_DATA_REPOSITORY.list_offers(limit=10_000)
+            )
+        )
+        registry.register(MockLiveMarketplaceConnector())
+        _MARKETPLACE_CONNECTOR_REGISTRY = registry
+    return _MARKETPLACE_CONNECTOR_REGISTRY
+
+
+def get_marketplace_data_repository() -> InMemoryMarketplaceDataRepository:
+    """Provide the process-scoped marketplace data repository."""
+    return _MARKETPLACE_DATA_REPOSITORY
+
+
+def get_marketplace_data_service(
+    repository: InMemoryMarketplaceDataRepository = Depends(get_marketplace_data_repository),
+    registry: MarketplaceConnectorRegistry = Depends(get_marketplace_connector_registry),
+) -> MarketplaceDataService:
+    """Provide Marketplace Data Synchronization orchestration."""
+    global _MARKETPLACE_DATA_SERVICE
+    if _MARKETPLACE_DATA_SERVICE is None:
+        _MARKETPLACE_DATA_SERVICE = MarketplaceDataService(
+            repository,
+            registry,
+            require_auth_for_ops=settings.marketplace_data_require_auth,
+        )
+    return _MARKETPLACE_DATA_SERVICE
+
+
 def get_deal_recommendation_service(
     marketplace_service: MarketplaceIntelligenceService = Depends(
         get_marketplace_intelligence_service
     ),
     deal_score_engine: DealScoreEngine = Depends(get_deal_score_engine),
+    marketplace_data_service: MarketplaceDataService = Depends(get_marketplace_data_service),
 ) -> DealRecommendationService:
     """Provide the DealScore recommendation orchestration service."""
+    data = marketplace_data_service if settings.marketplace_data_enabled else None
     return DealRecommendationService(
         marketplace_service=marketplace_service,
         deal_score_engine=deal_score_engine,
+        marketplace_data_service=data,
     )
 
 
@@ -879,6 +929,7 @@ def get_shopping_assistant_service(
     knowledge_graph_service: KnowledgeGraphService = Depends(get_knowledge_graph_service),
     personal_agent_service: PersonalAgentService = Depends(get_personal_agent_service),
     user_platform_service: UserPlatformService = Depends(get_user_platform_service),
+    marketplace_data_service: MarketplaceDataService = Depends(get_marketplace_data_service),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
@@ -886,6 +937,7 @@ def get_shopping_assistant_service(
     graph = knowledge_graph_service if settings.knowledge_graph_enabled else None
     personal = personal_agent_service if settings.personal_agent_enabled else None
     user_platform = user_platform_service if settings.user_platform_enabled else None
+    marketplace_data = marketplace_data_service if settings.marketplace_data_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
@@ -895,6 +947,7 @@ def get_shopping_assistant_service(
             knowledge_graph_service=graph,
             personal_agent_service=personal,
             user_platform_service=user_platform,
+            marketplace_data_service=marketplace_data,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
@@ -903,4 +956,5 @@ def get_shopping_assistant_service(
     _SHOPPING_ASSISTANT_SERVICE._knowledge_graph = graph  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._personal_agent = personal  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._user_platform = user_platform  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._marketplace_data = marketplace_data  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE
