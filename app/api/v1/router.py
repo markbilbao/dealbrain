@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     collection_operations,
     collections,
+    community,
     dealscore,
     health,
     intelligence,
@@ -35,3 +36,4 @@ api_v1_router.include_router(watchlists.alerts_router, tags=["alerts"])
 api_v1_router.include_router(reviews.router, tags=["reviews"])
 api_v1_router.include_router(review_summary.router, tags=["review-summary"])
 api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])
+api_v1_router.include_router(community.router, tags=["community"])

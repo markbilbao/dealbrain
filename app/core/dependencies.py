@@ -82,6 +82,27 @@ from app.intelligence.reviews import (
     MockShopeeReviewCollector,
     MockTikTokShopReviewCollector,
 )
+from app.infrastructure.ai.community_providers import (
+    ClaudeCommunityProvider,
+    DeterministicCommunityProviderAdapter,
+    GeminiCommunityProvider,
+    OpenAICommunityProvider,
+)
+from app.infrastructure.community import (
+    AmazonQACommunityProvider,
+    DiscordCommunityProvider,
+    ManufacturerForumsCommunityProvider,
+    MarketplaceQuestionsCommunityProvider,
+    MockCommunityTransport,
+    RedditCommunityProvider,
+    YouTubeCommunityProvider,
+)
+from app.intelligence.community import (
+    CommunityAIOrchestrator,
+    CommunityOrchestrator,
+    CommunityRegistry,
+    CommunitySummaryRegistry,
+)
 from app.intelligence.shopping_assistant import (
     InMemoryConversationRepository,
     ShoppingAssistantOrchestrator,
@@ -93,6 +114,7 @@ from app.intelligence.watchlists import (
 )
 from app.services.alert_service import AlertService
 from app.services.collection_operations_service import CollectionOperationsService
+from app.services.community_intelligence_service import CommunityIntelligenceService
 from app.services.deal_recommendation_service import DealRecommendationService
 from app.services.marketplace_collection_service import MarketplaceCollectionService
 from app.services.marketplace_intelligence_service import MarketplaceIntelligenceService
@@ -128,6 +150,7 @@ _ALERT_SERVICE: AlertService | None = None
 _REVIEW_SERVICE: ReviewService | None = None
 _REVIEW_SUMMARY_SERVICE: ReviewSummaryService | None = None
 _SHOPPING_ASSISTANT_SERVICE: ShoppingAssistantService | None = None
+_COMMUNITY_INTELLIGENCE_SERVICE: CommunityIntelligenceService | None = None
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -594,19 +617,133 @@ def get_shopping_assistant_orchestrator(
     )
 
 
+def get_community_registry() -> CommunityRegistry:
+    """Build pluggable community connector registry (fixtures / mock by default)."""
+    use_fixtures = settings.community_use_fixtures
+    transport = MockCommunityTransport()
+    providers = [
+        RedditCommunityProvider(
+            enabled=settings.community_reddit_enabled,
+            transport=transport,
+            use_fixtures_when_unavailable=use_fixtures,
+        ),
+        YouTubeCommunityProvider(
+            enabled=settings.community_youtube_enabled,
+            transport=transport,
+            use_fixtures_when_unavailable=use_fixtures,
+        ),
+        AmazonQACommunityProvider(
+            enabled=settings.community_amazon_qa_enabled,
+            transport=transport,
+            use_fixtures_when_unavailable=use_fixtures,
+        ),
+        MarketplaceQuestionsCommunityProvider(
+            enabled=settings.community_marketplace_qa_enabled,
+            transport=transport,
+            use_fixtures_when_unavailable=use_fixtures,
+        ),
+        ManufacturerForumsCommunityProvider(
+            enabled=settings.community_forums_enabled,
+            transport=transport,
+            use_fixtures_when_unavailable=use_fixtures,
+        ),
+        DiscordCommunityProvider(
+            enabled=settings.community_discord_enabled,
+            use_fixtures_when_unavailable=False,
+        ),
+    ]
+    return CommunityRegistry(providers)
+
+
+def get_community_summary_registry() -> CommunitySummaryRegistry:
+    """Build community AI summary providers (DisabledTransport by default)."""
+    live = settings.ai_community_external_calls_enabled
+    enabled = settings.ai_community_enabled
+    transport = DisabledTransport()
+    providers = [
+        OpenAICommunityProvider(
+            api_key=settings.openai_api_key,
+            model=settings.openai_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_enabled=enabled,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        ),
+        ClaudeCommunityProvider(
+            api_key=settings.anthropic_api_key,
+            model=settings.anthropic_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_enabled=enabled,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        ),
+        GeminiCommunityProvider(
+            api_key=settings.gemini_api_key,
+            model=settings.gemini_model,
+            transport=transport,
+            live_http_enabled=live,
+            ai_enabled=enabled,
+            timeout_seconds=settings.ai_provider_timeout_seconds,
+        ),
+        DeterministicCommunityProviderAdapter(),
+    ]
+    return CommunitySummaryRegistry(providers, fallback_order=settings.ai_fallback_order)
+
+
+def get_community_ai_orchestrator(
+    registry: CommunitySummaryRegistry = Depends(get_community_summary_registry),
+) -> CommunityAIOrchestrator:
+    """Provide the community multi-model AI summarizer."""
+    return CommunityAIOrchestrator(
+        registry,
+        ai_enabled=settings.ai_community_enabled,
+        configured_mode=settings.ai_community_mode,
+        allow_client_mode=settings.ai_community_allow_client_mode,
+        primary_provider=settings.ai_primary_provider,
+        secondary_provider=settings.ai_secondary_provider,
+        max_estimated_cost=settings.ai_max_estimated_cost_per_request,
+    )
+
+
+def get_community_orchestrator(
+    registry: CommunityRegistry = Depends(get_community_registry),
+    ai_orchestrator: CommunityAIOrchestrator = Depends(get_community_ai_orchestrator),
+) -> CommunityOrchestrator:
+    """Provide the Community Intelligence end-to-end orchestrator."""
+    return CommunityOrchestrator(registry, ai_orchestrator=ai_orchestrator)
+
+
+def get_community_intelligence_service(
+    orchestrator: CommunityOrchestrator = Depends(get_community_orchestrator),
+) -> CommunityIntelligenceService:
+    """Provide the Community Intelligence application service."""
+    global _COMMUNITY_INTELLIGENCE_SERVICE
+    if _COMMUNITY_INTELLIGENCE_SERVICE is None:
+        _COMMUNITY_INTELLIGENCE_SERVICE = CommunityIntelligenceService(orchestrator)
+        return _COMMUNITY_INTELLIGENCE_SERVICE
+    _COMMUNITY_INTELLIGENCE_SERVICE._orchestrator = orchestrator  # noqa: SLF001
+    return _COMMUNITY_INTELLIGENCE_SERVICE
+
+
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
+    community_service: CommunityIntelligenceService = Depends(
+        get_community_intelligence_service
+    ),
 ) -> ShoppingAssistantService:
     """Provide the AI Shopping Assistant orchestration service."""
     global _SHOPPING_ASSISTANT_SERVICE
+    community = community_service if settings.community_enabled else None
     if _SHOPPING_ASSISTANT_SERVICE is None:
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
             conversation_repository=conversations,
             max_query_length=settings.ai_shopping_max_query_length,
+            community_service=community,
         )
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._conversations = conversations  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._community = community  # noqa: SLF001
     return _SHOPPING_ASSISTANT_SERVICE

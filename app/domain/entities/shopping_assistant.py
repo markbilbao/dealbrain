@@ -33,6 +33,7 @@ EvidenceType = Literal[
     "recommendation",
     "seller",
     "watchlist",
+    "community",
 ]
 
 DataStatus = Literal["mock", "imported", "live"]

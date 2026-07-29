@@ -730,10 +730,60 @@
       </section>
     </section>
 
+    <section class="panel" aria-label="Community intelligence">
+      <h2 class="panel-heading">Community Intelligence Platform</h2>
+      <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
+        Provider-neutral community evidence · Reddit connector + mock adapters · Shopping Assistant integrated.
+      </p>
+      <div class="row" style="margin-top: 0.75rem;">
+        <label for="ci_product_id" style="flex:1;min-width:12rem;">
+          Product ID
+          <input id="ci_product_id" type="text" value="sa-laptop-tuf-a15" />
+        </label>
+        <label for="ci_mode" style="flex:0.7;min-width:8rem;">
+          Mode
+          <select id="ci_mode">
+            <option value="economy">economy</option>
+            <option value="balanced">balanced</option>
+            <option value="maximum">maximum</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top: 0.75rem;">
+        <button id="ci_load" type="button">Load Product</button>
+        <button id="ci_demo" type="button" style="background:#0F172A;">Load Dashboard Demo</button>
+      </div>
+      <div id="ci-trust" class="meta" style="margin-top:0.75rem;"></div>
+      <div id="ci-meta" class="meta" style="margin-top:0.5rem;"></div>
+      <div id="ci-status" class="status" aria-live="polite"></div>
+      <section id="ci-results" class="results visible" aria-live="polite">
+        <h3 class="section-title">Source breakdown</h3>
+        <div id="ci-sources"></div>
+        <h3 class="section-title">Topic chart</h3>
+        <div id="ci-topics"></div>
+        <h3 class="section-title">Positive topics</h3>
+        <div id="ci-positive"></div>
+        <h3 class="section-title">Negative topics</h3>
+        <div id="ci-negative"></div>
+        <h3 class="section-title">Timeline</h3>
+        <div id="ci-timeline"></div>
+        <h3 class="section-title">Connector status</h3>
+        <div id="ci-connectors"></div>
+        <h3 class="section-title">Recent discussions</h3>
+        <div id="ci-recent"></div>
+        <h3 class="section-title">Evidence Explorer</h3>
+        <div id="ci-explorer"></div>
+        <h3 class="section-title">AI Summary</h3>
+        <div id="ci-summary"></div>
+        <h3 class="section-title">Warnings</h3>
+        <div id="ci-warnings"></div>
+      </section>
+    </section>
+
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
-        Evidence-first shopping Q&amp;A · mock/imported DealBrain data · external AI disabled by default.
+        Evidence-first shopping Q&amp;A · includes Community Intelligence · mock/imported DealBrain data · external AI disabled by default.
       </p>
       <label for="sa_query" style="display:block;margin-top:0.75rem;">
         Shopping question
@@ -786,7 +836,8 @@
       POST /api/v1/collections/run · GET /api/v1/collection-operations/status ·
       POST /api/v1/watchlists/check-alerts · POST /api/v1/reviews/collect ·
       GET /api/v1/review-summary/demo · POST /api/v1/shopping-assistant/query ·
-      GET /api/v1/shopping-assistant/demo
+      GET /api/v1/shopping-assistant/demo · GET /api/v1/community/demo ·
+      GET /api/v1/community/product/{id}
     </footer>
   </main>
 
@@ -2881,6 +2932,154 @@
     saDemoBtn.addEventListener("click", loadShoppingDemo);
     loadShoppingMeta();
     loadShoppingDemo();
+
+    const ciLoadBtn = document.getElementById("ci_load");
+    const ciDemoBtn = document.getElementById("ci_demo");
+    const ciProductInput = document.getElementById("ci_product_id");
+    const ciModeInput = document.getElementById("ci_mode");
+    const ciTrustEl = document.getElementById("ci-trust");
+    const ciMetaEl = document.getElementById("ci-meta");
+    const ciStatusEl = document.getElementById("ci-status");
+    const ciSourcesEl = document.getElementById("ci-sources");
+    const ciTopicsEl = document.getElementById("ci-topics");
+    const ciPositiveEl = document.getElementById("ci-positive");
+    const ciNegativeEl = document.getElementById("ci-negative");
+    const ciTimelineEl = document.getElementById("ci-timeline");
+    const ciConnectorsEl = document.getElementById("ci-connectors");
+    const ciRecentEl = document.getElementById("ci-recent");
+    const ciExplorerEl = document.getElementById("ci-explorer");
+    const ciSummaryEl = document.getElementById("ci-summary");
+    const ciWarningsEl = document.getElementById("ci-warnings");
+
+    function renderCommunityDashboard(body) {
+      const trust = body.trust || {};
+      ciTrustEl.innerHTML = [
+        rvStat("Community Trust", trust.score != null ? String(trust.score) : "—", true),
+        rvStat("Band", escapeHtml(trust.band || "—"), true),
+        rvStat("Evidence count", body.evidence_count != null ? String(body.evidence_count) : "—", true),
+        rvStat("Data status", escapeHtml(body.data_status || "mock")),
+      ].join("");
+      ciMetaEl.innerHTML = [
+        rvStat("Product", escapeHtml(body.product_name || "—"), true),
+        rvStat("Product ID", escapeHtml(body.product_id || "—")),
+        rvStat("Positive topics", escapeHtml((body.positive_topics || []).slice(0, 3).join(", ") || "—")),
+        rvStat("Negative topics", escapeHtml((body.negative_topics || []).slice(0, 3).join(", ") || "—")),
+      ].join("");
+      const sources = body.source_breakdown || body.connector_status || [];
+      ciSourcesEl.innerHTML = sources.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${sources.map((s) =>
+          `<li><strong>${escapeHtml(s.source)}</strong> · ${escapeHtml(s.status)} · ${s.evidence_count || 0} evidence · eng ${Number(s.average_engagement || 0).toFixed(1)}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No source metrics.</p>';
+      const topics = body.topics || [];
+      ciTopicsEl.innerHTML = topics.length
+        ? `<table style="width:100%;border-collapse:collapse;font-size:0.92rem;">
+            <thead><tr><th align="left">Topic</th><th align="left">Mentions</th><th align="left">Sentiment</th><th align="left">Confidence</th></tr></thead>
+            <tbody>${topics.slice(0, 12).map((t) =>
+              `<tr><td>${escapeHtml(t.name)}</td><td>${t.mention_count}</td><td>${escapeHtml((t.sentiment && t.sentiment.label) || "—")}</td><td>${escapeHtml(t.confidence || "—")}</td></tr>`
+            ).join("")}</tbody></table>`
+        : '<p class="empty-state">No topics.</p>';
+      ciPositiveEl.innerHTML = renderBulletList(body.positive_topics || [], "No positive topics.");
+      ciNegativeEl.innerHTML = renderBulletList(body.negative_topics || [], "No negative topics.");
+      const timeline = body.timeline || [];
+      ciTimelineEl.innerHTML = timeline.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${timeline.map((e) =>
+          `<li>${escapeHtml((e.timestamp || "").slice(0, 10))} · ${e.evidence_count} evidence · +${e.positive_count}/-${e.negative_count}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No timeline events.</p>';
+      ciConnectorsEl.innerHTML = sources.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${sources.map((s) =>
+          `<li><strong>${escapeHtml(s.source)}</strong>: ${escapeHtml(s.status)}${s.enabled ? " (enabled)" : " (disabled)"} · ${escapeHtml(s.transport || "mock")}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No connectors.</p>';
+      const recent = body.recent_discussions || [];
+      ciRecentEl.innerHTML = recent.length
+        ? `<ul style="margin:0;padding-left:1.2rem;">${recent.map((d) =>
+          `<li><strong>${escapeHtml(d.source)}</strong> · ${escapeHtml(d.topic || "")}: ${escapeHtml(d.title || d.body || "")}</li>`
+        ).join("")}</ul>`
+        : '<p class="empty-state">No recent discussions.</p>';
+      ciExplorerEl.innerHTML = topics.length
+        ? topics.slice(0, 6).map((t) => {
+          const label = (t.sentiment && t.sentiment.label === "positive") ? "Excellent" : ((t.sentiment && t.sentiment.label) || "Mixed");
+          const ids = (t.evidence_ids || []).slice(0, 4);
+          return `<div style="margin-bottom:0.85rem;">
+            <strong>${escapeHtml(t.name)} ${escapeHtml(label)}</strong>
+            <div class="hint">Confidence ${escapeHtml(t.confidence || "—")}</div>
+            <div>Supported by:</div>
+            <ul style="margin:0.25rem 0 0;padding-left:1.2rem;">${ids.map((id) => `<li>${escapeHtml(id)}</li>`).join("") || "<li>No evidence IDs</li>"}</ul>
+          </div>`;
+        }).join("")
+        : '<p class="empty-state">No explorer insights.</p>';
+      const summary = body.summary || {};
+      const praised = (summary.most_praised || []).map((i) => i.statement);
+      const complaints = (summary.most_complaints || []).map((i) => i.statement);
+      const advice = (summary.buying_advice || []).map((i) => i.statement);
+      ciSummaryEl.innerHTML = `
+        <p class="hint" style="margin:0 0 0.5rem;">Provider: ${escapeHtml(summary.provider || "deterministic")} · mode: ${escapeHtml(summary.mode || "economy")}</p>
+        <div><strong>Most praised</strong>${renderBulletList(praised, "None")}</div>
+        <div style="margin-top:0.5rem;"><strong>Most complaints</strong>${renderBulletList(complaints, "None")}</div>
+        <div style="margin-top:0.5rem;"><strong>Buying advice</strong>${renderBulletList(advice, "None")}</div>
+      `;
+      const warnings = (body.warnings || []).map((w) => w.message || w);
+      ciWarningsEl.innerHTML = renderBulletList(warnings, "No warnings.");
+      if (body.product_id) ciProductInput.value = body.product_id;
+    }
+
+    async function loadCommunityDemo() {
+      ciDemoBtn.disabled = true;
+      showEl(ciStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading community dashboard…</div>');
+      try {
+        const mode = ciModeInput.value || "economy";
+        const response = await fetch(`/api/v1/community/demo?mode=${encodeURIComponent(mode)}`);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load community demo.");
+        }
+        const body = await response.json();
+        renderCommunityDashboard(body);
+        showEl(ciStatusEl, `<div class="hint">Dashboard loaded · trust ${body.trust ? body.trust.score : "—"} · ${body.evidence_count || 0} evidence</div>`);
+      } catch (error) {
+        showEl(ciStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        ciDemoBtn.disabled = false;
+      }
+    }
+
+    async function loadCommunityProduct() {
+      const productId = (ciProductInput.value || "").trim();
+      if (!productId) {
+        showEl(ciStatusEl, '<div class="error">Product ID is required.</div>');
+        return;
+      }
+      ciLoadBtn.disabled = true;
+      showEl(ciStatusEl, '<div class="loading"><span class="spinner" aria-hidden="true"></span> Loading product community intel…</div>');
+      try {
+        const mode = ciModeInput.value || "economy";
+        const response = await fetch(`/api/v1/community/product/${encodeURIComponent(productId)}?mode=${encodeURIComponent(mode)}`);
+        if (!response.ok) {
+          const detail = await response.json().catch(() => ({}));
+          throw new Error(detail.detail || "Failed to load community product.");
+        }
+        const body = await response.json();
+        renderCommunityDashboard({
+          ...body,
+          source_breakdown: body.source_metrics || [],
+          connector_status: body.source_metrics || [],
+          recent_discussions: (body.evidence || []).slice(0, 8),
+          positive_topics: (body.topics || []).filter((t) => t.sentiment && t.sentiment.label === "positive").map((t) => t.name),
+          negative_topics: (body.topics || []).filter((t) => t.negative_count > t.positive_count).map((t) => t.name),
+        });
+        showEl(ciStatusEl, `<div class="hint">Product loaded · trust ${body.trust ? body.trust.score : "—"} · ${body.evidence_count || 0} evidence</div>`);
+      } catch (error) {
+        showEl(ciStatusEl, `<div class="error">${error.message || error}</div>`);
+      } finally {
+        ciLoadBtn.disabled = false;
+      }
+    }
+
+    ciLoadBtn.addEventListener("click", loadCommunityProduct);
+    ciDemoBtn.addEventListener("click", loadCommunityDemo);
+    loadCommunityDemo();
   </script>
 </body>
 </html>

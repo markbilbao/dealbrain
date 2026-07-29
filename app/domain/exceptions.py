@@ -238,3 +238,19 @@ class ShoppingAssistantNotFoundError(Exception):
     def __init__(self, resource_id: str) -> None:
         self.resource_id = resource_id
         super().__init__(f"Shopping assistant resource not found: {resource_id}")
+
+
+class CommunityIntelligenceValidationError(Exception):
+    """Raised when community intelligence inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class CommunityIntelligenceNotFoundError(Exception):
+    """Raised when community evidence or a product intelligence payload is missing."""
+
+    def __init__(self, resource_id: str) -> None:
+        self.resource_id = resource_id
+        super().__init__(f"Community intelligence resource not found: {resource_id}")
