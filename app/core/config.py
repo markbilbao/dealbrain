@@ -229,6 +229,16 @@ class Settings(BaseSettings):
     # Affiliate Revenue Engine — Sprint 20 (demo/placeholder merchants only)
     affiliate_enabled: bool = Field(default=True, alias="AFFILIATE_ENABLED")
 
+    # Merchant Platform — Sprint 21 (demo merchants only; no public launch)
+    merchant_platform_enabled: bool = Field(
+        default=True,
+        alias="MERCHANT_PLATFORM_ENABLED",
+    )
+    merchant_platform_require_auth: bool = Field(
+        default=True,
+        alias="MERCHANT_PLATFORM_REQUIRE_AUTH",
+    )
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:

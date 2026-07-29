@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     intelligence,
     marketplace,
     marketplace_data,
+    merchant,
     notifications,
     personal,
     price_history,
@@ -58,6 +59,9 @@ api_v1_router.include_router(affiliate.click_router, tags=["affiliate"])
 api_v1_router.include_router(affiliate.report_router, tags=["affiliate"])
 api_v1_router.include_router(affiliate.merchant_router, tags=["affiliate"])
 api_v1_router.include_router(affiliate.disclosure_router, tags=["affiliate"])
+# Sprint 21 Merchant Platform v1 — never manipulates organic DealScore/ranking.
+api_v1_router.include_router(merchant.router, tags=["merchant-platform"])
+api_v1_router.include_router(merchant.admin_router, tags=["merchant-admin"])
 api_v1_router.include_router(reviews.router, tags=["reviews"])
 api_v1_router.include_router(review_summary.router, tags=["review-summary"])
 api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistant"])

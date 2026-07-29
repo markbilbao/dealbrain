@@ -462,3 +462,97 @@ class AffiliateDisclosureNotFoundError(AffiliateNotFoundError):
     def __init__(self, disclosure_id: str) -> None:
         super().__init__("disclosure", disclosure_id)
         self.disclosure_id = disclosure_id
+
+
+class MerchantValidationError(Exception):
+    """Raised when merchant platform inputs cannot be processed safely."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class MerchantNotFoundError(Exception):
+    """Raised when a merchant platform resource cannot be found."""
+
+    def __init__(self, resource_type: str, resource_id: str) -> None:
+        self.resource_type = resource_type
+        self.resource_id = resource_id
+        super().__init__(f"Merchant {resource_type} not found: {resource_id}")
+
+
+class MerchantOrganizationNotFoundError(MerchantNotFoundError):
+    """Raised when a merchant organization cannot be found."""
+
+    def __init__(self, organization_id: str) -> None:
+        super().__init__("organization", organization_id)
+        self.organization_id = organization_id
+
+
+class MerchantAccountNotFoundError(MerchantNotFoundError):
+    """Raised when a merchant account cannot be found."""
+
+    def __init__(self, account_id: str) -> None:
+        super().__init__("account", account_id)
+        self.account_id = account_id
+
+
+class MerchantMembershipNotFoundError(MerchantNotFoundError):
+    """Raised when a membership cannot be found."""
+
+    def __init__(self, membership_id: str) -> None:
+        super().__init__("membership", membership_id)
+        self.membership_id = membership_id
+
+
+class MerchantInvitationNotFoundError(MerchantNotFoundError):
+    """Raised when an invitation cannot be found."""
+
+    def __init__(self, invitation_id: str) -> None:
+        super().__init__("invitation", invitation_id)
+        self.invitation_id = invitation_id
+
+
+class MerchantSubmissionNotFoundError(MerchantNotFoundError):
+    """Raised when a product or offer submission cannot be found."""
+
+    def __init__(self, submission_id: str, *, resource_type: str = "submission") -> None:
+        super().__init__(resource_type, submission_id)
+        self.submission_id = submission_id
+
+
+class MerchantPromotionNotFoundError(MerchantNotFoundError):
+    """Raised when a promotion cannot be found."""
+
+    def __init__(self, promotion_id: str) -> None:
+        super().__init__("promotion", promotion_id)
+        self.promotion_id = promotion_id
+
+
+class MerchantCampaignNotFoundError(MerchantNotFoundError):
+    """Raised when a campaign cannot be found."""
+
+    def __init__(self, campaign_id: str) -> None:
+        super().__init__("campaign", campaign_id)
+        self.campaign_id = campaign_id
+
+
+class MerchantAuthorizationError(Exception):
+    """Raised when a merchant actor lacks permission for an action."""
+
+    def __init__(self, message: str = "Not authorized for this merchant action.") -> None:
+        self.message = message
+        super().__init__(message)
+
+
+class MerchantIsolationError(Exception):
+    """Raised when a cross-merchant access attempt is blocked."""
+
+    def __init__(
+        self,
+        organization_id: str,
+        message: str = "Cross-merchant access denied.",
+    ) -> None:
+        self.organization_id = organization_id
+        self.message = message
+        super().__init__(message)
