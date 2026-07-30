@@ -1,0 +1,32 @@
+# Staging overlay — extends base; no in-container Postgres (RDS).
+#
+# Usage:
+#   export DEALBRAIN_IMAGE=ghcr.io/ORG/dealbrain@sha256:…
+#   # inject secrets from Secrets Manager / env file (gitignored)
+#   docker compose -f infra/compose/docker-compose.base.yml \
+#                  -f infra/compose/docker-compose.staging.yml up -d
+#   docker compose -f infra/compose/docker-compose.base.yml \
+#                  -f infra/compose/docker-compose.staging.yml \
+#                  --profile migrate run --rm migrate
+
+name: dealbrain-staging
+
+services:
+  api:
+    environment:
+      APP_ENV: staging
+      LAUNCH_STRICT_STARTUP: ${LAUNCH_STRICT_STARTUP:-false}
+      ALLOW_DEMO_RESET_TOKENS: ${ALLOW_DEMO_RESET_TOKENS:-true}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      DEMO_LAUNCHER_ENABLED: ${DEMO_LAUNCHER_ENABLED:-false}
+      OPENAPI_PUBLIC_DOCS: ${OPENAPI_PUBLIC_DOCS:-false}
+    labels:
+      dealbrain.environment: staging
+      dealbrain.service: api
+
+  migrate:
+    environment:
+      APP_ENV: staging
+    labels:
+      dealbrain.environment: staging
+      dealbrain.service: migrate

@@ -1,6 +1,6 @@
 # DealBrain Architecture Lock
 
-**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive)  
+**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive)  
 **Hard endpoint:** Sprint 40  
 **Runtime enforcement:** This document is a change-control policy. It is **not** enforced by a separate runtime policy engine unless a specific check is implemented and documented elsewhere.
 
@@ -42,10 +42,13 @@ Sprint 24 owns **API contracts only** (OpenAPI, response shapes, pagination/filt
 | 22 | Launch Infrastructure, Startup Validation, Health and Readiness, Logging, Rate Limiting, Launch Cache, Diagnostics |
 | 23 | Production persistence adapters, migrations, transaction infrastructure, durable operational state, persistence validation, restart recovery, production configuration hardening, deeper readiness checks related to persistence |
 | 24 | API contracts, endpoint consistency, DTO/OpenAPI standardization, pagination/filtering/sorting conventions, error-response documentation, API integration/contract tests, API documentation, OpenAPI drift detection, compatibility gate — **not** domain engines or persistence adapters |
+| 25 | Production infrastructure and operations on the selected AWS single-region Compose+RDS stack: Terraform/Compose/Actions, secrets injection, promotion by digest, migrate jobs, observability, backup/DR/rollback, runbooks — **does not** own domain engines, API contracts, persistence adapters, or readiness semantics |
 
 Sprint 23 must **not** take ownership of Sprints 1–22 domain logic.
 
 Sprint 24 must **not** take ownership of Sprints 1–23 domain logic or persistence.
+
+Sprint 25 must **not** take ownership of Sprints 1–24 domain logic, API contracts, persistence adapters, or readiness probe semantics.
 
 ---
 
@@ -192,3 +195,23 @@ Sprint 24 is an **additive** stability sprint. It freezes and documents HTTP con
 - **Persistence (Sprint 23):** adapters, migrations, and durable stores are unchanged by Sprint 24
 - **Business / domain ownership (Sprints 1–22):** DealScore, Recommendation, Shopping Assistant ranking, affiliate attachment order, merchant neutrality, and all other locked domain owners remain as in §§2–10
 - Sprint 24 may wrap HTTP presentation only; it must not change domain outputs for identical inputs
+
+---
+
+## 14. Sprint 25 — Production infrastructure ownership (additive)
+
+Sprint 25 is an **additive** operations sprint. It owns the AWS single-region runtime platform and operational practices without redistributing domain, API, or persistence ownership.
+
+### 14.1 What Sprint 25 owns
+
+- Terraform / Compose / GitHub Actions deployment topology for staging and production
+- Secrets Manager injection, environment isolation, image digest promotion
+- Dedicated migrate jobs (API does not migrate at startup)
+- Observability, backup/DR/rollback evidence, and operational runbooks
+
+### 14.2 Unchanged ownership
+
+- **Readiness semantics (Sprint 22):** `/live`, `/ready`, `/health` meanings unchanged; ALB uses `/ready`, container HEALTHCHECK uses `/live`
+- **Persistence (Sprint 23):** Alembic schema and adapters unchanged by infrastructure work
+- **API contracts (Sprint 24):** no `/api/v2`, no response body redesign
+- **Domain engines (Sprints 1–21):** DealScore, Recommendation, Shopping Assistant ranking, Personal AI, affiliate/merchant neutrality untouched

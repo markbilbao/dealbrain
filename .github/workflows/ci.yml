@@ -1,0 +1,180 @@
+# Sprint 25a — CI foundation (lint, tests, contracts, infra validate, image build).
+# Does NOT deploy, apply Terraform to AWS, or require production secrets.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - sprint-25
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  TERRAFORM_VERSION: "1.9.8"
+
+jobs:
+  lint-and-test:
+    name: Lint, contracts, and pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Ruff lint
+        run: uv run ruff check app tests
+
+      - name: Ruff format check
+        run: uv run ruff format --check app tests
+
+      - name: Secret scan (deterministic)
+        run: uv run python scripts/secret_scan_25a.py
+
+      - name: OpenAPI / API contract tests
+        run: uv run pytest tests/unit/api_contract/test_openapi_drift.py tests/unit/api_contract -q
+
+      - name: Protected-module and architecture-lock tests
+        run: |
+          uv run pytest \
+            tests/unit/test_sprint22_protected_modules.py \
+            tests/unit/persistence/test_sprint23_architecture.py \
+            tests/unit/test_sprint25a_infrastructure.py \
+            -q
+
+      - name: Full pytest suite
+        run: uv run pytest -q
+
+  terraform:
+    name: Terraform fmt and validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive infra/terraform
+
+      - name: Validate staging
+        working-directory: infra/terraform/environments/staging
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: Validate production
+        working-directory: infra/terraform/environments/production
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+  compose:
+    name: Docker Compose config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compose config (production)
+        env:
+          DEALBRAIN_IMAGE: ghcr.io/example-org/dealbrain:ci-test
+          DATABASE_URL: postgresql+asyncpg://ci:CiStrongPass12@db.example:5432/dealbrain
+          CORS_ORIGINS: https://example.com
+          APP_ENV: production
+        run: |
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            -f infra/compose/docker-compose.production.yml \
+            config >/dev/null
+
+      - name: Compose config (staging)
+        env:
+          DEALBRAIN_IMAGE: ghcr.io/example-org/dealbrain:ci-test
+          DATABASE_URL: postgresql+asyncpg://ci:CiStrongPass12@db.example:5432/dealbrain
+          CORS_ORIGINS: https://staging.example.com
+          APP_ENV: staging
+        run: |
+          docker compose \
+            -f infra/compose/docker-compose.base.yml \
+            -f infra/compose/docker-compose.staging.yml \
+            config >/dev/null
+
+  image:
+    name: Docker image build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push on PR)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: |
+            dealbrain:ci-${{ github.sha }}
+            dealbrain:ci-local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image exists (no migrate at build)
+        run: |
+          docker image inspect "dealbrain:ci-${{ github.sha }}" >/dev/null
+          # Build must not execute Alembic; Dockerfile has no migrate RUN step.
+          if docker history --no-trunc "dealbrain:ci-${{ github.sha }}" | grep -qi alembic; then
+            echo "Unexpected alembic layer in image history" >&2
+            exit 1
+          fi
+
+      - name: Optional GHCR publish (protected branches only)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sprint-25')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push CI digest foundation to GHCR
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sprint-25')
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}:ci-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

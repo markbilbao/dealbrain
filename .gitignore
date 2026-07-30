@@ -150,12 +150,23 @@ activemq-data/
 # Environments
 .env
 .envrc
+.env.staging
+.env.production
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Terraform local state / var files (examples remain tracked)
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/terraform.tfvars
+**/*.auto.tfvars
+!**/terraform.tfvars.example
+
 
 # Spyder project settings
 .spyderproject

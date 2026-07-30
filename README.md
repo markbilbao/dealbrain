@@ -39,7 +39,8 @@ app/
 
 Architecture lock (Sprints 23–40): [docs/architecture/ARCHITECTURE_LOCK.md](docs/architecture/ARCHITECTURE_LOCK.md).  
 Persistence guide: [docs/PERSISTENCE.md](docs/PERSISTENCE.md).  
-API standards (Sprint 24): [docs/API_STANDARDS.md](docs/API_STANDARDS.md) · [Sprint 24 contract](docs/architecture/SPRINT_24_API_STABILITY.md).
+API standards (Sprint 24): [docs/API_STANDARDS.md](docs/API_STANDARDS.md) · [Sprint 24 contract](docs/architecture/SPRINT_24_API_STABILITY.md).  
+Production infrastructure (Sprint 25a): [docs/SPRINT_25A_INFRASTRUCTURE.md](docs/SPRINT_25A_INFRASTRUCTURE.md) · [`infra/`](infra/) · [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
 ## Quick Start
 

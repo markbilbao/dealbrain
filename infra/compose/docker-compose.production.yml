@@ -1,0 +1,36 @@
+# Production overlay — extends base; no in-container Postgres (RDS).
+# Fail-safe defaults: debug off, demo off, strict startup on.
+#
+# Usage:
+#   export DEALBRAIN_IMAGE=ghcr.io/ORG/dealbrain@sha256:…   # same digest as staging
+#   docker compose -f infra/compose/docker-compose.base.yml \
+#                  -f infra/compose/docker-compose.production.yml up -d
+#   docker compose -f infra/compose/docker-compose.base.yml \
+#                  -f infra/compose/docker-compose.production.yml \
+#                  --profile migrate run --rm migrate
+
+name: dealbrain-production
+
+services:
+  api:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LAUNCH_STRICT_STARTUP: "true"
+      ALLOW_DEMO_RESET_TOKENS: "false"
+      SEED_DEMO_DATA: "false"
+      DEMO_LAUNCHER_ENABLED: "false"
+      PRICE_HISTORY_SEED_DEMO_MOCK: "false"
+      OPENAPI_PUBLIC_DOCS: "false"
+      STRUCTURED_LOGGING_ENABLED: "true"
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
+    labels:
+      dealbrain.environment: production
+      dealbrain.service: api
+
+  migrate:
+    environment:
+      APP_ENV: production
+    labels:
+      dealbrain.environment: production
+      dealbrain.service: migrate

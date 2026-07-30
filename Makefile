@@ -1,4 +1,4 @@
-.PHONY: install dev run test lint migrate docker-up docker-down format
+.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra
 
 install:
 	uv sync
@@ -34,3 +34,6 @@ docker-down:
 
 docker-migrate:
 	docker compose --profile migrate up migrate
+
+validate-infra:
+	bash scripts/validate_infra_25a.sh

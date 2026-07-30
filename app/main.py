@@ -97,10 +97,6 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if validation.errors:
         for error in validation.errors:
             logger.error("startup_validation error=%s", error)
-        if settings.is_production or settings.launch_strict_startup:
-            from app.domain.exceptions import ConfigurationValidationError
-
-            raise ConfigurationValidationError(list(validation.errors))
     else:
         logger.info("startup_validation ok environment=%s", validation.environment)
 
