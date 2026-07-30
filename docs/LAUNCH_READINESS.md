@@ -7,16 +7,31 @@
 
 ## Overview
 
-Sprint 22 prepares DealBrain for a **public beta launch rehearsal** without
-real cloud deployment, production databases, payments, or production secrets.
-
-Everything remains **demo / in-memory safe**.
+Sprint 22 prepares DealBrain for a **public beta launch rehearsal**.
+Sprint 23 adds **durable operational persistence** and deeper readiness checks
+for Sprints 17–21 while Sprint 22 remains the readiness owner.
 
 **Hard rules preserved:**
 - Organic DealScore ranking is unchanged
 - Affiliate generation remains post-rank only
 - Merchant isolation is preserved
 - Prior sprint APIs continue to work
+
+## Readiness levels (Sprint 23)
+
+`/ready` reports `persistence_level`:
+
+| Level | Meaning |
+|-------|---------|
+| LIVE | Process up (`/live` only) |
+| READY | DB up + required production persistence bindings/schema OK |
+| DEGRADED | Non-fatal gaps (e.g. staging memory backends) |
+| NOT_READY | Production memory adapters, missing schema, or DB down |
+
+Checks distinguish **shallow** (`SELECT 1`) vs **deep** (`operational_entities` + adapter bindings).
+Simulated connectors/transports are never labeled as live integrations.
+
+See also [PERSISTENCE.md](PERSISTENCE.md) and [SPRINT_23_PRODUCTION_PERSISTENCE.md](SPRINT_23_PRODUCTION_PERSISTENCE.md).
 
 ## Architecture
 

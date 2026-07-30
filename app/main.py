@@ -58,10 +58,42 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     if validation.errors:
         for error in validation.errors:
             logger.error("startup_validation error=%s", error)
+        if settings.is_production or settings.launch_strict_startup:
+            from app.domain.exceptions import ConfigurationValidationError
+
+            raise ConfigurationValidationError(list(validation.errors))
     else:
         logger.info("startup_validation ok environment=%s", validation.environment)
 
+    if settings.is_production:
+        from app.infrastructure.persistence.binding import assert_production_persistence
+
+        assert_production_persistence(settings)
+
     await init_db()
+
+    from app.infrastructure.persistence.binding import resolve_backend
+    from app.infrastructure.persistence.session import require_operational_schema
+
+    needs_sql = any(
+        resolve_backend(d) == "sqlalchemy"
+        for d in (
+            "user_platform",
+            "marketplace_data",
+            "alerts",
+            "notifications",
+            "affiliate",
+            "merchant",
+        )
+    )
+    if needs_sql:
+        try:
+            require_operational_schema()
+            logger.info("operational persistence schema ok")
+        except Exception as exc:
+            logger.error("operational persistence schema check failed: %s", exc)
+            if settings.is_production or settings.launch_strict_startup:
+                raise
 
     yield
 

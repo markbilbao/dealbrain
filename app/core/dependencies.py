@@ -189,6 +189,12 @@ _MEMORY_ALERT_RULE_REPOSITORY = InMemoryAlertRuleRepository()
 _MEMORY_NOTIFICATION_CENTER_REPOSITORY = InMemoryNotificationCenterRepository()
 _MEMORY_AFFILIATE_REPOSITORY = InMemoryAffiliateRepository()
 _MEMORY_MERCHANT_REPOSITORY = InMemoryMerchantRepository()
+_SQL_USER_PLATFORM_STORE = None
+_SQL_MARKETPLACE_DATA_REPOSITORY = None
+_SQL_ALERT_RULE_REPOSITORY = None
+_SQL_NOTIFICATION_CENTER_REPOSITORY = None
+_SQL_AFFILIATE_REPOSITORY = None
+_SQL_MERCHANT_REPOSITORY = None
 _WATCHLIST_AUDIT_LOGGER = WatchlistAuditLogger()
 _MEMORY_REVIEW_REPOSITORY = InMemoryReviewRepository()
 _MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
@@ -349,7 +355,7 @@ def get_marketplace_connector_registry() -> MarketplaceConnectorRegistry:
         registry.register(FixtureMarketplaceConnector())
         registry.register(
             ImportedMarketplaceConnector(
-                lambda: _MARKETPLACE_DATA_REPOSITORY.list_offers(limit=10_000)
+                lambda: get_marketplace_data_repository().list_offers(limit=10_000)
             )
         )
         registry.register(MockLiveMarketplaceConnector())
@@ -357,13 +363,24 @@ def get_marketplace_connector_registry() -> MarketplaceConnectorRegistry:
     return _MARKETPLACE_CONNECTOR_REGISTRY
 
 
-def get_marketplace_data_repository() -> InMemoryMarketplaceDataRepository:
-    """Provide the process-scoped marketplace data repository."""
+def get_marketplace_data_repository():
+    """Provide marketplace data repository (memory or sqlalchemy per config)."""
+    from app.infrastructure.persistence.binding import resolve_backend
+
+    global _SQL_MARKETPLACE_DATA_REPOSITORY
+    if resolve_backend("marketplace_data") == "sqlalchemy":
+        if _SQL_MARKETPLACE_DATA_REPOSITORY is None:
+            from app.infrastructure.database.repositories.marketplace_data_repository import (
+                SqlAlchemyMarketplaceDataRepository,
+            )
+
+            _SQL_MARKETPLACE_DATA_REPOSITORY = SqlAlchemyMarketplaceDataRepository()
+        return _SQL_MARKETPLACE_DATA_REPOSITORY
     return _MARKETPLACE_DATA_REPOSITORY
 
 
 def get_marketplace_data_service(
-    repository: InMemoryMarketplaceDataRepository = Depends(get_marketplace_data_repository),
+    repository=Depends(get_marketplace_data_repository),
     registry: MarketplaceConnectorRegistry = Depends(get_marketplace_connector_registry),
 ) -> MarketplaceDataService:
     """Provide Marketplace Data Synchronization orchestration."""
@@ -592,21 +609,39 @@ def get_extended_watchlist_service(
 
 
 def get_alert_rule_repository() -> AlertRuleRepository:
-    """Provide the process-scoped in-memory alert rule repository (Sprint 19)."""
+    """Provide alert rule repository (memory or sqlalchemy per config)."""
+    from app.infrastructure.persistence.binding import resolve_backend
+
+    global _SQL_ALERT_RULE_REPOSITORY
+    if resolve_backend("alerts") == "sqlalchemy":
+        if _SQL_ALERT_RULE_REPOSITORY is None:
+            from app.infrastructure.database.repositories.alert_repository import (
+                SqlAlchemyAlertRuleRepository,
+            )
+
+            _SQL_ALERT_RULE_REPOSITORY = SqlAlchemyAlertRuleRepository()
+        return _SQL_ALERT_RULE_REPOSITORY
     return _MEMORY_ALERT_RULE_REPOSITORY
 
 
 def get_alert_event_repository() -> AlertEventRepository:
-    """Provide the process-scoped in-memory alert event repository (Sprint 19).
-
-    Backed by the same store as :func:`get_alert_rule_repository` —
-    :class:`InMemoryAlertRuleRepository` implements both ports.
-    """
-    return _MEMORY_ALERT_RULE_REPOSITORY
+    """Provide alert event repository (same store as alert rules)."""
+    return get_alert_rule_repository()  # type: ignore[return-value]
 
 
 def get_notification_center_repository() -> NotificationCenterRepository:
-    """Provide the process-scoped in-memory Notification Center repository (Sprint 19)."""
+    """Provide Notification Center repository (memory or sqlalchemy per config)."""
+    from app.infrastructure.persistence.binding import resolve_backend
+
+    global _SQL_NOTIFICATION_CENTER_REPOSITORY
+    if resolve_backend("notifications") == "sqlalchemy":
+        if _SQL_NOTIFICATION_CENTER_REPOSITORY is None:
+            from app.infrastructure.database.repositories.notification_repository import (
+                SqlAlchemyNotificationCenterRepository,
+            )
+
+            _SQL_NOTIFICATION_CENTER_REPOSITORY = SqlAlchemyNotificationCenterRepository()
+        return _SQL_NOTIFICATION_CENTER_REPOSITORY
     return _MEMORY_NOTIFICATION_CENTER_REPOSITORY
 
 
@@ -1116,14 +1151,29 @@ def get_personal_agent_service(
 
 
 def get_user_platform_store():
-    """Provide the process-scoped in-memory User Platform store, seeded with demo users."""
-    global _USER_PLATFORM_STORE
+    """Provide User Platform store (memory or sqlalchemy per config)."""
+    from app.infrastructure.persistence.binding import resolve_backend
+
+    global _USER_PLATFORM_STORE, _SQL_USER_PLATFORM_STORE
+    if resolve_backend("user_platform") == "sqlalchemy":
+        if _SQL_USER_PLATFORM_STORE is None:
+            from app.infrastructure.database.repositories.user_platform_repository import (
+                SqlAlchemyUserPlatformStore,
+            )
+            from app.user.fixtures import seed_demo_users
+
+            _SQL_USER_PLATFORM_STORE = SqlAlchemyUserPlatformStore()
+            if settings.seed_demo_data and not settings.is_production:
+                seed_demo_users(_SQL_USER_PLATFORM_STORE)
+        return _SQL_USER_PLATFORM_STORE
     if _USER_PLATFORM_STORE is None:
         from app.user.fixtures import seed_demo_users
         from app.user.memory import InMemoryUserPlatformStore
 
         _USER_PLATFORM_STORE = InMemoryUserPlatformStore()
-        seed_demo_users(_USER_PLATFORM_STORE)
+        # In-memory adapter is the explicit demo path: seed unless production.
+        if settings.seed_demo_data or not settings.is_production:
+            seed_demo_users(_USER_PLATFORM_STORE)
     return _USER_PLATFORM_STORE
 
 
@@ -1195,13 +1245,25 @@ def get_user_dashboard_service(
     return _USER_DASHBOARD_SERVICE
 
 
-def get_affiliate_repository() -> InMemoryAffiliateRepository:
-    """Provide the process-scoped in-memory Affiliate Revenue Engine store (Sprint 20)."""
+def get_affiliate_repository():
+    """Provide Affiliate Revenue Engine store (memory or sqlalchemy per config)."""
+    from app.infrastructure.persistence.binding import resolve_backend
+
+    global _SQL_AFFILIATE_REPOSITORY
+    if resolve_backend("affiliate") == "sqlalchemy":
+        if _SQL_AFFILIATE_REPOSITORY is None:
+            from app.infrastructure.database.repositories.affiliate_repository import (
+                SqlAlchemyAffiliateRepository,
+            )
+
+            seed = settings.seed_demo_data and not settings.is_production
+            _SQL_AFFILIATE_REPOSITORY = SqlAlchemyAffiliateRepository(seed=seed)
+        return _SQL_AFFILIATE_REPOSITORY
     return _MEMORY_AFFILIATE_REPOSITORY
 
 
 def get_affiliate_merchant_service(
-    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    repository=Depends(get_affiliate_repository),
 ) -> AffiliateMerchantService:
     """Provide the Affiliate Merchant registry service (Sprint 20)."""
     global _AFFILIATE_MERCHANT_SERVICE
@@ -1211,7 +1273,7 @@ def get_affiliate_merchant_service(
 
 
 def get_affiliate_link_service(
-    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    repository=Depends(get_affiliate_repository),
     merchant_service: AffiliateMerchantService = Depends(get_affiliate_merchant_service),
 ) -> AffiliateLinkService:
     """Provide the Affiliate Link generation service (Sprint 20)."""
@@ -1228,7 +1290,7 @@ def get_affiliate_link_service(
 
 
 def get_affiliate_tracking_service(
-    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    repository=Depends(get_affiliate_repository),
 ) -> AffiliateTrackingService:
     """Provide the Affiliate click tracking / attribution service (Sprint 20)."""
     global _AFFILIATE_TRACKING_SERVICE
@@ -1243,7 +1305,7 @@ def get_affiliate_tracking_service(
 
 
 def get_affiliate_reporting_service(
-    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    repository=Depends(get_affiliate_repository),
 ) -> AffiliateReportingService:
     """Provide the Affiliate revenue reporting service (Sprint 20)."""
     global _AFFILIATE_REPORTING_SERVICE
@@ -1255,7 +1317,7 @@ def get_affiliate_reporting_service(
 
 
 def get_affiliate_disclosure_service(
-    repository: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    repository=Depends(get_affiliate_repository),
 ) -> AffiliateDisclosureService:
     """Provide the Affiliate disclosure service (Sprint 20)."""
     global _AFFILIATE_DISCLOSURE_SERVICE
@@ -1264,13 +1326,25 @@ def get_affiliate_disclosure_service(
     return _AFFILIATE_DISCLOSURE_SERVICE
 
 
-def get_merchant_repository() -> InMemoryMerchantRepository:
-    """Provide the process-scoped in-memory Merchant Platform store (Sprint 21)."""
+def get_merchant_repository():
+    """Provide Merchant Platform store (memory or sqlalchemy per config)."""
+    from app.infrastructure.persistence.binding import resolve_backend
+
+    global _SQL_MERCHANT_REPOSITORY
+    if resolve_backend("merchant") == "sqlalchemy":
+        if _SQL_MERCHANT_REPOSITORY is None:
+            from app.infrastructure.database.repositories.merchant_repository import (
+                SqlAlchemyMerchantRepository,
+            )
+
+            seed = settings.seed_demo_data and not settings.is_production
+            _SQL_MERCHANT_REPOSITORY = SqlAlchemyMerchantRepository(seed=seed)
+        return _SQL_MERCHANT_REPOSITORY
     return _MEMORY_MERCHANT_REPOSITORY
 
 
 def get_merchant_auth_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantAuthService:
     """Provide merchant actor resolution (Sprint 21)."""
     global _MERCHANT_AUTH_SERVICE
@@ -1280,7 +1354,7 @@ def get_merchant_auth_service(
 
 
 def get_merchant_organization_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantOrganizationService:
     """Provide merchant organization management (Sprint 21)."""
     global _MERCHANT_ORGANIZATION_SERVICE
@@ -1292,7 +1366,7 @@ def get_merchant_organization_service(
 
 
 def get_merchant_membership_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantMembershipService:
     """Provide merchant membership / invitation management (Sprint 21)."""
     global _MERCHANT_MEMBERSHIP_SERVICE
@@ -1302,7 +1376,7 @@ def get_merchant_membership_service(
 
 
 def get_merchant_product_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantProductService:
     """Provide merchant product submission service (Sprint 21)."""
     global _MERCHANT_PRODUCT_SERVICE
@@ -1314,7 +1388,7 @@ def get_merchant_product_service(
 
 
 def get_merchant_offer_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantOfferService:
     """Provide merchant offer submission service (Sprint 21)."""
     global _MERCHANT_OFFER_SERVICE
@@ -1324,7 +1398,7 @@ def get_merchant_offer_service(
 
 
 def get_merchant_promotion_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantPromotionService:
     """Provide merchant promotion management (Sprint 21)."""
     global _MERCHANT_PROMOTION_SERVICE
@@ -1334,7 +1408,7 @@ def get_merchant_promotion_service(
 
 
 def get_merchant_campaign_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantCampaignService:
     """Provide sponsored campaign draft management (Sprint 21)."""
     global _MERCHANT_CAMPAIGN_SERVICE
@@ -1344,8 +1418,8 @@ def get_merchant_campaign_service(
 
 
 def get_merchant_analytics_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
-    affiliate_repo: InMemoryAffiliateRepository = Depends(get_affiliate_repository),
+    repository=Depends(get_merchant_repository),
+    affiliate_repo=Depends(get_affiliate_repository),
 ) -> MerchantAnalyticsService:
     """Provide merchant analytics + ranking explanations (Sprint 21)."""
     global _MERCHANT_ANALYTICS_SERVICE
@@ -1366,7 +1440,7 @@ def get_merchant_analytics_service(
 
 
 def get_merchant_admin_service(
-    repository: InMemoryMerchantRepository = Depends(get_merchant_repository),
+    repository=Depends(get_merchant_repository),
 ) -> MerchantAdminService:
     """Provide internal admin review workflows (Sprint 21)."""
     global _MERCHANT_ADMIN_SERVICE
@@ -1503,25 +1577,36 @@ def get_launch_dashboard_service() -> LaunchDashboardService:
             return len(_MEMORY_WATCHLIST_REPOSITORY.list_watchlists())
 
         def _merchants() -> int:
-            return len(_MEMORY_MERCHANT_REPOSITORY.list_organizations())
+            return len(get_merchant_repository().list_organizations())
 
         def _affiliate_clicks() -> int:
-            return len(_MEMORY_AFFILIATE_REPOSITORY.list_clicks(limit=10_000))
+            return len(get_affiliate_repository().list_clicks(limit=10_000))
 
         def _alerts() -> int:
-            return len(_MEMORY_ALERT_RULE_REPOSITORY.list_rules())
+            return len(get_alert_rule_repository().list_rules())
 
         def _notifications() -> int:
-            return len(_MEMORY_NOTIFICATION_CENTER_REPOSITORY._notifications)  # noqa: SLF001
+            repo = get_notification_center_repository()
+            if hasattr(repo, "_notifications"):
+                return len(repo._notifications)  # noqa: SLF001
+            # SQLAlchemy adapter: approximate via empty-user listing is wrong; use ops count if present
+            try:
+                from app.infrastructure.persistence.stores import NC_NOTIFICATIONS
+                from app.infrastructure.persistence.session import sync_session
+                from app.infrastructure.persistence.operational_store import OperationalStore
+                with sync_session() as session:
+                    return OperationalStore(session).count(NC_NOTIFICATIONS)
+            except Exception:
+                return 0
 
         def _products() -> int:
-            return len(_MEMORY_MERCHANT_REPOSITORY.list_product_submissions(limit=10_000))
+            return len(get_merchant_repository().list_product_submissions(limit=10_000))
 
         def _offers() -> int:
-            return len(_MEMORY_MERCHANT_REPOSITORY.list_offer_submissions(limit=10_000))
+            return len(get_merchant_repository().list_offer_submissions(limit=10_000))
 
         def _campaigns() -> int:
-            return len(_MEMORY_MERCHANT_REPOSITORY.list_campaigns(limit=10_000))
+            return len(get_merchant_repository().list_campaigns(limit=10_000))
 
         _LAUNCH_DASHBOARD_SERVICE = LaunchDashboardService(
             health_service=get_launch_health_service(),
