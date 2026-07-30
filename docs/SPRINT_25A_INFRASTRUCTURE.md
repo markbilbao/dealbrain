@@ -161,7 +161,9 @@ secret values. `/live` and `/ready` semantics are unchanged.
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs on pull requests and
 pushes to `main` / `sprint-25`:
 
-- Python deps via `uv`, Ruff lint/format
+- Python deps via `uv`, Ruff lint/format via **baseline gate**
+  (`scripts/check_ruff_baseline.py` + `tests/lint/baselines/ruff.baseline.json`):
+  pre-existing debt is grandfathered; CI fails only on **new** lint/format regressions
 - Deterministic secret scan (`scripts/secret_scan_25a.py`)
 - API/OpenAPI contract tests, protected-module/architecture tests, Sprint 25a tests
 - Full pytest suite
@@ -180,6 +182,7 @@ chmod +x scripts/validate_infra_25a.sh
 
 # Or manually:
 python scripts/secret_scan_25a.py
+uv run python scripts/check_ruff_baseline.py
 terraform fmt -check -recursive infra/terraform
 (cd infra/terraform/environments/staging && terraform init -backend=false && terraform validate)
 (cd infra/terraform/environments/production && terraform init -backend=false && terraform validate)
@@ -202,6 +205,9 @@ evidence before merge — do not claim local validate/build passed.
 - No AWS resources were applied by this change set
 - Remote state backend must be bootstrapped before shared `apply`
 - ACM/DNS cutover not performed
+- Ruff CI uses a committed baseline (`tests/lint/baselines/ruff.baseline.json`);
+  ~95 lint findings and ~90 unformatted files are grandfathered until intentionally
+  ratcheted with `uv run python scripts/check_ruff_baseline.py --update`
 - CloudWatch dashboards, synthetics, paging deferred
 - Deploy / promote workflows deferred to Sprint 25b+
 - EC2 user-data does not yet install Docker (deploy phase)

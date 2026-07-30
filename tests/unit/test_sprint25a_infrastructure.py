@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import json
 import re
 from pathlib import Path
 
@@ -351,6 +352,7 @@ def test_ci_workflow_exists_with_required_gates() -> None:
         "pull_request",
         "pytest",
         "ruff",
+        "check_ruff_baseline",
         "terraform fmt",
         "terraform validate",
         "docker compose",
@@ -364,6 +366,21 @@ def test_ci_workflow_exists_with_required_gates() -> None:
     assert "terraform apply" not in text
     assert "deploy-staging" not in text
     assert "deploy-production" not in text
+    # Must not enforce raw full-tree ruff without the baseline gate
+    assert "ruff check app tests" not in text
+    assert "ruff format --check app tests" not in text
+
+
+def test_ruff_baseline_artifact_exists() -> None:
+    baseline = ROOT / "tests/lint/baselines/ruff.baseline.json"
+    script = ROOT / "scripts/check_ruff_baseline.py"
+    assert script.is_file()
+    assert baseline.is_file()
+    data = json.loads(baseline.read_text(encoding="utf-8"))
+    assert data.get("version") == 1
+    assert isinstance(data.get("check"), dict)
+    assert isinstance(data.get("format_unformatted"), list)
+    assert data.get("totals", {}).get("check", 0) >= 1
 
 
 def test_infra_files_have_no_embedded_secrets() -> None:

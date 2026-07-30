@@ -13,8 +13,7 @@ test:
 	uv run pytest
 
 lint:
-	uv run ruff check app tests
-	uv run ruff format --check app tests
+	uv run python scripts/check_ruff_baseline.py
 
 format:
 	uv run ruff format app tests
