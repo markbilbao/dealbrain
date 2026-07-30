@@ -78,6 +78,10 @@ async def shopping_assistant_meta(
     "/query",
     response_model=ShoppingAssistantResponse,
     summary="Ask the AI shopping assistant a product-shopping question",
+    description=(
+        "Organic Shopping Assistant ranking is service-owned. "
+        "Caller-controlled sorting of organic results is not supported."
+    ),
 )
 async def query_shopping_assistant(
     body: ShoppingAssistantQueryRequest,

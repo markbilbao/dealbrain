@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.api_common import PaginationMeta
+
 
 class NotificationPayload(BaseModel):
     notification_id: str
@@ -32,7 +34,21 @@ class NotificationPayload(BaseModel):
 
 
 class NotificationListResponse(BaseModel):
+    """Notification inbox list.
+
+    Primary consumer field remains ``notifications``. Sprint 24 optionally
+    mirrors the same array on ``items`` and may attach ``pagination``.
+    """
+
     notifications: list[NotificationPayload] = Field(default_factory=list)
+    items: list[NotificationPayload] | None = Field(
+        default=None,
+        description="Additive alias of notifications (same order, same objects)",
+    )
+    pagination: PaginationMeta | None = Field(
+        default=None,
+        description="Additive pagination metadata when listing",
+    )
 
 
 class UnreadCountResponse(BaseModel):

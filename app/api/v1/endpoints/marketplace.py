@@ -22,6 +22,10 @@ router = APIRouter(prefix="/marketplace")
     "/search",
     response_model=MarketplaceSearchResponse,
     summary="Search mocked marketplace listings across connected marketplaces",
+    description=(
+        "Kind S search aggregate. Organic marketplace ordering is service-owned. "
+        "Caller-controlled ``sort`` is not supported. Not paginated."
+    ),
 )
 def search_marketplaces(
     q: str = Query(..., min_length=1, description="Search query"),

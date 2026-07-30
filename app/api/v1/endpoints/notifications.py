@@ -23,6 +23,12 @@ from app.domain.exceptions import (
     NotificationValidationError,
     UserPlatformAuthError,
 )
+from app.schemas.api_common import (
+    SORT_ALLOWLIST_NOTIFICATIONS,
+    apply_sort,
+    build_pagination_meta,
+    parse_sort,
+)
 from app.schemas.notifications import (
     MarkAllReadResponse,
     NotificationListResponse,
@@ -80,6 +86,11 @@ def _require_actor(actor: str | None) -> str:
     "",
     response_model=NotificationListResponse,
     summary="List the authenticated user's notifications",
+    description=(
+        "Primary collection key remains ``notifications``. Sprint 24 adds optional "
+        "``items`` (alias) and ``pagination``. Optional presentation sort: "
+        "created_at, severity."
+    ),
 )
 async def list_notifications(
     type: str | None = None,  # noqa: A002 - matches query param naming
@@ -88,27 +99,61 @@ async def list_notifications(
     unread: bool | None = None,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
+    sort: str | None = Query(
+        default=None,
+        description="Optional presentation sort, e.g. sort=-created_at,severity",
+    ),
     user_id: str | None = Query(default=None, description="Demo-mode fallback user id"),
     authorization: str | None = Header(default=None),
     service: NotificationCenterService = Depends(get_notification_center_service),
     user_platform: UserPlatformService = Depends(get_user_platform_service),
 ) -> NotificationListResponse:
     actor = _require_actor(_resolve_actor(authorization, user_platform, fallback_user_id=user_id))
+    directives = parse_sort(sort, SORT_ALLOWLIST_NOTIFICATIONS)
     try:
-        notifications = service.list_notifications(
-            actor,
-            type=NotificationType(type) if type else None,
-            severity=NotificationSeverity(severity) if severity else None,
-            watchlist_id=watchlist_id,
-            unread=unread,
-            limit=limit,
-            offset=offset,
-        )
+        if directives:
+            # Sort before pagination so allowlisted presentation order is stable.
+            filtered = service.list_notifications(
+                actor,
+                type=NotificationType(type) if type else None,
+                severity=NotificationSeverity(severity) if severity else None,
+                watchlist_id=watchlist_id,
+                unread=unread,
+                limit=1_000_000,
+                offset=0,
+            )
+            payloads = [to_notification_payload(n) for n in filtered]
+            payloads = apply_sort(payloads, directives)
+            total = len(payloads)
+            page = payloads[offset : offset + limit]
+        else:
+            notifications = service.list_notifications(
+                actor,
+                type=NotificationType(type) if type else None,
+                severity=NotificationSeverity(severity) if severity else None,
+                watchlist_id=watchlist_id,
+                unread=unread,
+                limit=limit + 1,
+                offset=offset,
+            )
+            has_more = len(notifications) > limit
+            page_entities = notifications[:limit]
+            page = [to_notification_payload(n) for n in page_entities]
+            total = None
+            pagination = build_pagination_meta(
+                limit=limit, offset=offset, total=total, page_len=len(page), has_more=has_more
+            )
+            return NotificationListResponse(
+                notifications=page,
+                items=page,
+                pagination=pagination,
+            )
     except (ValueError, NotificationValidationError) as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
-    return NotificationListResponse(
-        notifications=[to_notification_payload(n) for n in notifications]
+    pagination = build_pagination_meta(
+        limit=limit, offset=offset, total=total, page_len=len(page)
     )
+    return NotificationListResponse(notifications=page, items=page, pagination=pagination)
 
 
 @router.get(

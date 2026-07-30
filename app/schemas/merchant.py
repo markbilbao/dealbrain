@@ -6,6 +6,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.api_common import PaginationMeta
+
 
 class MerchantProfilePayload(BaseModel):
     business_name: str
@@ -378,6 +380,7 @@ class MerchantAnalyticsResponse(BaseModel):
 
 class MerchantAuditLogResponse(BaseModel):
     items: list[dict[str, Any]]
+    pagination: PaginationMeta | None = None
 
 
 class MerchantRankingExplanationResponse(BaseModel):

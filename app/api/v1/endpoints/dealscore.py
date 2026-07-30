@@ -20,6 +20,11 @@ router = APIRouter(prefix="/dealscore")
     "/search",
     response_model=DealScoreSearchResponse,
     summary="Search marketplaces and rank listings by DealScore",
+    description=(
+        "Kind S search aggregate. Organic DealScore ordering is service-owned. "
+        "Caller-controlled ``sort`` is not supported and must not influence ranking. "
+        "Not paginated."
+    ),
 )
 def search_dealscore(
     q: str = Query(..., min_length=1, description="Search query"),

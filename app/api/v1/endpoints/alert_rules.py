@@ -44,6 +44,12 @@ from app.schemas.alerts_v2 import (
     AlertRulePayload,
     AlertRuleUpdateRequest,
 )
+from app.schemas.api_common import (
+    SORT_ALLOWLIST_ALERT_EVENTS,
+    apply_sort,
+    build_pagination_meta,
+    parse_sort,
+)
 from app.services.alert_evaluation_service import AlertEvaluationService
 from app.services.alert_rule_service import AlertRuleService
 from app.services.user_platform_service import UserPlatformService
@@ -311,18 +317,48 @@ async def evaluate_rules(
     "/events",
     response_model=AlertEventListResponse,
     summary="List the authenticated user's alert events (Sprint 19)",
+    description=(
+        "Primary collection key remains ``events``. Sprint 24 adds optional "
+        "``items`` alias, ``offset``, and ``pagination``. Optional presentation "
+        "sort allowlist: created_at."
+    ),
 )
 async def list_events(
     rule_id: str | None = None,
     limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    sort: str | None = Query(
+        default=None,
+        description="Optional presentation sort, e.g. sort=-created_at",
+    ),
     user_id: str | None = Query(default=None, description="Demo-mode fallback user id"),
     authorization: str | None = Header(default=None),
     event_repository: AlertEventRepository = Depends(get_alert_event_repository),
     user_platform: UserPlatformService = Depends(get_user_platform_service),
 ) -> AlertEventListResponse:
     actor = _require_actor(_resolve_actor(authorization, user_platform, fallback_user_id=user_id))
-    events = event_repository.list_events(user_id=actor, rule_id=rule_id, limit=limit)
-    return AlertEventListResponse(events=[to_event_payload(e) for e in events])
+    directives = parse_sort(sort, SORT_ALLOWLIST_ALERT_EVENTS)
+    # Repository is limit-only; apply offset (and optional sort) at the API boundary.
+    fetch_limit = max(offset + limit + 1, limit + 1)
+    events = event_repository.list_events(user_id=actor, rule_id=rule_id, limit=fetch_limit)
+    payloads = [to_event_payload(e) for e in events]
+    if directives:
+        # Full filtered set for stable presentation sort, then page.
+        all_events = event_repository.list_events(user_id=actor, rule_id=rule_id, limit=10_000)
+        payloads = apply_sort([to_event_payload(e) for e in all_events], directives)
+        total = len(payloads)
+        page = payloads[offset : offset + limit]
+        pagination = build_pagination_meta(
+            limit=limit, offset=offset, total=total, page_len=len(page)
+        )
+    else:
+        window = payloads[offset:]
+        has_more = len(window) > limit
+        page = window[:limit]
+        pagination = build_pagination_meta(
+            limit=limit, offset=offset, page_len=len(page), has_more=has_more
+        )
+    return AlertEventListResponse(events=page, items=page, pagination=pagination)
 
 
 def _rule_status(value: str):

@@ -4,22 +4,44 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.api.deps import products_pagination
 from app.core.dependencies import get_product_service
 from app.domain.exceptions import ProductNotFoundError
+from app.schemas.api_common import SORT_ALLOWLIST_PRODUCTS, apply_sort, parse_sort
 from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 from app.services.product_service import ProductService
 
 router = APIRouter(prefix="/products")
 
 
-@router.get("", response_model=list[ProductResponse])
+@router.get(
+    "",
+    response_model=list[ProductResponse],
+    summary="List products with pagination",
+    description=(
+        "Bare-list response (Sprint 1–23). Remains a JSON array — not wrapped. "
+        "Pagination: prefer ``offset``; deprecated ``skip`` remains an alias. "
+        "Optional presentation ``sort`` allowlist: created_at, brand, category."
+    ),
+)
 async def list_products(
-    skip: int = Query(default=0, ge=0),
-    limit: int = Query(default=100, ge=1, le=500),
+    pagination: tuple[int, int] = Depends(products_pagination),
+    sort: str | None = Query(
+        default=None,
+        description="Optional presentation sort, e.g. sort=-created_at,brand",
+    ),
     service: ProductService = Depends(get_product_service),
 ) -> list[ProductResponse]:
     """List products with pagination."""
-    return await service.list_products(skip=skip, limit=limit)
+    limit, offset = pagination
+    directives = parse_sort(sort, SORT_ALLOWLIST_PRODUCTS)
+    if directives:
+        # Presentation sort requires a stable full ordering before paging.
+        # Fetch a bounded window then slice — products remain a bare list.
+        all_items = await service.list_products(skip=0, limit=10_000)
+        sorted_items = apply_sort(all_items, directives)
+        return sorted_items[offset : offset + limit]
+    return await service.list_products(skip=offset, limit=limit)
 
 
 @router.get("/{product_id}", response_model=ProductResponse)

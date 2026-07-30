@@ -19,6 +19,7 @@ from app.domain.exceptions import (
     CollectionValidationError,
 )
 from app.domain.interfaces.collection_scheduler import CollectionScheduler
+from app.schemas.api_common import build_pagination_meta
 from app.schemas.collection import (
     CollectionJobCreateRequest,
     CollectionJobListResponse,
@@ -62,13 +63,26 @@ async def run_collection(
     "/runs",
     response_model=CollectionRunListResponse,
     summary="List recent collection runs",
+    description=(
+        "Primary key remains ``runs``. Sprint 24 adds optional ``offset``, "
+        "``items`` alias, and ``pagination``."
+    ),
 )
 async def list_collection_runs(
     limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     service: MarketplaceCollectionService = Depends(get_marketplace_collection_service),
 ) -> CollectionRunListResponse:
-    runs = service.list_runs(limit=limit)
-    return CollectionRunListResponse(runs=[to_run_payload(run) for run in runs])
+    # Service is limit-only; apply offset at the API boundary.
+    runs = service.list_runs(limit=offset + limit + 1)
+    payloads = [to_run_payload(run) for run in runs]
+    window = payloads[offset:]
+    has_more = len(window) > limit
+    page = window[:limit]
+    pagination = build_pagination_meta(
+        limit=limit, offset=offset, page_len=len(page), has_more=has_more
+    )
+    return CollectionRunListResponse(runs=page, items=page, pagination=pagination)
 
 
 @router.get(
