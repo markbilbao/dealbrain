@@ -121,15 +121,33 @@ async def generate_affiliate_link(
     "",
     response_model=AffiliateLinkListResponse,
     summary="List generated affiliate links",
+    description=(
+        "Operational list only — never feeds organic ranking. Optional "
+        "presentation sort ``created_at``."
+    ),
 )
 async def list_affiliate_links(
     merchant_id: str | None = None,
     product_id: str | None = None,
     limit: int = Query(default=100, ge=1, le=500),
+    sort: str | None = Query(
+        default=None,
+        description="Optional presentation sort, e.g. sort=-created_at",
+    ),
     service: AffiliateLinkService = Depends(get_affiliate_link_service),
 ) -> AffiliateLinkListResponse:
+    from app.schemas.api_common import (
+        SORT_ALLOWLIST_AFFILIATE_LINKS,
+        apply_sort,
+        parse_sort,
+    )
+
+    directives = parse_sort(sort, SORT_ALLOWLIST_AFFILIATE_LINKS)
     links = service.list_links(merchant_id=merchant_id, product_id=product_id, limit=limit)
-    return AffiliateLinkListResponse(links=[to_link_payload(link) for link in links])
+    payloads = [to_link_payload(link) for link in links]
+    if directives:
+        payloads = apply_sort(payloads, directives)
+    return AffiliateLinkListResponse(links=payloads)
 
 
 @link_router.get(

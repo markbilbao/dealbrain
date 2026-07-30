@@ -38,6 +38,16 @@ from app.domain.exceptions import (
     WatchlistOwnershipError,
     WatchlistValidationError,
 )
+from app.schemas.api_common import (
+    SORT_ALLOWLIST_LEGACY_ALERTS,
+    SORT_ALLOWLIST_WATCHLIST_HISTORY,
+    SORT_ALLOWLIST_WATCHLISTS,
+    apply_sort,
+    build_pagination_meta,
+    parse_sort,
+    resolve_skip_offset,
+    slice_page,
+)
 from app.schemas.watchlists import (
     AlertEvaluationResponse,
     AlertListResponse,
@@ -119,15 +129,45 @@ def _get_watchlist_checked(service: WatchlistService, watchlist_id: str, actor: 
     "",
     response_model=WatchlistListResponse,
     summary="List watchlists",
+    description=(
+        "Primary collection key remains ``watchlists``. Sprint 24 adds optional "
+        "``items`` alias, ``limit``/``offset``/``skip``, and ``pagination``. "
+        "When no pagination params are supplied, the complete list is returned "
+        "(pre-Sprint-24 compatibility). Pagination applies only when ``limit``, "
+        "``offset``, and/or ``skip`` are explicitly supplied. Optional "
+        "presentation sort: created_at, name, status."
+    ),
 )
 async def list_watchlists(
     enabled: bool | None = None,
     status_filter: str | None = Query(None, alias="status"),
+    limit: int | None = Query(
+        default=None,
+        ge=1,
+        le=500,
+        description="Page size. Omit (with offset/skip) to return the full list.",
+    ),
+    offset: int | None = Query(
+        default=None,
+        ge=0,
+        description="Canonical pagination offset (0-based). Alias of skip.",
+    ),
+    skip: int | None = Query(
+        default=None,
+        ge=0,
+        deprecated=True,
+        description="Deprecated alias for offset — prefer offset.",
+    ),
+    sort: str | None = Query(
+        default=None,
+        description="Optional presentation sort, e.g. sort=-created_at,name",
+    ),
     authorization: str | None = Header(default=None),
     service: WatchlistService = Depends(get_watchlist_service),
     user_platform: UserPlatformService = Depends(get_user_platform_service),
 ) -> WatchlistListResponse:
     actor = _resolve_actor(authorization, user_platform, required=True)
+    directives = parse_sort(sort, SORT_ALLOWLIST_WATCHLISTS)
     try:
         watchlists = service.list_watchlists(owner_id=actor, enabled=enabled, status=status_filter)
     except TypeError:
@@ -139,7 +179,27 @@ async def list_watchlists(
         )
         for wl in watchlists
     ]
-    return WatchlistListResponse(watchlists=payloads)
+    if directives:
+        payloads = apply_sort(payloads, directives)
+
+    # Opt-in pagination: legacy clients (no limit/offset/skip) get the full list.
+    pagination_requested = limit is not None or offset is not None or skip is not None
+    if pagination_requested:
+        effective_offset = resolve_skip_offset(skip=skip, offset=offset, default=0)
+        effective_limit = 100 if limit is None else limit
+        page, pagination = slice_page(
+            payloads, offset=effective_offset, limit=effective_limit
+        )
+    else:
+        page = payloads
+        pagination = build_pagination_meta(
+            limit=len(payloads),
+            offset=0,
+            total=len(payloads),
+            page_len=len(payloads),
+            has_more=False,
+        )
+    return WatchlistListResponse(watchlists=page, items=page, pagination=pagination)
 
 
 @router.post(
@@ -366,22 +426,42 @@ async def archive_watchlist(
     "/{watchlist_id}/history",
     response_model=WatchlistHistoryListResponse,
     summary="List watchlist history (Sprint 19)",
+    description=(
+        "Primary key remains ``history``. Optional ``offset``, ``items`` alias, "
+        "``pagination``, and presentation sort ``created_at``."
+    ),
 )
 async def get_watchlist_history(
     watchlist_id: str,
     limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    sort: str | None = Query(default=None, description="Optional sort, e.g. sort=-created_at"),
     authorization: str | None = Header(default=None),
     service: WatchlistService = Depends(get_watchlist_service),
     user_platform: UserPlatformService = Depends(get_user_platform_service),
 ) -> WatchlistHistoryListResponse:
     actor = _resolve_actor(authorization, user_platform, required=True)
+    directives = parse_sort(sort, SORT_ALLOWLIST_WATCHLIST_HISTORY)
     try:
         _get_watchlist_checked(service, watchlist_id, actor)
         get_history = getattr(service, "get_history", None)
-        entries = get_history(watchlist_id, limit=limit) if callable(get_history) else []
+        # Fetch enough rows for offset (+1 for has_more) when unsorted.
+        fetch_limit = 10_000 if directives else offset + limit + 1
+        entries = get_history(watchlist_id, limit=fetch_limit) if callable(get_history) else []
     except (WatchlistNotFoundError, WatchlistOwnershipError) as exc:
         raise _map_error(exc) from exc
-    return WatchlistHistoryListResponse(history=[to_history_payload(e) for e in entries])
+    payloads = [to_history_payload(e) for e in entries]
+    if directives:
+        payloads = apply_sort(payloads, directives)
+        page, pagination = slice_page(payloads, offset=offset, limit=limit)
+    else:
+        window = payloads[offset:]
+        has_more = len(window) > limit
+        page = window[:limit]
+        pagination = build_pagination_meta(
+            limit=limit, offset=offset, page_len=len(page), has_more=has_more
+        )
+    return WatchlistHistoryListResponse(history=page, items=page, pagination=pagination)
 
 
 @router.put(
@@ -777,6 +857,13 @@ async def check_watchlist_alerts(
     "",
     response_model=AlertListResponse,
     summary="List recent alerts",
+    deprecated=True,
+    description=(
+        "Sprint 10 legacy alert list — **deprecated** but still available. "
+        "Prefer Sprint 19 ``/alerts/rules`` and ``/alerts/events``. "
+        "Primary key remains ``alerts``; Sprint 24 adds optional ``items``, "
+        "``offset``, and ``pagination``."
+    ),
 )
 async def list_alerts(
     watchlist_id: str | None = None,
@@ -784,25 +871,42 @@ async def list_alerts(
     alert_type: str | None = None,
     status_filter: str | None = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    sort: str | None = Query(default=None, description="Optional sort, e.g. sort=-created_at"),
     alert_service: AlertService = Depends(get_alert_service),
 ) -> AlertListResponse:
+    directives = parse_sort(sort, SORT_ALLOWLIST_LEGACY_ALERTS)
     try:
+        fetch_limit = 10_000 if directives else offset + limit + 1
         alerts = alert_service.list_alerts(
             watchlist_id=watchlist_id,
             item_id=item_id,
             alert_type=alert_type,
             status=status_filter,
-            limit=limit,
+            limit=fetch_limit,
         )
     except (WatchlistNotFoundError, WatchlistValidationError) as exc:
         raise _map_error(exc) from exc
-    return AlertListResponse(alerts=[to_alert_payload(a) for a in alerts])
+    payloads = [to_alert_payload(a) for a in alerts]
+    if directives:
+        payloads = apply_sort(payloads, directives)
+        page, pagination = slice_page(payloads, offset=offset, limit=limit)
+    else:
+        window = payloads[offset:]
+        has_more = len(window) > limit
+        page = window[:limit]
+        pagination = build_pagination_meta(
+            limit=limit, offset=offset, page_len=len(page), has_more=has_more
+        )
+    return AlertListResponse(alerts=page, items=page, pagination=pagination)
 
 
 @alerts_router.get(
     "/{alert_id}",
     response_model=AlertPayload,
     summary="Get an alert",
+    deprecated=True,
+    description="Sprint 10 legacy get — deprecated but still available.",
 )
 async def get_alert(
     alert_id: str,
@@ -819,6 +923,8 @@ async def get_alert(
     "/{alert_id}/acknowledge",
     response_model=AlertPayload,
     summary="Acknowledge an alert",
+    deprecated=True,
+    description="Sprint 10 legacy acknowledge — deprecated but still available.",
 )
 async def acknowledge_alert(
     alert_id: str,
@@ -835,6 +941,8 @@ async def acknowledge_alert(
     "/{alert_id}/dismiss",
     response_model=AlertPayload,
     summary="Dismiss an alert",
+    deprecated=True,
+    description="Sprint 10 legacy dismiss — deprecated but still available.",
 )
 async def dismiss_alert(
     alert_id: str,

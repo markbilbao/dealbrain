@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.api_common import PaginationMeta
+
 
 class CollectionRunRequest(BaseModel):
     """Manual collection run inputs."""
@@ -92,6 +94,11 @@ class CollectionRunPayload(BaseModel):
 
 class CollectionRunListResponse(BaseModel):
     runs: list[CollectionRunPayload] = Field(default_factory=list)
+    items: list[CollectionRunPayload] | None = Field(
+        default=None,
+        description="Additive alias of runs (same order, same objects)",
+    )
+    pagination: PaginationMeta | None = None
 
 
 class CollectionJobPayload(BaseModel):

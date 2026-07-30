@@ -1,0 +1,26 @@
+{
+  "description": "Representative Sprint 23 response fixtures used as the Sprint 24 client-compatibility proxy (no in-repo frontend).",
+  "bare_list_products": [],
+  "named_collections": {
+    "watchlists": {"watchlists": []},
+    "notifications": {"notifications": []},
+    "alerts_legacy": {"alerts": []},
+    "alert_events": {"events": []},
+    "collection_runs": {"runs": []}
+  },
+  "kind_s_search": {
+    "query": "iphone",
+    "results": []
+  },
+  "error_envelope": {
+    "error": "validation_error",
+    "message": "Request validation failed",
+    "status_code": 422,
+    "detail": "Request validation failed"
+  },
+  "notes": [
+    "Named collection keys remain primary after Sprint 24 dual-run.",
+    "Additive items/pagination must not remove named keys.",
+    "Bare lists must remain JSON arrays."
+  ]
+}

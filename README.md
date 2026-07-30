@@ -38,7 +38,8 @@ app/
 **Dependency rule:** outer layers depend on inner layers. Domain has no framework imports.
 
 Architecture lock (Sprints 23–40): [docs/architecture/ARCHITECTURE_LOCK.md](docs/architecture/ARCHITECTURE_LOCK.md).  
-Persistence guide: [docs/PERSISTENCE.md](docs/PERSISTENCE.md).
+Persistence guide: [docs/PERSISTENCE.md](docs/PERSISTENCE.md).  
+API standards (Sprint 24): [docs/API_STANDARDS.md](docs/API_STANDARDS.md) · [Sprint 24 contract](docs/architecture/SPRINT_24_API_STABILITY.md).
 
 ## Quick Start
 

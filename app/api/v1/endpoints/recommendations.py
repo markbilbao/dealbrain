@@ -22,6 +22,10 @@ router = APIRouter(prefix="/recommendations")
     "/search",
     response_model=ShoppingRecommendationSearchResponse,
     summary="Search marketplaces and return explainable purchase recommendations",
+    description=(
+        "Kind S search aggregate. Buy/Wait/Consider/Avoid decisions are service-owned. "
+        "Caller-controlled ``sort`` is not supported. Not paginated."
+    ),
 )
 def search_recommendations(
     q: str = Query(..., min_length=1, description="Search query"),

@@ -13,6 +13,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.api_common import PaginationMeta
+
 
 class WatchlistCreateRequest(BaseModel):
     name: str = Field(..., min_length=1)
@@ -57,7 +59,21 @@ class WatchlistPayload(BaseModel):
 
 
 class WatchlistListResponse(BaseModel):
+    """Watchlist collection.
+
+    Primary consumer field remains ``watchlists``. Sprint 24 optionally
+    mirrors the same array on ``items`` and may attach ``pagination``.
+    """
+
     watchlists: list[WatchlistPayload] = Field(default_factory=list)
+    items: list[WatchlistPayload] | None = Field(
+        default=None,
+        description="Additive alias of watchlists (same order, same objects)",
+    )
+    pagination: PaginationMeta | None = Field(
+        default=None,
+        description="Additive pagination metadata when listing",
+    )
 
 
 class WatchlistItemCreateRequest(BaseModel):
@@ -155,6 +171,11 @@ class WatchlistHistoryEntryPayload(BaseModel):
 
 class WatchlistHistoryListResponse(BaseModel):
     history: list[WatchlistHistoryEntryPayload] = Field(default_factory=list)
+    items: list[WatchlistHistoryEntryPayload] | None = Field(
+        default=None,
+        description="Additive alias of history (same order, same objects)",
+    )
+    pagination: PaginationMeta | None = None
 
 
 class AlertPayload(BaseModel):
@@ -174,7 +195,14 @@ class AlertPayload(BaseModel):
 
 
 class AlertListResponse(BaseModel):
+    """Sprint 10 legacy alert list (deprecated path family; still available)."""
+
     alerts: list[AlertPayload] = Field(default_factory=list)
+    items: list[AlertPayload] | None = Field(
+        default=None,
+        description="Additive alias of alerts (same order, same objects)",
+    )
+    pagination: PaginationMeta | None = None
 
 
 class NotificationReceiptPayload(BaseModel):

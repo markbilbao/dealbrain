@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.schemas.api_common import PaginationMeta
+
 
 class AlertConditionPayload(BaseModel):
     condition_type: str
@@ -124,4 +126,18 @@ class AlertRuleEvaluateResponse(BaseModel):
 
 
 class AlertEventListResponse(BaseModel):
+    """Alert event list (Sprint 19).
+
+    Primary consumer field remains ``events``. Sprint 24 optionally mirrors
+    the same array on ``items`` and may attach ``pagination``.
+    """
+
     events: list[AlertEventPayload] = Field(default_factory=list)
+    items: list[AlertEventPayload] | None = Field(
+        default=None,
+        description="Additive alias of events (same order, same objects)",
+    )
+    pagination: PaginationMeta | None = Field(
+        default=None,
+        description="Additive pagination metadata when listing",
+    )

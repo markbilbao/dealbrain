@@ -808,19 +808,47 @@ async def get_analytics(
     "/{merchant_id}/audit-log",
     response_model=MerchantAuditLogResponse,
     summary="Merchant audit log",
+    description=(
+        "Operational list only — never feeds organic ranking. Optional "
+        "``offset`` and presentation sort ``created_at``; ``items`` key preserved."
+    ),
 )
 async def get_audit_log(
     merchant_id: str,
     limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    sort: str | None = Query(default=None, description="Optional sort, e.g. sort=-created_at"),
     authorization: str | None = Header(default=None),
     auth: MerchantAuthService = Depends(get_merchant_auth_service),
     service: MerchantAnalyticsService = Depends(get_merchant_analytics_service),
 ) -> MerchantAuditLogResponse:
+    from app.schemas.api_common import (
+        SORT_ALLOWLIST_MERCHANT_AUDIT,
+        apply_sort,
+        build_pagination_meta,
+        parse_sort,
+    )
+
     try:
         actor = _actor(auth, authorization, organization_id=merchant_id)
-        return MerchantAuditLogResponse(
-            items=service.list_audit_log(actor, merchant_id, limit=limit)
-        )
+        directives = parse_sort(sort, SORT_ALLOWLIST_MERCHANT_AUDIT)
+        fetch_limit = 10_000 if directives else offset + limit + 1
+        rows = service.list_audit_log(actor, merchant_id, limit=fetch_limit)
+        if directives:
+            rows = apply_sort(rows, directives)
+            total = len(rows)
+            page = rows[offset : offset + limit]
+            pagination = build_pagination_meta(
+                limit=limit, offset=offset, total=total, page_len=len(page)
+            )
+        else:
+            window = rows[offset:]
+            has_more = len(window) > limit
+            page = window[:limit]
+            pagination = build_pagination_meta(
+                limit=limit, offset=offset, page_len=len(page), has_more=has_more
+            )
+        return MerchantAuditLogResponse(items=page, pagination=pagination)
     except Exception as exc:  # noqa: BLE001
         raise _map_error(exc) from exc
 

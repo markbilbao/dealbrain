@@ -1,0 +1,4110 @@
+{
+  "bare_list_endpoints": [
+    "GET /api/v1/products",
+    "GET /api/v1/user/comparisons",
+    "GET /api/v1/user/history",
+    "GET /api/v1/user/saved-products",
+    "GET /api/v1/user/searches"
+  ],
+  "frontend_in_repo": false,
+  "frontend_note": "No frontend/UI package exists in this repository. Compatibility proxy: API regression suite + frozen OpenAPI + response fixtures.",
+  "generated_from": "Sprint 23 freeze / Phase 0",
+  "operation_count": 231,
+  "path_count": 193,
+  "routes": [
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "admin_list_submissions_api_v1_admin_merchant_submissions_get",
+      "path": "/api/v1/admin/merchant-submissions",
+      "query_params": [
+        "status"
+      ],
+      "response_shape_hint": "ref:MerchantProductListResponse",
+      "security": null,
+      "summary": "List merchant product submissions for review",
+      "tags": [
+        "merchant-admin"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "admin_approve_submission_api_v1_admin_merchant_submissions__submission_id__approve_post",
+      "path": "/api/v1/admin/merchant-submissions/{submission_id}/approve",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantProductPayload",
+      "security": null,
+      "summary": "Approve a merchant product submission",
+      "tags": [
+        "merchant-admin"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "admin_reject_submission_api_v1_admin_merchant_submissions__submission_id__reject_post",
+      "path": "/api/v1/admin/merchant-submissions/{submission_id}/reject",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantProductPayload",
+      "security": null,
+      "summary": "Reject a merchant product submission",
+      "tags": [
+        "merchant-admin"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "admin_activate_merchant_api_v1_admin_merchants__merchant_id__activate_post",
+      "path": "/api/v1/admin/merchants/{merchant_id}/activate",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOrganizationPayload",
+      "security": null,
+      "summary": "Activate a merchant organization",
+      "tags": [
+        "merchant-admin"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "admin_suspend_merchant_api_v1_admin_merchants__merchant_id__suspend_post",
+      "path": "/api/v1/admin/merchants/{merchant_id}/suspend",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOrganizationPayload",
+      "security": null,
+      "summary": "Suspend a merchant organization",
+      "tags": [
+        "merchant-admin"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "admin_update_verification_api_v1_admin_merchants__merchant_id__verification_post",
+      "path": "/api/v1/admin/merchants/{merchant_id}/verification",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOrganizationPayload",
+      "security": null,
+      "summary": "Update merchant verification status",
+      "tags": [
+        "merchant-admin"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "track_affiliate_click_api_v1_affiliate_click_post",
+      "path": "/api/v1/affiliate/click",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Track an affiliate click",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_affiliate_clicks_api_v1_affiliate_click_get",
+      "path": "/api/v1/affiliate/click",
+      "query_params": [
+        "user_id",
+        "session_id",
+        "merchant_id",
+        "product_id",
+        "limit"
+      ],
+      "response_shape_hint": "ref:AffiliateClickListResponse",
+      "security": null,
+      "summary": "List tracked affiliate clicks",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "attribute_clicks_api_v1_affiliate_click_attribute_post",
+      "path": "/api/v1/affiliate/click/attribute",
+      "query_params": [],
+      "response_shape_hint": "ref:AttributionResultPayload",
+      "security": null,
+      "summary": "Run attribution over tracked clicks (simulated)",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_affiliate_click_api_v1_affiliate_click__click_id__get",
+      "path": "/api/v1/affiliate/click/{click_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateClickPayload",
+      "security": null,
+      "summary": "Get a tracked affiliate click",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_click_conversion_api_v1_affiliate_click__click_id__conversion_patch",
+      "path": "/api/v1/affiliate/click/{click_id}/conversion",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateClickPayload",
+      "security": null,
+      "summary": "Update conversion status for a click (simulated)",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_disclosures_api_v1_affiliate_disclosure_get",
+      "path": "/api/v1/affiliate/disclosure",
+      "query_params": [
+        "region",
+        "merchant_id",
+        "disclosure_type",
+        "active_only"
+      ],
+      "response_shape_hint": "ref:AffiliateDisclosureListResponse",
+      "security": null,
+      "summary": "List affiliate disclosures",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_disclosure_api_v1_affiliate_disclosure_post",
+      "path": "/api/v1/affiliate/disclosure",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create an affiliate disclosure record",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "resolve_disclosures_api_v1_affiliate_disclosure_resolve_get",
+      "path": "/api/v1/affiliate/disclosure/resolve",
+      "query_params": [
+        "region",
+        "merchant_id",
+        "include_general",
+        "include_ftc"
+      ],
+      "response_shape_hint": "ref:AffiliateDisclosureResolveResponse",
+      "security": null,
+      "summary": "Resolve contextual affiliate / FTC disclosures",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_disclosure_api_v1_affiliate_disclosure__disclosure_id__get",
+      "path": "/api/v1/affiliate/disclosure/{disclosure_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateDisclosurePayload",
+      "security": null,
+      "summary": "Get an affiliate disclosure",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "generate_affiliate_link_api_v1_affiliate_link_post",
+      "path": "/api/v1/affiliate/link",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Generate an affiliate link for a selected product",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_affiliate_links_api_v1_affiliate_link_get",
+      "path": "/api/v1/affiliate/link",
+      "query_params": [
+        "merchant_id",
+        "product_id",
+        "limit"
+      ],
+      "response_shape_hint": "ref:AffiliateLinkListResponse",
+      "security": null,
+      "summary": "List generated affiliate links",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_affiliate_link_api_v1_affiliate_link__link_id__get",
+      "path": "/api/v1/affiliate/link/{link_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateLinkPayload",
+      "security": null,
+      "summary": "Get a generated affiliate link",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_merchants_api_v1_affiliate_merchant_get",
+      "path": "/api/v1/affiliate/merchant",
+      "query_params": [
+        "status",
+        "marketplace",
+        "country",
+        "active_only"
+      ],
+      "response_shape_hint": "ref:AffiliateMerchantListResponse",
+      "security": null,
+      "summary": "List affiliate merchants",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_merchant_api_v1_affiliate_merchant_post",
+      "path": "/api/v1/affiliate/merchant",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create a placeholder affiliate merchant",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_merchant_api_v1_affiliate_merchant__merchant_id__get",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Get an affiliate merchant",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_merchant_api_v1_affiliate_merchant__merchant_id__patch",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Update an affiliate merchant",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "activate_merchant_api_v1_affiliate_merchant__merchant_id__activate_post",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}/activate",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Activate an affiliate merchant",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_merchant_commission_api_v1_affiliate_merchant__merchant_id__commission_patch",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}/commission",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Update merchant commission (demo estimate only)",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_merchant_countries_api_v1_affiliate_merchant__merchant_id__countries_patch",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}/countries",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Update merchant country restrictions",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "deactivate_merchant_api_v1_affiliate_merchant__merchant_id__deactivate_post",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}/deactivate",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Deactivate an affiliate merchant",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_merchant_health_api_v1_affiliate_merchant__merchant_id__health_patch",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}/health",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Update merchant health status (synthetic)",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_merchant_priority_api_v1_affiliate_merchant__merchant_id__priority_patch",
+      "path": "/api/v1/affiliate/merchant/{merchant_id}/priority",
+      "query_params": [],
+      "response_shape_hint": "ref:AffiliateMerchantPayload",
+      "security": null,
+      "summary": "Update merchant priority",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "affiliate_report_api_v1_affiliate_report_get",
+      "path": "/api/v1/affiliate/report",
+      "query_params": [
+        "merchant_id",
+        "product_id",
+        "currency",
+        "top_n"
+      ],
+      "response_shape_hint": "ref:AffiliateReportResponse",
+      "security": null,
+      "summary": "Affiliate revenue report (demo estimates)",
+      "tags": [
+        "affiliate"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_alerts_api_v1_alerts_get",
+      "path": "/api/v1/alerts",
+      "query_params": [
+        "watchlist_id",
+        "item_id",
+        "alert_type",
+        "status",
+        "limit"
+      ],
+      "response_shape_hint": "ref:AlertListResponse",
+      "security": null,
+      "summary": "List recent alerts",
+      "tags": [
+        "alerts"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "evaluate_rules_api_v1_alerts_evaluate_post",
+      "path": "/api/v1/alerts/evaluate",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertRuleEvaluateResponse",
+      "security": null,
+      "summary": "Manually evaluate alert rules (Sprint 19)",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_events_api_v1_alerts_events_get",
+      "path": "/api/v1/alerts/events",
+      "query_params": [
+        "rule_id",
+        "limit",
+        "user_id"
+      ],
+      "response_shape_hint": "ref:AlertEventListResponse",
+      "security": null,
+      "summary": "List the authenticated user's alert events (Sprint 19)",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_rules_api_v1_alerts_rules_get",
+      "path": "/api/v1/alerts/rules",
+      "query_params": [
+        "watchlist_id",
+        "item_id",
+        "enabled"
+      ],
+      "response_shape_hint": "ref:AlertRuleListResponse",
+      "security": null,
+      "summary": "List the authenticated user's alert rules",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_rule_api_v1_alerts_rules_post",
+      "path": "/api/v1/alerts/rules",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create an alert rule",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_rule_api_v1_alerts_rules__rule_id__get",
+      "path": "/api/v1/alerts/rules/{rule_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertRulePayload",
+      "security": null,
+      "summary": "Get an alert rule",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_rule_api_v1_alerts_rules__rule_id__put",
+      "path": "/api/v1/alerts/rules/{rule_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertRulePayload",
+      "security": null,
+      "summary": "Update an alert rule",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_rule_api_v1_alerts_rules__rule_id__delete",
+      "path": "/api/v1/alerts/rules/{rule_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Delete an alert rule",
+      "tags": [
+        "alert-rules"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_alert_api_v1_alerts__alert_id__get",
+      "path": "/api/v1/alerts/{alert_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertPayload",
+      "security": null,
+      "summary": "Get an alert",
+      "tags": [
+        "alerts"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "acknowledge_alert_api_v1_alerts__alert_id__acknowledge_post",
+      "path": "/api/v1/alerts/{alert_id}/acknowledge",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertPayload",
+      "security": null,
+      "summary": "Acknowledge an alert",
+      "tags": [
+        "alerts"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "dismiss_alert_api_v1_alerts__alert_id__dismiss_post",
+      "path": "/api/v1/alerts/{alert_id}/dismiss",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertPayload",
+      "security": null,
+      "summary": "Dismiss an alert",
+      "tags": [
+        "alerts"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "demo_api_v1_auth_demo_get",
+      "path": "/api/v1/auth/demo",
+      "query_params": [],
+      "response_shape_hint": "ref:UserPlatformDemoResponse",
+      "security": null,
+      "summary": "List demo accounts available for login (Sprint 17)",
+      "tags": [
+        "user-platform-auth"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "login_api_v1_auth_login_post",
+      "path": "/api/v1/auth/login",
+      "query_params": [],
+      "response_shape_hint": "ref:AuthResponse",
+      "security": null,
+      "summary": "Log in to a demo account and start a session",
+      "tags": [
+        "user-platform-auth"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "logout_api_v1_auth_logout_post",
+      "path": "/api/v1/auth/logout",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Log out and revoke the current session",
+      "tags": [
+        "user-platform-auth"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "me_api_v1_auth_me_get",
+      "path": "/api/v1/auth/me",
+      "query_params": [],
+      "response_shape_hint": "ref:UserPayload",
+      "security": null,
+      "summary": "Get the currently authenticated user",
+      "tags": [
+        "user-platform-auth"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "meta_api_v1_auth_meta_get",
+      "path": "/api/v1/auth/meta",
+      "query_params": [],
+      "response_shape_hint": "ref:UserPlatformMetaResponse",
+      "security": null,
+      "summary": "User platform metadata, limitations, and endpoint map",
+      "tags": [
+        "user-platform-auth"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "register_api_v1_auth_register_post",
+      "path": "/api/v1/auth/register",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Register a new demo account and start a session",
+      "tags": [
+        "user-platform-auth"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "collection_health_api_v1_collection_operations_health_get",
+      "path": "/api/v1/collection-operations/health",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsHealthPayload",
+      "security": null,
+      "summary": "Collection operations health",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_jobs_api_v1_collection_operations_jobs_get",
+      "path": "/api/v1/collection-operations/jobs",
+      "query_params": [
+        "status",
+        "marketplace",
+        "enabled"
+      ],
+      "response_shape_hint": "ref:CollectionOpsJobListResponse",
+      "security": null,
+      "summary": "List collection jobs",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_job_api_v1_collection_operations_jobs_post",
+      "path": "/api/v1/collection-operations/jobs",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsJobPayload",
+      "security": null,
+      "summary": "Create a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_job_api_v1_collection_operations_jobs__job_id__get",
+      "path": "/api/v1/collection-operations/jobs/{job_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsJobPayload",
+      "security": null,
+      "summary": "Get a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_job_api_v1_collection_operations_jobs__job_id__patch",
+      "path": "/api/v1/collection-operations/jobs/{job_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsJobPayload",
+      "security": null,
+      "summary": "Update a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_job_api_v1_collection_operations_jobs__job_id__delete",
+      "path": "/api/v1/collection-operations/jobs/{job_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Delete a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "pause_job_api_v1_collection_operations_jobs__job_id__pause_post",
+      "path": "/api/v1/collection-operations/jobs/{job_id}/pause",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsJobPayload",
+      "security": null,
+      "summary": "Pause a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "resume_job_api_v1_collection_operations_jobs__job_id__resume_post",
+      "path": "/api/v1/collection-operations/jobs/{job_id}/resume",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsJobPayload",
+      "security": null,
+      "summary": "Resume a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "run_job_api_v1_collection_operations_jobs__job_id__run_post",
+      "path": "/api/v1/collection-operations/jobs/{job_id}/run",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsRunPayload",
+      "security": null,
+      "summary": "Manually trigger a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_job_runs_api_v1_collection_operations_jobs__job_id__runs_get",
+      "path": "/api/v1/collection-operations/jobs/{job_id}/runs",
+      "query_params": [
+        "limit"
+      ],
+      "response_shape_hint": "ref:CollectionOpsRunListResponse",
+      "security": null,
+      "summary": "List runs for a collection job",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "collection_readiness_api_v1_collection_operations_readiness_get",
+      "path": "/api/v1/collection-operations/readiness",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsReadinessPayload",
+      "security": null,
+      "summary": "Collection operations readiness",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "run_due_api_v1_collection_operations_run_due_post",
+      "path": "/api/v1/collection-operations/run-due",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsRunDueResponse",
+      "security": null,
+      "summary": "Run all due collection jobs",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_runs_api_v1_collection_operations_runs_get",
+      "path": "/api/v1/collection-operations/runs",
+      "query_params": [
+        "limit",
+        "failed_only"
+      ],
+      "response_shape_hint": "ref:CollectionOpsRunListResponse",
+      "security": null,
+      "summary": "List recent collection runs",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_run_api_v1_collection_operations_runs__run_id__get",
+      "path": "/api/v1/collection-operations/runs/{run_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsRunPayload",
+      "security": null,
+      "summary": "Get a collection run",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_collection_status_api_v1_collection_operations_status_get",
+      "path": "/api/v1/collection-operations/status",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionOpsStatusPayload",
+      "security": null,
+      "summary": "Collection operational status",
+      "tags": [
+        "collection-operations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_collection_jobs_api_v1_collections_jobs_get",
+      "path": "/api/v1/collections/jobs",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionJobListResponse",
+      "security": null,
+      "summary": "List scheduled collection jobs",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_collection_job_api_v1_collections_jobs_post",
+      "path": "/api/v1/collections/jobs",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionJobPayload",
+      "security": null,
+      "summary": "Create a scheduled collection job",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "run_due_collection_jobs_api_v1_collections_jobs_run_due_post",
+      "path": "/api/v1/collections/jobs/run-due",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionRunDueResponse",
+      "security": null,
+      "summary": "Execute due scheduled collection jobs",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_collection_job_api_v1_collections_jobs__job_id__delete",
+      "path": "/api/v1/collections/jobs/{job_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Delete a scheduled collection job",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "run_collection_api_v1_collections_run_post",
+      "path": "/api/v1/collections/run",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionRunPayload",
+      "security": null,
+      "summary": "Run a manual mock marketplace collection",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_collection_runs_api_v1_collections_runs_get",
+      "path": "/api/v1/collections/runs",
+      "query_params": [
+        "limit"
+      ],
+      "response_shape_hint": "ref:CollectionRunListResponse",
+      "security": null,
+      "summary": "List recent collection runs",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_collection_run_api_v1_collections_runs__run_id__get",
+      "path": "/api/v1/collections/runs/{run_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CollectionRunPayload",
+      "security": null,
+      "summary": "Get a collection run by id",
+      "tags": [
+        "collections"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "community_demo_api_v1_community_demo_get",
+      "path": "/api/v1/community/demo",
+      "query_params": [
+        "mode"
+      ],
+      "response_shape_hint": "ref:CommunityDashboardResponse",
+      "security": null,
+      "summary": "Community Intelligence demo dashboard",
+      "tags": [
+        "community"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "community_evidence_api_v1_community_evidence__evidence_id__get",
+      "path": "/api/v1/community/evidence/{evidence_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CommunityEvidenceResponse",
+      "security": null,
+      "summary": "Fetch a single community evidence item",
+      "tags": [
+        "community"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "community_meta_api_v1_community_meta_get",
+      "path": "/api/v1/community/meta",
+      "query_params": [],
+      "response_shape_hint": "ref:CommunityMetaResponse",
+      "security": null,
+      "summary": "Community Intelligence metadata and connector status",
+      "tags": [
+        "community"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "community_product_api_v1_community_product__product_id__get",
+      "path": "/api/v1/community/product/{product_id}",
+      "query_params": [
+        "mode"
+      ],
+      "response_shape_hint": "ref:CommunityProductResponse",
+      "security": null,
+      "summary": "Community intelligence for a product",
+      "tags": [
+        "community"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "community_timeline_api_v1_community_timeline__product_id__get",
+      "path": "/api/v1/community/timeline/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CommunityTimelineResponse",
+      "security": null,
+      "summary": "Community timeline for a product",
+      "tags": [
+        "community"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "community_topics_api_v1_community_topics__product_id__get",
+      "path": "/api/v1/community/topics/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:CommunityTopicsResponse",
+      "security": null,
+      "summary": "Community topics for a product",
+      "tags": [
+        "community"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_dashboard_api_v1_dashboard_get",
+      "path": "/api/v1/dashboard",
+      "query_params": [
+        "currency",
+        "user_id"
+      ],
+      "response_shape_hint": "ref:UserDashboardResponse",
+      "security": null,
+      "summary": "Get the authenticated user's dashboard",
+      "tags": [
+        "dashboard"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "search_dealscore_api_v1_dealscore_search_get",
+      "path": "/api/v1/dealscore/search",
+      "query_params": [
+        "q"
+      ],
+      "response_shape_hint": "ref:DealScoreSearchResponse",
+      "security": null,
+      "summary": "Search marketplaces and rank listings by DealScore",
+      "tags": [
+        "dealscore"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_demo_api_v1_graph_demo_get",
+      "path": "/api/v1/graph/demo",
+      "query_params": [],
+      "response_shape_hint": "ref:GraphSubgraphResponse",
+      "security": null,
+      "summary": "Knowledge Graph demo product subgraph",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_evidence_api_v1_graph_evidence__node_id__get",
+      "path": "/api/v1/graph/evidence/{node_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:GraphEvidenceResponse",
+      "security": null,
+      "summary": "Evidence linked to a knowledge graph node",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_explain_api_v1_graph_explain_get",
+      "path": "/api/v1/graph/explain",
+      "query_params": [
+        "from_node_id",
+        "to_node_id",
+        "from_product_id",
+        "to_product_id",
+        "claim",
+        "max_depth"
+      ],
+      "response_shape_hint": "ref:GraphExplanationResponse",
+      "security": null,
+      "summary": "Explain why two nodes or products are connected",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_meta_api_v1_graph_meta_get",
+      "path": "/api/v1/graph/meta",
+      "query_params": [],
+      "response_shape_hint": "ref:GraphMetaResponse",
+      "security": null,
+      "summary": "Knowledge Graph metadata and limits",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_node_api_v1_graph_node__node_id__get",
+      "path": "/api/v1/graph/node/{node_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:KnowledgeNodePayload",
+      "security": null,
+      "summary": "Fetch a knowledge graph node",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_neighbors_api_v1_graph_node__node_id__neighbors_get",
+      "path": "/api/v1/graph/node/{node_id}/neighbors",
+      "query_params": [
+        "direction",
+        "edge_types",
+        "minimum_confidence",
+        "max_nodes"
+      ],
+      "response_shape_hint": "ref:GraphSubgraphResponse",
+      "security": null,
+      "summary": "Direct neighbors of a node",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_relationships_api_v1_graph_node__node_id__relationships_get",
+      "path": "/api/v1/graph/node/{node_id}/relationships",
+      "query_params": [],
+      "response_shape_hint": "ref:GraphRelationshipsResponse",
+      "security": null,
+      "summary": "Incoming and outgoing relationships for a node",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_path_api_v1_graph_path_get",
+      "path": "/api/v1/graph/path",
+      "query_params": [
+        "from_node_id",
+        "to_node_id",
+        "max_depth",
+        "edge_types",
+        "minimum_confidence"
+      ],
+      "response_shape_hint": "ref:GraphPathResponse",
+      "security": null,
+      "summary": "Find evidence paths between two nodes",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "graph_product_api_v1_graph_product__product_id__get",
+      "path": "/api/v1/graph/product/{product_id}",
+      "query_params": [
+        "max_depth",
+        "max_nodes",
+        "max_edges"
+      ],
+      "response_shape_hint": "ref:GraphSubgraphResponse",
+      "security": null,
+      "summary": "Product-centered knowledge graph",
+      "tags": [
+        "knowledge-graph"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "health_check_api_v1_health_get",
+      "path": "/api/v1/health",
+      "query_params": [],
+      "response_shape_hint": "ref:EnhancedHealthResponse",
+      "security": null,
+      "summary": "Application health with dependency checks",
+      "tags": [
+        "health"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "match_product_listings_api_v1_intelligence_match_post",
+      "path": "/api/v1/intelligence/match",
+      "query_params": [],
+      "response_shape_hint": "ref:IntelligenceMatchResponse",
+      "security": null,
+      "summary": "Match two product listings to the same exact variant",
+      "tags": [
+        "intelligence"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "parse_product_listing_api_v1_intelligence_parse_post",
+      "path": "/api/v1/intelligence/parse",
+      "query_params": [],
+      "response_shape_hint": "ref:IntelligenceParseResponse",
+      "security": null,
+      "summary": "Parse a messy product listing into a canonical product",
+      "tags": [
+        "intelligence"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "launch_checklist_api_v1_launch_checklist_get",
+      "path": "/api/v1/launch/checklist",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Launch checklist status",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_checklist_api_v1_launch_checklist__item_id__patch",
+      "path": "/api/v1/launch/checklist/{item_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Update a launch checklist item",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "export_config_api_v1_launch_config_export_post",
+      "path": "/api/v1/launch/config/export",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Export redacted configuration snapshot",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_exports_api_v1_launch_config_exports_get",
+      "path": "/api/v1/launch/config/exports",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "List configuration export snapshots",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_export_api_v1_launch_config_exports__snapshot_id__get",
+      "path": "/api/v1/launch/config/exports/{snapshot_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Fetch a configuration export",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "import_config_api_v1_launch_config_import_post",
+      "path": "/api/v1/launch/config/import",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Import configuration for review (does not mutate runtime)",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "launch_dashboard_api_v1_launch_dashboard_get",
+      "path": "/api/v1/launch/dashboard",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Admin launch dashboard \u2014 metrics, health, flags, checklist",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "demo_status_api_v1_launch_demo_get",
+      "path": "/api/v1/launch/demo",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Demo launcher status and personas",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "demo_personas_api_v1_launch_demo_personas_get",
+      "path": "/api/v1/launch/demo/personas",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "List demo launcher personas",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "demo_switch_api_v1_launch_demo_switch_post",
+      "path": "/api/v1/launch/demo/switch",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Switch active demo persona",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "feature_flags_api_v1_launch_feature_flags_get",
+      "path": "/api/v1/launch/feature-flags",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "List effective feature flags",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "launch_meta_api_v1_launch_meta_get",
+      "path": "/api/v1/launch/meta",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Launch readiness metadata and limitations",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "performance_stats_api_v1_launch_performance_get",
+      "path": "/api/v1/launch/performance",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Performance cache stats",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "performance_clear_api_v1_launch_performance_clear_post",
+      "path": "/api/v1/launch/performance/clear",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Clear performance cache",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "system_status_api_v1_launch_system_status_get",
+      "path": "/api/v1/launch/system-status",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Production settings and system status snapshot",
+      "tags": [
+        "launch-readiness"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "liveness_check_api_v1_live_get",
+      "path": "/api/v1/live",
+      "query_params": [],
+      "response_shape_hint": "ref:LiveResponse",
+      "security": null,
+      "summary": "Liveness probe \u2014 process is running",
+      "tags": [
+        "health"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "search_marketplaces_api_v1_marketplace_search_get",
+      "path": "/api/v1/marketplace/search",
+      "query_params": [
+        "q"
+      ],
+      "response_shape_hint": "ref:MarketplaceSearchResponse",
+      "security": null,
+      "summary": "Search mocked marketplace listings across connected marketplaces",
+      "tags": [
+        "marketplace"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_connectors_api_v1_marketplaces_connectors_get",
+      "path": "/api/v1/marketplaces/connectors",
+      "query_params": [
+        "include_stubs"
+      ],
+      "response_shape_hint": "ref:ConnectorListResponse",
+      "security": null,
+      "summary": "List marketplace connectors",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_connector_api_v1_marketplaces_connectors__connector_id__get",
+      "path": "/api/v1/marketplaces/connectors/{connector_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:ConnectorCapabilityPayload",
+      "security": null,
+      "summary": "Get connector details (secrets redacted)",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_connector_health_api_v1_marketplaces_connectors__connector_id__health_get",
+      "path": "/api/v1/marketplaces/connectors/{connector_id}/health",
+      "query_params": [],
+      "response_shape_hint": "ref:ConnectorHealthPayload",
+      "security": null,
+      "summary": "Get connector health",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "test_connector_api_v1_marketplaces_connectors__connector_id__test_post",
+      "path": "/api/v1/marketplaces/connectors/{connector_id}/test",
+      "query_params": [],
+      "response_shape_hint": "ref:ConnectorTestResponse",
+      "security": null,
+      "summary": "Test connector configuration",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "seed_demo_api_v1_marketplaces_demo_seed_post",
+      "path": "/api/v1/marketplaces/demo/seed",
+      "query_params": [],
+      "response_shape_hint": "ref:MarketplaceDataDemoResponse",
+      "security": null,
+      "summary": "Seed deterministic fixture and simulated-live demos",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_import_api_v1_marketplaces_imports_post",
+      "path": "/api/v1/marketplaces/imports",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Import marketplace products from CSV/JSON",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_import_api_v1_marketplaces_imports__batch_id__get",
+      "path": "/api/v1/marketplaces/imports/{batch_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:ImportBatchPayload",
+      "security": null,
+      "summary": "Get import batch",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_import_errors_api_v1_marketplaces_imports__batch_id__errors_get",
+      "path": "/api/v1/marketplaces/imports/{batch_id}/errors",
+      "query_params": [],
+      "response_shape_hint": "ref:ImportErrorListResponse",
+      "security": null,
+      "summary": "List import row errors",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_offers_api_v1_marketplaces_offers_get",
+      "path": "/api/v1/marketplaces/offers",
+      "query_params": [
+        "source_mode",
+        "marketplace",
+        "product_id",
+        "limit"
+      ],
+      "response_shape_hint": "ref:MarketplaceOfferListResponse",
+      "security": null,
+      "summary": "List normalized offers",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_offer_api_v1_marketplaces_offers__offer_id__get",
+      "path": "/api/v1/marketplaces/offers/{offer_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MarketplaceOfferPayload",
+      "security": null,
+      "summary": "Get offer",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_sources_api_v1_marketplaces_sources_get",
+      "path": "/api/v1/marketplaces/sources",
+      "query_params": [],
+      "response_shape_hint": "ref:MarketplaceSourceListResponse",
+      "security": null,
+      "summary": "List marketplace sources",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_sync_api_v1_marketplaces_sync_post",
+      "path": "/api/v1/marketplaces/sync",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Trigger marketplace synchronization",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_sync_api_v1_marketplaces_sync__job_id__get",
+      "path": "/api/v1/marketplaces/sync/{job_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:SyncJobPayload",
+      "security": null,
+      "summary": "Get sync job",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_sync_conflicts_api_v1_marketplaces_sync__job_id__conflicts_get",
+      "path": "/api/v1/marketplaces/sync/{job_id}/conflicts",
+      "query_params": [],
+      "response_shape_hint": "ref:SyncConflictListResponse",
+      "security": null,
+      "summary": "List sync conflicts",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_merchant_api_v1_merchants_post",
+      "path": "/api/v1/merchants",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create a merchant organization",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_merchants_api_v1_merchants_get",
+      "path": "/api/v1/merchants",
+      "query_params": [
+        "status"
+      ],
+      "response_shape_hint": "ref:MerchantOrganizationListResponse",
+      "security": null,
+      "summary": "List merchants",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "accept_invitation_api_v1_merchants_invitations__invitation_id__accept_post",
+      "path": "/api/v1/merchants/invitations/{invitation_id}/accept",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantMembershipPayload",
+      "security": null,
+      "summary": "Accept a merchant invitation",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "merchant_demo_meta_api_v1_merchants_meta_demo_get",
+      "path": "/api/v1/merchants/meta/demo",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantDemoMetaResponse",
+      "security": null,
+      "summary": "List demo merchant accounts and limitations",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_merchant_api_v1_merchants__merchant_id__get",
+      "path": "/api/v1/merchants/{merchant_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOrganizationPayload",
+      "security": null,
+      "summary": "Get a merchant organization",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_merchant_api_v1_merchants__merchant_id__put",
+      "path": "/api/v1/merchants/{merchant_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOrganizationPayload",
+      "security": null,
+      "summary": "Update merchant organization profile",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_analytics_api_v1_merchants__merchant_id__analytics_get",
+      "path": "/api/v1/merchants/{merchant_id}/analytics",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantAnalyticsResponse",
+      "security": null,
+      "summary": "Merchant analytics dashboard",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "archive_merchant_api_v1_merchants__merchant_id__archive_post",
+      "path": "/api/v1/merchants/{merchant_id}/archive",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOrganizationPayload",
+      "security": null,
+      "summary": "Archive a merchant organization",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_audit_log_api_v1_merchants__merchant_id__audit_log_get",
+      "path": "/api/v1/merchants/{merchant_id}/audit-log",
+      "query_params": [
+        "limit"
+      ],
+      "response_shape_hint": "ref:MerchantAuditLogResponse",
+      "security": null,
+      "summary": "Merchant audit log",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_campaigns_api_v1_merchants__merchant_id__campaigns_get",
+      "path": "/api/v1/merchants/{merchant_id}/campaigns",
+      "query_params": [
+        "status"
+      ],
+      "response_shape_hint": "ref:MerchantCampaignListResponse",
+      "security": null,
+      "summary": "List sponsored campaign drafts",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_campaign_api_v1_merchants__merchant_id__campaigns_post",
+      "path": "/api/v1/merchants/{merchant_id}/campaigns",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create a sponsored campaign draft",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_campaign_api_v1_merchants__merchant_id__campaigns__campaign_id__put",
+      "path": "/api/v1/merchants/{merchant_id}/campaigns/{campaign_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantCampaignPayload",
+      "security": null,
+      "summary": "Update a sponsored campaign draft",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "pause_campaign_api_v1_merchants__merchant_id__campaigns__campaign_id__pause_post",
+      "path": "/api/v1/merchants/{merchant_id}/campaigns/{campaign_id}/pause",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantCampaignPayload",
+      "security": null,
+      "summary": "Pause a sponsored campaign",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "resume_campaign_api_v1_merchants__merchant_id__campaigns__campaign_id__resume_post",
+      "path": "/api/v1/merchants/{merchant_id}/campaigns/{campaign_id}/resume",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantCampaignPayload",
+      "security": null,
+      "summary": "Resume a sponsored campaign",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "invite_member_api_v1_merchants__merchant_id__invitations_post",
+      "path": "/api/v1/merchants/{merchant_id}/invitations",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Invite a merchant user",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_members_api_v1_merchants__merchant_id__members_get",
+      "path": "/api/v1/merchants/{merchant_id}/members",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantMembershipListResponse",
+      "security": null,
+      "summary": "List organization members",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_member_role_api_v1_merchants__merchant_id__members__member_id__put",
+      "path": "/api/v1/merchants/{merchant_id}/members/{member_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantMembershipPayload",
+      "security": null,
+      "summary": "Change a member role",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "remove_member_api_v1_merchants__merchant_id__members__member_id__delete",
+      "path": "/api/v1/merchants/{merchant_id}/members/{member_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Remove a member",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_offers_api_v1_merchants__merchant_id__offers_get",
+      "path": "/api/v1/merchants/{merchant_id}/offers",
+      "query_params": [
+        "status"
+      ],
+      "response_shape_hint": "ref:MerchantOfferListResponse",
+      "security": null,
+      "summary": "List offer submissions",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_offer_api_v1_merchants__merchant_id__offers_post",
+      "path": "/api/v1/merchants/{merchant_id}/offers",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Submit an offer",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_offer_api_v1_merchants__merchant_id__offers__offer_id__put",
+      "path": "/api/v1/merchants/{merchant_id}/offers/{offer_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOfferPayload",
+      "security": null,
+      "summary": "Update an offer",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "deactivate_offer_api_v1_merchants__merchant_id__offers__offer_id__delete",
+      "path": "/api/v1/merchants/{merchant_id}/offers/{offer_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantOfferPayload",
+      "security": null,
+      "summary": "Deactivate / archive an offer",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_products_api_v1_merchants__merchant_id__products_get",
+      "path": "/api/v1/merchants/{merchant_id}/products",
+      "query_params": [
+        "status"
+      ],
+      "response_shape_hint": "ref:MerchantProductListResponse",
+      "security": null,
+      "summary": "List product submissions",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_product_api_v1_merchants__merchant_id__products_post",
+      "path": "/api/v1/merchants/{merchant_id}/products",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create a product submission draft",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "product_performance_api_v1_merchants__merchant_id__products__product_id__performance_get",
+      "path": "/api/v1/merchants/{merchant_id}/products/{product_id}/performance",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Product performance analytics",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "ranking_explanation_api_v1_merchants__merchant_id__products__product_id__ranking_explanation_get",
+      "path": "/api/v1/merchants/{merchant_id}/products/{product_id}/ranking-explanation",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantRankingExplanationResponse",
+      "security": null,
+      "summary": "Safe ranking explanation for a product",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_product_api_v1_merchants__merchant_id__products__submission_id__get",
+      "path": "/api/v1/merchants/{merchant_id}/products/{submission_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantProductPayload",
+      "security": null,
+      "summary": "Get a product submission",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_product_api_v1_merchants__merchant_id__products__submission_id__put",
+      "path": "/api/v1/merchants/{merchant_id}/products/{submission_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantProductPayload",
+      "security": null,
+      "summary": "Update a pending product submission",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "submit_product_api_v1_merchants__merchant_id__products__submission_id__submit_post",
+      "path": "/api/v1/merchants/{merchant_id}/products/{submission_id}/submit",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantProductPayload",
+      "security": null,
+      "summary": "Submit a product for review (runs matching)",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "withdraw_product_api_v1_merchants__merchant_id__products__submission_id__withdraw_post",
+      "path": "/api/v1/merchants/{merchant_id}/products/{submission_id}/withdraw",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantProductPayload",
+      "security": null,
+      "summary": "Withdraw a product submission",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_promotions_api_v1_merchants__merchant_id__promotions_get",
+      "path": "/api/v1/merchants/{merchant_id}/promotions",
+      "query_params": [
+        "status"
+      ],
+      "response_shape_hint": "ref:MerchantPromotionListResponse",
+      "security": null,
+      "summary": "List promotions",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_promotion_api_v1_merchants__merchant_id__promotions_post",
+      "path": "/api/v1/merchants/{merchant_id}/promotions",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create a promotion",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_promotion_api_v1_merchants__merchant_id__promotions__promotion_id__put",
+      "path": "/api/v1/merchants/{merchant_id}/promotions/{promotion_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantPromotionPayload",
+      "security": null,
+      "summary": "Update a promotion",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "pause_promotion_api_v1_merchants__merchant_id__promotions__promotion_id__pause_post",
+      "path": "/api/v1/merchants/{merchant_id}/promotions/{promotion_id}/pause",
+      "query_params": [],
+      "response_shape_hint": "ref:MerchantPromotionPayload",
+      "security": null,
+      "summary": "Pause a promotion",
+      "tags": [
+        "merchant-platform"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_preferences_api_v1_notification_preferences_get",
+      "path": "/api/v1/notification-preferences",
+      "query_params": [
+        "user_id"
+      ],
+      "response_shape_hint": "ref:NotificationPreferencesPayload",
+      "security": null,
+      "summary": "Get the authenticated user's notification preferences",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_preferences_api_v1_notification_preferences_put",
+      "path": "/api/v1/notification-preferences",
+      "query_params": [
+        "user_id"
+      ],
+      "response_shape_hint": "ref:NotificationPreferencesPayload",
+      "security": null,
+      "summary": "Update the authenticated user's notification preferences",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": true,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_notifications_api_v1_notifications_get",
+      "path": "/api/v1/notifications",
+      "query_params": [
+        "type",
+        "severity",
+        "watchlist_id",
+        "unread",
+        "limit",
+        "offset",
+        "user_id"
+      ],
+      "response_shape_hint": "ref:NotificationListResponse",
+      "security": null,
+      "summary": "List the authenticated user's notifications",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "mark_all_read_api_v1_notifications_read_all_post",
+      "path": "/api/v1/notifications/read-all",
+      "query_params": [
+        "user_id"
+      ],
+      "response_shape_hint": "ref:MarkAllReadResponse",
+      "security": null,
+      "summary": "Mark all of the authenticated user's notifications as read",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "unread_count_api_v1_notifications_unread_count_get",
+      "path": "/api/v1/notifications/unread-count",
+      "query_params": [
+        "user_id"
+      ],
+      "response_shape_hint": "ref:UnreadCountResponse",
+      "security": null,
+      "summary": "Count the authenticated user's unread notifications",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_notification_api_v1_notifications__notification_id__delete",
+      "path": "/api/v1/notifications/{notification_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Permanently delete a notification",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "archive_notification_api_v1_notifications__notification_id__archive_post",
+      "path": "/api/v1/notifications/{notification_id}/archive",
+      "query_params": [],
+      "response_shape_hint": "ref:NotificationPayload",
+      "security": null,
+      "summary": "Archive a notification",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "mark_read_api_v1_notifications__notification_id__read_post",
+      "path": "/api/v1/notifications/{notification_id}/read",
+      "query_params": [],
+      "response_shape_hint": "ref:NotificationPayload",
+      "security": null,
+      "summary": "Mark a notification as read",
+      "tags": [
+        "notifications"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "personal_advice_api_v1_personal_advice__product_id__get",
+      "path": "/api/v1/personal/advice/{product_id}",
+      "query_params": [
+        "profile_id"
+      ],
+      "response_shape_hint": "ref:BuyingAdvicePayload",
+      "security": null,
+      "summary": "Structured buying advice for a product and profile",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "personal_deals_api_v1_personal_deals_get",
+      "path": "/api/v1/personal/deals",
+      "query_params": [
+        "profile_id",
+        "limit"
+      ],
+      "response_shape_hint": "ref:PersonalDealsResponse",
+      "security": null,
+      "summary": "Ranked personalized deals for a demo profile",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "personal_demo_api_v1_personal_demo_get",
+      "path": "/api/v1/personal/demo",
+      "query_params": [
+        "profile_id"
+      ],
+      "response_shape_hint": "ref:PersonalDemoResponse",
+      "security": null,
+      "summary": "Personal AI Shopping Agent demo with active profile deals",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "personal_meta_api_v1_personal_meta_get",
+      "path": "/api/v1/personal/meta",
+      "query_params": [],
+      "response_shape_hint": "ref:PersonalMetaResponse",
+      "security": null,
+      "summary": "Personal agent metadata and available demo profiles",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "personal_profile_api_v1_personal_profile_get",
+      "path": "/api/v1/personal/profile",
+      "query_params": [
+        "profile_id"
+      ],
+      "response_shape_hint": "ref:CustomerProfilePayload",
+      "security": null,
+      "summary": "Get active or specified demo customer profile",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "switch_personal_profile_api_v1_personal_profile_switch_post",
+      "path": "/api/v1/personal/profile/switch",
+      "query_params": [],
+      "response_shape_hint": "ref:CustomerProfilePayload",
+      "security": null,
+      "summary": "Switch the active demo customer profile",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "personal_recommendation_api_v1_personal_recommendation__product_id__get",
+      "path": "/api/v1/personal/recommendation/{product_id}",
+      "query_params": [
+        "profile_id"
+      ],
+      "response_shape_hint": "ref:PersonalRecommendationPayload",
+      "security": null,
+      "summary": "Personalized recommendation for a product",
+      "tags": [
+        "personal-agent"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_listing_price_history_api_v1_price_history_listings__listing_id__get",
+      "path": "/api/v1/price-history/listings/{listing_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:PriceHistoryResponse",
+      "security": null,
+      "summary": "Return recorded price history for one marketplace listing",
+      "tags": [
+        "price-history"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_product_price_history_api_v1_price_history_products__canonical_product_id__get",
+      "path": "/api/v1/price-history/products/{canonical_product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:PriceHistoryResponse",
+      "security": null,
+      "summary": "Return recorded price history for a canonical product",
+      "tags": [
+        "price-history"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_product_price_history_range_api_v1_price_history_products__canonical_product_id__range_get",
+      "path": "/api/v1/price-history/products/{canonical_product_id}/range",
+      "query_params": [
+        "start",
+        "end"
+      ],
+      "response_shape_hint": "ref:PriceHistoryResponse",
+      "security": null,
+      "summary": "Return product price history within an optional date range",
+      "tags": [
+        "price-history"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "search_price_history_api_v1_price_history_search_get",
+      "path": "/api/v1/price-history/search",
+      "query_params": [
+        "q"
+      ],
+      "response_shape_hint": "ref:PriceHistorySearchResponse",
+      "security": null,
+      "summary": "Search marketplaces, record current prices, return history stats",
+      "tags": [
+        "price-history"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_snapshots_api_v1_price_history_snapshots_post",
+      "path": "/api/v1/price-history/snapshots",
+      "query_params": [],
+      "response_shape_hint": "ref:PriceSnapshotsCreateResponse",
+      "security": null,
+      "summary": "Record one or more normalized listing price snapshots",
+      "tags": [
+        "price-history"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": true,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_products_api_v1_products_get",
+      "path": "/api/v1/products",
+      "query_params": [
+        "skip",
+        "limit"
+      ],
+      "response_shape_hint": "bare_list",
+      "security": null,
+      "summary": "List Products",
+      "tags": [
+        "products"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_product_api_v1_products_post",
+      "path": "/api/v1/products",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Create Product",
+      "tags": [
+        "products"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_product_api_v1_products__product_id__get",
+      "path": "/api/v1/products/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:ProductResponse",
+      "security": null,
+      "summary": "Get Product",
+      "tags": [
+        "products"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_product_api_v1_products__product_id__put",
+      "path": "/api/v1/products/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:ProductResponse",
+      "security": null,
+      "summary": "Update Product",
+      "tags": [
+        "products"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_product_api_v1_products__product_id__delete",
+      "path": "/api/v1/products/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Delete Product",
+      "tags": [
+        "products"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "product_inventory_history_api_v1_products__product_id__inventory_history_get",
+      "path": "/api/v1/products/{product_id}/inventory-history",
+      "query_params": [],
+      "response_shape_hint": "ref:InventoryHistoryListResponse",
+      "security": null,
+      "summary": "Marketplace data inventory history for a product",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "product_price_history_api_v1_products__product_id__price_history_get",
+      "path": "/api/v1/products/{product_id}/price-history",
+      "query_params": [],
+      "response_shape_hint": "ref:PriceHistoryListResponse",
+      "security": null,
+      "summary": "Marketplace data price history for a product",
+      "tags": [
+        "marketplace-data"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_profile_api_v1_profile_get",
+      "path": "/api/v1/profile",
+      "query_params": [],
+      "response_shape_hint": "ref:ProfileResponse",
+      "security": null,
+      "summary": "Get the authenticated user's shopping profile",
+      "tags": [
+        "user-platform-profile"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_profile_api_v1_profile_put",
+      "path": "/api/v1/profile",
+      "query_params": [],
+      "response_shape_hint": "ref:ProfileResponse",
+      "security": null,
+      "summary": "Update the authenticated user's shopping profile",
+      "tags": [
+        "user-platform-profile"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_preferences_api_v1_profile_preferences_get",
+      "path": "/api/v1/profile/preferences",
+      "query_params": [],
+      "response_shape_hint": "ref:PreferencesPayload",
+      "security": null,
+      "summary": "Get the authenticated user's shopping preferences",
+      "tags": [
+        "user-platform-profile"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "update_preferences_api_v1_profile_preferences_put",
+      "path": "/api/v1/profile/preferences",
+      "query_params": [],
+      "response_shape_hint": "ref:PreferencesPayload",
+      "security": null,
+      "summary": "Update the authenticated user's shopping preferences",
+      "tags": [
+        "user-platform-profile"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "readiness_check_api_v1_ready_get",
+      "path": "/api/v1/ready",
+      "query_params": [],
+      "response_shape_hint": "ref:ReadyResponse",
+      "security": null,
+      "summary": "Readiness probe \u2014 safe to receive traffic",
+      "tags": [
+        "health"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "search_recommendations_api_v1_recommendations_search_get",
+      "path": "/api/v1/recommendations/search",
+      "query_params": [
+        "q"
+      ],
+      "response_shape_hint": "ref:ShoppingRecommendationSearchResponse",
+      "security": null,
+      "summary": "Search marketplaces and return explainable purchase recommendations",
+      "tags": [
+        "recommendations"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "demo_review_summary_api_v1_review_summary_demo_get",
+      "path": "/api/v1/review-summary/demo",
+      "query_params": [
+        "mode"
+      ],
+      "response_shape_hint": "ref:ReviewSummaryResponse",
+      "security": null,
+      "summary": "Demo AI review summary for iPhone 17 Pro Max",
+      "tags": [
+        "review-summary"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_review_summary_api_v1_review_summary__product_id__get",
+      "path": "/api/v1/review-summary/{product_id}",
+      "query_params": [
+        "mode"
+      ],
+      "response_shape_hint": "ref:ReviewSummaryResponse",
+      "security": null,
+      "summary": "AI review summary for a product",
+      "tags": [
+        "review-summary"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "collect_reviews_api_v1_reviews_collect_post",
+      "path": "/api/v1/reviews/collect",
+      "query_params": [],
+      "response_shape_hint": "ref:ReviewCollectResponse",
+      "security": null,
+      "summary": "Collect mock marketplace reviews for a product",
+      "tags": [
+        "reviews"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "compare_marketplaces_api_v1_reviews_compare__product_id__get",
+      "path": "/api/v1/reviews/compare/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:ReviewCompareResponse",
+      "security": null,
+      "summary": "Compare marketplace ratings for a product",
+      "tags": [
+        "reviews"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "review_history_api_v1_reviews_history__product_id__get",
+      "path": "/api/v1/reviews/history/{product_id}",
+      "query_params": [
+        "marketplace",
+        "limit"
+      ],
+      "response_shape_hint": "ref:ReviewHistoryResponse",
+      "security": null,
+      "summary": "Review snapshot history for a product",
+      "tags": [
+        "reviews"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "latest_reviews_api_v1_reviews__product_id__get",
+      "path": "/api/v1/reviews/{product_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:ReviewLatestResponse",
+      "security": null,
+      "summary": "Latest marketplace reviews for a product",
+      "tags": [
+        "reviews"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "demo_shopping_assistant_api_v1_shopping_assistant_demo_get",
+      "path": "/api/v1/shopping-assistant/demo",
+      "query_params": [
+        "mode"
+      ],
+      "response_shape_hint": "ref:ShoppingAssistantResponse",
+      "security": null,
+      "summary": "Demo AI shopping assistant recommendation",
+      "tags": [
+        "shopping-assistant"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "shopping_assistant_meta_api_v1_shopping_assistant_meta_get",
+      "path": "/api/v1/shopping-assistant/meta",
+      "query_params": [],
+      "response_shape_hint": "ref:ShoppingAssistantDemoMeta",
+      "security": null,
+      "summary": "Shopping assistant demo metadata and allowed modes",
+      "tags": [
+        "shopping-assistant"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "query_shopping_assistant_api_v1_shopping_assistant_query_post",
+      "path": "/api/v1/shopping-assistant/query",
+      "query_params": [],
+      "response_shape_hint": "ref:ShoppingAssistantResponse",
+      "security": null,
+      "summary": "Ask the AI shopping assistant a product-shopping question",
+      "tags": [
+        "shopping-assistant"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_comparisons_api_v1_user_comparisons_get",
+      "path": "/api/v1/user/comparisons",
+      "query_params": [],
+      "response_shape_hint": "bare_list",
+      "security": null,
+      "summary": "List the authenticated user's saved comparisons",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "save_comparison_api_v1_user_comparisons_post",
+      "path": "/api/v1/user/comparisons",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Save a product comparison for the authenticated user",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_history_api_v1_user_history_get",
+      "path": "/api/v1/user/history",
+      "query_params": [],
+      "response_shape_hint": "bare_list",
+      "security": null,
+      "summary": "List the authenticated user's recommendation history",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_recently_viewed_api_v1_user_recently_viewed_get",
+      "path": "/api/v1/user/recently-viewed",
+      "query_params": [],
+      "response_shape_hint": "ref:RecentlyViewedPayload",
+      "security": null,
+      "summary": "Get the authenticated user's recently viewed products",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "mark_viewed_api_v1_user_recently_viewed_post",
+      "path": "/api/v1/user/recently-viewed",
+      "query_params": [],
+      "response_shape_hint": "ref:RecentlyViewedPayload",
+      "security": null,
+      "summary": "Record a product as recently viewed for the authenticated user",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_saved_products_api_v1_user_saved_products_get",
+      "path": "/api/v1/user/saved-products",
+      "query_params": [],
+      "response_shape_hint": "bare_list",
+      "security": null,
+      "summary": "List the authenticated user's saved products",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "save_product_api_v1_user_saved_products_post",
+      "path": "/api/v1/user/saved-products",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Save a product to the authenticated user's list",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_saved_product_api_v1_user_saved_products__saved_id__delete",
+      "path": "/api/v1/user/saved-products/{saved_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Remove a saved product",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_searches_api_v1_user_searches_get",
+      "path": "/api/v1/user/searches",
+      "query_params": [],
+      "response_shape_hint": "bare_list",
+      "security": null,
+      "summary": "List the authenticated user's saved searches",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "save_search_api_v1_user_searches_post",
+      "path": "/api/v1/user/searches",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Save a search query for the authenticated user",
+      "tags": [
+        "user-platform-saved-items"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_watchlists_api_v1_watchlists_get",
+      "path": "/api/v1/watchlists",
+      "query_params": [
+        "enabled",
+        "status"
+      ],
+      "response_shape_hint": "ref:WatchlistListResponse",
+      "security": null,
+      "summary": "List watchlists",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "create_watchlist_api_v1_watchlists_post",
+      "path": "/api/v1/watchlists",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Create a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "check_all_alerts_api_v1_watchlists_check_alerts_post",
+      "path": "/api/v1/watchlists/check-alerts",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertEvaluationResponse",
+      "security": null,
+      "summary": "Evaluate alerts for all enabled watchlists",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_watchlist_api_v1_watchlists__watchlist_id__get",
+      "path": "/api/v1/watchlists/{watchlist_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Get a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_watchlist_api_v1_watchlists__watchlist_id__patch",
+      "path": "/api/v1/watchlists/{watchlist_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Update a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "replace_watchlist_api_v1_watchlists__watchlist_id__put",
+      "path": "/api/v1/watchlists/{watchlist_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Update a watchlist (alias of PATCH)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_watchlist_api_v1_watchlists__watchlist_id__delete",
+      "path": "/api/v1/watchlists/{watchlist_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Delete a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_watchlist_alerts_api_v1_watchlists__watchlist_id__alerts_get",
+      "path": "/api/v1/watchlists/{watchlist_id}/alerts",
+      "query_params": [
+        "alert_type",
+        "status",
+        "limit"
+      ],
+      "response_shape_hint": "ref:AlertListResponse",
+      "security": null,
+      "summary": "List alerts for a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "archive_watchlist_api_v1_watchlists__watchlist_id__archive_post",
+      "path": "/api/v1/watchlists/{watchlist_id}/archive",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Archive a watchlist (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "check_watchlist_alerts_api_v1_watchlists__watchlist_id__check_alerts_post",
+      "path": "/api/v1/watchlists/{watchlist_id}/check-alerts",
+      "query_params": [],
+      "response_shape_hint": "ref:AlertEvaluationResponse",
+      "security": null,
+      "summary": "Evaluate alerts for one watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": true,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_watchlist_history_api_v1_watchlists__watchlist_id__history_get",
+      "path": "/api/v1/watchlists/{watchlist_id}/history",
+      "query_params": [
+        "limit"
+      ],
+      "response_shape_hint": "ref:WatchlistHistoryListResponse",
+      "security": null,
+      "summary": "List watchlist history (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "list_items_api_v1_watchlists__watchlist_id__items_get",
+      "path": "/api/v1/watchlists/{watchlist_id}/items",
+      "query_params": [
+        "enabled",
+        "enrich"
+      ],
+      "response_shape_hint": "ref:WatchlistItemListResponse",
+      "security": null,
+      "summary": "List watchlist items (enriched)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "add_item_api_v1_watchlists__watchlist_id__items_post",
+      "path": "/api/v1/watchlists/{watchlist_id}/items",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistItemPayload",
+      "security": null,
+      "summary": "Add a product to a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "get_item_api_v1_watchlists__watchlist_id__items__item_id__get",
+      "path": "/api/v1/watchlists/{watchlist_id}/items/{item_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistItemPayload",
+      "security": null,
+      "summary": "Get a watchlist item",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PATCH",
+      "operation_id": "update_item_api_v1_watchlists__watchlist_id__items__item_id__patch",
+      "path": "/api/v1/watchlists/{watchlist_id}/items/{item_id}",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistItemPayload",
+      "security": null,
+      "summary": "Update a watchlist item",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "DELETE",
+      "operation_id": "delete_item_api_v1_watchlists__watchlist_id__items__item_id__delete",
+      "path": "/api/v1/watchlists/{watchlist_id}/items/{item_id}",
+      "query_params": [],
+      "response_shape_hint": "other/unknown",
+      "security": null,
+      "summary": "Remove a product from a watchlist",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "set_item_preferred_marketplaces_api_v1_watchlists__watchlist_id__items__item_id__preferred_marketplaces_put",
+      "path": "/api/v1/watchlists/{watchlist_id}/items/{item_id}/preferred-marketplaces",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistItemPayload",
+      "security": null,
+      "summary": "Set an item's preferred marketplaces (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "set_item_preferred_sellers_api_v1_watchlists__watchlist_id__items__item_id__preferred_sellers_put",
+      "path": "/api/v1/watchlists/{watchlist_id}/items/{item_id}/preferred-sellers",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistItemPayload",
+      "security": null,
+      "summary": "Set an item's preferred sellers (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "add_offer_api_v1_watchlists__watchlist_id__offers_post",
+      "path": "/api/v1/watchlists/{watchlist_id}/offers",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistItemPayload",
+      "security": null,
+      "summary": "Track a marketplace offer on a watchlist (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "pause_watchlist_api_v1_watchlists__watchlist_id__pause_post",
+      "path": "/api/v1/watchlists/{watchlist_id}/pause",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Pause a watchlist (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "set_watchlist_preferred_marketplaces_api_v1_watchlists__watchlist_id__preferred_marketplaces_put",
+      "path": "/api/v1/watchlists/{watchlist_id}/preferred-marketplaces",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Set a watchlist's preferred marketplaces (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "PUT",
+      "operation_id": "set_watchlist_preferred_sellers_api_v1_watchlists__watchlist_id__preferred_sellers_put",
+      "path": "/api/v1/watchlists/{watchlist_id}/preferred-sellers",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Set a watchlist's preferred sellers (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "POST",
+      "operation_id": "resume_watchlist_api_v1_watchlists__watchlist_id__resume_post",
+      "path": "/api/v1/watchlists/{watchlist_id}/resume",
+      "query_params": [],
+      "response_shape_hint": "ref:WatchlistPayload",
+      "security": null,
+      "summary": "Resume a paused watchlist (Sprint 19)",
+      "tags": [
+        "watchlists"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "root_health_health_get",
+      "path": "/health",
+      "query_params": [],
+      "response_shape_hint": "ref:EnhancedHealthResponse",
+      "security": null,
+      "summary": "Health probe",
+      "tags": [
+        "probes"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "root_live_live_get",
+      "path": "/live",
+      "query_params": [],
+      "response_shape_hint": "ref:LiveResponse",
+      "security": null,
+      "summary": "Liveness probe",
+      "tags": [
+        "probes"
+      ]
+    },
+    {
+      "deprecated": false,
+      "has_limit": false,
+      "has_offset": false,
+      "has_skip": false,
+      "has_sort": false,
+      "method": "GET",
+      "operation_id": "root_ready_ready_get",
+      "path": "/ready",
+      "query_params": [],
+      "response_shape_hint": "ref:ReadyResponse",
+      "security": null,
+      "summary": "Readiness probe",
+      "tags": [
+        "probes"
+      ]
+    }
+  ]
+}

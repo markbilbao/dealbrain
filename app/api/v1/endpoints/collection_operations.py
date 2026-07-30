@@ -23,6 +23,7 @@ from app.domain.exceptions import (
     CollectionRunNotFoundError,
     CollectionValidationError,
 )
+from app.schemas.api_common import build_pagination_meta
 from app.schemas.collection_operations import (
     CollectionOpsHealthPayload,
     CollectionOpsJobCreateRequest,
@@ -231,13 +232,24 @@ async def run_job(
 async def list_job_runs(
     job_id: str,
     limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     service: CollectionOperationsService = Depends(get_collection_operations_service),
 ) -> CollectionOpsRunListResponse:
     try:
-        runs = service.list_runs_for_job(job_id, limit=limit)
+        runs = service.list_runs_for_job(job_id, limit=offset + limit + 1)
     except CollectionJobNotFoundError as exc:
         raise _map_error(exc) from exc
-    return CollectionOpsRunListResponse(runs=[to_ops_run_payload(run) for run in runs])
+    payloads = [to_ops_run_payload(run) for run in runs]
+    window = payloads[offset:]
+    has_more = len(window) > limit
+    page = window[:limit]
+    return CollectionOpsRunListResponse(
+        runs=page,
+        items=page,
+        pagination=build_pagination_meta(
+            limit=limit, offset=offset, page_len=len(page), has_more=has_more
+        ),
+    )
 
 
 @router.get(
@@ -247,11 +259,22 @@ async def list_job_runs(
 )
 async def list_runs(
     limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     failed_only: bool = Query(False),
     service: CollectionOperationsService = Depends(get_collection_operations_service),
 ) -> CollectionOpsRunListResponse:
-    runs = service.list_runs(limit=limit, failed_only=failed_only)
-    return CollectionOpsRunListResponse(runs=[to_ops_run_payload(run) for run in runs])
+    runs = service.list_runs(limit=offset + limit + 1, failed_only=failed_only)
+    payloads = [to_ops_run_payload(run) for run in runs]
+    window = payloads[offset:]
+    has_more = len(window) > limit
+    page = window[:limit]
+    return CollectionOpsRunListResponse(
+        runs=page,
+        items=page,
+        pagination=build_pagination_meta(
+            limit=limit, offset=offset, page_len=len(page), has_more=has_more
+        ),
+    )
 
 
 @router.get(
