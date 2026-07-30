@@ -151,8 +151,11 @@ jobs:
       - name: Verify image exists (no migrate at build)
         run: |
           docker image inspect "dealbrain:ci-${{ github.sha }}" >/dev/null
-          # Build must not execute Alembic; Dockerfile has no migrate RUN step.
-          if docker history --no-trunc "dealbrain:ci-${{ github.sha }}" | grep -qi alembic; then
+          # Build must not execute Alembic. COPY of alembic.ini / alembic/ for the
+          # runtime migrate job is expected; only fail on shell/RUN layers.
+          if docker history --no-trunc --format '{{.CreatedBy}}' "dealbrain:ci-${{ github.sha }}" \
+            | grep -viE '^\s*(COPY|ADD)\b' \
+            | grep -qi alembic; then
             echo "Unexpected alembic layer in image history" >&2
             exit 1
           fi
