@@ -8,12 +8,21 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import Protocol
 from uuid import uuid4
 
-from app.affiliate.memory import InMemoryAffiliateRepository
 from app.affiliate.reporting.aggregator import aggregate_revenue_report
 from app.domain.entities.affiliate import AffiliateRevenueReport
 from app.domain.interfaces.affiliate_repository import AffiliateClickRepository
+
+
+class ImpressionCounter(Protocol):
+    """Minimal impression counter used by affiliate reporting (demo metrics only)."""
+
+    @property
+    def impression_count(self) -> int: ...
+
+    def record_impression(self, count: int = 1) -> int: ...
 
 
 class AffiliateReportingService:
@@ -23,7 +32,7 @@ class AffiliateReportingService:
         self,
         click_repository: AffiliateClickRepository,
         *,
-        impression_store: InMemoryAffiliateRepository | None = None,
+        impression_store: ImpressionCounter | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
     ) -> None:

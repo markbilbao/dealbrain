@@ -47,6 +47,36 @@ def validate_settings(cfg: Settings | None = None) -> ValidationResult:
             warnings.append("Live AI HTTP is enabled — ensure API keys are vaulted")
         if cfg.app_log_level.upper() == "DEBUG":
             warnings.append("APP_LOG_LEVEL=DEBUG is noisy for production")
+        if cfg.demo_launcher_enabled:
+            errors.append("DEMO_LAUNCHER_ENABLED must be false in production")
+        if cfg.allow_demo_reset_tokens:
+            errors.append("ALLOW_DEMO_RESET_TOKENS must be false in production")
+        if cfg.seed_demo_data:
+            errors.append("SEED_DEMO_DATA must be false in production")
+        if cfg.openapi_public_docs:
+            warnings.append("OPENAPI_PUBLIC_DOCS=true exposes API docs publicly")
+        if not cfg.launch_strict_startup:
+            warnings.append("LAUNCH_STRICT_STARTUP should be true in production")
+        # Persistence backends — no silent in-memory in production.
+        from app.infrastructure.persistence.binding import (
+            REQUIRED_PRODUCTION_BACKENDS,
+            resolve_backend,
+        )
+
+        for domain in REQUIRED_PRODUCTION_BACKENDS:
+            if resolve_backend(domain, cfg) != "sqlalchemy":
+                errors.append(
+                    f"{domain} persistence must be sqlalchemy in production "
+                    f"(got {resolve_backend(domain, cfg)})"
+                )
+        if cfg.canonical_registry_backend == "memory":
+            warnings.append(
+                "CANONICAL_REGISTRY_BACKEND=memory in production — durable registry recommended"
+            )
+        if cfg.price_history_backend == "memory":
+            warnings.append(
+                "PRICE_HISTORY_BACKEND=memory in production — durable price history recommended"
+            )
 
     if cfg.app_env == "staging":
         if cfg.app_debug:
@@ -94,6 +124,15 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
         "app_log_level": cfg.app_log_level,
         "canonical_registry_backend": cfg.canonical_registry_backend,
         "price_history_backend": cfg.price_history_backend,
+        "persistence_backend": cfg.persistence_backend,
+        "user_platform_backend": cfg.user_platform_backend,
+        "marketplace_data_backend": cfg.marketplace_data_backend,
+        "alerts_backend": cfg.alerts_backend,
+        "notifications_backend": cfg.notifications_backend,
+        "affiliate_backend": cfg.affiliate_backend,
+        "merchant_backend": cfg.merchant_backend,
+        "allow_demo_reset_tokens": cfg.allow_demo_reset_tokens,
+        "seed_demo_data": cfg.seed_demo_data,
         "cors_origins": list(cfg.cors_origins),
         "launch_readiness_enabled": cfg.launch_readiness_enabled,
         "rate_limiting_enabled": cfg.rate_limiting_enabled,

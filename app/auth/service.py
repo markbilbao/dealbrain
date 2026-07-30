@@ -263,7 +263,10 @@ class AuthService:
             )
         )
         self._audit.record("password_reset_requested", user_id=user.user_id)
-        response["reset_token_demo_only"] = raw
+        from app.core.config import settings as app_settings
+
+        if app_settings.allow_demo_reset_tokens and not app_settings.is_production:
+            response["reset_token_demo_only"] = raw
         return response
 
     def request_email_verification(self, user_id: str) -> dict[str, Any]:
@@ -292,11 +295,15 @@ class AuthService:
             )
         )
         self._audit.record("email_verification_requested", user_id=user.user_id)
-        return {
+        payload: dict[str, Any] = {
             "status": "accepted",
             "email_delivery": False,
-            "verification_token_demo_only": raw,
         }
+        from app.core.config import settings as app_settings
+
+        if app_settings.allow_demo_reset_tokens and not app_settings.is_production:
+            payload["verification_token_demo_only"] = raw
+        return payload
 
     def begin_oauth_link(self, provider: str, user_id: str) -> dict[str, Any]:
         self._audit.record("oauth_link_attempt", user_id=user_id, metadata={"provider": provider})

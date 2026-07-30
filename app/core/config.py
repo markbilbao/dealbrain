@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     # Application
@@ -34,6 +35,51 @@ class Settings(BaseSettings):
         alias="DATABASE_URL",
     )
     database_echo: bool = Field(default=False, alias="DATABASE_ECHO")
+
+    # Sprint 23 — operational persistence selection
+    # Global default for Sprint 17–21 adapters. Production resolves to sqlalchemy
+    # when unset; development/demo may keep memory. Domain-specific overrides below.
+    persistence_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="PERSISTENCE_BACKEND",
+    )
+    user_platform_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="USER_PLATFORM_BACKEND",
+    )
+    marketplace_data_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="MARKETPLACE_DATA_BACKEND",
+    )
+    alerts_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="ALERTS_BACKEND",
+    )
+    notifications_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="NOTIFICATIONS_BACKEND",
+    )
+    affiliate_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="AFFILIATE_BACKEND",
+    )
+    merchant_backend: Literal["memory", "sqlalchemy"] | None = Field(
+        default=None,
+        alias="MERCHANT_BACKEND",
+    )
+    # When true (non-production only), password-reset responses may include
+    # reset_token_demo_only. Production validation forces this false.
+    allow_demo_reset_tokens: bool = Field(
+        default=True,
+        alias="ALLOW_DEMO_RESET_TOKENS",
+    )
+    # Seed demo users/merchants/affiliates when constructing stores.
+    # Opt-in: development sets SEED_DEMO_DATA=true explicitly in .env.example.
+    # Production validation rejects true.
+    seed_demo_data: bool = Field(
+        default=False,
+        alias="SEED_DEMO_DATA",
+    )
 
     # Canonical registry backend: "memory" (demo/default) or "sqlalchemy"
     canonical_registry_backend: Literal["memory", "sqlalchemy"] = Field(

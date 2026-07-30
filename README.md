@@ -8,7 +8,7 @@ Production-ready backend for the DealBrain AI platform.
 |-----------|------------|
 | Runtime | Python 3.12 |
 | Framework | FastAPI |
-| ORM | SQLAlchemy 2.x (async) |
+| ORM | SQLAlchemy 2.x (async + sync operational adapters) |
 | Database | PostgreSQL 16 |
 | Migrations | Alembic |
 | Validation | Pydantic v2 |
@@ -31,10 +31,14 @@ app/
 │   └── interfaces/         # Abstract contracts (Repository, AIProvider)
 └── infrastructure/         # External adapters
     ├── database/           # SQLAlchemy models, sessions, repositories
-    └── ai/                 # AI provider implementations (future)
+    ├── persistence/        # Sprint 23 sync persistence helpers / bindings
+    └── ai/                 # AI provider implementations
 ```
 
 **Dependency rule:** outer layers depend on inner layers. Domain has no framework imports.
+
+Architecture lock (Sprints 23–40): [docs/architecture/ARCHITECTURE_LOCK.md](docs/architecture/ARCHITECTURE_LOCK.md).  
+Persistence guide: [docs/PERSISTENCE.md](docs/PERSISTENCE.md).
 
 ## Quick Start
 
@@ -54,7 +58,7 @@ cd dealbrain
 cp .env.example .env
 
 # Install dependencies
-uv sync --dev
+uv sync --extra dev
 
 # Start PostgreSQL (Docker)
 docker compose up db -d
@@ -62,13 +66,15 @@ docker compose up db -d
 # Run migrations
 uv run alembic upgrade head
 
-# Start the API
+# Start the API (dev defaults keep Sprint 17–21 adapters in-memory)
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 Health check: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+
+Readiness (includes Sprint 23 persistence components): [http://localhost:8000/ready](http://localhost:8000/ready)
 
 ### Docker (full stack)
 

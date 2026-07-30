@@ -27,7 +27,7 @@ EXTRA_DIGESTS = {
         "bd15838483d2e75f726eac62f02c34b296bc69a3ccf85bc0ba46e7b866b051ce"
     ),
     "app/services/affiliate_reporting_service.py": (
-        "7a23eeb34e820082f6f8c3d071c1a5267fb5b1f9f16059144e651699d63ccb99"
+        "c8262fb71b538b163a81d3b4954d141bccc5e97dd146822c4ba9a44d21aa7e6d"
     ),
     "app/services/affiliate_disclosure_service.py": (
         "7f7a1a61813265ec50532bf7fa54753d7e7ca7341d77712321ced0f731229d88"

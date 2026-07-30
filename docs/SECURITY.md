@@ -33,6 +33,13 @@ Configurable in-process limits for:
 - search / recommendations
 - default bucket for other routes
 
+### Demo token / reset token hardening (Sprint 23)
+
+- `ALLOW_DEMO_RESET_TOKENS` must be false in production; raw reset/verification
+  tokens are omitted from API responses when disabled or in production.
+- `DEMO_LAUNCHER_ENABLED` must be false in production.
+- Production persistence backends must be `sqlalchemy` (no silent memory fallback).
+
 ### Error responses
 
 Consistent JSON envelope (`error`, `message`, `status_code`) while retaining

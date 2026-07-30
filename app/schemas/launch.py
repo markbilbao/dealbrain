@@ -35,6 +35,8 @@ class ReadyResponse(BaseModel):
     database: str
     cache: str
     uptime_seconds: float
+    persistence_level: str | None = None
+    components: list[dict[str, Any]] = Field(default_factory=list)
 
     model_config = {
         "json_schema_extra": {
@@ -46,6 +48,8 @@ class ReadyResponse(BaseModel):
                 "database": "up",
                 "cache": "up",
                 "uptime_seconds": 12.5,
+                "persistence_level": "READY",
+                "components": [],
             }
         }
     }
