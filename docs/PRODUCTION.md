@@ -29,14 +29,22 @@ Product flags from prior sprints (`USER_PLATFORM_ENABLED`, `AFFILIATE_ENABLED`,
 
 ## Startup validation
 
-`run_startup_validation()` checks:
+`run_startup_validation()` is the authoritative fail-closed path:
 
 - Production: `APP_DEBUG` must be false; CORS must not be `*`
+- Production: demo seed/launcher/reset tokens off; `PRICE_HISTORY_SEED_DEMO_MOCK` off
+- Production: `LAUNCH_STRICT_STARTUP` must be true; structured logging on; log level not DEBUG
+- Production: `DATABASE_URL` must be PostgreSQL with a non-placeholder password
+- Production: `APP_SECRET_KEY` present and strong (min 32 chars; value never logged)
 - Port / database URL sanity
 - Rate limit floors
-- Warnings for live AI HTTP without keys
+- Warnings for live AI HTTP without keys (fatal in production when live HTTP is on)
 
-Set `LAUNCH_STRICT_STARTUP=true` to abort boot on errors.
+**Contract:** when `APP_ENV=production`, invalid mandatory configuration raises
+regardless of `LAUNCH_STRICT_STARTUP`. The flag strengthens non-production boots but
+must not weaken production. Application lifespan calls this helper only — it does not
+re-implement a second raise path. Error text names field categories and never includes
+secret values.
 
 ## Secure secret loading
 
@@ -44,6 +52,8 @@ Set `LAUNCH_STRICT_STARTUP=true` to abort boot on errors.
 - Configuration export **always redacts** database URLs and API keys
 - Config import never mutates runtime Settings and strips secret keys
 - Never commit real production secrets — examples use empty placeholders
+- Cloud RDS master passwords are AWS-managed (Secrets Manager); Terraform stores
+  secret ARNs only (see [SPRINT_25A_INFRASTRUCTURE.md](SPRINT_25A_INFRASTRUCTURE.md))
 
 ## Memory vs SQL backends
 

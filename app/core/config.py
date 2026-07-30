@@ -288,6 +288,14 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Launch readiness & production preparation — Sprint 22
     # ------------------------------------------------------------------
+    # Application secret for production ops material (signing / future cookies).
+    # Injected from Secrets Manager in cloud; never commit real values.
+    app_secret_key: str = Field(default="", alias="APP_SECRET_KEY")
+    # Expected public hostnames behind the ALB (comma-separated). Deploy gate.
+    trusted_hosts: Annotated[list[str], NoDecode] = Field(
+        default_factory=list,
+        alias="TRUSTED_HOSTS",
+    )
     launch_readiness_enabled: bool = Field(
         default=True,
         alias="LAUNCH_READINESS_ENABLED",
@@ -396,7 +404,7 @@ class Settings(BaseSettings):
         alias="SECURITY_PERMISSIONS_POLICY",
     )
 
-    @field_validator("cors_origins", mode="before")
+    @field_validator("cors_origins", "trusted_hosts", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):

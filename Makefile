@@ -1,4 +1,4 @@
-.PHONY: install dev run test lint migrate docker-up docker-down format
+.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra
 
 install:
 	uv sync
@@ -13,8 +13,7 @@ test:
 	uv run pytest
 
 lint:
-	uv run ruff check app tests
-	uv run ruff format --check app tests
+	uv run python scripts/check_ruff_baseline.py
 
 format:
 	uv run ruff format app tests
@@ -34,3 +33,6 @@ docker-down:
 
 docker-migrate:
 	docker compose --profile migrate up migrate
+
+validate-infra:
+	bash scripts/validate_infra_25a.sh

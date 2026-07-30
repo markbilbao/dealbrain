@@ -51,6 +51,19 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 > This sprint does **not** perform a real cloud deployment. Use compose locally
 > or in a staging VM for rehearsal only.
 
+## Cloud foundation (Sprint 25a)
+
+AWS single-region Terraform + Compose overlays live under `infra/`.
+Phase 25a CI lives at [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
+
+See [SPRINT_25A_INFRASTRUCTURE.md](SPRINT_25A_INFRASTRUCTURE.md) and
+[`infra/terraform/README.md`](../infra/terraform/README.md).
+
+Cloud staging/production **do not** use the root Compose `db` service — they use
+private RDS with **AWS-managed master passwords** (Secrets Manager). Terraform never
+accepts a plaintext `db_password`. Runtime `DATABASE_URL` assembly/injection is a
+Sprint 25b deploy concern. Migrations run via the dedicated `migrate` service only.
+
 ## Environment examples
 
 | File | Purpose |

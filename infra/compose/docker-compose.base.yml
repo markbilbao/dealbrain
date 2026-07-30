@@ -1,0 +1,80 @@
+# Base production-shaped Compose definition (Sprint 25a).
+# Used by staging/production overlays. Does NOT include Postgres —
+# RDS is the database for cloud environments.
+#
+# Image and secrets are injected via environment / overlay, never committed.
+
+services:
+  api:
+    image: ${DEALBRAIN_IMAGE:?Set DEALBRAIN_IMAGE to a GHCR digest or immutable tag}
+    pull_policy: always
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: ${APP_ENV:?APP_ENV is required}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8000"
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-INFO}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_ECHO: "false"
+      PERSISTENCE_BACKEND: sqlalchemy
+      USER_PLATFORM_BACKEND: sqlalchemy
+      MARKETPLACE_DATA_BACKEND: sqlalchemy
+      ALERTS_BACKEND: sqlalchemy
+      NOTIFICATIONS_BACKEND: sqlalchemy
+      AFFILIATE_BACKEND: sqlalchemy
+      MERCHANT_BACKEND: sqlalchemy
+      CANONICAL_REGISTRY_BACKEND: sqlalchemy
+      PRICE_HISTORY_BACKEND: sqlalchemy
+      PRICE_HISTORY_SEED_DEMO_MOCK: "false"
+      ALLOW_DEMO_RESET_TOKENS: ${ALLOW_DEMO_RESET_TOKENS:-false}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      DEMO_LAUNCHER_ENABLED: ${DEMO_LAUNCHER_ENABLED:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-}
+      LAUNCH_READINESS_ENABLED: "true"
+      LAUNCH_STRICT_STARTUP: ${LAUNCH_STRICT_STARTUP:-true}
+      RATE_LIMITING_ENABLED: "true"
+      SECURITY_HEADERS_ENABLED: "true"
+      STRUCTURED_LOGGING_ENABLED: "true"
+      OPENAPI_PUBLIC_DOCS: ${OPENAPI_PUBLIC_DOCS:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      APP_SECRET_KEY: ${APP_SECRET_KEY:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/live')",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    stop_grace_period: 30s
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    # Non-root user is baked into the image (dealbrain).
+    # API must NOT run migrations — migrate service owns Alembic.
+
+  migrate:
+    image: ${DEALBRAIN_IMAGE:?Set DEALBRAIN_IMAGE to a GHCR digest or immutable tag}
+    pull_policy: always
+    profiles:
+      - migrate
+    environment:
+      APP_ENV: ${APP_ENV:?APP_ENV is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    # One-shot: docker compose --profile migrate run --rm migrate
