@@ -10,6 +10,11 @@
 **Revision:** Status reconciled to repository-complete; normative security contract unchanged  
 **Implementation doc:** [SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md](../SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md)
 
+> **Superseded (Sprint 25b.4b):** Backend rows describing “S3+DynamoDB commented” and
+> `required_version >= 1.5` for account/staging are obsolete. Current: Terraform
+> `>= 1.11.0`, partial S3 backend with `use_lockfile = true`, CI pin `1.15.8`.
+> Production backend migration remains deferred. See [`infra/terraform/README.md`](../../infra/terraform/README.md).
+
 ---
 
 ## 1. Executive summary

@@ -1,4 +1,4 @@
-# DealBrain Terraform — Sprint 25a foundation + 25b.2 OIDC/IAM + 25b.3 staging deploy
+# DealBrain Terraform — Sprint 25a foundation + 25b.2 OIDC/IAM + 25b.3 staging deploy + 25b.4b backend
 
 ## Structure
 
@@ -28,19 +28,102 @@ perform `terraform apply` unless an operator explicitly runs it.
 
 ## Prerequisites
 
-- Terraform >= 1.5
+- Terraform >= 1.11.0 (CI pins `1.15.8`)
 - AWS credentials with permission to manage VPC/EC2/RDS/ALB/IAM/Secrets Manager/OIDC/SSM/S3
-- Remote state bootstrap: S3 bucket + DynamoDB lock table (separate from app secrets **and**
-  separate from the staging release-artifacts bucket)
+- Remote state bootstrap: encrypted S3 bucket for Terraform state (separate from app secrets
+  **and** separate from the staging release-artifacts bucket). Locking uses **S3 native
+  lockfiles** (`use_lockfile = true`). DynamoDB lock tables are obsolete and must not be
+  created for new backends.
 - ACM certificate ARN (optional until TLS cutover; leave empty for HTTP bootstrap)
 - GitHub repository owner/name for OIDC trust variables (25b.2)
 
+## Remote state locking (Sprint 25b.4b)
+
+| Concern | Current | Obsolete |
+|---------|---------|----------|
+| Locking | S3 native lockfiles (`use_lockfile = true`) | S3 + DynamoDB lock table |
+| Roots modernized | `account/`, `environments/staging` | — |
+| Production | Intentionally deferred (see below) | Commented DynamoDB-era backend remains until production rollout |
+
+## Backend initialization
+
+`account/` and `environments/staging` declare a **partial** S3 backend:
+
+```hcl
+backend "s3" {
+  use_lockfile = true
+}
+```
+
+`bucket`, `key`, and `region` are supplied at `terraform init` time via `-backend-config`.
+Do **not** commit real bucket names or account-specific values into the repository.
+
+### Account backend
+
+```bash
+cd infra/terraform/account
+cp terraform.tfvars.example terraform.tfvars   # if needed
+terraform init \
+  -backend-config="bucket=dealbrain-terraform-state-<ACCOUNT_OR_SUFFIX>" \
+  -backend-config="key=account/terraform.tfstate" \
+  -backend-config="region=us-east-1"
+terraform validate
+# Operator only: terraform apply
+```
+
+### Staging backend
+
+```bash
+cd infra/terraform/environments/staging
+cp terraform.tfvars.example terraform.tfvars
+# Set github_oidc_provider_arn from account output
+# Do NOT set a database password or GHCR token
+terraform init \
+  -backend-config="bucket=dealbrain-terraform-state-<ACCOUNT_OR_SUFFIX>" \
+  -backend-config="key=staging/terraform.tfstate" \
+  -backend-config="region=us-east-1"
+terraform validate
+# Operator only: terraform apply
+```
+
+Use the same state bucket for account and staging with **distinct keys**. Encrypt the bucket
+(SSE-S3 or SSE-KMS) out-of-band before first apply.
+
+### Validation / CI only — `terraform init -backend=false`
+
+```bash
+terraform init -backend=false -input=false
+terraform validate
+```
+
+`-backend=false` skips remote-state configuration. It is intended **only** for:
+
+- Local schema validation
+- GitHub Actions `terraform` job (fmt + validate)
+
+It is **not** a substitute for a real backend when applying shared infrastructure.
+
+## Production status (intentionally deferred)
+
+Production backend modernization is **deferred** until the production rollout sprint.
+
+| Item | Status |
+|------|--------|
+| `environments/production` `required_version` | Still `>= 1.5.0` |
+| Production S3 backend block | Still commented (legacy DynamoDB-era comments) |
+| Action this sprint | **None** — do not migrate production state or enable `use_lockfile` here |
+
+When production is rolled out, migrate it to the same partial S3 backend pattern as staging
+(`use_lockfile = true` + `-backend-config` for bucket/key/region). Until then, operators
+must not assume production shares the modernized locking model.
+
 ## Apply order
 
-1. Bootstrap remote state out-of-band  
-2. **`account/`** — create (or import) the single GitHub OIDC provider  
-3. **`environments/staging`** and **`environments/production`** — pass
-   `github_oidc_provider_arn` from the account output (or remote state)
+1. Bootstrap the encrypted S3 state bucket out-of-band (versioning + encryption recommended)
+2. **`account/`** — init with backend config, then create (or import) the single GitHub OIDC provider
+3. **`environments/staging`** — init with backend config; pass `github_oidc_provider_arn` from
+   the account output (or remote state)
+4. **`environments/production`** — deferred backend migration; follow production rollout sprint
 
 ## Environment isolation
 
@@ -56,25 +139,7 @@ perform `terraform apply` unless an operator explicitly runs it.
 | Release artifacts bucket | `dealbrain-staging-release-artifacts-<account>` | none (25b.3) |
 | State key | `staging/terraform.tfstate` | `production/terraform.tfstate` |
 | Account OIDC state | `account/terraform.tfstate` | (shared account root) |
-
-## Initialize (account then staging example)
-
-```bash
-cd infra/terraform/account
-cp terraform.tfvars.example terraform.tfvars
-terraform init -backend=false   # or uncomment backend after bootstrap
-terraform validate
-# Operator only: terraform apply
-
-cd ../environments/staging
-cp terraform.tfvars.example terraform.tfvars
-# Set github_oidc_provider_arn from account output
-# Do NOT set a database password or GHCR token
-terraform init -backend=false
-terraform validate
-```
-
-Repeat for `environments/production` with a **separate** state key and VPC.
+| State locking | S3 native lockfile | Deferred (see Production status) |
 
 ## Secrets model
 
@@ -132,6 +197,7 @@ See [docs/SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md](../../docs/SPRINT_25
 
 ## Deferred
 
+- Production backend modernization (`use_lockfile` + partial S3 backend) → production rollout sprint
 - Production deploy workflow / approval / snapshot gate → 25b.4
 - Automated rollback → 25b.5
 - CloudWatch dashboards / synthetics → 25c

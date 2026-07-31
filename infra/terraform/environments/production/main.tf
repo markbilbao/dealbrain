@@ -8,16 +8,18 @@ terraform {
     }
   }
 
-  # Remote state is mandatory for production.
-  # Bootstrap an S3 bucket + DynamoDB lock table out-of-band, then uncomment:
+  # Production backend modernization is INTENTIONALLY DEFERRED (Sprint 25b.4b).
+  # Account + staging use a partial S3 backend with native lockfiles:
   #
-  # backend "s3" {
-  #   bucket         = "dealbrain-terraform-state-REPLACE_ME"
-  #   key            = "production/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "dealbrain-terraform-locks"
-  #   encrypt        = true
-  # }
+  #   backend "s3" {
+  #     use_lockfile = true
+  #   }
+  #
+  # …then: terraform init -backend-config="bucket=..." -backend-config="key=..."
+  #         -backend-config="region=..."
+  #
+  # Do not enable that pattern here until the production rollout sprint.
+  # DynamoDB lock tables are obsolete; do not create dealbrain-terraform-locks.
 }
 
 provider "aws" {
