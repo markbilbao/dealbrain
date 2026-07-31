@@ -1,5 +1,7 @@
-# Sprint 25a — CI foundation (lint, tests, contracts, infra validate, image build).
-# Does NOT deploy, apply Terraform to AWS, or require production secrets.
+# Sprint 25a/25b.1 — CI foundation (lint, tests, contracts, infra validate, image build).
+# Does NOT deploy, apply Terraform to AWS, publish releasable GHCR images, or
+# require production secrets.
+# Releasable image publication is owned solely by build-image.yml (Sprint 25b.1).
 name: CI
 
 on:
@@ -58,6 +60,7 @@ jobs:
             tests/unit/test_sprint22_protected_modules.py \
             tests/unit/persistence/test_sprint23_architecture.py \
             tests/unit/test_sprint25a_infrastructure.py \
+            tests/unit/test_sprint25b1_image_publication.py \
             -q
 
       - name: Full pytest suite
@@ -123,11 +126,10 @@ jobs:
             config >/dev/null
 
   image:
-    name: Docker image build
+    name: Docker image build (validate only; no GHCR publish)
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -135,7 +137,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image (no push on PR)
+      # PR and branch CI validate the production Dockerfile without publishing.
+      # Releasable GHCR publication (immutable sha-<gitsha> + digest + manifest)
+      # is owned exclusively by .github/workflows/build-image.yml.
+      - name: Build image (no push)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -159,24 +164,3 @@ jobs:
             echo "Unexpected alembic layer in image history" >&2
             exit 1
           fi
-
-      - name: Optional GHCR publish (protected branches only)
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sprint-25')
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push CI digest foundation to GHCR
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/sprint-25')
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
-            ghcr.io/${{ github.repository }}:ci-latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max

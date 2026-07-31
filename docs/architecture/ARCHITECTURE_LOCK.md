@@ -209,6 +209,22 @@ Sprint 25 is an **additive** operations sprint. It owns the AWS single-region ru
 - Dedicated migrate jobs (API does not migrate at startup)
 - Observability, backup/DR/rollback evidence, and operational runbooks
 
+### 14.1a Sprint 25b.1 (implemented slice)
+
+Sprint 25b.1 owns **immutable GHCR image publication** and the **release manifest**
+build evidence only (`build-image.yml`, `scripts/release/*`,
+`schemas/release-manifest.schema.json`).
+
+| Concern | Owner |
+|---------|--------|
+| Validation (lint, tests, contracts, docker build without push) | `ci.yml` |
+| Releasable GHCR publication | `build-image.yml` only |
+| Authoritative image identity | Digest `sha256:…` + immutable tag `sha-<full_git_sha>` |
+| Mutable tags (`latest`, `ci-latest`, env aliases) | Informational only — **no** deployment authority |
+
+Sprint 25b.1 does **not** own staging/production deploy, OIDC, SSM, migration
+execution in AWS, or rollback workflows (25b.2–25b.5).
+
 ### 14.2 Unchanged ownership
 
 - **Readiness semantics (Sprint 22):** `/live`, `/ready`, `/health` meanings unchanged; ALB uses `/ready`, container HEALTHCHECK uses `/live`

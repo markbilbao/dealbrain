@@ -310,7 +310,7 @@ Covered in §2.0–§2.2. M30 sizing start: API 0.5–1 vCPU / 1–2 GiB per hos
 
 1. **Terraform** — AWS foundation only (VPC, subnets, security groups, EC2, RDS, IAM, Secrets Manager stubs/ARNs, ALB, ACM data sources, CloudWatch log groups/alarms).
 2. **Docker Compose overlays** — application runtime (`api`, `migrate`) consuming the root `Dockerfile` image.
-3. **GitHub Actions workflows** — CI gates, image publish, staging deploy, production promote.
+3. **GitHub Actions workflows** — `ci.yml` validation gates, `build-image.yml` releasable publish, staging deploy, production promote.
 
 This avoids Kubernetes/ECS abstraction for a single-region Compose-native app while still keeping cloud resources reviewable as code.
 
@@ -369,17 +369,22 @@ Root `Dockerfile` and root `docker-compose.yml` remain the local/dev baseline; p
 | Step | Owner |
 |------|-------|
 | Define `Dockerfile` | Application repo (already exists) |
-| Build & push image | GitHub Actions on merge to release-capable branch / version tag |
-| Tagging | Immutable: `ghcr.io/<org>/dealbrain:<git-sha>` and digest `sha256:…` |
-| Movable tags | `staging` / `production` are **pointers only**; they must always resolve to a previously built digest — never a rebuild |
+| Validation CI | `.github/workflows/ci.yml` — lint, tests, contracts, Terraform/Compose checks, Docker **build without push** |
+| Releasable image publication | `.github/workflows/build-image.yml` only — after CI succeeds on `main` (`workflow_run` / gated `workflow_dispatch`) |
+| Authoritative tagging | Immutable: `ghcr.io/<org>/<repo>:sha-<full_git_sha>` (40-char SHA) |
+| Deployment authority | Image digest `sha256:…` (and the release manifest that records it) — **never** a mutable tag |
+| Mutable / convenience tags | `latest`, `ci-latest`, branch names, `staging` / `production` pointers are **informational only**; they confer **no** deployment authority and must resolve to a previously built digest if used at all |
+
+Sprint 25b.1 implements the validation/publication split above. Staging and production deploy workflows remain later phases (25b.3–25b.4).
 
 ### 8.2 Promotion contract (**M30**)
 
 | Stage | Rule |
 |-------|------|
-| **Image build** | CI builds once from git SHA; pushes to GHCR; records digest in workflow summary + release evidence artifact |
-| **Immutable tagging** | `:git-sha` never overwritten; digest is canonical identity |
-| **Digest recording** | Store `GIT_SHA`, `IMAGE_REF`, `IMAGE_DIGEST`, workflow run URL in deploy evidence |
+| **Validation** | `ci.yml` gates merge/main quality; it does **not** publish releasable GHCR images |
+| **Image build** | `build-image.yml` builds once from git SHA after CI is green; pushes to GHCR; records digest + checksummed release manifest artifact |
+| **Immutable tagging** | `sha-<full_git_sha>` is the only publish tag in 25b.1; digest is canonical identity |
+| **Digest recording** | Store `GIT_SHA`, `IMAGE_REF`, `IMAGE_DIGEST`, workflow run URL in deploy evidence / release manifest |
 | **Staging deployment** | Pull **that digest** on staging hosts; run migrate job; start/reload API |
 | **Staging verification** | `/live` OK; `/ready` with `persistence_level` compatible with READY; smoke critical paths; CI contract suite already green |
 | **Production approval** | GitHub Environment protection rule — human approver; checklist includes staging evidence link |
@@ -390,13 +395,17 @@ Root `Dockerfile` and root `docker-compose.yml` remain the local/dev baseline; p
 ### 8.3 Pipeline sketch
 
 ```
-PR: lint → unit/contract/OpenAPI drift → (optional) compose config
-main/release: build image → push digest → deploy staging → migrate → verify
-                → manual approval → deploy production (same digest) → migrate → verify → hold window
+PR / branch: ci.yml → lint → unit/contract/OpenAPI drift → compose/terraform → docker build (push: false)
+main (CI green): build-image.yml → build once → push sha-<full_git_sha> + digest
+                 → release-manifest artifact
+later phases:    deploy staging (same digest) → migrate → verify
+                 → manual approval → deploy production (same digest) → migrate → verify → hold window
 ```
 
 ### 8.4 Forbidden
 
+- Publishing releasable images from `ci.yml` (validation-only).
+- Treating `latest`, `ci-latest`, or other mutable tags as deployment authority.
 - Rebuilding for production from the same commit “to pick up secrets” (secrets are runtime).
 - Tagging `production` to an image that never ran on staging (except documented P1 hotfix with incident record).
 - Skipping OpenAPI drift / contract tests.
@@ -702,7 +711,7 @@ Mandatory **M30** runbooks RB-01…RB-10 (deploy staging/prod, app rollback, mig
 
 | | |
 |--|--|
-| **Objective** | Staging RDS + Secrets Manager + EC2 Compose deploy from CI |
+| **Objective** | Staging RDS + Secrets Manager + EC2 Compose deploy by immutable digest (after `build-image.yml`) |
 | **Allowed repo changes** | Staging Terraform apply configs; staging Compose overlay; `deploy-staging` workflow; secret name docs |
 | **Dependencies** | 25a complete |
 | **Deliverables** | Staging API reachable via ALB TLS; Secrets injected; migrate job works |

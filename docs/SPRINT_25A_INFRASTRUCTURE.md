@@ -169,10 +169,11 @@ pushes to `main` / `sprint-25`:
 - Full pytest suite
 - Terraform fmt + validate (staging and production, `-backend=false`)
 - Docker Compose config validation
-- Docker image build (no deploy; no PR push; optional GHCR publish on protected branches)
+- Docker image build validation (no deploy; **no GHCR publish** — releasable
+  publication moved to `build-image.yml` in Sprint 25b.1)
 
 CI does **not** run `terraform apply`, staging/production deploy, approval gates, or
-digest promotion (Sprint 25b).
+digest promotion. See [SPRINT_25B_IMAGE_PUBLICATION.md](SPRINT_25B_IMAGE_PUBLICATION.md).
 
 ## Validation commands
 
@@ -217,7 +218,7 @@ evidence before merge — do not claim local validate/build passed.
 
 | Phase | Focus |
 |-------|-------|
-| **25b** | Staging apply, secret population, `DATABASE_URL` assembly, Compose deploy from CI, GHCR promote |
+| **25b** | Immutable GHCR publish via `build-image.yml` (25b.1); OIDC/IAM (25b.2); staging apply, secret population, `DATABASE_URL` assembly, Compose deploy by digest (25b.3+) |
 | **25c** | CloudWatch logs/metrics/synthetics/alarms |
 | **25d** | Backup restore drill, runbooks RB-01…RB-10 |
 | **25e** | Production dry-run, rollback rehearsal, config-failure evidence |

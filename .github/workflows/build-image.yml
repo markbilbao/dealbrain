@@ -1,0 +1,232 @@
+# Sprint 25b.1 — Immutable image publication + release manifest.
+# Independent from pull-request CI. Does NOT deploy, apply Terraform,
+# touch AWS, or require application production secrets.
+#
+# CI-green mechanism (Approach A + dispatch gate):
+#   Automatic: workflow_run after the "CI" workflow succeeds on main.
+#   Manual: workflow_dispatch on main, with an explicit GitHub API check that
+#   CI for the same commit SHA concluded successfully.
+#   This avoids racing a simultaneous push-triggered CI run.
+name: Build Image
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      git_sha:
+        description: >
+          Full git SHA to publish (default: current ref SHA). Must already have
+          a successful CI workflow run.
+        required: false
+        type: string
+
+concurrency:
+  # Same commit must not race; never cancel once publication may have started.
+  group: >-
+    release-build-${{
+      github.event_name == 'workflow_run'
+      && github.event.workflow_run.head_sha
+      || github.event_name == 'workflow_dispatch'
+      && (inputs.git_sha || github.sha)
+      || github.sha
+    }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    name: Publish immutable image and release manifest
+    runs-on: ubuntu-latest
+    # Fork protection + main-only publication. workflow_run must be successful CI on main.
+    if: >
+      github.event.repository.fork == false &&
+      (
+        (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main'
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main'
+        )
+      )
+    steps:
+      - name: Resolve commit SHA and CI run id
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            SHA="${{ github.event.workflow_run.head_sha }}"
+            TEST_RUN_ID="${{ github.event.workflow_run.id }}"
+          else
+            SHA="${{ inputs.git_sha }}"
+            if [ -z "$SHA" ]; then
+              SHA="${{ github.sha }}"
+            fi
+            # Explicit CI-green gate for manual dispatch (no timing assumption).
+            TEST_RUN_ID="$(
+              gh run list \
+                --workflow ci.yml \
+                --commit "$SHA" \
+                --branch main \
+                --json databaseId,conclusion,status,event \
+                --jq '[.[] | select(.conclusion=="success" and .status=="completed")][0].databaseId // empty'
+            )"
+            if [ -z "$TEST_RUN_ID" ]; then
+              echo "No successful CI workflow run found for commit $SHA on main." >&2
+              echo "Refusing to publish a releasable image without CI evidence." >&2
+              exit 1
+            fi
+          fi
+          if ! [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Resolved SHA must be a full 40-char lowercase hex git SHA; got: $SHA" >&2
+            exit 1
+          fi
+          echo "git_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "test_workflow_run_id=$TEST_RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Resolved git_sha=$SHA test_workflow_run_id=$TEST_RUN_ID"
+
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.git_sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare OCI metadata
+        id: prep
+        run: |
+          set -euo pipefail
+          SHA="${{ steps.resolve.outputs.git_sha }}"
+          CREATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          REPO_LC="$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          IMAGE="${{ env.REGISTRY }}/${REPO_LC}"
+          echo "created=$CREATED" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=sha-${SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push immutable image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ${{ steps.prep.outputs.image }}:${{ steps.prep.outputs.tag_sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.resolve.outputs.git_sha }}
+            org.opencontainers.image.created=${{ steps.prep.outputs.created }}
+            org.opencontainers.image.version=${{ steps.resolve.outputs.git_sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Capture and validate image digest
+        id: digest
+        run: |
+          set -euo pipefail
+          DIGEST="${{ steps.push.outputs.digest }}"
+          if ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Invalid image digest (expected sha256:<64 lowercase hex>): $DIGEST" >&2
+            exit 1
+          fi
+          IMAGE="${{ steps.prep.outputs.image }}"
+          echo "Verifying digest exists in GHCR: ${IMAGE}@${DIGEST}"
+          docker buildx imagetools inspect "${IMAGE}@${DIGEST}" >/tmp/imagetools.txt
+          grep -q "$DIGEST" /tmp/imagetools.txt
+          echo "image_digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          # Deployment authority is the digest only — never mutable tags.
+          echo "Deployment authority: ${IMAGE}@${DIGEST}"
+          echo "Immutable tag (pointer to same digest): ${IMAGE}:${{ steps.prep.outputs.tag_sha }}"
+          echo "NOTE: do not treat latest/ci-latest/branch tags as deployment authority."
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Create release manifest
+        id: manifest
+        env:
+          GIT_SHA: ${{ steps.resolve.outputs.git_sha }}
+          IMAGE: ${{ steps.prep.outputs.image }}
+          DIGEST: ${{ steps.digest.outputs.image_digest }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+          TEST_RUN_ID: ${{ steps.resolve.outputs.test_workflow_run_id }}
+          CREATED: ${{ steps.prep.outputs.created }}
+        run: |
+          set -euo pipefail
+          uv run python scripts/release/create_release_manifest.py \
+            --git-sha "$GIT_SHA" \
+            --image-repository "$IMAGE" \
+            --image-digest "$DIGEST" \
+            --build-workflow-run-id "$BUILD_RUN_ID" \
+            --test-workflow-run-id "$TEST_RUN_ID" \
+            --created-at "$CREATED" \
+            --output release-manifest.json
+          uv run python scripts/release/validate_release_manifest.py release-manifest.json
+          RELEASE_ID="$(python -c 'import json; print(json.load(open("release-manifest.json"))["release_id"])')"
+          MANIFEST_SHA="$(python -c 'import json; print(json.load(open("release-manifest.json"))["manifest_sha256"])')"
+          echo "release_id=$RELEASE_ID" >> "$GITHUB_OUTPUT"
+          echo "manifest_sha256=$MANIFEST_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        run: |
+          {
+            echo "## Sprint 25b.1 — Release image published"
+            echo ""
+            echo "| Field | Value |"
+            echo "|-------|-------|"
+            echo "| Release ID | \`${{ steps.manifest.outputs.release_id }}\` |"
+            echo "| Git SHA | \`${{ steps.resolve.outputs.git_sha }}\` |"
+            echo "| Immutable tag | \`${{ steps.prep.outputs.image }}:${{ steps.prep.outputs.tag_sha }}\` |"
+            echo "| Image digest (authority) | \`${{ steps.digest.outputs.image_digest }}\` |"
+            echo "| Manifest SHA-256 | \`${{ steps.manifest.outputs.manifest_sha256 }}\` |"
+            echo "| Build run ID | \`${{ github.run_id }}\` |"
+            echo "| Test (CI) run ID | \`${{ steps.resolve.outputs.test_workflow_run_id }}\` |"
+            echo ""
+            echo "Mutable tags (if any) are **not** deployment authority."
+            echo "Staging/production deployment is deferred to Sprint 25b.3–25b.4."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload release manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest-${{ steps.manifest.outputs.release_id }}
+          path: |
+            release-manifest.json
+            release-manifest.json.sha256
+          retention-days: 90
+          if-no-files-found: error
