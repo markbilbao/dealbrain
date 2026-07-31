@@ -57,12 +57,22 @@ variable "max_session_duration" {
 
 variable "allowed_ssm_document_arns" {
   description = <<-EOT
-    Extension point: SSM document ARNs the deploy role may invoke via SendCommand.
-    When empty (the environment-root default), only AWS-RunShellScript is permitted.
-    Custom DealBrain documents remain Sprint 25b.3; do not widen this list in 25b.2.
+    SSM document ARNs the deploy role may invoke via SendCommand.
+    When empty, only AWS-RunShellScript is permitted (production interim default).
+    Staging (Sprint 25b.3) must set this to the custom DealBrain-StagingDeploy ARN only.
   EOT
   type        = list(string)
   default     = []
+}
+
+variable "release_artifacts_bucket_arn" {
+  description = <<-EOT
+    Optional staging release-artifacts bucket ARN. When set, the deploy role may
+    PutObject/GetObject under releases/* and evidence/*, plus ListBucket on those
+    prefixes. Production must leave this empty in Sprint 25b.3.
+  EOT
+  type        = string
+  default     = ""
 }
 
 variable "tags" {

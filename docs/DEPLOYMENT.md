@@ -80,18 +80,39 @@ Repository Terraform models:
   exact `environment:staging` / `environment:production` trust
 - Host `AmazonSSMManagedInstanceCore` + `dealbrain/<env>/ghcr_pull` secret containers
 
-**No deploy workflows** (`deploy-staging.yml` / `deploy-production.yml`) exist yet.
+**No production deploy workflows** exist yet. Staging deploy is implemented in
+Sprint 25b.3 (repository only until live prerequisites are met).
+
 Roles are **not operationally approved** until GitHub Environments are configured
 with exact names, **`main`-only** deployment branches, and production **required
 reviewers** (admin bypass disabled or formally audited). Terraform apply and
-role assumption are **not** claimed by this documentation.
+role assumption are **not** claimed by this documentation for 25b.2 alone.
 
 See [SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md](SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md).
 
+### Staging deployment (Sprint 25b.3)
+
+Repository implementation:
+
+- [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml) —
+  `workflow_dispatch` on `main`, Environment `staging`, OIDC →
+  `dealbrain-staging-gha-deploy`, custom SSM `DealBrain-StagingDeploy`
+- Release-manifest ingestion + immutable digest pull (no rebuild)
+- S3 staging release-artifacts bucket + integrity-checked bundle
+- Host bootstrap via Terraform `user_data` (`infra/ec2/user_data/staging.sh`)
+- Host-side Secrets Manager assembly of `DATABASE_URL` (URL-encoded) + app secrets
+- One-shot `migrate` then API recreate; `/live` + `/ready` + ALB gates
+- Append-only `staging-deploy-evidence.json` (GitHub artifact + S3)
+
+**Live staging deploy has not been executed by this repository change.**  
+See [SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md](SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md)
+and [runbooks/STAGING_DEPLOY.md](runbooks/STAGING_DEPLOY.md).
+
 Cloud staging/production **do not** use the root Compose `db` service — they use
 private RDS with **AWS-managed master passwords** (Secrets Manager). Terraform never
-accepts a plaintext `db_password`. Runtime `DATABASE_URL` assembly/injection is a
-Sprint 25b.3 deploy concern. Migrations run via the dedicated `migrate` service only.
+accepts a plaintext `db_password`. Runtime `DATABASE_URL` is assembled **on the host**
+during staging deploy (Sprint 25b.3). Migrations run via the dedicated `migrate`
+service only.
 
 ## Environment examples
 

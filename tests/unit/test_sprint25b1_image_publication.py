@@ -139,7 +139,10 @@ def test_staging_and_production_deploy_workflows_absent_or_no_build() -> None:
             continue
         text = path.read_text(encoding="utf-8").lower()
         assert "build-push-action" not in text
-        assert "docker build" not in text
+        # Digest inspect via buildx imagetools is allowed; image rebuild is not.
+        assert "docker build " not in text
+        assert "docker build\n" not in text
+        assert "dockerfile" not in text or "imagetools" in text
 
 
 def test_ci_no_longer_publishes_releasable_ghcr_images() -> None:

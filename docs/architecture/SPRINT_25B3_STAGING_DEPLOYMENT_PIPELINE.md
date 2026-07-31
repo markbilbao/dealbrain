@@ -503,17 +503,17 @@ Exact order on host (under flock):
 1. Acquire `/opt/dealbrain/locks/staging-deploy.lock` (`flock -n` or wait with timeout)  
 2. Verify SSM params vs `bundle-meta.json` / manifest  
 3. Download + checksum S3 bundle; extract to `/opt/dealbrain/releases/<release_id>`  
-4. Symlink `current` → that release  
+4. Symlink `pending` → that release (optional); **do not** advance `current` until health gates pass  
 5. Assemble runtime env (0600)  
 6. GHCR login + **disk check before pull** + **pull digest** + **disk check after pull**  
 7. `docker compose … config` validate  
 8. Record `alembic current` (one-shot helper container or `compose run` with `alembic current`) → `migration_revision_before`  
-9. `docker compose -f base -f staging --profile migrate run --rm migrate`  
+9. `timeout 1200s docker compose -f base -f staging --profile migrate run --rm migrate`  
 10. Record `alembic current` → `migration_revision_after`; require exit 0  
 11. Recreate API (`up -d --force-recreate --no-deps api` or equivalent)  
 12. Health gates  
-13. Write `/opt/dealbrain/current/DEPLOY_VERSION` and retain prior release directory  
-14. Write evidence locally; release lock  
+13. Write `DEPLOY_VERSION` into the release dir; atomically update `current`; retain prior release directory  
+14. Write+upload evidence to S3; release lock  
 
 | Topic | Spec |
 |-------|------|
@@ -679,7 +679,7 @@ Lock metadata file: `/opt/dealbrain/locks/staging-deploy.lock.info` JSON with `r
 |------|----------|
 | Overlapping SSM | Second flock fails/times out → command non-zero → workflow fail |
 | Stale lock | If lock holder PID dead and age > 90 min → operator may `rm` info + break flock (runbook); not automatic in v1 |
-| Superseded queue | Newer dispatch waits; when older finishes, newer proceeds; optional check: refuse deploy if a newer `main` release_id exists (soft warning → **hard fail** if `git_sha` older than currently running staging digest **and** operator did not set `allow_older=true` — default **allow explicit older for staging recovery**) |
+| Superseded queue | Newer dispatch waits; when older finishes, newer proceeds. Freshness/`allow_older` comparison was deferred/removed in acceptance fix (no reliable live-state comparison without echo-only controls) |
 | Operator override | Documented SSM Session Manager break-glass (SSO), not GHA |
 
 ---
@@ -953,7 +953,7 @@ None launch-blocking. Non-blocking:
 | Auto `workflow_run` after Build Image | Enable only after first live success |
 | Host uploads evidence vs GHA-only | Prefer **GHA** upload from command outputs + host-written file pulled via SSM |
 | KMS CMK vs SSE-S3 for artifacts | SSE-S3 acceptable for staging launch |
-| `allow_older` dispatch input | Include as optional boolean default `false` for intentional staging pin |
+| `allow_older` dispatch input | **Removed** in acceptance fix (was echo-only; freshness requires live deploy state) |
 
 ---
 

@@ -24,6 +24,16 @@ variable "log_group_arns" {
   default     = []
 }
 
+variable "release_artifacts_bucket_arn" {
+  description = <<-EOT
+    Optional staging release-artifacts bucket ARN. When set, the host may
+    GetObject/ListBucket only under the releases/ prefix (Sprint 25b.3).
+    Production must leave this empty.
+  EOT
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Common tags."
   type        = map(string)

@@ -57,7 +57,8 @@ secret values.
 - Production runtime images must be pulled by **immutable digest** from GHCR
   (`ghcr.io/<owner>/<repo>@sha256:…`), never by mutable tags such as `latest` or
   `ci-latest` (see [SPRINT_25B_IMAGE_PUBLICATION.md](SPRINT_25B_IMAGE_PUBLICATION.md)).
-  Staging/production promotion workflows are not implemented in Sprint 25b.1.
+  Staging/production promotion: staging deploy is repository-implemented in
+  Sprint 25b.3; production promotion remains deferred (25b.4+).
 - Sprint 25b.2 models OIDC deploy roles and GHCR pull secret **containers**
   (`dealbrain/<env>/ghcr_pull`) for a classic PAT with `read:packages` only.
   Secret **values** (including the PAT) are never stored in Terraform or git.
@@ -66,6 +67,11 @@ secret values.
   (`staging` / `production` exact names, `main`-only deployment branches,
   production required reviewers, admin bypass disabled or formally audited).
   See [SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md](SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md).
+- Sprint 25b.3 adds staging-only deploy orchestration (`deploy-staging.yml`),
+  custom SSM document `DealBrain-StagingDeploy`, host bootstrap, S3 release
+  bundles, host-side secret assembly, and append-only staging evidence.
+  **No** production deploy, approval, snapshot, or rollback path is created.
+  See [SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md](SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md).
 
 ## Memory vs SQL backends
 

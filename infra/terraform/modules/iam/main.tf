@@ -66,6 +66,86 @@ data "aws_iam_policy_document" "api_host" {
     resources = ["*"]
     # Images come from GHCR; no ECR access required for Sprint 25a.
   }
+
+  # Sprint 25b.3 — staging host downloads release bundles and uploads evidence.
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [var.release_artifacts_bucket_arn] : []
+    content {
+      sid    = "ReadReleaseBundles"
+      effect = "Allow"
+      actions = [
+        "s3:GetObject",
+      ]
+      resources = [
+        "${statement.value}/releases/*",
+      ]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [var.release_artifacts_bucket_arn] : []
+    content {
+      sid    = "PutStagingEvidence"
+      effect = "Allow"
+      actions = [
+        "s3:PutObject",
+      ]
+      resources = [
+        "${statement.value}/evidence/*",
+      ]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [var.release_artifacts_bucket_arn] : []
+    content {
+      sid    = "ListReleaseBundlesPrefix"
+      effect = "Allow"
+      actions = [
+        "s3:ListBucket",
+      ]
+      resources = [statement.value]
+      condition {
+        test     = "StringLike"
+        variable = "s3:prefix"
+        values = [
+          "releases/",
+          "releases/*",
+          "evidence/",
+          "evidence/*",
+        ]
+      }
+    }
+  }
+
+  # Host IAM also needs GetObject on the command-id binder under evidence/.
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [var.release_artifacts_bucket_arn] : []
+    content {
+      sid    = "ReadEvidenceBinderObjects"
+      effect = "Allow"
+      actions = [
+        "s3:GetObject",
+      ]
+      resources = [
+        "${statement.value}/evidence/*",
+      ]
+    }
+  }
+
+  # Host verifies Environment/Role/Project tags and ALB target health during deploy.
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [1] : []
+    content {
+      sid    = "StagingHostDescribeForDeploy"
+      effect = "Allow"
+      actions = [
+        "ec2:DescribeTags",
+        "elasticloadbalancing:DescribeTargetHealth",
+      ]
+      resources = ["*"]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "api_host" {
