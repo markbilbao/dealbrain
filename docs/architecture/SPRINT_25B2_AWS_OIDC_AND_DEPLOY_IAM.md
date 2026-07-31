@@ -1,18 +1,22 @@
 # Sprint 25b.2 — AWS OIDC & Deploy IAM Architecture
 
-**Status:** Architecture proposal only (no implementation, no AWS apply, no GitHub UI changes)  
+**Status:** Architecture approved; **repository implementation complete**  
+**Live status:** Terraform plan/apply **not performed**; live AWS resources **not created**; GitHub Environments **not configured**  
+**Operational status:** Deploy roles remain **non-operational** until live security gates (§11 / §2.9 / DoD D) are completed  
 **Branch:** `sprint-25b2`  
-**Proposed path:** `docs/architecture/SPRINT_25B2_AWS_OIDC_AND_DEPLOY_IAM.md`  
+**Path:** `docs/architecture/SPRINT_25B2_AWS_OIDC_AND_DEPLOY_IAM.md`  
 **Contracts:** Sprint 25 §2.0 / §5 / §7 / §8; Sprint 25a foundation; Sprint 25b.1 image publication  
 **Predecessor:** Sprint 25b.1 merged (`c75f81f`)  
-**Revision:** Corrected GHCR classic-PAT auth; deferred `rds:CreateDBSnapshot` to 25b.4; GitHub Environment branch/reviewer gates are live security boundary  
-**Ready for implementation:** **YES**
+**Revision:** Status reconciled to repository-complete; normative security contract unchanged  
+**Implementation doc:** [SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md](../SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md)
 
 ---
 
 ## 1. Executive summary
 
 Sprint 25b.2 establishes the **authorization foundation** for later SSM-based staging (25b.3) and production (25b.4) deploys. It does **not** deploy DealBrain, run migrations, assemble `DATABASE_URL`, create DB snapshots, or create deploy workflows that execute against AWS.
+
+**Repository vs live (current):** Terraform modules, env wiring, tests, and docs for OIDC + deploy IAM are in git. No `terraform apply` has been run, no AWS OIDC provider or deploy roles exist in a live account from this sprint, and GitHub Environments have not been configured. Modeled roles are **not operationally approved** until the hard gates below are live.
 
 **Chosen launch design (concrete):**
 
@@ -37,16 +41,18 @@ Sprint 25b.2 establishes the **authorization foundation** for later SSM-based st
 
 | Item | Evidence |
 |------|----------|
-| Branch | `sprint-25b2` (tracks `origin/sprint-25b2`) |
+| Branch | `sprint-25b2` |
 | Remote | `git@github.com:markbilbao/dealbrain.git` → owner `markbilbao`, repo `dealbrain` |
 | 25b.1 | Merged via PR #23; `build-image.yml` + release manifest tooling present |
-| This phase | Architecture only — **no 25b.2 code required yet** |
+| This phase | **Repository implementation complete** — Terraform + tests + docs in git; **no** live apply; **no** GitHub Environment configuration |
 
-### 2.2 Terraform organization — **already implemented (25a)**
+### 2.2 Terraform organization — **25a foundation + 25b.2 OIDC/IAM**
 
 ```
 infra/terraform/
+  account/                                      # 25b.2 — OIDC provider root
   modules/{networking,security_groups,alb,ec2,rds,secrets,iam}/
+  modules/{github_oidc,github_deploy_role}/     # 25b.2
   environments/{staging,production}/
   README.md
 ```
@@ -56,45 +62,47 @@ infra/terraform/
 | Provider | `hashicorp/aws ~> 5.0`, `required_version >= 1.5` |
 | Backend | S3+DynamoDB **commented**; validate uses `-backend=false` |
 | Naming | `dealbrain-<env>-*` / `name_prefix = dealbrain-${environment}` |
-| Tags | `Project=dealbrain`, `Environment=staging|production`, `ManagedBy=terraform`, `Sprint=25a` |
+| Tags | `Project=dealbrain`, `Environment=staging|production`, `ManagedBy=terraform`; account/deploy-role `Sprint=25b.2`; env common tags remain `Sprint=25a` |
 | Account IDs / ARNs hard-coded | **No** (placeholders like `EXAMPLE_ORG`, `REPLACE_ME`) |
-| GitHub owner/repo parameterized | **Missing** |
+| GitHub owner/repo parameterized | **Repository-implemented** (`github_repository_owner` / `github_repository_name`) |
 | Remote state active | **Deferred** (bootstrap out-of-band) |
 
-### 2.3 EC2 host IAM — **already implemented, incomplete for SSM**
+### 2.3 EC2 host IAM — **25a secrets scope + 25b.2 SSM**
 
 Role: `${name_prefix}-api-host` (`dealbrain-staging-api-host` / `dealbrain-production-api-host`)
 
 | Capability | Status |
 |------------|--------|
-| EC2 assume role + instance profile | **Implemented** |
-| `GetSecretValue` / `DescribeSecret` on env secret ARNs + RDS managed secret | **Implemented** |
-| Explicit deny opposite `dealbrain/<other>/*` | **Implemented** |
-| Optional CloudWatch Logs write | **Implemented** (empty `log_group_arns` until 25c) |
-| Explicit deny `ecr:*` | **Implemented** (images from GHCR) |
-| `AmazonSSMManagedInstanceCore` | **Missing** |
-| GHCR pull secret access | **Missing** (no `ghcr_pull` secret) |
-| Custom minimum SSM policy | **Missing** |
+| EC2 assume role + instance profile | **Repository-implemented** (25a) |
+| `GetSecretValue` / `DescribeSecret` on env secret ARNs + RDS managed secret | **Repository-implemented** (25a) |
+| Explicit deny opposite `dealbrain/<other>/*` | **Repository-implemented** (25a) |
+| Optional CloudWatch Logs write | **Repository-implemented** (empty `log_group_arns` until 25c) |
+| Explicit deny `ecr:*` | **Repository-implemented** (images from GHCR) |
+| `AmazonSSMManagedInstanceCore` | **Repository-implemented** (25b.2) |
+| GHCR pull secret access | **Repository-implemented** (`ghcr_pull` in env secret ARN list) |
+| Custom minimum SSM policy (instead of managed) | **Not adopted** — managed policy acceptable for launch |
+| Live host SSM Online | **Not claimed** (no apply) |
 
 ### 2.4 Secrets / RDS
 
 | Item | Status |
 |------|--------|
-| App secret containers under `dealbrain/<env>/{app_secret_key,openai_api_key,…}` | **Implemented** (empty values) |
-| No conflicting `database_url` container | **Implemented** |
-| RDS `manage_master_user_password` | **Implemented** |
-| Host may read RDS managed secret ARN | **Implemented** |
-| GHCR credential secret | **Missing** |
+| App secret containers under `dealbrain/<env>/{app_secret_key,openai_api_key,…}` | **Repository-implemented** (empty values) |
+| No conflicting `database_url` container | **Repository-implemented** |
+| RDS `manage_master_user_password` | **Repository-implemented** |
+| Host may read RDS managed secret ARN | **Repository-implemented** |
+| GHCR credential secret container | **Repository-implemented** (`dealbrain/<env>/ghcr_pull`) |
 | Secret values in Terraform | **Correctly absent** |
+| Live secret values / classic PAT populated | **Not performed** (out-of-band operator) |
 
 ### 2.5 Network / SSM connectivity
 
 | Item | Status |
 |------|--------|
-| EC2 in private subnet, `associate_public_ip = false` | **Implemented** |
-| NAT Gateway for egress (default on) | **Implemented** → SSM public endpoints reachable |
+| EC2 in private subnet, `associate_public_ip = false` | **Repository-implemented** |
+| NAT Gateway for egress (default on) | **Repository-implemented** → SSM public endpoints reachable after apply |
 | VPC endpoints for `ssm` / `ssmmessages` / `ec2messages` | **Missing** (optional; not required while NAT exists) |
-| API SG egress `0.0.0.0/0` | **Implemented** (needed for GHCR, SM, SSM, RDS) |
+| API SG egress `0.0.0.0/0` | **Repository-implemented** (needed for GHCR, SM, SSM, RDS) |
 | SSM agent | **Expected** on AL2023 AMI (preinstalled); not asserted in Terraform; user_data empty (Docker install deferred) |
 | Public SSH | **Not present** (correct) |
 
@@ -102,22 +110,25 @@ Role: `${name_prefix}-api-host` (`dealbrain-staging-api-host` / `dealbrain-produ
 
 | Output | Status |
 |--------|--------|
-| `api_instance_id` | **Implemented** |
-| Tags `Environment`, `Role=api-compose-host`, `Name` | **Implemented** |
-| `alb_target_group_arn` | **Implemented** |
-| `rds_*` endpoints / secret ARN | **Implemented** |
+| `api_instance_id` | **Repository-implemented** |
+| Tags `Environment`, `Role=api-compose-host`, `Name` | **Repository-implemented** |
+| `alb_target_group_arn` | **Repository-implemented** |
+| `rds_*` endpoints / secret ARN | **Repository-implemented** |
 
-### 2.7 GitHub / workflows
+### 2.7 GitHub / workflows / OIDC & deploy IAM
 
 | Item | Status |
 |------|--------|
-| `ci.yml` | Validate only; no AWS deploy; no OIDC |
+| `ci.yml` | Validate only; no AWS deploy; no OIDC assume |
 | `build-image.yml` | GHCR publish; explicitly **no** `id-token`, OIDC, SSM, Environments |
 | Deploy workflows | **Absent** (correct for 25b.2) |
-| GitHub OIDC provider in AWS | **Missing** (not modeled) |
-| Deploy IAM roles | **Missing** |
-| GitHub Environment hard gates | **Missing** — **blocker for operational approval** |
-| GHCR pull credentials on host | **Missing** |
+| GitHub OIDC provider in AWS (Terraform model) | **Repository-implemented** (`infra/terraform/account` + `modules/github_oidc`) |
+| Live OIDC provider in AWS account | **Not created** (no apply) |
+| Deploy IAM roles (Terraform model) | **Repository-implemented** (`dealbrain-<env>-gha-deploy` via `modules/github_deploy_role`) |
+| Live deploy roles in AWS | **Not created** (no apply) |
+| GitHub Environment hard gates | **Documented; not configured** — **blocker for operational approval** |
+| GHCR pull secret containers (Terraform) | **Repository-implemented** |
+| Host GHCR pull at runtime | **Not claimed** (no apply / no values) |
 
 ### 2.8 Classification matrix
 
@@ -125,13 +136,13 @@ Role: `${name_prefix}-api-host` (`dealbrain-staging-api-host` / `dealbrain-produ
 |---------|----------------|
 | VPC/ALB/RDS/Secrets/host IAM (secrets) | Already implemented (25a) |
 | Immutable image + manifest | Already implemented (25b.1) |
-| Account OIDC provider | **Missing → 25b.2** |
-| Staging/prod GHA deploy roles + trust | **Missing → 25b.2** |
-| Host SSM managed policy | **Missing → 25b.2** |
-| GHCR secret **container** + runbook | **Missing → 25b.2** |
+| Account OIDC provider | **Repository-implemented (25b.2)** — live resource not created |
+| Staging/prod GHA deploy roles + trust | **Repository-implemented (25b.2)** — live roles not created; non-operational until gates |
+| Host SSM managed policy | **Repository-implemented (25b.2)** |
+| GHCR secret **container** + runbook | **Repository-implemented (25b.2)** — values out-of-band |
 | GitHub Environments UI hard gates | **Prerequisite (operator)** — required before roles are operationally approved |
 | Remote state bootstrap | **Prerequisite** for shared apply |
-| Live `terraform apply` | **Prerequisite / operator** — not required for repo DoD |
+| Live `terraform plan` / `apply` | **Not performed** — operator prerequisite; not required for repo DoD |
 | Custom SSM document | **Deferred → 25b.3** |
 | Deploy workflows / SSM SendCommand execution | **Deferred → 25b.3/25b.4** |
 | `DATABASE_URL` assembly | **Deferred → 25b.3** |
@@ -225,7 +236,7 @@ infra/terraform/account/
 | Inputs | `tags`; optional `create_provider` (bool, default true); optional `existing_provider_arn` |
 | Outputs | `oidc_provider_arn`, `oidc_provider_url` |
 | Duplicate prevention | Single root; `lifecycle { prevent_destroy = true }` recommended; tests assert exactly one provider resource |
-| Import | If provider exists: `terraform import …` **or** `create_provider=false` + data source by URL |
+| Import | If provider exists: `terraform import 'module.github_oidc.aws_iam_openid_connect_provider.github[0]' …` **or** `create_provider=false` + `existing_provider_arn` |
 | Second AWS account later | Clone `account/` root per account; env roots consume that account’s provider ARN |
 
 **Staging/production roots:** consume `oidc_provider_arn` via `terraform_remote_state.account` (preferred once backends exist) **or** temporary variable `github_oidc_provider_arn`.
@@ -417,7 +428,7 @@ secretsmanager:UpdateSecret
 rds:CreateDBSnapshot
 rds:DeleteDBInstance
 rds:ModifyDBInstance
-ssm:SendCommand where aws:ResourceTag/Environment = opposite
+ssm:SendCommand where ssm:resourceTag/Environment = opposite
 ec2:TerminateInstances, StopInstances, ModifyInstanceAttribute
 ```
 
@@ -440,7 +451,7 @@ ec2:TerminateInstances, StopInstances, ModifyInstanceAttribute
 
 | Topic | Decision |
 |-------|----------|
-| Document (25b.2) | Allow only `arn:aws:ssm:<region>::document/AWS-RunShellScript` (and/or account custom ARN later) |
+| Document (25b.2) | Environment roots leave `allowed_ssm_document_arns` empty → only `arn:aws:ssm:<region>::document/AWS-RunShellScript`. That variable is an extension point for 25b.3 custom docs; do not widen it in 25b.2. |
 | Custom DealBrain document | **Defer to 25b.3** |
 | Target selection | Prefer **instance ID** from `api_instance_id`, verified against tags `Project=dealbrain`, `Environment=<env>`, `Role=api-compose-host` |
 | Tag targeting | Allowed as secondary; IAM tag conditions mandatory |
@@ -757,29 +768,29 @@ Full suite; save this architecture doc; additive lock; CI includes 25b.2 tests; 
 
 ## 19. Definition of Done
 
-### A. Repository complete (no AWS creds required)
+### A. Repository complete (no AWS creds required) — **DONE in git**
 
-- [ ] OIDC provider modeled exactly once  
-- [ ] Separate staging/production deploy roles  
-- [ ] Trust pinned to repo + GitHub Environment name  
-- [ ] No static AWS credentials  
-- [ ] Deploy roles cannot administer IAM / apply Terraform / read SM values  
-- [ ] Deploy roles **do not** include `rds:CreateDBSnapshot`  
-- [ ] Isolation tests green (including snapshot absence)  
-- [ ] Host SSM capability modeled  
-- [ ] GHCR containers modeled (`dealbrain/<env>/ghcr_pull`); classic PAT design documented; **no token values** anywhere in repo/TF  
-- [ ] Architecture documents Environment hard gates as operational approval criteria  
-- [ ] `terraform fmt` + `validate`  
-- [ ] 25a/25b.1/25b.2 tests + secret scan green  
-- [ ] Architecture lock additive  
-- [ ] No deploy executed  
+- [x] OIDC provider modeled exactly once  
+- [x] Separate staging/production deploy roles  
+- [x] Trust pinned to repo + GitHub Environment name  
+- [x] No static AWS credentials  
+- [x] Deploy roles cannot administer IAM / apply Terraform / read SM values  
+- [x] Deploy roles **do not** include `rds:CreateDBSnapshot`  
+- [x] Isolation tests green (including snapshot absence)  
+- [x] Host SSM capability modeled  
+- [x] GHCR containers modeled (`dealbrain/<env>/ghcr_pull`); classic PAT design documented; **no token values** anywhere in repo/TF  
+- [x] Architecture documents Environment hard gates as operational approval criteria  
+- [x] `terraform fmt` + `validate` (CI / local; **no apply**)  
+- [x] 25a/25b.1/25b.2 tests + secret scan green  
+- [x] Architecture lock additive  
+- [x] No deploy executed  
 
-### B. Terraform plan complete
+### B. Terraform plan complete — **not performed**
 
-- [ ] `account` + staging + production plans succeed  
+- [ ] `account` + staging + production plans succeed against a real account  
 - [ ] Import path verified if provider pre-exists  
 
-### C. Live AWS configuration complete
+### C. Live AWS configuration complete — **not performed**
 
 - [ ] Provider present once  
 - [ ] Roles exist with correct trust  
@@ -788,7 +799,7 @@ Full suite; save this architecture doc; additive lock; CI includes 25b.2 tests; 
 - [ ] Staging cannot SendCommand to prod  
 - [ ] Neither deploy role can `CreateDBSnapshot`  
 
-### D. GitHub UI configuration complete (**hard gate — operational approval**)
+### D. GitHub UI configuration complete (**hard gate — operational approval**) — **not configured**
 
 - [ ] Environment name exactly `staging`; deployment branches = **`main` only**  
 - [ ] Environment name exactly `production`; deployment branches = **`main` only**  
@@ -796,9 +807,9 @@ Full suite; save this architecture doc; additive lock; CI includes 25b.2 tests; 
 - [ ] Production **administrator bypass disabled** or **formal audit record** filed  
 - [ ] Non-secret vars (role ARN / region / account) set only after above gates  
 
-**Until D is complete, deploy roles are not operationally approved.**
+**Until D is complete, deploy roles are not operationally approved** (even after a future apply creates them).
 
-### E. Security verification complete
+### E. Security verification complete — **not performed**
 
 - [ ] Assume success only from correctly gated Environment jobs on `main`  
 - [ ] Assume fail from wrong env / PR / feature branch  
@@ -807,7 +818,7 @@ Full suite; save this architecture doc; additive lock; CI includes 25b.2 tests; 
 - [ ] No secret values (including classic PAT) in Actions logs  
 - [ ] Snapshot create denied on current deploy roles  
 
-**Without AWS/GitHub UI:** complete **A**.  
+**Without AWS/GitHub UI:** complete **A** (repository).  
 **Before any real assume/deploy:** complete **D** then **B/C/E** as applicable.
 
 ---
@@ -845,11 +856,13 @@ Non-blocking future items (explicitly **not** open launch choices):
 
 ---
 
-## 22. Ready for implementation
+## 22. Implementation status
 
-# **YES**
+# **Repository complete; live gates incomplete**
 
-Sprint 25b.2 is ready to implement as **repository Terraform + tests + docs** under the phases above.
+Sprint 25b.2 **repository** work (Terraform + tests + docs under the phases above) is complete in git.
+
+**Not performed:** `terraform plan` / `apply`, live AWS OIDC provider or deploy-role creation, GitHub Environment configuration, role assumption, or SSM SendCommand.
 
 **Operational use of the roles remains gated** on GitHub Environment hard security settings (`staging` / `production` exact names, `main`-only deployment branches, production required reviewers, admin bypass disabled or formally audited).
 
@@ -857,4 +870,4 @@ Sprint 25b.2 is ready to implement as **repository Terraform + tests + docs** un
 
 ---
 
-*Architecture-only revision. No files were modified, no commits created, no AWS resources changed, and no GitHub Environments were configured.*
+*Status reconciled after repository implementation. Normative security contract unchanged. No terraform apply, no live AWS resources, and no GitHub Environments were configured by this document revision.*

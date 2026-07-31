@@ -361,12 +361,15 @@ def test_ci_workflow_exists_with_required_gates() -> None:
         "test_openapi_drift",
         "test_sprint25a_infrastructure",
         "test_sprint25b1_image_publication",
+        "test_sprint25b2_oidc_iam",
     ):
         assert needle in text, f"CI missing required gate mention: {needle}"
     # Must not deploy or apply AWS in Phase 25a CI
     assert "terraform apply" not in text
     assert "deploy-staging" not in text
     assert "deploy-production" not in text
+    assert "role-to-assume" not in text
+    assert "id-token: write" not in text
     # Releasable GHCR publish is owned by build-image.yml (Sprint 25b.1)
     assert "Push CI digest foundation to GHCR" not in text
     assert "packages: write" not in text

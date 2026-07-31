@@ -67,10 +67,26 @@ succeeds on `main`. Images are pushed to GHCR as `sha-<full_git_sha>`; the
 **digest** is deployment authority. A checksummed `release-manifest.json` is
 uploaded as a workflow artifact (90-day retention).
 
-CI still builds the Dockerfile on PRs **without** pushing. Staging/production
-deploy workflows, OIDC, and SSM are deferred (25b.2+).
+CI still builds the Dockerfile on PRs **without** pushing.
 
 See [SPRINT_25B_IMAGE_PUBLICATION.md](SPRINT_25B_IMAGE_PUBLICATION.md).
+
+### OIDC & deploy IAM (Sprint 25b.2)
+
+Repository Terraform models:
+
+- One account-level GitHub Actions OIDC provider (`infra/terraform/account/`)
+- `dealbrain-staging-gha-deploy` / `dealbrain-production-gha-deploy` with
+  exact `environment:staging` / `environment:production` trust
+- Host `AmazonSSMManagedInstanceCore` + `dealbrain/<env>/ghcr_pull` secret containers
+
+**No deploy workflows** (`deploy-staging.yml` / `deploy-production.yml`) exist yet.
+Roles are **not operationally approved** until GitHub Environments are configured
+with exact names, **`main`-only** deployment branches, and production **required
+reviewers** (admin bypass disabled or formally audited). Terraform apply and
+role assumption are **not** claimed by this documentation.
+
+See [SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md](SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md).
 
 Cloud staging/production **do not** use the root Compose `db` service — they use
 private RDS with **AWS-managed master passwords** (Secrets Manager). Terraform never

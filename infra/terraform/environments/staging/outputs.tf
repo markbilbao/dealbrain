@@ -67,6 +67,16 @@ output "api_host_role_arn" {
   value = module.iam.api_host_role_arn
 }
 
+output "gha_deploy_role_arn" {
+  description = "Staging GitHub Actions deploy role ARN (OIDC; not operationally approved until Environment hard gates)."
+  value       = module.github_deploy_role.gha_deploy_role_arn
+}
+
+output "gha_deploy_role_name" {
+  description = "Staging GitHub Actions deploy role name."
+  value       = module.github_deploy_role.gha_deploy_role_name
+}
+
 output "domain_name" {
   value = var.domain_name
 }

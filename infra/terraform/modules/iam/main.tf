@@ -74,6 +74,13 @@ resource "aws_iam_role_policy" "api_host" {
   policy = data.aws_iam_policy_document.api_host.json
 }
 
+# Sprint 25b.2 — SSM managed-instance capability for later Run Command deploys.
+# Preserves Secrets Manager allow/deny and ECR deny above. No SSH.
+resource "aws_iam_role_policy_attachment" "api_host_ssm_managed_instance" {
+  role       = aws_iam_role.api_host.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "api_host" {
   name = "${var.name_prefix}-api-host"
   role = aws_iam_role.api_host.name

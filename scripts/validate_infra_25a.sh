@@ -43,22 +43,24 @@ if command -v terraform >/dev/null 2>&1; then
   else
     fail "terraform fmt -check"
   fi
-  for env in staging production; do
-    dir="infra/terraform/environments/${env}"
-    # validate needs init; use -backend=false for offline foundation check
+  # Account root (Sprint 25b.2 OIDC) then environment roots
+  for dir in infra/terraform/account \
+             infra/terraform/environments/staging \
+             infra/terraform/environments/production; do
+    label="${dir##*/}"
     if (
       cd "$dir"
       terraform init -backend=false -input=false >/dev/null
       terraform validate
     ); then
-      ok "terraform validate ${env}"
+      ok "terraform validate ${label}"
     else
-      fail "terraform validate ${env}"
+      fail "terraform validate ${label}"
     fi
   done
 else
   skip "terraform not installed — run: terraform fmt -check -recursive infra/terraform"
-  skip "terraform validate staging/production after terraform init -backend=false"
+  skip "terraform validate account/staging/production after terraform init -backend=false"
 fi
 
 note "Compose config"
@@ -88,9 +90,11 @@ else
   skip "docker not installed — run docker compose … config with DEALBRAIN_IMAGE set"
 fi
 
-note "Application unit tests (Sprint 25a + protected modules)"
+note "Application unit tests (Sprint 25a/25b.1/25b.2 + protected modules)"
 if [[ -x "$ROOT/.venv/bin/pytest" ]]; then
   if "$ROOT/.venv/bin/pytest" tests/unit/test_sprint25a_infrastructure.py \
+    tests/unit/test_sprint25b1_image_publication.py \
+    tests/unit/test_sprint25b2_oidc_iam.py \
     tests/unit/test_sprint22_protected_modules.py \
     tests/unit/persistence/test_sprint23_architecture.py \
     -q; then
@@ -100,6 +104,8 @@ if [[ -x "$ROOT/.venv/bin/pytest" ]]; then
   fi
 elif command -v uv >/dev/null 2>&1; then
   if uv run pytest tests/unit/test_sprint25a_infrastructure.py \
+    tests/unit/test_sprint25b1_image_publication.py \
+    tests/unit/test_sprint25b2_oidc_iam.py \
     tests/unit/test_sprint22_protected_modules.py \
     tests/unit/persistence/test_sprint23_architecture.py \
     -q; then

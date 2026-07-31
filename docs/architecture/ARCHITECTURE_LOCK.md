@@ -1,6 +1,6 @@
 # DealBrain Architecture Lock
 
-**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive)  
+**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive); Sprint 25b.2 OIDC/deploy IAM ownership added (additive)  
 **Hard endpoint:** Sprint 40  
 **Runtime enforcement:** This document is a change-control policy. It is **not** enforced by a separate runtime policy engine unless a specific check is implemented and documented elsewhere.
 
@@ -225,9 +225,29 @@ build evidence only (`build-image.yml`, `scripts/release/*`,
 Sprint 25b.1 does **not** own staging/production deploy, OIDC, SSM, migration
 execution in AWS, or rollback workflows (25b.2–25b.5).
 
+### 14.1b Sprint 25b.2 (implemented slice)
+
+Sprint 25b.2 owns the **authorization foundation** for later SSM deploys:
+
+| Concern | Owner |
+|---------|--------|
+| Account-level GitHub Actions OIDC provider | `infra/terraform/account/` + `modules/github_oidc/` (exactly once) |
+| Staging / production deploy IAM roles + OIDC trust | `modules/github_deploy_role/` via environment roots |
+| Deploy-role orchestration permissions (SSM SendCommand prep + describe) | Sprint 25b.2 — **no** secret value reads, **no** `rds:CreateDBSnapshot` |
+| EC2 host SSM managed-instance capability | `modules/iam` attaches `AmazonSSMManagedInstanceCore` |
+| GHCR pull secret **containers** (`dealbrain/<env>/ghcr_pull`) | `modules/secrets` — values out-of-band only |
+| GitHub Environment hard gates (`main`-only; prod reviewers; bypass policy) | **Live operator prerequisite** — documented; not Terraform |
+
+Sprint 25b.2 does **not** own executable deploy workflows, SSM command execution,
+`DATABASE_URL` assembly, migration runs, production approval workflows, rollback,
+or live AWS/GitHub UI configuration. Roles modeled in Terraform are **not
+operationally approved** until GitHub Environment hard gates are verified.
+
 ### 14.2 Unchanged ownership
 
 - **Readiness semantics (Sprint 22):** `/live`, `/ready`, `/health` meanings unchanged; ALB uses `/ready`, container HEALTHCHECK uses `/live`
 - **Persistence (Sprint 23):** Alembic schema and adapters unchanged by infrastructure work
 - **API contracts (Sprint 24):** no `/api/v2`, no response body redesign
 - **Domain engines (Sprints 1–21):** DealScore, Recommendation, Shopping Assistant ranking, Personal AI, affiliate/merchant neutrality untouched
+- **Image publication (Sprint 25b.1):** digest authority and `build-image.yml` contract unchanged by 25b.2 IAM work
+- **Sprint 25a networking / RDS secret ownership:** unchanged; 25b.2 only adds host SSM attachment and `ghcr_pull` containers

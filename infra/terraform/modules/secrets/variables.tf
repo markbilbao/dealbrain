@@ -18,7 +18,12 @@ variable "secret_names" {
     Logical secret leaf names under dealbrain/<env>/.
     RDS master credentials are AWS-managed separately (see rds module
     manage_master_user_password) — do not add a conflicting database_url
-    container here. Runtime DATABASE_URL assembly is Sprint 25b.
+    container here. Runtime DATABASE_URL assembly is Sprint 25b.3.
+
+    ghcr_pull (Sprint 25b.2): container only for a classic PAT with
+    read:packages. Expected JSON shape (values out-of-band — never in TF):
+      {"username":"REPLACE_ME_OUT_OF_BAND","token":"REPLACE_ME_OUT_OF_BAND"}
+    Do not create aws_secretsmanager_secret_version for these credentials.
   EOT
   type        = list(string)
   default = [
@@ -28,6 +33,7 @@ variable "secret_names" {
     "gemini_api_key",
     "cors_origins",
     "monitoring",
+    "ghcr_pull",
   ]
 }
 
