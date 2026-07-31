@@ -146,7 +146,7 @@ def test_staging_trust_pins_environment_staging() -> None:
         'expected_sub      = "repo:${local.github_repository}:environment:${var.environment}"'
         in trust
     )
-    assert "environment              = local.environment" in staging_main
+    assert re.search(r"environment\s+=\s+local\.environment", staging_main)
     assert 'environment = "staging"' in staging_main
     assert GITHUB_ENVIRONMENT_STAGING == "staging"
 
@@ -162,7 +162,7 @@ def test_staging_trust_cannot_assume_production() -> None:
     """Staging root pins environment=staging; module builds sub from var.environment only."""
     staging_main = _read(STAGING / "main.tf")
     deploy_main = _read(DEPLOY_MODULE / "main.tf")
-    assert "environment              = local.environment" in staging_main
+    assert re.search(r"environment\s+=\s+local\.environment", staging_main)
     assert 'environment = "staging"' in staging_main
     # Module constructs a single expected_sub — never both environments.
     assert deploy_main.count("expected_sub") >= 1
@@ -295,7 +295,7 @@ def test_staging_cannot_target_production_resources() -> None:
     assert "DenyOppositeEnvironmentSecretArns" in deploy_main
     assert "local.opposite_environment" in deploy_main
     staging_main = _read(STAGING / "main.tf")
-    assert "environment              = local.environment" in staging_main
+    assert re.search(r"environment\s+=\s+local\.environment", staging_main)
     assert 'environment = "staging"' in staging_main
 
 
@@ -324,15 +324,19 @@ def test_rds_create_db_snapshot_absent_or_denied() -> None:
 def test_deploy_allow_documents_star_resources_for_describe_apis() -> None:
     deploy_main = _read(DEPLOY_MODULE / "main.tf")
     assert "ObserveSsmCommands" in deploy_main
-    assert "DescribeForTargetingAndHealth" in deploy_main
+    assert "DescribeForTargeting" in deploy_main
     assert "ec2:DescribeInstances" in deploy_main
-    assert "elasticloadbalancing:DescribeTargetHealth" in deploy_main
+    # Target health is host-side; GHA must not require DescribeTargetHealth/Groups.
+    assert "elasticloadbalancing:DescribeTargetHealth" not in deploy_main
+    assert "elasticloadbalancing:DescribeTargetGroups" not in deploy_main
     # Resource "*" required note appears in comments or structure.
     assert 'resources = ["*"]' in deploy_main
 
 
-# Exact approved Allow action set for Sprint 25b.2 deploy roles.
+# Exact approved Allow action set for Sprint 25b.2 deploy roles, plus Sprint
+# 25b.3 optional staging release-artifacts S3 actions (dynamic; present in HCL).
 # Explicit Deny statements are intentionally excluded from this comparison.
+# ALB health checks run on the host; GHA uses an exact TG ARN env var.
 APPROVED_DEPLOY_ALLOW_ACTIONS = frozenset(
     {
         "ssm:SendCommand",
@@ -341,8 +345,11 @@ APPROVED_DEPLOY_ALLOW_ACTIONS = frozenset(
         "ssm:ListCommandInvocations",
         "ec2:DescribeInstances",
         "ec2:DescribeInstanceStatus",
-        "elasticloadbalancing:DescribeTargetHealth",
         "rds:DescribeDBInstances",
+        # Sprint 25b.3 — staging release-artifacts bucket (optional via variable)
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:ListBucket",
     }
 )
 
@@ -362,13 +369,13 @@ def _extract_deploy_allow_actions(deploy_main: str) -> set[str]:
 
 
 def test_deploy_allow_actions_exact_approved_set() -> None:
-    """Fail if deploy_allow gains or loses any IAM action vs the approved 25b.2 set."""
+    """Fail if deploy_allow gains or loses any IAM action vs the approved set."""
     deploy_main = _read(DEPLOY_MODULE / "main.tf")
     found = _extract_deploy_allow_actions(deploy_main)
     extra = sorted(found - APPROVED_DEPLOY_ALLOW_ACTIONS)
     missing = sorted(APPROVED_DEPLOY_ALLOW_ACTIONS - found)
     assert found == APPROVED_DEPLOY_ALLOW_ACTIONS, (
-        "deploy_allow action set drifted from Sprint 25b.2 approved set.\n"
+        "deploy_allow action set drifted from approved Sprint 25b.2/25b.3 set.\n"
         f"extra: {extra}\n"
         f"missing: {missing}"
     )
@@ -460,9 +467,11 @@ def test_no_real_token_like_values_in_terraform_tree() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_no_deploy_workflows_exist() -> None:
-    for name in ("deploy-staging.yml", "deploy-production.yml", "rollback.yml"):
-        assert not (WORKFLOWS / name).is_file(), f"{name} must not exist in Sprint 25b.2"
+def test_no_production_or_rollback_deploy_workflows_exist() -> None:
+    """Sprint 25b.3 introduces staging deploy only; production/rollback remain deferred."""
+    assert (WORKFLOWS / "deploy-staging.yml").is_file()
+    for name in ("deploy-production.yml", "rollback.yml"):
+        assert not (WORKFLOWS / name).is_file(), f"{name} must not exist yet"
 
 
 def test_no_terraform_apply_in_github_actions() -> None:
@@ -497,6 +506,7 @@ def test_architecture_lock_updates_are_additive() -> None:
     lock = _read(ROOT / "docs/architecture/ARCHITECTURE_LOCK.md")
     assert "Sprint 25" in lock
     assert "25b.2" in lock or "Sprint 25b.2" in lock
+    assert "14.1c" in lock or "25b.3" in lock
     assert "OIDC" in lock
     # Must not remove prior ownership.
     assert "Sprint 23" in lock

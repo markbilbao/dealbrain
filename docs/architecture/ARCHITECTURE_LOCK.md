@@ -1,6 +1,6 @@
 # DealBrain Architecture Lock
 
-**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive); Sprint 25b.2 OIDC/deploy IAM ownership added (additive)  
+**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive); Sprint 25b.2 OIDC/deploy IAM ownership added (additive); Sprint 25b.3 staging deployment pipeline ownership added (additive)  
 **Hard endpoint:** Sprint 40  
 **Runtime enforcement:** This document is a change-control policy. It is **not** enforced by a separate runtime policy engine unless a specific check is implemented and documented elsewhere.
 
@@ -243,11 +243,31 @@ Sprint 25b.2 does **not** own executable deploy workflows, SSM command execution
 or live AWS/GitHub UI configuration. Roles modeled in Terraform are **not
 operationally approved** until GitHub Environment hard gates are verified.
 
+### 14.1c Sprint 25b.3 (implemented slice)
+
+Sprint 25b.3 owns the **staging-only deployment pipeline** (repository model):
+
+| Concern | Owner |
+|---------|--------|
+| Staging deploy workflow (`workflow_dispatch`, Environment `staging`) | `.github/workflows/deploy-staging.yml` |
+| Release-manifest ingestion + digest authority checks | `scripts/deploy/validate_staging_release.py` (+ 25b.1 validator) |
+| Staging release bundle + S3 artifacts bucket | `scripts/deploy/build_staging_bundle.py`, `modules/release_artifacts/` |
+| Custom SSM document `DealBrain-StagingDeploy` | `modules/ssm_deploy_document/` (staging root wiring) |
+| Host bootstrap (`user_data`) | `infra/ec2/user_data/staging.sh` |
+| Host-side secret assembly + GHCR stdin login | `scripts/deploy/host/assemble-runtime-env.py`, `ghcr-login.sh` |
+| One-shot migrate then API recreate + health gates | `scripts/deploy/host/dealbrain-staging-deploy.sh`, `verify-staging.sh` |
+| Append-only staging evidence | `schemas/staging-deploy-evidence.schema.json`, `scripts/deploy/evidence.py` |
+
+Sprint 25b.3 does **not** own production deploy/approval/snapshot/rollback,
+CloudWatch/synthetics (25c), or live AWS/GitHub UI configuration. Repository
+implementation does **not** imply a live staging deploy has occurred.
+
 ### 14.2 Unchanged ownership
 
 - **Readiness semantics (Sprint 22):** `/live`, `/ready`, `/health` meanings unchanged; ALB uses `/ready`, container HEALTHCHECK uses `/live`
 - **Persistence (Sprint 23):** Alembic schema and adapters unchanged by infrastructure work
 - **API contracts (Sprint 24):** no `/api/v2`, no response body redesign
 - **Domain engines (Sprints 1–21):** DealScore, Recommendation, Shopping Assistant ranking, Personal AI, affiliate/merchant neutrality untouched
-- **Image publication (Sprint 25b.1):** digest authority and `build-image.yml` contract unchanged by 25b.2 IAM work
-- **Sprint 25a networking / RDS secret ownership:** unchanged; 25b.2 only adds host SSM attachment and `ghcr_pull` containers
+- **Image publication (Sprint 25b.1):** digest authority and `build-image.yml` contract unchanged by 25b.2/25b.3 IAM/deploy work
+- **Sprint 25a networking / RDS secret ownership:** unchanged; 25b.3 only consumes ARNs/outputs for host assembly
+- **Sprint 25b.2 trust-policy boundaries:** staging custom SSM allowlist narrows SendCommand; production interim `AWS-RunShellScript` default retained until 25b.4

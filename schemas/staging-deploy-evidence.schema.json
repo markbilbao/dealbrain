@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dealbrain.local/schemas/staging-deploy-evidence.schema.json",
+  "title": "DealBrain Staging Deploy Evidence",
+  "description": "Sprint 25b.3 append-only staging deployment evidence. Separate from the immutable build release-manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "release_id",
+    "git_sha",
+    "image_repository",
+    "image_digest",
+    "source_manifest_sha256",
+    "deploy_workflow_run_id",
+    "aws_account_id",
+    "aws_region",
+    "assumed_role_arn",
+    "role_session_name",
+    "ec2_instance_id",
+    "ssm_command_id",
+    "migration_revision_before",
+    "migration_revision_after",
+    "localhost_live",
+    "localhost_ready",
+    "alb_target_healthy",
+    "smoke_ok",
+    "image_id",
+    "repo_digest",
+    "image_created_at",
+    "deployment_started_at",
+    "deployment_finished_at",
+    "deployment_duration_seconds",
+    "final_status",
+    "failure_reason",
+    "evidence_sha256"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "release_id": {
+      "type": "string",
+      "pattern": "^rel-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{7,40}$"
+    },
+    "git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "image_repository": {
+      "type": "string",
+      "pattern": "^ghcr\\.io/[a-z0-9]([a-z0-9._-]*/)+[a-z0-9._-]+$"
+    },
+    "image_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "deploy_workflow_run_id": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "aws_account_id": {
+      "type": "string",
+      "pattern": "^[0-9]{12}$"
+    },
+    "aws_region": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumed_role_arn": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role_session_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ec2_instance_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ssm_command_id": { "type": ["string", "null"] },
+    "migration_revision_before": { "type": ["string", "null"] },
+    "migration_revision_after": { "type": ["string", "null"] },
+    "localhost_live": { "type": ["boolean", "null"] },
+    "localhost_ready": { "type": ["boolean", "null"] },
+    "alb_target_healthy": { "type": ["boolean", "null"] },
+    "smoke_ok": { "type": ["boolean", "null"] },
+    "image_id": { "type": ["string", "null"] },
+    "repo_digest": { "type": ["string", "null"] },
+    "image_created_at": { "type": ["string", "null"] },
+    "deployment_started_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "deployment_finished_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "deployment_duration_seconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "final_status": {
+      "type": "string",
+      "enum": ["staging_ok", "failed"]
+    },
+    "failure_reason": { "type": ["string", "null"] },
+    "evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

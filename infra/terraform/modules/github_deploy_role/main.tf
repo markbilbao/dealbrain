@@ -120,17 +120,57 @@ data "aws_iam_policy_document" "deploy_allow" {
     resources = ["*"]
   }
 
-  # Targeting / health describe APIs — AWS documents Resource "*" only.
+  # Targeting describe APIs — AWS documents Resource "*" only.
+  # ALB target health is verified on the host (DescribeTargetHealth lives on host IAM).
+  # Target group ARN is supplied via GitHub Environment var (no DescribeTargetGroups).
   statement {
-    sid    = "DescribeForTargetingAndHealth"
+    sid    = "DescribeForTargeting"
     effect = "Allow"
     actions = [
       "ec2:DescribeInstances",
       "ec2:DescribeInstanceStatus",
-      "elasticloadbalancing:DescribeTargetHealth",
       "rds:DescribeDBInstances",
     ]
     resources = ["*"]
+  }
+
+  # Sprint 25b.3 — staging release-artifacts bucket (bundles + evidence). Absent for production.
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [var.release_artifacts_bucket_arn] : []
+    content {
+      sid    = "ReleaseArtifactsObjectAccess"
+      effect = "Allow"
+      actions = [
+        "s3:PutObject",
+        "s3:GetObject",
+      ]
+      resources = [
+        "${statement.value}/releases/*",
+        "${statement.value}/evidence/*",
+      ]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = trimspace(var.release_artifacts_bucket_arn) != "" ? [var.release_artifacts_bucket_arn] : []
+    content {
+      sid    = "ReleaseArtifactsListBucket"
+      effect = "Allow"
+      actions = [
+        "s3:ListBucket",
+      ]
+      resources = [statement.value]
+      condition {
+        test     = "StringLike"
+        variable = "s3:prefix"
+        values = [
+          "releases/",
+          "releases/*",
+          "evidence/",
+          "evidence/*",
+        ]
+      }
+    }
   }
 }
 

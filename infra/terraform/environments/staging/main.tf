@@ -44,6 +44,9 @@ locals {
     ManagedBy   = "terraform"
     Sprint      = "25a"
   })
+
+  # Sprint 25b.3 — idempotent AL2023 bootstrap + thin SSM entrypoint (no secrets).
+  staging_user_data = file("${path.module}/../../../ec2/user_data/staging.sh")
 }
 
 module "networking" {
@@ -107,13 +110,36 @@ module "rds" {
   tags                  = local.common_tags
 }
 
+# Sprint 25b.3 — staging release-artifacts bucket (bundles + evidence).
+module "release_artifacts" {
+  source = "../../modules/release_artifacts"
+
+  environment = local.environment
+  name_prefix = local.name_prefix
+  tags = merge(local.common_tags, {
+    Sprint = "25b.3"
+  })
+}
+
+# Sprint 25b.3 — custom SSM Command document for staging deploy.
+# Replaces the interim managed RunShellScript allowlist entry on staging.
+module "ssm_deploy_document" {
+  source = "../../modules/ssm_deploy_document"
+
+  environment = local.environment
+  tags = merge(local.common_tags, {
+    Sprint = "25b.3"
+  })
+}
+
 # IAM after RDS so the instance role may read this env's application secrets
 # and the AWS-managed RDS master-user secret ARN only (no plaintext values).
 module "iam" {
   source = "../../modules/iam"
 
-  name_prefix = local.name_prefix
-  environment = local.environment
+  name_prefix                  = local.name_prefix
+  environment                  = local.environment
+  release_artifacts_bucket_arn = module.release_artifacts.bucket_arn
   secret_arns = compact(concat(
     values(module.secrets.secret_arns),
     [module.rds.master_user_secret_arn],
@@ -133,21 +159,24 @@ module "ec2" {
   target_group_arn          = module.alb.target_group_arn
   associate_public_ip       = false
   root_volume_size_gb       = var.root_volume_size_gb
+  user_data                 = local.staging_user_data
   tags                      = local.common_tags
 }
 
-# Sprint 25b.2 — GitHub Actions OIDC deploy role (orchestration only).
+# Sprint 25b.2/25b.3 — GitHub Actions OIDC deploy role.
+# Staging: custom DealBrain-StagingDeploy document only (no managed RunShellScript allow).
 # Operationally approved only after GitHub Environment hard gates are live.
-# Does not create deploy workflows or send SSM commands.
 module "github_deploy_role" {
   source = "../../modules/github_deploy_role"
 
-  environment              = local.environment
-  github_repository_owner  = var.github_repository_owner
-  github_repository_name   = var.github_repository_name
-  github_oidc_provider_arn = var.github_oidc_provider_arn
-  aws_region               = var.aws_region
+  environment                  = local.environment
+  github_repository_owner      = var.github_repository_owner
+  github_repository_name       = var.github_repository_name
+  github_oidc_provider_arn     = var.github_oidc_provider_arn
+  aws_region                   = var.aws_region
+  allowed_ssm_document_arns    = [module.ssm_deploy_document.document_arn]
+  release_artifacts_bucket_arn = module.release_artifacts.bucket_arn
   tags = merge(local.common_tags, {
-    Sprint = "25b.2"
+    Sprint = "25b.3"
   })
 }

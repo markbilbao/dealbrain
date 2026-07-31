@@ -77,6 +77,26 @@ output "gha_deploy_role_name" {
   value       = module.github_deploy_role.gha_deploy_role_name
 }
 
+output "release_artifacts_bucket_name" {
+  description = "Staging release-artifacts S3 bucket name (bundles + evidence)."
+  value       = module.release_artifacts.bucket_name
+}
+
+output "release_artifacts_bucket_arn" {
+  description = "Staging release-artifacts S3 bucket ARN."
+  value       = module.release_artifacts.bucket_arn
+}
+
+output "ssm_deploy_document_name" {
+  description = "Custom staging SSM deploy document name."
+  value       = module.ssm_deploy_document.document_name
+}
+
+output "ssm_deploy_document_arn" {
+  description = "Custom staging SSM deploy document ARN."
+  value       = module.ssm_deploy_document.document_arn
+}
+
 output "domain_name" {
   value = var.domain_name
 }
