@@ -51,7 +51,7 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 > This sprint does **not** perform a real cloud deployment. Use compose locally
 > or in a staging VM for rehearsal only.
 
-## Cloud foundation (Sprint 25a)
+## Cloud foundation (Sprint 25a / 25b.1)
 
 AWS single-region Terraform + Compose overlays live under `infra/`.
 Phase 25a CI lives at [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
@@ -59,10 +59,23 @@ Phase 25a CI lives at [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 See [SPRINT_25A_INFRASTRUCTURE.md](SPRINT_25A_INFRASTRUCTURE.md) and
 [`infra/terraform/README.md`](../infra/terraform/README.md).
 
+### Immutable image publication (Sprint 25b.1)
+
+Releasable images are published only by
+[`.github/workflows/build-image.yml`](../.github/workflows/build-image.yml) after CI
+succeeds on `main`. Images are pushed to GHCR as `sha-<full_git_sha>`; the
+**digest** is deployment authority. A checksummed `release-manifest.json` is
+uploaded as a workflow artifact (90-day retention).
+
+CI still builds the Dockerfile on PRs **without** pushing. Staging/production
+deploy workflows, OIDC, and SSM are deferred (25b.2+).
+
+See [SPRINT_25B_IMAGE_PUBLICATION.md](SPRINT_25B_IMAGE_PUBLICATION.md).
+
 Cloud staging/production **do not** use the root Compose `db` service — they use
 private RDS with **AWS-managed master passwords** (Secrets Manager). Terraform never
 accepts a plaintext `db_password`. Runtime `DATABASE_URL` assembly/injection is a
-Sprint 25b deploy concern. Migrations run via the dedicated `migrate` service only.
+Sprint 25b.3 deploy concern. Migrations run via the dedicated `migrate` service only.
 
 ## Environment examples
 

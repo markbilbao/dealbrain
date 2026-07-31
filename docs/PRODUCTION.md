@@ -54,6 +54,10 @@ secret values.
 - Never commit real production secrets — examples use empty placeholders
 - Cloud RDS master passwords are AWS-managed (Secrets Manager); Terraform stores
   secret ARNs only (see [SPRINT_25A_INFRASTRUCTURE.md](SPRINT_25A_INFRASTRUCTURE.md))
+- Production runtime images must be pulled by **immutable digest** from GHCR
+  (`ghcr.io/<owner>/<repo>@sha256:…`), never by mutable tags such as `latest` or
+  `ci-latest` (see [SPRINT_25B_IMAGE_PUBLICATION.md](SPRINT_25B_IMAGE_PUBLICATION.md)).
+  Staging/production promotion workflows are not implemented in Sprint 25b.1.
 
 ## Memory vs SQL backends
 
