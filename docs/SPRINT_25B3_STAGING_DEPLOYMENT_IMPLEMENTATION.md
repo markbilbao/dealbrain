@@ -82,3 +82,7 @@ uv run pytest tests/unit/test_sprint25b3_staging_deploy.py \
   tests/unit/test_sprint25b1_image_publication.py \
   tests/unit/test_sprint25b2_oidc_iam.py -q
 ```
+
+## Follow-on: Sprint 25b.4a
+
+Pre-live repository refinements (head-bucket removal, strict ALB, evidence import fail-closed) are documented in [SPRINT_25B4A_PRE_LIVE_REFINEMENTS.md](SPRINT_25B4A_PRE_LIVE_REFINEMENTS.md). No live AWS action in 25b.4a; 25b.4b remains separately gated.

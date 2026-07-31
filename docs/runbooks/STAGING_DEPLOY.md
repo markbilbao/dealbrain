@@ -1,7 +1,8 @@
-# Staging deploy runbook (Sprint 25b.3)
+# Staging deploy runbook (Sprint 25b.3 / 25b.4a)
 
 **Audience:** operators performing the first (and subsequent) staging digest deploys  
-**Does not cover:** production promotion (25b.4+), automated rollback (25b.5)
+**Does not cover:** production promotion (25b.4+), automated rollback (25b.5)  
+**25b.4a note:** repository pre-live refinements only — **no live AWS action** occurred in 25b.4a; **25b.4b** remains separately gated for apply / Environment / secrets / first deploy.
 
 ## Preconditions
 
@@ -25,7 +26,23 @@
 - Host-uploaded evidence at `s3://…/evidence/<release_id>/<run_id>/staging-deploy-evidence.json` with `final_status=staging_ok`
 - GitHub artifact `staging-evidence-<release_id>-<run_id>` (copy of host evidence; never synthesized)
 - Host `/opt/dealbrain/current/DEPLOY_VERSION` matches release identity
-- Localhost `/live` + `/ready` content gates; ALB target healthy
+- Localhost `/live` + `/ready` content gates
+- ALB: **strict** acceptance — the expected staging EC2 instance is the sole target and `TargetHealth.State` is exactly `healthy` (no substring fallback)
+
+## S3 readiness (25b.4a)
+
+The workflow does **not** call `s3api head-bucket`. The deploy role’s `ListBucket` permission is prefix-conditioned under `releases/*` and `evidence/*`; bucket-existence preflight would require a broader grant that we intentionally refuse.
+
+Authoritative checks are exact object operations:
+
+- upload/download of `releases/<release_id>/…`
+- `head-object` / get of host evidence under `evidence/<release_id>/<run_id>/…`
+
+Missing or inaccessible release/evidence objects fail closed.
+
+## Evidence writer (25b.4a)
+
+Host evidence writing requires the canonical bundled `evidence.py` module. If that import fails, the writer exits non-zero and does **not** write or upload success evidence. There is no inline fallback writer.
 
 ## Common failures
 
@@ -33,9 +50,12 @@
 |---------|--------------|--------|
 | Manifest validation fail | Wrong run / not built | Re-run Build Image; use that run ID |
 | OIDC AccessDenied | Env name/branch/vars | Fix GitHub Environment gates |
+| S3 object Put/Get/Head denied | Prefix/IAM/key mismatch | Fix role prefix grants; do not add unscoped ListBucket for head-bucket |
 | Missing host evidence | Host failed before upload / IAM | Inspect SSM output; fix host role evidence PutObject |
+| Evidence module unavailable | Bundle missing `bin/evidence.py` | Rebuild/upload release bundle; do not bypass |
 | SSM offline | NAT/agent/IAM | Fix networking; replace instance if needed |
 | Bundle checksum mismatch | Tamper / wrong key | Re-upload via workflow; investigate |
+| ALB not exactly healthy | Wrong TG, wrong instance, initial/unhealthy/mixed targets | Confirm `STAGING_TARGET_GROUP_ARN` and single staging instance registration |
 | Migration failed / timeout | Schema / DB / 20m bound | API untouched; `current` remains prior release |
 | Disk space | Images/logs | Expand volume / prune unused images |
 | Stale flock | Crashed deploy | SSO Session Manager; remove lock info if PID dead >90m |

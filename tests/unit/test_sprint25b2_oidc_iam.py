@@ -341,8 +341,7 @@ APPROVED_DEPLOY_ALLOW_ACTIONS = frozenset(
     {
         "ssm:SendCommand",
         "ssm:GetCommandInvocation",
-        "ssm:ListCommands",
-        "ssm:ListCommandInvocations",
+        # Sprint 25b.4a — ListCommands / ListCommandInvocations unused; removed.
         "ec2:DescribeInstances",
         "ec2:DescribeInstanceStatus",
         "rds:DescribeDBInstances",

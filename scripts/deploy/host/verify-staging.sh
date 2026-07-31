@@ -1,6 +1,7 @@
 #!/bin/bash
-# Staging post-deploy verification gates (Sprint 25b.3).
+# Staging post-deploy verification gates (Sprint 25b.3 / 25b.4a).
 # Does not alter application /live or /ready semantics.
+# ALB acceptance is strict: sole expected instance target must be exactly healthy.
 set -euo pipefail
 set +x
 
@@ -10,10 +11,13 @@ IMAGE_REPOSITORY=""
 COMPOSE_PROJECT="dealbrain-staging"
 TG_JSON=""
 REGION=""
+INSTANCE_ID=""
 OUT_JSON="/tmp/dealbrain-verify.json"
 LOCAL_INTERVAL=5
 LOCAL_TIMEOUT=180
 ALB_TIMEOUT=300
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -23,6 +27,7 @@ while [[ $# -gt 0 ]]; do
     --compose-project) COMPOSE_PROJECT="$2"; shift 2 ;;
     --target-group-json) TG_JSON="$2"; shift 2 ;;
     --region) REGION="$2"; shift 2 ;;
+    --instance-id) INSTANCE_ID="$2"; shift 2 ;;
     --out-json) OUT_JSON="$2"; shift 2 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
@@ -33,6 +38,8 @@ done
 [[ -n "$IMAGE_REPOSITORY" ]] || { echo "ERROR: --image-repository required" >&2; exit 1; }
 [[ -n "$TG_JSON" && -f "$TG_JSON" ]] || { echo "ERROR: --target-group-json required" >&2; exit 1; }
 [[ -n "$REGION" ]] || { echo "ERROR: --region required" >&2; exit 1; }
+[[ -n "$INSTANCE_ID" ]] || { echo "ERROR: --instance-id required" >&2; exit 1; }
+[[ "$INSTANCE_ID" =~ ^i-[0-9a-f]+$ ]] || { echo "ERROR: bad instance id" >&2; exit 1; }
 
 TG_ARN="$(jq -r '.target_group_arn' "$TG_JSON")"
 [[ -n "$TG_ARN" && "$TG_ARN" != "null" ]] || { echo "ERROR: target_group_arn missing" >&2; exit 1; }
@@ -45,6 +52,13 @@ case "$TG_ARN" in
   *staging*|*dealbrain-staging*) ;;
   *) echo "ERROR: target group ARN must identify staging" >&2; exit 1 ;;
 esac
+
+# Resolve strict ALB evaluator (bundle bin/ or repo scripts/deploy/).
+ALB_EVAL="${SCRIPT_DIR}/alb_target_health.py"
+if [[ ! -f "$ALB_EVAL" ]]; then
+  ALB_EVAL="$(cd "${SCRIPT_DIR}/.." && pwd)/alb_target_health.py"
+fi
+[[ -f "$ALB_EVAL" ]] || { echo "ERROR: alb_target_health.py missing" >&2; exit 1; }
 
 probe_live() {
   local body="$1"
@@ -118,19 +132,20 @@ echo "$RUNNING_DIGEST" | grep -q "$IMAGE_DIGEST" || {
   }
 }
 
-# ALB target health
+# Strict ALB target health — one structured acceptance path only.
+# No substring "healthy" fallback. Bounded poll; timeout fails closed.
 elapsed=0
 while [[ $elapsed -lt $ALB_TIMEOUT ]]; do
-  STATES="$(aws elbv2 describe-target-health \
-    --region "$REGION" \
+  HEALTH_JSON="$(
+    aws elbv2 describe-target-health \
+      --region "$REGION" \
+      --target-group-arn "$TG_ARN" \
+      --output json 2>/dev/null || echo '{"TargetHealthDescriptions":[]}'
+  )"
+  if printf '%s' "$HEALTH_JSON" | python3 "$ALB_EVAL" \
     --target-group-arn "$TG_ARN" \
-    --query 'TargetHealthDescriptions[].TargetHealth.State' \
-    --output text 2>/dev/null || true)"
-  if echo "$STATES" | grep -qw healthy && ! echo "$STATES" | grep -Eqw 'unhealthy|draining|initial'; then
-    ALB_OK=true
-    break
-  fi
-  if echo "$STATES" | grep -qw healthy; then
+    --instance-id "$INSTANCE_ID" \
+    --input - >/dev/null; then
     ALB_OK=true
     break
   fi

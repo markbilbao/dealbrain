@@ -192,9 +192,10 @@ jobs:
           echo "$TG_ARN" | grep -qv production
 
           # Bucket name pattern from Terraform: dealbrain-staging-release-artifacts-<account>
+          # No bucket-existence preflight: ListBucket is prefix-conditioned; exact
+          # object Put/Get/Head under releases/* and evidence/* are the checks.
           ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
           BUCKET="dealbrain-staging-release-artifacts-${ACCOUNT}"
-          aws s3api head-bucket --bucket "$BUCKET"
 
           # Non-secret RDS metadata for host DATABASE_URL assembly.
           RDS_JSON="$(

@@ -36,6 +36,8 @@ REQUIRED_MEMBERS = (
     "bin/assemble-runtime-env.py",
     "bin/ghcr-login.sh",
     "bin/verify-staging.sh",
+    "bin/alb_target_health.py",
+    "bin/evidence.py",
     "manifest/release-manifest.json",
     "bundle-meta.json",
 )
