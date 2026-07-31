@@ -108,6 +108,16 @@ Repository implementation:
 See [SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md](SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md)
 and [runbooks/STAGING_DEPLOY.md](runbooks/STAGING_DEPLOY.md).
 
+### Pre-live refinements (Sprint 25b.4a)
+
+Repository-only hardening before first live deploy (no AWS apply/deploy):
+
+- Removed S3 `head-bucket` preflight; exact object ops under `releases/*` / `evidence/*` remain authoritative
+- Strict ALB target-health acceptance (expected instance sole target, state exactly `healthy`)
+- Evidence writer fails closed if canonical `evidence.py` cannot import
+
+See [SPRINT_25B4A_PRE_LIVE_REFINEMENTS.md](SPRINT_25B4A_PRE_LIVE_REFINEMENTS.md). **25b.4b** (live prerequisites) remains separately gated.
+
 Cloud staging/production **do not** use the root Compose `db` service — they use
 private RDS with **AWS-managed master passwords** (Secrets Manager). Terraform never
 accepts a plaintext `db_password`. Runtime `DATABASE_URL` is assembled **on the host**

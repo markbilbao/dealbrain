@@ -108,14 +108,13 @@ data "aws_iam_policy_document" "deploy_allow" {
     }
   }
 
-  # Result observation — these SSM APIs require Resource "*".
+  # Result observation — GetCommandInvocation requires Resource "*".
+  # ListCommands / ListCommandInvocations unused by deploy workflow (removed 25b.4a).
   statement {
     sid    = "ObserveSsmCommands"
     effect = "Allow"
     actions = [
       "ssm:GetCommandInvocation",
-      "ssm:ListCommands",
-      "ssm:ListCommandInvocations",
     ]
     resources = ["*"]
   }

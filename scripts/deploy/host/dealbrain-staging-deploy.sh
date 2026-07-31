@@ -456,6 +456,7 @@ bash "${BIN}/verify-staging.sh" \
   --compose-project "$COMPOSE_PROJECT" \
   --target-group-json "$TG_ARN_FILE" \
   --region "$REGION" \
+  --instance-id "$INSTANCE_ID" \
   --out-json "${EVIDENCE_DIR}/verify-${RELEASE_ID}.json"
 
 LOCAL_LIVE="$(jq -r '.localhost_live' "${EVIDENCE_DIR}/verify-${RELEASE_ID}.json")"

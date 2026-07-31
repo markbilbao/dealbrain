@@ -1,4 +1,4 @@
-.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra validate-oidc validate-staging-deploy
+.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra validate-oidc validate-staging-deploy validate-pre-live
 
 install:
 	uv sync
@@ -45,6 +45,20 @@ validate-oidc:
 # Sprint 25b.3 staging deploy contract + predecessor infra tests
 validate-staging-deploy:
 	uv run pytest \
+		tests/unit/test_sprint25b3_staging_deploy.py \
+		tests/unit/test_sprint25a_infrastructure.py \
+		tests/unit/test_sprint25b1_image_publication.py \
+		tests/unit/test_sprint25b2_oidc_iam.py -q
+	bash scripts/validate_infra_25a.sh
+	bash -n infra/ec2/user_data/staging.sh
+	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/ghcr-login.sh
+	bash -n scripts/deploy/host/verify-staging.sh
+
+# Sprint 25b.4a pre-live refinements + staging deploy contract
+validate-pre-live:
+	uv run pytest \
+		tests/unit/test_sprint25b4a_pre_live_refinements.py \
 		tests/unit/test_sprint25b3_staging_deploy.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \

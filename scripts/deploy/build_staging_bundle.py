@@ -31,6 +31,7 @@ INCLUDE_FILES: tuple[tuple[str, str], ...] = (
     ("scripts/deploy/host/verify-staging.sh", "bin/verify-staging.sh"),
     ("scripts/deploy/host/write-staging-evidence.py", "bin/write-staging-evidence.py"),
     ("scripts/deploy/evidence.py", "bin/evidence.py"),
+    ("scripts/deploy/alb_target_health.py", "bin/alb_target_health.py"),
     ("scripts/deploy/verify_staging_bundle.py", "bin/verify_staging_bundle.py"),
     ("scripts/deploy/probe_checks.py", "bin/probe_checks.py"),
     ("schemas/staging-deploy-evidence.schema.json", "bin/staging-deploy-evidence.schema.json"),

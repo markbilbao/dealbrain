@@ -26,9 +26,10 @@ variable "log_group_arns" {
 
 variable "release_artifacts_bucket_arn" {
   description = <<-EOT
-    Optional staging release-artifacts bucket ARN. When set, the host may
-    GetObject/ListBucket only under the releases/ prefix (Sprint 25b.3).
-    Production must leave this empty.
+    Optional staging release-artifacts bucket ARN. When set, the staging host may:
+    read release bundle objects under releases/*; read the SSM command-ID binding
+    under the scoped evidence/* prefix; and write host-authored deployment
+    evidence under evidence/* (Sprint 25b.3/25b.4a). Production must leave empty.
   EOT
   type        = string
   default     = ""

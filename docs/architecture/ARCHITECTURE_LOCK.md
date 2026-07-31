@@ -262,6 +262,20 @@ Sprint 25b.3 does **not** own production deploy/approval/snapshot/rollback,
 CloudWatch/synthetics (25c), or live AWS/GitHub UI configuration. Repository
 implementation does **not** imply a live staging deploy has occurred.
 
+### 14.1d Sprint 25b.4a (implemented slice)
+
+Sprint 25b.4a owns **pre-live repository refinements** only:
+
+| Concern | Owner |
+|---------|--------|
+| Remove S3 `head-bucket` preflight (exact object ops remain authoritative) | `.github/workflows/deploy-staging.yml` |
+| Strict ALB target-health (expected instance, state exactly `healthy`) | `scripts/deploy/alb_target_health.py`, `verify-staging.sh` |
+| Evidence writer import fail-closed (no inline fallback) | `scripts/deploy/host/write-staging-evidence.py` |
+| Host IAM variable description hygiene; unused GHA SSM list actions removed | `modules/iam/variables.tf`, `modules/github_deploy_role/` |
+
+Sprint 25b.4a does **not** apply Terraform, configure GitHub Environments, populate
+secrets, send SSM commands, or perform a live deploy. **25b.4b+** remains gated.
+
 ### 14.2 Unchanged ownership
 
 - **Readiness semantics (Sprint 22):** `/live`, `/ready`, `/health` meanings unchanged; ALB uses `/ready`, container HEALTHCHECK uses `/live`

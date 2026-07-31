@@ -1,47 +1,44 @@
 #!/usr/bin/env python3
-"""Write append-only staging deploy evidence with deterministic checksum."""
+"""Write append-only staging deploy evidence with deterministic checksum.
+
+Fail closed if the canonical evidence module cannot be imported. Never fall
+back to an inline writer (Sprint 25b.4a).
+"""
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 from pathlib import Path
 
-# Allow importing evidence helpers from the same bin/ directory (bundle layout).
-_BIN = Path(__file__).resolve().parent
-if str(_BIN) not in sys.path:
-    sys.path.insert(0, str(_BIN))
-_SCRIPTS = Path(__file__).resolve().parents[1]
-if str(_SCRIPTS) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS))
 
-try:
-    from evidence import create_evidence, write_evidence
-except ImportError:
+def _load_evidence_api():
+    """Import canonical evidence helpers only — no duplicate fallback writer."""
+    _bin = Path(__file__).resolve().parent
+    if str(_bin) not in sys.path:
+        sys.path.insert(0, str(_bin))
+    _scripts = Path(__file__).resolve().parents[1]
+    if str(_scripts) not in sys.path:
+        sys.path.insert(0, str(_scripts))
+
+    try:
+        from evidence import create_evidence, write_evidence
+
+        return create_evidence, write_evidence
+    except ImportError:
+        pass
+
     try:
         from scripts.deploy.evidence import create_evidence, write_evidence
-    except ImportError:
-        # Bundle layout: bin/ next to evidence.py sibling may not exist on host;
-        # fall back to inline minimal writer matching schema.
-        from hashlib import sha256
 
-        def _canonicalize(payload: dict) -> str:
-            data = dict(payload)
-            data["evidence_sha256"] = None
-            return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
-
-        def create_evidence(**kwargs):  # type: ignore[no-redef]
-            payload = dict(kwargs)
-            payload["schema_version"] = 1
-            payload["evidence_sha256"] = sha256(_canonicalize(payload).encode()).hexdigest()
-            return payload
-
-        def write_evidence(path: Path, payload: dict) -> None:  # type: ignore[no-redef]
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-            )
+        return create_evidence, write_evidence
+    except ImportError as exc:
+        # Redacted: do not dump paths that may embed release ids / secrets.
+        print(
+            "ERROR: canonical evidence module unavailable; refusing to write deployment evidence",
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from exc
 
 
 def _boolish(value: str) -> bool | None:
@@ -55,6 +52,8 @@ def _boolish(value: str) -> bool | None:
 
 
 def main() -> int:
+    create_evidence, write_evidence = _load_evidence_api()
+
     out = Path(os.environ["DEALBRAIN_EVIDENCE_OUT"])
     release_id = os.environ["DEALBRAIN_RELEASE_ID"]
     git_sha = os.environ["DEALBRAIN_GIT_SHA"]
@@ -70,9 +69,7 @@ def main() -> int:
         "DEALBRAIN_ASSUMED_ROLE_ARN",
         f"arn:aws:iam::{aws_account}:role/dealbrain-staging-gha-deploy",
     )
-    role_session = os.environ.get(
-        "DEALBRAIN_ROLE_SESSION_NAME", f"gha-{deploy_run_id}-staging"
-    )
+    role_session = os.environ.get("DEALBRAIN_ROLE_SESSION_NAME", f"gha-{deploy_run_id}-staging")
 
     payload = create_evidence(
         release_id=release_id,
