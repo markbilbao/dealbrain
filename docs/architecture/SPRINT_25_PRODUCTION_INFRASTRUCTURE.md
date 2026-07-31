@@ -7,6 +7,11 @@
 **Owner:** Production infrastructure and operations (not domain logic, not API contracts, not persistence adapters)  
 **Contract revision:** Finalization (concrete platform, IaC, isolation, release, migration, rollback, SLOs, observability, backup evidence, config gate, M30 evidence matrix, phased DoD)
 
+> **Superseded (Sprint 25b.4b):** References to **S3 + DynamoDB** state locking are obsolete.
+> Current operator truth: S3 native lockfiles (`use_lockfile = true`) for `account/` and
+> staging; production backend migration deferred. See [`infra/terraform/README.md`](../../infra/terraform/README.md)
+> and [`docs/SPRINT_25B4B_BACKEND_MODERNIZATION.md`](../SPRINT_25B4B_BACKEND_MODERNIZATION.md).
+
 ---
 
 ## 0. Scope and non-negotiables

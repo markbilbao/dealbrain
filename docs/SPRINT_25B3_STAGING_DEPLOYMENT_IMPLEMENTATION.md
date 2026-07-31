@@ -40,7 +40,8 @@
 
 ### Live prerequisites (operator — **not** done by this implementation)
 
-1. Remote Terraform state bootstrapped; backends uncommented
+1. Remote Terraform state bootstrapped (S3 + native lockfiles); account/staging
+   initialized with `-backend-config` (see [`infra/terraform/README.md`](../infra/terraform/README.md))
 2. `account/` + `environments/staging` Terraform **applied**
 3. GitHub Environment exactly named `staging`, deployment branches **`main` only**
 4. Environment vars: `AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUNT_ID`, `STAGING_TARGET_GROUP_ARN`

@@ -46,9 +46,10 @@ infra/terraform/
 
 ### Apply order (operator; not run by this sprint)
 
-1. Bootstrap remote state (S3 + DynamoDB) if not already done  
-2. Apply `infra/terraform/account/`  
-3. Apply staging / production with `github_oidc_provider_arn` from account output  
+1. Bootstrap remote state (encrypted S3 + native lockfiles; **not** DynamoDB) if not already done  
+2. Apply `infra/terraform/account/` (partial S3 backend + `-backend-config`)  
+3. Apply staging with `github_oidc_provider_arn` from account output  
+4. Production backend modernization remains deferred (Sprint 25b.4b) — see [`infra/terraform/README.md`](../infra/terraform/README.md)
 
 ### OIDC import path
 

@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.11.0"
 
   required_providers {
     aws = {
@@ -8,16 +8,9 @@ terraform {
     }
   }
 
-  # Remote state is mandatory for shared environments.
-  # Bootstrap an S3 bucket + DynamoDB lock table out-of-band, then uncomment:
-  #
-  # backend "s3" {
-  #   bucket         = "dealbrain-terraform-state-REPLACE_ME"
-  #   key            = "staging/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   dynamodb_table = "dealbrain-terraform-locks"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    use_lockfile = true
+  }
 }
 
 provider "aws" {

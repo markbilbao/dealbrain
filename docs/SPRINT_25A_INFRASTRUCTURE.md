@@ -32,10 +32,11 @@ Root `Dockerfile` and `docker-compose.yml` remain the local/dev baseline.
 
 ## Prerequisites
 
-- Terraform >= 1.5
+- Terraform >= 1.11.0 (see Sprint 25b.4b; CI pins `1.15.8`)
 - AWS account (or separate staging/prod accounts) with IAM least privilege
 - Docker / Docker Compose for overlay config checks
-- Remote state bootstrap: S3 bucket + DynamoDB lock table (out-of-band)
+- Remote state bootstrap: encrypted S3 bucket with **S3 native lockfiles**
+  (`use_lockfile = true`). DynamoDB lock tables are obsolete (superseded by 25b.4b).
 - ACM certificate ARN placeholder until TLS cutover (Sprint 25b+)
 
 ## AWS account requirements
@@ -51,25 +52,35 @@ Root `Dockerfile` and `docker-compose.yml` remain the local/dev baseline.
 
 ## Terraform initialization
 
+Account and staging use a **partial** S3 backend (`use_lockfile = true`). Supply
+bucket/key/region at init (see [`infra/terraform/README.md`](../infra/terraform/README.md)):
+
 ```bash
 cd infra/terraform/environments/staging
 cp terraform.tfvars.example terraform.tfvars
-# Uncomment/configure S3 backend after remote-state bootstrap
 # Do NOT export or set a database password — AWS manages the RDS master credential.
-terraform init
+terraform init \
+  -backend-config="bucket=dealbrain-terraform-state-<ACCOUNT_OR_SUFFIX>" \
+  -backend-config="key=staging/terraform.tfstate" \
+  -backend-config="region=us-east-1"
 terraform validate
-terraform plan
+# Operator only: terraform plan / apply
 ```
 
-Repeat for `environments/production` with a **separate** state key and VPC CIDR.
-Each environment gets its own AWS-managed RDS master secret.
+Production backend modernization is **intentionally deferred** until the production
+rollout sprint. For CI/schema checks only:
+
+```bash
+terraform init -backend=false && terraform validate
+```
 
 ### Remote-state bootstrap assumptions
 
 - One encrypted S3 bucket for Terraform state
-- Separate state keys: `staging/terraform.tfstate`, `production/terraform.tfstate`
-- DynamoDB table for state locking
-- Backend blocks are commented until bootstrap exists (local init uses `-backend=false` for validate)
+- Separate state keys: `account/terraform.tfstate`, `staging/terraform.tfstate`,
+  `production/terraform.tfstate` (production key when that root is modernized)
+- Locking: S3 native lockfiles (`use_lockfile = true`) — **not** DynamoDB
+- `terraform init -backend=false` is for validation / CI only
 
 ## Staging vs production isolation
 
