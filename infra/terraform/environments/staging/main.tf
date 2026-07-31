@@ -135,3 +135,19 @@ module "ec2" {
   root_volume_size_gb       = var.root_volume_size_gb
   tags                      = local.common_tags
 }
+
+# Sprint 25b.2 — GitHub Actions OIDC deploy role (orchestration only).
+# Operationally approved only after GitHub Environment hard gates are live.
+# Does not create deploy workflows or send SSM commands.
+module "github_deploy_role" {
+  source = "../../modules/github_deploy_role"
+
+  environment              = local.environment
+  github_repository_owner  = var.github_repository_owner
+  github_repository_name   = var.github_repository_name
+  github_oidc_provider_arn = var.github_oidc_provider_arn
+  aws_region               = var.aws_region
+  tags = merge(local.common_tags, {
+    Sprint = "25b.2"
+  })
+}

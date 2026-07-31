@@ -158,6 +158,40 @@ variable "log_retention_days" {
   default     = 30
 }
 
+variable "github_repository_owner" {
+  description = "GitHub repository owner for OIDC trust (mandatory; no wildcards)."
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.github_repository_owner)) > 0
+    error_message = "github_repository_owner is required and must be non-empty."
+  }
+}
+
+variable "github_repository_name" {
+  description = "GitHub repository name for OIDC trust (mandatory; no wildcards)."
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.github_repository_name)) > 0
+    error_message = "github_repository_name is required and must be non-empty."
+  }
+}
+
+variable "github_oidc_provider_arn" {
+  description = <<-EOT
+    ARN of the account-level GitHub Actions OIDC provider created by
+    infra/terraform/account/. Prefer terraform_remote_state once backends
+    exist; until then pass the account root output explicitly.
+  EOT
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.github_oidc_provider_arn)) > 0
+    error_message = "github_oidc_provider_arn is required and must be non-empty."
+  }
+}
+
 variable "tags" {
   description = "Additional tags."
   type        = map(string)

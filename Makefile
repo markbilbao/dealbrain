@@ -1,4 +1,4 @@
-.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra
+.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra validate-oidc
 
 install:
 	uv sync
@@ -35,4 +35,9 @@ docker-migrate:
 	docker compose --profile migrate up migrate
 
 validate-infra:
+	bash scripts/validate_infra_25a.sh
+
+# Sprint 25b.2 targeted checks (OIDC/IAM static tests + infra validate helpers)
+validate-oidc:
+	uv run pytest tests/unit/test_sprint25b2_oidc_iam.py -q
 	bash scripts/validate_infra_25a.sh

@@ -1,12 +1,19 @@
 # Example production inputs — SAFE TO COMMIT (no secrets).
 # Copy to terraform.tfvars locally. Do NOT set any database password:
 # RDS master credentials are AWS-managed (manage_master_user_password).
+# Do NOT put GHCR tokens or AWS access keys here.
 #
 #   cp terraform.tfvars.example terraform.tfvars
 #
 # Fail-safe defaults: private RDS, deletion protection, backups ≥30d, Multi-AZ.
+# Apply account root first; then set github_oidc_provider_arn from its output.
 
 aws_region = "us-east-1"
+
+# Sprint 25b.2 — OIDC trust inputs (mandatory; no wildcards).
+github_repository_owner  = "markbilbao"
+github_repository_name   = "dealbrain"
+github_oidc_provider_arn = "arn:aws:iam::REPLACE_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
 
 vpc_cidr             = "10.20.0.0/16"
 public_subnet_cidrs  = ["10.20.0.0/24", "10.20.1.0/24"]

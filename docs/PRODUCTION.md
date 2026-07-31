@@ -58,6 +58,14 @@ secret values.
   (`ghcr.io/<owner>/<repo>@sha256:…`), never by mutable tags such as `latest` or
   `ci-latest` (see [SPRINT_25B_IMAGE_PUBLICATION.md](SPRINT_25B_IMAGE_PUBLICATION.md)).
   Staging/production promotion workflows are not implemented in Sprint 25b.1.
+- Sprint 25b.2 models OIDC deploy roles and GHCR pull secret **containers**
+  (`dealbrain/<env>/ghcr_pull`) for a classic PAT with `read:packages` only.
+  Secret **values** (including the PAT) are never stored in Terraform or git.
+  Deploy roles cannot read Secrets Manager values; hosts retrieve them.
+  Roles remain **non-operational** until GitHub Environment hard gates are live
+  (`staging` / `production` exact names, `main`-only deployment branches,
+  production required reviewers, admin bypass disabled or formally audited).
+  See [SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md](SPRINT_25B2_OIDC_IAM_IMPLEMENTATION.md).
 
 ## Memory vs SQL backends
 

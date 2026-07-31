@@ -1,0 +1,20 @@
+# Example account-root inputs — SAFE TO COMMIT (no secrets).
+# Copy to terraform.tfvars locally.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# Apply order: account → staging / production.
+# Staging/production consume oidc_provider_arn (remote state or variable).
+
+aws_region = "us-east-1"
+
+# Default: create the provider once in this account.
+create_provider = true
+
+# If the provider already exists, set create_provider = false and supply ARN:
+# create_provider       = false
+# existing_provider_arn = "arn:aws:iam::REPLACE_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+
+tags = {
+  CostCenter = "dealbrain-account"
+}
