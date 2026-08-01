@@ -809,9 +809,35 @@ def test_database_url_encoding_edge_characters() -> None:
 
 def test_bootstrap_no_unsigned_compose_download() -> None:
     ud = _read(USER_DATA)
-    assert "docker-compose-plugin" in ud
+    # Must never fetch Compose as an unsigned GitHub binary.
     assert "github.com/docker/compose/releases" not in ud
-    assert "fail closed" in ud.lower() or "docker compose version" in ud
+    assert "raw.githubusercontent.com" not in ud
+    assert "curl -SL" not in ud
+    assert "curl -L https://github.com/docker" not in ud
+
+
+def test_bootstrap_al2023_compose_unavailable_still_completes() -> None:
+    """AL2023 default repos lack docker-compose-plugin; bootstrap must not abort."""
+    ud = _read(USER_DATA)
+    # Forbidden: the package path that fails closed on live AL2023 hosts.
+    assert "dnf -y install docker-compose-plugin" not in ud
+    assert "dnf install docker-compose-plugin" not in ud
+    # Compose must not be a hard bootstrap gate (would prevent bootstrap.ok).
+    assert "docker compose version >/dev/null\n" not in ud
+    assert 'docker compose version >/dev/null 2>&1; then' in ud or "docker compose unavailable" in ud
+    assert "deferred" in ud.lower()
+    # Successful bootstrap artifacts must still be modeled.
+    assert "touch /opt/dealbrain/bootstrap.ok" in ud
+    assert "/opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
+    assert "chmod 0755 /opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
+    # Docker engine + fail-closed checks remain required.
+    assert "dnf -y install \\\n  docker \\" in ud or "\n  docker \\\n" in ud
+    assert "command -v docker >/dev/null" in ud
+    assert "systemctl enable docker" in ud
+    assert "systemctl start docker" in ud
+    # Deploy orchestrator still fail-closes without Compose.
+    orch = _read(HOST_SCRIPTS / "dealbrain-staging-deploy.sh")
+    assert 'docker compose version >/dev/null || die "docker compose missing"' in orch
 
 
 def test_architecture_lock_trailing_newline() -> None:
