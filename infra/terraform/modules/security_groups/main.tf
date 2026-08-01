@@ -1,6 +1,6 @@
 resource "aws_security_group" "alb" {
   name_prefix = "${var.name_prefix}-alb-"
-  description = "DealBrain ALB — HTTPS/HTTP from allowed CIDRs"
+  description = "DealBrain ALB - HTTPS/HTTP from allowed CIDRs"
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
@@ -43,7 +43,7 @@ resource "aws_vpc_security_group_egress_rule" "alb_all" {
 
 resource "aws_security_group" "api" {
   name_prefix = "${var.name_prefix}-api-"
-  description = "DealBrain API/EC2 host — traffic only from ALB"
+  description = "DealBrain API/EC2 host - traffic only from ALB"
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
@@ -77,7 +77,7 @@ resource "aws_vpc_security_group_egress_rule" "api_all" {
 # connections in this architecture.
 resource "aws_security_group" "rds" {
   name_prefix = "${var.name_prefix}-rds-"
-  description = "DealBrain RDS — PostgreSQL only from API host SG; no egress"
+  description = "DealBrain RDS - PostgreSQL only from API host SG; no egress"
   vpc_id      = var.vpc_id
 
   ingress {

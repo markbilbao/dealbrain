@@ -33,7 +33,7 @@ CI-green commit
 | Trigger | **B — `workflow_dispatch`** with `build_workflow_run_id` (manual, auditable; no artifact race) |
 | Automatic staging on every build | **Deferred** until first successful live path exists |
 | Production workflow | **Forbidden** in this sprint |
-| Host bootstrap | **A — Terraform `user_data`** (idempotent AL2023 package + dirs) |
+| Host bootstrap | **A — Terraform gzip `user_data_base64`** (idempotent AL2023 package + dirs; cloud-init runs original `staging.sh`) |
 | Release bundle | **C — S3 staging release-artifacts bucket** (integrity-checked; no host GitHub token) |
 | SSM document | **B — custom `DealBrain-StagingDeploy`**; revoke `AWS-RunShellScript` on staging deploy role once live |
 | API rollout | **In-place Compose recreate** on the single staging host |
@@ -274,16 +274,16 @@ Do **not** add production Environment behavior in 25b.3.
 | Secrets in user_data | **Forbidden** |
 | Git credentials on host | **Forbidden** |
 
-### Decision: **Option A — Terraform `user_data`**
+### Decision: **Option A — Terraform `user_data` / `user_data_base64`**
 
 | Option | Verdict |
 |--------|---------|
-| **A. Terraform user_data** | **Selected** — runs on every new instance; survives replacement; no secrets |
+| **A. Terraform user_data** | **Selected** — runs on every new instance; survives replacement; no secrets. Sprint 25b.5b submits staging bootstrap as gzip-compressed `user_data_base64` (`base64gzip(file(...))`) under the EC2 16 KiB raw limit; cloud-init executes the original script. |
 | B. One-time SSM bootstrap | Rejected as sole path — drift on replace |
 | C. Immutable AMI | Deferred — ops cost too high for launch |
 | D. Other | N/A |
 
-**Design:** Staging EC2 module receives cloud-init/`user_data` that:
+**Design:** Staging EC2 module receives cloud-init via gzip-compressed `user_data_base64` that decompresses to:
 
 1. `dnf` install docker, awscli, jq, gnupg2 (and other AL2023 default-repo tools; not full `curl` — use preinstalled `curl-minimal`)
 2. Enable/start `docker`

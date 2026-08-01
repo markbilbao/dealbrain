@@ -165,7 +165,7 @@ must not assume production shares the modernized locking model.
 - Explicitly denied: IAM admin, PassRole, Secrets Manager values, `rds:CreateDBSnapshot`,
   opposite-environment SSM targets, Terraform state writes
 - Host roles attach `AmazonSSMManagedInstanceCore`
-- Host bootstrap: `infra/ec2/user_data/staging.sh` (Amazon Docker + AWS CLI/jq; Compose via signed Docker Inc plugin only — Sprint 25b.5a; no secrets)
+- Host bootstrap: `infra/ec2/user_data/staging.sh` (Amazon Docker + AWS CLI/jq; Compose via signed Docker Inc plugin only — Sprint 25b.5a; no secrets). Staging submits this script as gzip-compressed `user_data_base64` (`base64gzip(file(...))`) so the EC2 raw payload stays within the 16,384-byte limit; cloud-init executes the original decompressed script (Sprint 25b.5b).
 
 ### GitHub Environment hard gates (live; not Terraform)
 
