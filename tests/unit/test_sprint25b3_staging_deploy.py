@@ -824,7 +824,9 @@ def test_bootstrap_al2023_compose_unavailable_still_completes() -> None:
     assert "dnf install docker-compose-plugin" not in ud
     # Compose must not be a hard bootstrap gate (would prevent bootstrap.ok).
     assert "docker compose version >/dev/null\n" not in ud
-    assert 'docker compose version >/dev/null 2>&1; then' in ud or "docker compose unavailable" in ud
+    assert (
+        "docker compose version >/dev/null 2>&1; then" in ud or "docker compose unavailable" in ud
+    )
     assert "deferred" in ud.lower()
     # Successful bootstrap artifacts must still be modeled.
     assert "touch /opt/dealbrain/bootstrap.ok" in ud
