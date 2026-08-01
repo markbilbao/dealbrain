@@ -165,7 +165,7 @@ must not assume production shares the modernized locking model.
 - Explicitly denied: IAM admin, PassRole, Secrets Manager values, `rds:CreateDBSnapshot`,
   opposite-environment SSM targets, Terraform state writes
 - Host roles attach `AmazonSSMManagedInstanceCore`
-- Host bootstrap: `infra/ec2/user_data/staging.sh` (Docker/AWS CLI/jq; Compose deferred — not in AL2023 repos; no secrets)
+- Host bootstrap: `infra/ec2/user_data/staging.sh` (Amazon Docker + AWS CLI/jq; Compose via signed Docker Inc plugin only — Sprint 25b.5a; no secrets)
 
 ### GitHub Environment hard gates (live; not Terraform)
 

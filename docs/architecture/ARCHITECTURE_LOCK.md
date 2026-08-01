@@ -254,6 +254,7 @@ Sprint 25b.3 owns the **staging-only deployment pipeline** (repository model):
 | Staging release bundle + S3 artifacts bucket | `scripts/deploy/build_staging_bundle.py`, `modules/release_artifacts/` |
 | Custom SSM document `DealBrain-StagingDeploy` | `modules/ssm_deploy_document/` (staging root wiring) |
 | Host bootstrap (`user_data`) | `infra/ec2/user_data/staging.sh` |
+| Signed Compose plugin install (AL2023 staging) | `scripts/deploy/host/install-compose-plugin.sh` (Sprint 25b.5a) |
 | Host-side secret assembly + GHCR stdin login | `scripts/deploy/host/assemble-runtime-env.py`, `ghcr-login.sh` |
 | One-shot migrate then API recreate + health gates | `scripts/deploy/host/dealbrain-staging-deploy.sh`, `verify-staging.sh` |
 | Append-only staging evidence | `schemas/staging-deploy-evidence.schema.json`, `scripts/deploy/evidence.py` |

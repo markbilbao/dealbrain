@@ -1,10 +1,10 @@
 # Sprint 25b.3 — Staging Deployment Pipeline Architecture
 
-**Status:** Architecture proposal (documentation only; no implementation by this document)  
-**Branch:** `sprint-25b3`  
-**Path:** `docs/architecture/SPRINT_25B3_STAGING_DEPLOYMENT_PIPELINE.md`  
-**Contracts:** Sprint 25 §2/§8/§15; Sprint 25a Compose/RDS/secrets; Sprint 25b.1 digest + manifest; Sprint 25b.2 OIDC + deploy IAM  
-**Predecessors:** 25b.1 merged (`c75f81f` / PR #23); 25b.2 merged (`49b73f3` / PR #24)  
+**Status:** Architecture proposal (documentation only; no implementation by this document)
+**Branch:** `sprint-25b3`
+**Path:** `docs/architecture/SPRINT_25B3_STAGING_DEPLOYMENT_PIPELINE.md`
+**Contracts:** Sprint 25 §2/§8/§15; Sprint 25a Compose/RDS/secrets; Sprint 25b.1 digest + manifest; Sprint 25b.2 OIDC + deploy IAM
+**Predecessors:** 25b.1 merged (`c75f81f` / PR #23); 25b.2 merged (`49b73f3` / PR #24)
 **Scope:** **Staging only** — no production workflow, approval, snapshot, or rollback
 
 ---
@@ -41,7 +41,7 @@ CI-green commit
 | Secrets | **Host-only** Secrets Manager reads; never from GitHub/SSM params |
 | Image authority | `ghcr.io/<owner>/<repo>@sha256:<digest>` only |
 
-**Ready for repository implementation: YES**  
+**Ready for repository implementation: YES**
 **Ready for live staging deploy: NO** until DoD C/D prerequisites below.
 
 ---
@@ -71,8 +71,8 @@ CI-green commit
 | EC2 tags `Environment`, `Role=api-compose-host`, `Project=dealbrain` | **Repository-implemented** |
 | GHCR secret container `dealbrain/staging/ghcr_pull` | **Repository-implemented** (empty values) |
 | RDS managed secret ARN + endpoint/port/db_name | **Repository-implemented** |
-| `user_data` Docker/Compose bootstrap | **Missing** (variable exists; env roots pass empty) |
-| Docker / Compose / AWS CLI / jq on host | **Live prerequisite** (not installed by TF today) |
+| `user_data` Docker/Compose bootstrap | **Repository-implemented** (`infra/ec2/user_data/staging.sh`; signed Compose plugin via Sprint 25b.5a). Earlier inventory revisions marked this missing before the 25b.3 bootstrap script landed. |
+| Docker / Compose / AWS CLI / jq on host | **Repository-implemented** in staging `user_data` (live host still requires apply/replace to pick up bootstrap) |
 | SSM Agent registered / Online | **Live prerequisite** (AL2023 expected; needs apply + NAT) |
 | Staging TF applied | **Live prerequisite** — **not performed** |
 | GitHub Environment `staging` (`main` only) | **Live prerequisite** — **not configured** |
@@ -85,7 +85,7 @@ CI-green commit
 
 ### 2.3 Compose contract (exact)
 
-**Files:** `infra/compose/docker-compose.base.yml` + `docker-compose.staging.yml`  
+**Files:** `infra/compose/docker-compose.base.yml` + `docker-compose.staging.yml`
 **Project name:** `dealbrain-staging`
 
 | Service | Image | Profile | Command | Restart |
@@ -93,21 +93,21 @@ CI-green commit
 | `api` | `${DEALBRAIN_IMAGE}` | (default) | image CMD (uvicorn) | `unless-stopped` |
 | `migrate` | same digest | `migrate` | `alembic upgrade head` | `no` |
 
-Required at render time: `DEALBRAIN_IMAGE`, `APP_ENV`, `DATABASE_URL`, `CORS_ORIGINS` (plus optional AI keys / `APP_SECRET_KEY`).  
-Staging overlay forces `APP_ENV=staging`.  
-**API must not run Alembic.** Migrate is one-shot:  
+Required at render time: `DEALBRAIN_IMAGE`, `APP_ENV`, `DATABASE_URL`, `CORS_ORIGINS` (plus optional AI keys / `APP_SECRET_KEY`).
+Staging overlay forces `APP_ENV=staging`.
+**API must not run Alembic.** Migrate is one-shot:
 `docker compose -f …base.yml -f …staging.yml --profile migrate run --rm migrate`
 
 ### 2.4 Current blockers
 
 **Blockers to live deploy (not blockers to coding 25b.3):**
 
-1. Remote state not bootstrapped / backends commented  
-2. No evidence staging stack was applied  
-3. GitHub Environment `staging` not configured (`main` only)  
-4. Secret values (app + GHCR PAT) not populated  
-5. Host bootstrap (Docker/Compose) not modeled yet (this sprint owns it)  
-6. SSM Agent Online not verified  
+1. Remote state not bootstrapped / backends commented
+2. No evidence staging stack was applied
+3. GitHub Environment `staging` not configured (`main` only)
+4. Secret values (app + GHCR PAT) not populated
+5. Host bootstrap (Docker/Compose) not modeled yet (this sprint owns it)
+6. SSM Agent Online not verified
 
 ---
 
@@ -121,7 +121,7 @@ Staging overlay forces `APP_ENV=staging`.
 | **B. `workflow_dispatch`** | **Selected** — explicit operator intent; stable artifact download by run ID |
 | C. Reusable workflow from build | Rejected — couples publish to deploy; harder to gate on Environment |
 
-**File:** `.github/workflows/deploy-staging.yml`  
+**File:** `.github/workflows/deploy-staging.yml`
 **Name:** `Deploy Staging`
 
 ### Triggers
@@ -140,9 +140,9 @@ on:
         type: string
 ```
 
-- **Automatic vs manual:** Manual for 25b.3 launch.  
-- **No** `workflow_run`, **no** PR triggers, **no** production workflow.  
-- Forks: job `if: github.event.repository.fork == false`.  
+- **Automatic vs manual:** Manual for 25b.3 launch.
+- **No** `workflow_run`, **no** PR triggers, **no** production workflow.
+- Forks: job `if: github.event.repository.fork == false`.
 - Ref: must be `refs/heads/main` (Environment branch rule is the hard gate; workflow also asserts).
 
 ### Permissions / environment
@@ -175,11 +175,11 @@ concurrency:
 
 Use GitHub API + `gh` / `actions/download-artifact` **against the build run**:
 
-1. `gh run view <build_workflow_run_id> --json conclusion,headSha,event,workflowName,status`  
-2. Assert `workflowName` = `Build Image`, `conclusion` = `success`, `status` = `completed`  
-3. List artifacts; find `release-manifest-<release_id>`  
-4. Download via `gh run download <build_run_id> -n release-manifest-<id>`  
-5. Fail closed if missing / multiple ambiguous / cancelled upstream  
+1. `gh run view <build_workflow_run_id> --json conclusion,headSha,event,workflowName,status`
+2. Assert `workflowName` = `Build Image`, `conclusion` = `success`, `status` = `completed`
+3. List artifacts; find `release-manifest-<release_id>`
+4. Download via `gh run download <build_run_id> -n release-manifest-<id>`
+5. Fail closed if missing / multiple ambiguous / cancelled upstream
 
 ---
 
@@ -206,10 +206,10 @@ From `release-manifest.json` (25b.1 schema):
 
 ### Additional evidence checks
 
-1. **GHCR digest exists:** `docker buildx imagetools inspect ${repo}@${digest}` (or GHCR API) after packages login with `GITHUB_TOKEN`  
-2. **CI green:** `gh run view <test_workflow_run_id>` → success + same SHA  
-3. **Reject** manifests with `staging_deployment_run_id` already set (built-state invariant)  
-4. **Never** treat tag-only identity as deployable  
+1. **GHCR digest exists:** `docker buildx imagetools inspect ${repo}@${digest}` (or GHCR API) after packages login with `GITHUB_TOKEN`
+2. **CI green:** `gh run view <test_workflow_run_id>` → success + same SHA
+3. **Reject** manifests with `staging_deployment_run_id` already set (built-state invariant)
+4. **Never** treat tag-only identity as deployable
 
 ### Permissions needed
 
@@ -285,16 +285,16 @@ Do **not** add production Environment behavior in 25b.3.
 
 **Design:** Staging EC2 module receives cloud-init/`user_data` that:
 
-1. `dnf` install docker, awscli, jq (and other AL2023 default-repo tools; not full `curl` — use preinstalled `curl-minimal`)  
-2. Enable/start `docker`  
-3. **Do not** install Compose from default AL2023 repos (package unavailable) or via unsigned binaries (Sprint 25b.4c)  
-4. Create directory layout + marker `/opt/dealbrain/bootstrap.ok` after Docker/tooling checks  
-5. Never embeds tokens, PAT, or DB passwords  
+1. `dnf` install docker, awscli, jq, gnupg2 (and other AL2023 default-repo tools; not full `curl` — use preinstalled `curl-minimal`)
+2. Enable/start `docker`
+3. Install Compose via signed Docker Inc path only (`scripts/deploy/host/install-compose-plugin.sh` — Sprint 25b.5a): plugin RPM only, Amazon engine retained, no unsigned binaries, no `docker-ce` / `--allowerasing`
+4. Create directory layout + marker `/opt/dealbrain/bootstrap.ok` after Docker + Compose + tooling checks
+5. Never embeds tokens, PAT, or DB passwords
 
-**Idempotence:** Re-run safe package installs; marker written after bootstrap-owned Docker/tooling checks (Compose is optional at bootstrap).  
-**Verification:** Deploy script aborts if `bootstrap.ok` missing or `docker`/`compose` fail.  
-**Compose:** Required at deploy time; fail-closed in the orchestrator until a signed/reviewed Compose CLI path exists.  
-**Package failures:** Instance unhealthy until fixed; SSM deploy fails closed without Compose.
+**Idempotence:** Re-run safe package installs + compose installer short-circuit; marker written only after `docker compose version` succeeds.
+**Verification:** Deploy script aborts if `bootstrap.ok` missing or `docker`/`compose` fail.
+**Compose:** Required at bootstrap (25b.5a) and again at deploy time (orchestrator defense in depth).
+**Package failures:** Instance unhealthy until fixed; no `bootstrap.ok` / SSM deploy fails closed without Compose.
 
 Bootstrap script content lives in-repo (`infra/ec2/user_data/staging.sh` or Terraform `templatefile`) — **no secrets**.
 
@@ -323,9 +323,9 @@ Bootstrap script content lives in-repo (`infra/ec2/user_data/staging.sh` or Terr
 | Versioning | Enabled |
 | Lifecycle | Expire incomplete multipart; optional 90-day object expiry |
 
-**Object key:**  
-`releases/<release_id>/bundle.tar.gz`  
-`releases/<release_id>/bundle.sha256`  
+**Object key:**
+`releases/<release_id>/bundle.tar.gz`
+`releases/<release_id>/bundle.sha256`
 `evidence/<release_id>/<deploy_run_id>/staging-deploy-evidence.json`
 
 ### Bundle contents (exact)
@@ -341,8 +341,8 @@ manifest/release-manifest.json       # copy of validated built manifest
 bundle-meta.json                     # release_id, git_sha, image_digest, files sha256 map
 ```
 
-**Integrity:** Workflow computes SHA-256 of tarball; host verifies before extract.  
-**Linkage:** `bundle-meta.json` must include same `image_digest` + `release_id` as SSM params.  
+**Integrity:** Workflow computes SHA-256 of tarball; host verifies before extract.
+**Linkage:** `bundle-meta.json` must include same `image_digest` + `release_id` as SSM params.
 **Production material:** Bucket is staging-only; production Compose overlay **must not** be included.
 
 ### IAM updates (25b.3)
@@ -394,8 +394,8 @@ Document body **must not** interpolate parameters into free-form shell (`command
 
 ### Output / evidence
 
-- `CloudWatchOutputConfig` optional (25c); for 25b.3 capture via `GetCommandInvocation` Stdout/Stderr with redaction  
-- Non-zero script exit → workflow fails  
+- `CloudWatchOutputConfig` optional (25c); for 25b.3 capture via `GetCommandInvocation` Stdout/Stderr with redaction
+- Non-zero script exit → workflow fails
 - CloudTrail: `SendCommand` under role session `gha-<run_id>-staging`
 
 ### GHA SendCommand shape
@@ -443,7 +443,7 @@ DATABASE_URL=postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}
 | `dealbrain/staging/cors_origins` | `CORS_ORIGINS` |
 | `dealbrain/staging/monitoring` | optional / reserved |
 
-Missing **required** secrets (`app_secret_key`, `cors_origins`, RDS secret) → fail closed.  
+Missing **required** secrets (`app_secret_key`, `cors_origins`, RDS secret) → fail closed.
 Optional AI keys may be empty if live HTTP disabled.
 
 ### Env file contract
@@ -460,7 +460,7 @@ Optional AI keys may be empty if live HTTP disabled.
 
 ### Compose secret exposure (accepted launch risk)
 
-Docker Compose `environment:` / `env_file` places values in **container config** visible via `docker inspect` to anyone with Docker socket (root on host).  
+Docker Compose `environment:` / `env_file` places values in **container config** visible via `docker inspect` to anyone with Docker socket (root on host).
 
 **Accepted residual risk for staging launch:** host root / Docker group is already a secret peer (same as SM read). Mitigations: private subnet, IMDSv2, no SSH, no shared host users, 0600 env file, no secrets in SSM/GitHub logs. **Deferred hardening:** Docker secrets / tmpfs-only env injection (P30+).
 
@@ -470,10 +470,10 @@ Docker Compose `environment:` / `env_file` places values in **container config**
 
 ### Host-side login
 
-1. `GetSecretValue` → `dealbrain/staging/ghcr_pull`  
-2. Parse JSON `username` + `token`  
-3. `printf '%s' "$token" | docker login ghcr.io -u "$username" --password-stdin`  
-4. Never echo token; never pass via argv  
+1. `GetSecretValue` → `dealbrain/staging/ghcr_pull`
+2. Parse JSON `username` + `token`
+3. `printf '%s' "$token" | docker login ghcr.io -u "$username" --password-stdin`
+4. Never echo token; never pass via argv
 
 | Topic | Spec |
 |-------|------|
@@ -490,7 +490,7 @@ Docker Compose `environment:` / `env_file` places values in **container config**
 
 Disk free space **must** be verified at two points:
 
-1. **Before image pull** — fail closed if free space `< 4 GiB`  
+1. **Before image pull** — fail closed if free space `< 4 GiB`
 2. **After image pull** — fail closed if free space `< 2 GiB` (or if pull consumed unexpected capacity leaving the host below the post-pull floor)
 
 Both checks are hard gates. Partial pulls that leave the host disk-starved must abort before migrate/API recreate.
@@ -501,20 +501,20 @@ Both checks are hard gates. Partial pulls that leave the host disk-starved must 
 
 Exact order on host (under flock):
 
-1. Acquire `/opt/dealbrain/locks/staging-deploy.lock` (`flock -n` or wait with timeout)  
-2. Verify SSM params vs `bundle-meta.json` / manifest  
-3. Download + checksum S3 bundle; extract to `/opt/dealbrain/releases/<release_id>`  
-4. Symlink `pending` → that release (optional); **do not** advance `current` until health gates pass  
-5. Assemble runtime env (0600)  
-6. GHCR login + **disk check before pull** + **pull digest** + **disk check after pull**  
-7. `docker compose … config` validate  
-8. Record `alembic current` (one-shot helper container or `compose run` with `alembic current`) → `migration_revision_before`  
-9. `timeout 1200s docker compose -f base -f staging --profile migrate run --rm migrate`  
-10. Record `alembic current` → `migration_revision_after`; require exit 0  
-11. Recreate API (`up -d --force-recreate --no-deps api` or equivalent)  
-12. Health gates  
-13. Write `DEPLOY_VERSION` into the release dir; atomically update `current`; retain prior release directory  
-14. Write+upload evidence to S3; release lock  
+1. Acquire `/opt/dealbrain/locks/staging-deploy.lock` (`flock -n` or wait with timeout)
+2. Verify SSM params vs `bundle-meta.json` / manifest
+3. Download + checksum S3 bundle; extract to `/opt/dealbrain/releases/<release_id>`
+4. Symlink `pending` → that release (optional); **do not** advance `current` until health gates pass
+5. Assemble runtime env (0600)
+6. GHCR login + **disk check before pull** + **pull digest** + **disk check after pull**
+7. `docker compose … config` validate
+8. Record `alembic current` (one-shot helper container or `compose run` with `alembic current`) → `migration_revision_before`
+9. `timeout 1200s docker compose -f base -f staging --profile migrate run --rm migrate`
+10. Record `alembic current` → `migration_revision_after`; require exit 0
+11. Recreate API (`up -d --force-recreate --no-deps api` or equivalent)
+12. Health gates
+13. Write `DEPLOY_VERSION` into the release dir; atomically update `current`; retain prior release directory
+14. Write+upload evidence to S3; release lock
 
 | Topic | Spec |
 |-------|------|
@@ -550,8 +550,8 @@ This file is non-secret host state for operators and verification scripts. It mu
 
 Under `/opt/dealbrain/releases/`:
 
-- Keep the **current** release directory (target of the `current` symlink)  
-- Keep at least the **previous** release directory  
+- Keep the **current** release directory (target of the `current` symlink)
+- Keep at least the **previous** release directory
 
 Older directories beyond current + previous may be pruned after a successful deploy. Retention of current + previous supports manual staging recovery without an automated rollback workflow (deferred to 25b.5).
 
@@ -656,7 +656,7 @@ No production approval identity.
 
 Add `schemas/staging-deploy-evidence.schema.json` + Python validator mirroring manifest checksum model.
 
-Logical status transition (derived view):  
+Logical status transition (derived view):
 `built`/`none` → evidence `staging_ok`/`staging` (build artifact unchanged).
 
 ---
@@ -757,42 +757,42 @@ Lock metadata file: `/opt/dealbrain/locks/staging-deploy.lock.info` JSON with `r
 
 Assert at minimum:
 
-1. `deploy-staging.yml` exists.  
-2. It uses `environment: staging`.  
-3. It uses OIDC and no static keys.  
-4. It assumes only the staging role.  
-5. It cannot target production.  
-6. It validates release manifest and checksum.  
-7. It verifies CI/build workflow evidence.  
-8. It deploys by digest only.  
-9. It does not rebuild.  
-10. It does not use mutable tags.  
-11. It uses SSM only.  
-12. No SSH.  
-13. No secrets passed from GitHub.  
-14. Runtime secret assembly is host-side.  
-15. GHCR login uses password-stdin.  
-16. `DATABASE_URL` encoding is tested.  
-17. Secret env file uses 0600.  
-18. Migration runs separately.  
-19. API startup does not run Alembic.  
-20. API rollout happens only after migration success.  
-21. Concurrency cancellation is false.  
-22. Host flock exists.  
-23. Staging and production resource isolation.  
-24. Probe semantics unchanged.  
-25. ALB health verification exists.  
-26. Evidence schema validates.  
-27. Evidence checksum detects tampering.  
-28. No production workflow exists.  
-29. No DB snapshot permission/execution.  
-30. No Terraform apply.  
-31. Existing 25a, 25b.1, and 25b.2 tests remain green.  
-32. Secret scan and Ruff baseline remain green.  
-33. Disk-space checks exist before and after image pull.  
-34. `DEPLOY_VERSION` is written with `release_id`, `git_sha`, `image_digest`, `deployed_at`.  
-35. Current and previous release directories are retained.  
-36. Evidence includes deployment timing fields.  
+1. `deploy-staging.yml` exists.
+2. It uses `environment: staging`.
+3. It uses OIDC and no static keys.
+4. It assumes only the staging role.
+5. It cannot target production.
+6. It validates release manifest and checksum.
+7. It verifies CI/build workflow evidence.
+8. It deploys by digest only.
+9. It does not rebuild.
+10. It does not use mutable tags.
+11. It uses SSM only.
+12. No SSH.
+13. No secrets passed from GitHub.
+14. Runtime secret assembly is host-side.
+15. GHCR login uses password-stdin.
+16. `DATABASE_URL` encoding is tested.
+17. Secret env file uses 0600.
+18. Migration runs separately.
+19. API startup does not run Alembic.
+20. API rollout happens only after migration success.
+21. Concurrency cancellation is false.
+22. Host flock exists.
+23. Staging and production resource isolation.
+24. Probe semantics unchanged.
+25. ALB health verification exists.
+26. Evidence schema validates.
+27. Evidence checksum detects tampering.
+28. No production workflow exists.
+29. No DB snapshot permission/execution.
+30. No Terraform apply.
+31. Existing 25a, 25b.1, and 25b.2 tests remain green.
+32. Secret scan and Ruff baseline remain green.
+33. Disk-space checks exist before and after image pull.
+34. `DEPLOY_VERSION` is written with `release_id`, `git_sha`, `image_digest`, `deployed_at`.
+35. Current and previous release directories are retained.
+36. Evidence includes deployment timing fields.
 37. Evidence includes Docker image metadata (`image_id`, `repo_digest`, `image_created_at`).
 
 **Note:** Update 25b.1/25b.2 tests that currently assert `deploy-staging.yml` **must not exist** — flip to 25b.3 positive assertions.
@@ -890,58 +890,58 @@ Assert at minimum:
 
 ### A. Architecture complete
 
-- [x] This document selects concrete designs for all 20 sections  
-- [x] Operational refinements recorded: `DEPLOY_VERSION`, release retention, deployment timing, pre/post-pull disk checks, Docker image metadata in evidence  
-- [ ] Stakeholder sign-off  
+- [x] This document selects concrete designs for all 20 sections
+- [x] Operational refinements recorded: `DEPLOY_VERSION`, release retention, deployment timing, pre/post-pull disk checks, Docker image metadata in evidence
+- [ ] Stakeholder sign-off
 
 ### B. Repository implementation complete
 
-- [ ] `deploy-staging.yml` exists; **no** `deploy-production.yml` / `rollback.yml`  
-- [ ] Digest authority; manifest validation; OIDC staging only  
-- [ ] Custom SSM doc modeled; RunShellScript removed from staging role allowlist  
-- [ ] Host bootstrap + S3 bundle + host scripts  
-- [ ] Host-side secrets + GHCR stdin login  
-- [ ] Disk checks before and after image pull  
-- [ ] Migrate then API; health + evidence; concurrency + flock  
-- [ ] `/opt/dealbrain/current/DEPLOY_VERSION` written on success  
-- [ ] Current and previous release directories retained  
-- [ ] Evidence includes timing and Docker image metadata fields  
-- [ ] Tests green; no secrets in fixtures; lock additive; docs accurate  
+- [ ] `deploy-staging.yml` exists; **no** `deploy-production.yml` / `rollback.yml`
+- [ ] Digest authority; manifest validation; OIDC staging only
+- [ ] Custom SSM doc modeled; RunShellScript removed from staging role allowlist
+- [ ] Host bootstrap + S3 bundle + host scripts
+- [ ] Host-side secrets + GHCR stdin login
+- [ ] Disk checks before and after image pull
+- [ ] Migrate then API; health + evidence; concurrency + flock
+- [ ] `/opt/dealbrain/current/DEPLOY_VERSION` written on success
+- [ ] Current and previous release directories retained
+- [ ] Evidence includes timing and Docker image metadata fields
+- [ ] Tests green; no secrets in fixtures; lock additive; docs accurate
 
 ### C. Live prerequisite complete
 
-- [ ] Account + staging Terraform applied; remote state active  
-- [ ] GitHub `staging` Environment: exact name, `main` only  
-- [ ] Vars: role ARN / account / region  
-- [ ] Instance SSM Online; Docker present (`bootstrap.ok`); Compose available via signed path before deploy  
-- [ ] App secrets + GHCR classic PAT populated  
-- [ ] RDS reachable from host; ALB TG attached  
+- [ ] Account + staging Terraform applied; remote state active
+- [ ] GitHub `staging` Environment: exact name, `main` only
+- [ ] Vars: role ARN / account / region
+- [ ] Instance SSM Online; Docker + Compose present (`bootstrap.ok` implies signed plugin path succeeded — Sprint 25b.5a)
+- [ ] App secrets + GHCR classic PAT populated
+- [ ] RDS reachable from host; ALB TG attached
 
 ### D. Live staging deployment evidence complete
 
-- [ ] One successful digest deploy with evidence artifact + S3 object  
-- [ ] Safe failure-path probes (e.g. bad checksum / wrong role) recorded  
+- [ ] One successful digest deploy with evidence artifact + S3 object
+- [ ] Safe failure-path probes (e.g. bad checksum / wrong role) recorded
 
 ### E. Security verification complete
 
-- [ ] No secrets in GHA/SSM logs  
-- [ ] Staging cannot SendCommand to production  
-- [ ] Deploy role cannot GetSecretValue  
-- [ ] Digest-only pull proven  
+- [ ] No secrets in GHA/SSM logs
+- [ ] Staging cannot SendCommand to production
+- [ ] Deploy role cannot GetSecretValue
+- [ ] Digest-only pull proven
 
 ---
 
 ## 21. Assumptions
 
-1. Single AWS account; region `us-east-1` (25a freeze).  
-2. Repo identity `markbilbao/dealbrain` (legacy OIDC `sub`).  
-3. One staging EC2 Compose host.  
-4. AL2023 + NAT for SSM/GHCR/SM.  
-5. GHCR private; classic PAT `read:packages`.  
-6. Operators complete Environment hard gates before assume-in-anger.  
-7. ACM may be empty initially (HTTP ALB) — TG health still authoritative.  
-8. Staging accepts short in-place downtime.  
-9. No production touch in this sprint.  
+1. Single AWS account; region `us-east-1` (25a freeze).
+2. Repo identity `markbilbao/dealbrain` (legacy OIDC `sub`).
+3. One staging EC2 Compose host.
+4. AL2023 + NAT for SSM/GHCR/SM.
+5. GHCR private; classic PAT `read:packages`.
+6. Operators complete Environment hard gates before assume-in-anger.
+7. ACM may be empty initially (HTTP ALB) — TG health still authoritative.
+8. Staging accepts short in-place downtime.
+9. No production touch in this sprint.
 
 ---
 
@@ -978,8 +978,8 @@ No DealScore / Recommendation / Shopping Assistant / marketplace / affiliate / A
 
 The following were approved as normative for Sprint 25b.3 implementation and are woven into §§6, 10–14, 16, 18–20:
 
-1. **`/opt/dealbrain/current/DEPLOY_VERSION`** containing `release_id`, `git_sha`, `image_digest`, `deployed_at`.  
-2. **Release retention:** at least current and previous directories under `/opt/dealbrain/releases/`.  
-3. **Evidence timing:** `deployment_started_at`, `deployment_finished_at`, `deployment_duration_seconds`.  
-4. **Disk checks:** required both before and after image pull.  
+1. **`/opt/dealbrain/current/DEPLOY_VERSION`** containing `release_id`, `git_sha`, `image_digest`, `deployed_at`.
+2. **Release retention:** at least current and previous directories under `/opt/dealbrain/releases/`.
+3. **Evidence timing:** `deployment_started_at`, `deployment_finished_at`, `deployment_duration_seconds`.
+4. **Disk checks:** required both before and after image pull.
 5. **Evidence image metadata:** `image_id`, `repo_digest`, `image_created_at`.
