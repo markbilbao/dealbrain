@@ -38,8 +38,10 @@ locals {
     Sprint      = "25a"
   })
 
-  # Sprint 25b.3 — idempotent AL2023 bootstrap + thin SSM entrypoint (no secrets).
-  staging_user_data = file("${path.module}/../../../ec2/user_data/staging.sh")
+  # Sprint 25b.3 / 25b.5b — idempotent AL2023 bootstrap + thin SSM entrypoint (no secrets).
+  # Gzip+base64 at the Terraform boundary so the EC2 raw user-data payload stays
+  # under the 16,384-byte limit; cloud-init decompresses to staging.sh bytes.
+  staging_user_data_base64 = base64gzip(file("${path.module}/../../../ec2/user_data/staging.sh"))
 }
 
 module "networking" {
@@ -152,7 +154,7 @@ module "ec2" {
   target_group_arn          = module.alb.target_group_arn
   associate_public_ip       = false
   root_volume_size_gb       = var.root_volume_size_gb
-  user_data                 = local.staging_user_data
+  user_data_base64          = local.staging_user_data_base64
   tags                      = local.common_tags
 }
 

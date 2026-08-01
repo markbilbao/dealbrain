@@ -47,8 +47,8 @@ variable "root_volume_size_gb" {
   default     = 30
 }
 
-variable "user_data" {
-  description = "Optional cloud-init / user-data script (Docker install deferred to deploy phase)."
+variable "user_data_base64" {
+  description = "Optional gzip-compressed, base64-encoded cloud-init user data for aws_instance.user_data_base64. Empty leaves user data unset. Do not pass plaintext via a parallel user_data argument."
   type        = string
   default     = ""
 }

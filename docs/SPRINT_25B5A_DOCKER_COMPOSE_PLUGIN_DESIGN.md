@@ -87,7 +87,7 @@ Once the installer intends to enable the Docker Inc repo:
 | Path | Role |
 |------|------|
 | `scripts/deploy/host/install-compose-plugin.sh` | Reviewed idempotent installer (source of truth) |
-| `infra/ec2/user_data/staging.sh` | Embeds + runs installer; hard-gates Compose before `bootstrap.ok` |
+| `infra/ec2/user_data/staging.sh` | Embeds + runs installer; hard-gates Compose before `bootstrap.ok`. Staging Terraform submits this file as gzip-compressed `user_data_base64` (`base64gzip`); cloud-init executes the original script bytes (Sprint 25b.5b). |
 | `tests/unit/test_sprint25b3_staging_deploy.py` | Signed-path / denylist / fingerprint / fail-safe cleanup / embed-sync tests |
 
 ## Maintenance

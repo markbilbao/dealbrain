@@ -168,7 +168,7 @@ AWS Free Plan blocked the example sizing. Local staging tfvars (gitignored) were
 
 ### Security group descriptions (not in this PR)
 
-During live apply, AWS rejected non-ASCII em dashes (`—`) in security group `GroupDescription` values. Operators worked around that for the live staging apply. **That ASCII description change is not included in this PR** (no Terraform behavior change in this branch). Track separately if a future apply should carry ASCII-only descriptions in `infra/terraform/modules/security_groups/main.tf`.
+During live apply, AWS rejected non-ASCII em dashes (`—`) in security group `GroupDescription` values. Operators worked around that for the live staging apply with ASCII hyphens. **Resolved in-repo by Sprint 25b.5b:** `infra/terraform/modules/security_groups/main.tf` now uses ASCII hyphens only in AWS security-group descriptions so plans no longer propose SG replacement for punctuation drift.
 
 ## Remaining blockers (before first Deploy Staging)
 

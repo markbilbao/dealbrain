@@ -300,8 +300,10 @@ def test_host_bootstrap_modeled() -> None:
     for needle in ("GITHUB_TOKEN", "DATABASE_URL=", "secret_key"):
         assert needle not in ud
     staging = _read(STAGING_TF / "main.tf")
-    assert "staging_user_data" in staging
-    assert "user_data" in staging
+    assert "staging_user_data_base64" in staging
+    assert "user_data_base64" in staging
+    assert "base64gzip" in staging
+    assert re.search(r"^\s*user_data\s*=", staging, re.MULTILINE) is None
 
 
 def test_runtime_secrets_host_side() -> None:
@@ -1148,8 +1150,11 @@ def test_bootstrap_signed_compose_plugin_path() -> None:
     # Production must not gain user_data / compose installer wiring.
     prod = _read(PROD_TF / "main.tf")
     assert "staging_user_data" not in prod
+    assert "staging_user_data_base64" not in prod
     assert "install-compose-plugin" not in prod
     assert "user_data" not in prod
+    assert "user_data_base64" not in prod
+    assert "base64gzip" not in prod
 
     # Deploy orchestrator still fail-closes without Compose (defense in depth).
     orch = _read(HOST_SCRIPTS / "dealbrain-staging-deploy.sh")

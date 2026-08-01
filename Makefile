@@ -46,6 +46,7 @@ validate-oidc:
 validate-staging-deploy:
 	uv run pytest \
 		tests/unit/test_sprint25b3_staging_deploy.py \
+		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py -q
@@ -61,6 +62,7 @@ validate-pre-live:
 	uv run pytest \
 		tests/unit/test_sprint25b4a_pre_live_refinements.py \
 		tests/unit/test_sprint25b3_staging_deploy.py \
+		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py -q

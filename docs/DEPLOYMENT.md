@@ -99,7 +99,7 @@ Repository implementation:
   `dealbrain-staging-gha-deploy`, custom SSM `DealBrain-StagingDeploy`
 - Release-manifest ingestion + immutable digest pull (no rebuild)
 - S3 staging release-artifacts bucket + integrity-checked bundle
-- Host bootstrap via Terraform `user_data` (`infra/ec2/user_data/staging.sh`)
+- Host bootstrap via Terraform gzip-compressed `user_data_base64` (`infra/ec2/user_data/staging.sh`; cloud-init runs the original script)
 - Host-side Secrets Manager assembly of `DATABASE_URL` (URL-encoded) + app secrets
 - One-shot `migrate` then API recreate; `/live` + `/ready` + ALB gates
 - Append-only `staging-deploy-evidence.json` (GitHub artifact + S3)
