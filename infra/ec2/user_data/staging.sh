@@ -1,10 +1,15 @@
 #!/bin/bash
-# DealBrain staging EC2 user_data bootstrap (Sprint 25b.3).
+# DealBrain staging EC2 user_data bootstrap (Sprint 25b.3 / 25b.4c).
 # Amazon Linux 2023 — idempotent, no secrets, no GitHub credentials.
 #
-# Installs packages, directory layout, and a thin fixed SSM entrypoint that
-# acquires the deploy lock, safely extracts the release bundle, then runs the
-# release orchestrator.
+# Installs AL2023 packages, directory layout, and a thin fixed SSM entrypoint
+# that acquires the deploy lock, safely extracts the release bundle, then runs
+# the release orchestrator.
+#
+# Compose is intentionally NOT required here: default AL2023 dnf repos do not
+# ship docker-compose-plugin, and unsigned GitHub binary installs are forbidden.
+# The deploy orchestrator fail-closes if `docker compose` is absent when a
+# release bundle is applied.
 set -euo pipefail
 
 LOG=/var/log/dealbrain/bootstrap.log
@@ -21,13 +26,16 @@ install -d -o root -g root -m 0755 /opt/dealbrain/locks
 install -d -o root -g root -m 0755 /opt/dealbrain/bin
 install -d -o root -g root -m 0755 /var/log/dealbrain
 
-# Packages (AL2023)
+# Packages (AL2023 default repos only — fail closed on missing packages).
 dnf -y update || true
+# AL2023 ships curl-minimal; installing the full `curl` package conflicts and
+# aborts bootstrap (bootstrap.ok never written). Prefer the preinstalled curl.
+# Do NOT install docker-compose-plugin: it is unavailable in default AL2023
+# repos and must not be replaced with an unsigned binary download.
 dnf -y install \
   docker \
   awscli \
   jq \
-  curl \
   python3 \
   tar \
   gzip \
@@ -35,18 +43,13 @@ dnf -y install \
   util-linux \
   coreutils
 
-# Docker Compose plugin — AL2023 package only; fail closed (no unsigned binary).
-if ! docker compose version >/dev/null 2>&1; then
-  dnf -y install docker-compose-plugin
-fi
-docker compose version >/dev/null
-
 systemctl enable docker
 systemctl start docker
 
+# Fail closed on bootstrap-owned runtime tools. Compose is optional at this
+# stage (may be absent on AL2023); deploy remains fail-closed without it.
 command -v docker >/dev/null
 docker --version
-docker compose version
 command -v aws >/dev/null
 aws --version
 command -v jq >/dev/null
@@ -54,6 +57,13 @@ command -v curl >/dev/null
 command -v python3 >/dev/null
 command -v flock >/dev/null
 command -v timeout >/dev/null
+
+if docker compose version >/dev/null 2>&1; then
+  docker compose version
+  echo "docker compose available at bootstrap"
+else
+  echo "docker compose unavailable from AL2023 packages; deferred (deploy fail-closed)"
+fi
 
 # Fixed safe-extract helper (mirrors scripts/deploy/verify_staging_bundle.py contract).
 # Updated from release bundles after first successful extract.
