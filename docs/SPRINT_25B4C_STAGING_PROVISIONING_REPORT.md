@@ -84,7 +84,7 @@ Unsigned GitHub Compose binary downloads are **forbidden** and were not used.
 
 ### Sprint 25b.4c solution (repository)
 
-Defer Compose **out of bootstrap**. Staging user_data now:
+Defer Compose **out of bootstrap**. Staging user_data (as of 25b.4c):
 
 - Installs Docker Engine and bootstrap tools from AL2023 default repos only.
 - Fail-closes if Docker / awscli / jq / curl / python3 / flock / timeout are missing.
@@ -92,21 +92,21 @@ Defer Compose **out of bootstrap**. Staging user_data now:
 - Still creates the fixed SSM entrypoint and `/opt/dealbrain/bootstrap.ok` after bootstrap-owned checks pass.
 - Does **not** install Compose via `dnf`, Docker CE third-party repos, or unsigned binaries.
 
-`bootstrap.ok` therefore means: Docker engine + host layout + entrypoint are ready. It does **not** mean Compose CLI is present.
+`bootstrap.ok` (25b.4c meaning): Docker engine + host layout + entrypoint are ready. It does **not** mean Compose CLI is present.
 
-### Deploy still requires Docker Compose
+### Follow-on: Sprint 25b.5a signed Compose path
 
-The release orchestrator (`scripts/deploy/host/dealbrain-staging-deploy.sh`) remains fail-closed:
+**Resolved in-repo by Sprint 25b.5a.** See [`docs/SPRINT_25B5A_DOCKER_COMPOSE_PLUGIN_DESIGN.md`](SPRINT_25B5A_DOCKER_COMPOSE_PLUGIN_DESIGN.md) and `scripts/deploy/host/install-compose-plugin.sh`. Staging bootstrap now installs only `docker-compose-plugin` from Docker Inc RHEL9 stable after GPG fingerprint verification, keeps the Amazon `docker` engine, disables the third-party repo (`enabled=0` + `includepkgs`), and writes `bootstrap.ok` only after `docker compose version` succeeds. Unsigned GitHub binaries remain forbidden.
+
+The release orchestrator (`scripts/deploy/host/dealbrain-staging-deploy.sh`) remains fail-closed as defense in depth:
 
 ```text
 docker compose version >/dev/null || die "docker compose missing"
 ```
 
-**No signed AL2023 installation path for Docker Compose has been implemented yet.** First Deploy Staging will fail closed until an operator/follow-on sprint provides a reviewed Compose delivery method (for example an AL2023-packaged plugin when Amazon ships it, or another signed/reviewed path). This sprint intentionally does not add unsigned binary installs.
-
 ### Live host status
 
-The running instance (`i-0d09a608f9c776b8c`) still has the pre-fix user_data outcome (no `bootstrap.ok`). Applying the 25b.4c script requires a clean EC2 replacement (prefer `terraform plan -replace=...`, not `taint`). After replace + successful cloud-init, expect `bootstrap.ok` and the entrypoint; Compose CLI will still be absent until a signed path exists.
+The running instance (`i-0d09a608f9c776b8c`) still has the pre-fix user_data outcome (no `bootstrap.ok`). Applying the 25b.5a script requires a clean EC2 replacement (prefer `terraform plan -replace=...`, not `taint`) under a separate approval gate. After replace + successful cloud-init, expect `bootstrap.ok`, the entrypoint, and a working `docker compose` CLI.
 
 ## Outputs (non-secret)
 
@@ -172,8 +172,8 @@ During live apply, AWS rejected non-ASCII em dashes (`—`) in security group `G
 
 ## Remaining blockers (before first Deploy Staging)
 
-1. **Replace the staging EC2 instance** with the 25b.4c user_data so `/opt/dealbrain/bootstrap.ok` and the deploy entrypoint exist on the live host.
-2. **Provide a signed/reviewed Docker Compose CLI path** — deploy remains fail-closed without `docker compose`. No AL2023 default-repo package and no signed install path exist in-repo yet. Do **not** use unsigned GitHub binaries.
+1. **Replace the staging EC2 instance** with the 25b.5a user_data so `/opt/dealbrain/bootstrap.ok`, the deploy entrypoint, and signed Compose plugin exist on the live host.
+2. **Signed Compose path** — implemented in-repo (25b.5a); still requires EC2 replace (blocker #1) before the live host has `docker compose`. Do **not** use unsigned GitHub binaries.
 3. **Populate Secrets Manager values** out-of-band (`app_secret_key`, `cors_origins`, AI keys as needed, `ghcr_pull` classic PAT with `read:packages` only). Never put values in Terraform or GitHub secrets.
 4. **Successful image build on `main`** — note `build_workflow_run_id` for deploy dispatch.
 5. **ALB target health** — will remain unhealthy until first digest deploy brings up the API on `:8000`.

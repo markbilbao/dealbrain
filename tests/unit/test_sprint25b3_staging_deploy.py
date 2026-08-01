@@ -5,10 +5,14 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+import os
 import re
+import shlex
 import stat
+import subprocess
 import tarfile
 import tempfile
+import textwrap
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -809,37 +813,479 @@ def test_database_url_encoding_edge_characters() -> None:
 
 def test_bootstrap_no_unsigned_compose_download() -> None:
     ud = _read(USER_DATA)
-    # Must never fetch Compose as an unsigned GitHub binary.
-    assert "github.com/docker/compose/releases" not in ud
-    assert "raw.githubusercontent.com" not in ud
-    assert "curl -SL" not in ud
-    assert "curl -L https://github.com/docker" not in ud
+    installer = _read(HOST_SCRIPTS / "install-compose-plugin.sh")
+    for blob in (ud, installer):
+        # Must never fetch Compose as an unsigned GitHub binary.
+        assert "github.com/docker/compose/releases" not in blob
+        assert "raw.githubusercontent.com" not in blob
+        assert "curl -SL" not in blob
+        assert "curl -L https://github.com/docker" not in blob
+        assert "get.docker.com" not in blob
 
 
-def test_bootstrap_al2023_compose_unavailable_still_completes() -> None:
-    """AL2023 default repos lack docker-compose-plugin; bootstrap must not abort."""
-    ud = _read(USER_DATA)
-    # Forbidden: the package path that fails closed on live AL2023 hosts.
-    assert "dnf -y install docker-compose-plugin" not in ud
-    assert "dnf install docker-compose-plugin" not in ud
-    # Compose must not be a hard bootstrap gate (would prevent bootstrap.ok).
-    assert "docker compose version >/dev/null\n" not in ud
-    assert (
-        "docker compose version >/dev/null 2>&1; then" in ud or "docker compose unavailable" in ud
+def _embedded_compose_installer(user_data: str) -> str:
+    marker_open = "<< 'COMPOSEPLUGIN'\n"
+    marker_close = "\nCOMPOSEPLUGIN\n"
+    start = user_data.index(marker_open) + len(marker_open)
+    end = user_data.index(marker_close, start)
+    return user_data[start:end]
+
+
+EXPECTED_DOCKER_GPG_FP = "060A61C51B558A7F742B77AAC52FEB6B621E9F35"
+
+
+def _write_executable(path: Path, body: str) -> None:
+    path.write_text(body, encoding="utf-8")
+    path.chmod(path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def _compose_installer_harness(
+    tmp_path: Path,
+    *,
+    dnf_exit: int = 0,
+    gpg_mode: str = "match",
+    skip_plugin_rpm: bool = True,
+) -> tuple[Path, Path, Path]:
+    """Build an isolated installer + mock PATH for behavioral shell tests.
+
+    Returns (script_path, repo_file, import_log).
+    """
+    repo_file = tmp_path / "docker-ce.repo"
+    gpg_path = tmp_path / "RPM-GPG-KEY-docker"
+    key_fixture = tmp_path / "docker.gpg"
+    key_fixture.write_text("-----BEGIN PGP PUBLIC KEY BLOCK-----\nTEST\n", encoding="utf-8")
+    import_log = tmp_path / "rpm-import.log"
+    mock_bin = tmp_path / "mock-bin"
+    mock_bin.mkdir()
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+
+    # Mock toolchain — never touches the real host package manager.
+    _write_executable(mock_bin / "id", "#!/bin/sh\necho 0\n")
+    _write_executable(
+        mock_bin / "rpm",
+        textwrap.dedent(
+            f"""\
+            #!/bin/sh
+            if [ "$1" = "--import" ]; then
+              echo "IMPORT:$2" >> {shlex.quote(str(import_log))}
+              exit 0
+            fi
+            if [ "$1" = "-q" ]; then
+              case "$2" in
+                docker) exit 0 ;;
+                docker-ce|docker-ce-cli) exit 1 ;;
+                docker-compose-plugin)
+                  if [ -f {shlex.quote(str(state_dir / "plugin_installed"))} ]; then
+                    exit 0
+                  fi
+                  exit 1
+                  ;;
+                *) exit 1 ;;
+              esac
+            fi
+            exit 0
+            """
+        ),
     )
-    assert "deferred" in ud.lower()
-    # Successful bootstrap artifacts must still be modeled.
-    assert "touch /opt/dealbrain/bootstrap.ok" in ud
-    assert "/opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
-    assert "chmod 0755 /opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
-    # Docker engine + fail-closed checks remain required.
-    assert "dnf -y install \\\n  docker \\" in ud or "\n  docker \\\n" in ud
+    _write_executable(
+        mock_bin / "docker",
+        textwrap.dedent(
+            f"""\
+            #!/bin/sh
+            if [ "$1" = "--version" ]; then
+              echo "Docker version mock"
+              exit 0
+            fi
+            if [ "$1" = "compose" ] && [ "$2" = "version" ]; then
+              if [ -f {shlex.quote(str(state_dir / "plugin_installed"))} ]; then
+                echo "Docker Compose version v2.0.0"
+                exit 0
+              fi
+              exit 1
+            fi
+            exit 0
+            """
+        ),
+    )
+    _write_executable(
+        mock_bin / "systemctl",
+        "#!/bin/sh\n# Pretend docker is already active.\nexit 0\n",
+    )
+    _write_executable(
+        mock_bin / "dnf",
+        textwrap.dedent(
+            f"""\
+            #!/bin/sh
+            # Fail closed when requested (install failure cleanup tests).
+            if [ "{dnf_exit}" != "0" ]; then
+              echo "mock dnf failure" >&2
+              exit {dnf_exit}
+            fi
+            # Successful plugin install marks state for rpm/docker mocks.
+            touch {shlex.quote(str(state_dir / "plugin_installed"))}
+            exit 0
+            """
+        ),
+    )
+    _write_executable(
+        mock_bin / "curl",
+        textwrap.dedent(
+            f"""\
+            #!/bin/sh
+            out=""
+            while [ "$#" -gt 0 ]; do
+              case "$1" in
+                -o) out="$2"; shift 2 ;;
+                *) shift ;;
+              esac
+            done
+            [ -n "$out" ] || exit 1
+            cp {shlex.quote(str(key_fixture))} "$out"
+            exit 0
+            """
+        ),
+    )
+    if gpg_mode == "match":
+        gpg_script = textwrap.dedent(
+            f"""\
+            #!/bin/sh
+            # One primary fingerprint (pub then fpr), plus a subkey fpr that must be ignored.
+            cat <<'GPG'
+            pub:-:4096:1:ABCDEF01:0
+            fpr:::::::::{EXPECTED_DOCKER_GPG_FP}:
+            sub:-:4096:1:ABCDEF02:0
+            fpr:::::::::1111111111111111111111111111111111111111:
+            GPG
+            """
+        )
+    elif gpg_mode == "mismatch":
+        gpg_script = textwrap.dedent(
+            """\
+            #!/bin/sh
+            cat <<'GPG'
+            pub:-:4096:1:ABCDEF01:0
+            fpr:::::::::AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:
+            GPG
+            """
+        )
+    elif gpg_mode == "multiple":
+        gpg_script = textwrap.dedent(
+            f"""\
+            #!/bin/sh
+            cat <<'GPG'
+            pub:-:4096:1:ABCDEF01:0
+            fpr:::::::::{EXPECTED_DOCKER_GPG_FP}:
+            pub:-:4096:1:ABCDEF02:0
+            fpr:::::::::BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB:
+            GPG
+            """
+        )
+    elif gpg_mode == "empty":
+        gpg_script = "#!/bin/sh\ncat <<'GPG'\nGPG\n"
+    else:
+        raise AssertionError(f"unknown gpg_mode: {gpg_mode}")
+    _write_executable(mock_bin / "gpg", gpg_script)
+    _write_executable(
+        mock_bin / "install",
+        textwrap.dedent(
+            """\
+            #!/bin/sh
+            # emulate: install -o root -g root -m 0644 SRC DEST
+            src=""
+            dest=""
+            while [ "$#" -gt 0 ]; do
+              case "$1" in
+                -o|-g|-m) shift 2 ;;
+                *)
+                  if [ -z "$src" ]; then src="$1"
+                  else dest="$1"
+                  fi
+                  shift
+                  ;;
+              esac
+            done
+            [ -n "$src" ] && [ -n "$dest" ] || exit 1
+            cp "$src" "$dest"
+            exit 0
+            """
+        ),
+    )
+
+    src = _read(HOST_SCRIPTS / "install-compose-plugin.sh")
+    patched = src.replace(
+        'REPO_FILE="/etc/yum.repos.d/docker-ce.repo"',
+        f'REPO_FILE="{repo_file}"',
+    ).replace(
+        'DOCKER_GPG_PATH="/etc/pki/rpm-gpg/RPM-GPG-KEY-docker"',
+        f'DOCKER_GPG_PATH="{gpg_path}"',
+    )
+    if not skip_plugin_rpm:
+        # Pre-seed idempotent-success path.
+        (state_dir / "plugin_installed").write_text("1", encoding="utf-8")
+        repo_file.write_text(
+            textwrap.dedent(
+                """\
+                [docker-ce-stable]
+                enabled=0
+                includepkgs=docker-compose-plugin
+                gpgcheck=1
+                repo_gpgcheck=1
+                """
+            ),
+            encoding="utf-8",
+        )
+    script = tmp_path / "install-compose-plugin.sh"
+    script.write_text(patched, encoding="utf-8")
+    script.chmod(0o755)
+    return script, repo_file, import_log
+
+
+def _run_compose_installer(script: Path, mock_bin: Path) -> subprocess.CompletedProcess[str]:
+    env = {
+        **os.environ,
+        "PATH": f"{mock_bin}:{os.environ.get('PATH', '')}",
+    }
+    return subprocess.run(
+        ["bash", str(script)],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(script.parent),
+    )
+
+
+def _assert_repo_locked_disabled(repo_file: Path) -> None:
+    text = repo_file.read_text(encoding="utf-8")
+    assert re.search(r"^enabled=0(?:\s|$)", text, re.M)
+    assert re.search(r"^includepkgs=docker-compose-plugin(?:\s|$)", text, re.M)
+    assert re.search(r"^gpgcheck=1(?:\s|$)", text, re.M)
+    assert re.search(r"^repo_gpgcheck=1(?:\s|$)", text, re.M)
+
+
+def test_compose_plugin_installer_embedded_matches_source() -> None:
+    """Bootstrap embeds the reviewed installer; keep heredoc and source identical."""
+    ud = _read(USER_DATA)
+    src = _read(HOST_SCRIPTS / "install-compose-plugin.sh")
+    # Heredoc close marker consumes the final newline; compare canonical text.
+    assert _embedded_compose_installer(ud).rstrip("\n") == src.rstrip("\n")
+
+
+def test_bootstrap_signed_compose_plugin_path() -> None:
+    """Sprint 25b.5a: signed Docker Inc plugin only; Amazon engine kept; fail-closed."""
+    ud = _read(USER_DATA)
+    installer = _read(HOST_SCRIPTS / "install-compose-plugin.sh")
+
+    # Fingerprint pin + compare-before-import.
+    spaced_fp = "060A 61C5 1B55 8A7F 742B 77AA C52F EB6B 621E 9F35"
+    assert EXPECTED_DOCKER_GPG_FP in installer
+    assert spaced_fp in installer
+    assert "EXPECTED_DOCKER_GPG_FINGERPRINT" in installer
+    assert "gpg --show-keys" in installer
+    assert "rpm --import" in installer
+    assert "extract_primary_fingerprints" in installer
+    assert "expected exactly one primary Docker GPG fingerprint" in installer
+    # Import only after fingerprint match (mismatch dies before import).
+    fn_start = installer.index("verify_and_import_docker_gpg()")
+    fn_body = installer[fn_start : installer.index("\ninstall_plugin()", fn_start)]
+    assert "fingerprint mismatch" in fn_body
+    assert fn_body.index("fingerprint mismatch") < fn_body.index("rpm --import")
+    assert "exactly one primary" in fn_body
+    assert fn_body.index("exactly one primary") < fn_body.index("rpm --import")
+
+    # Repo lockdown knobs + fail-safe EXIT restore.
+    assert (
+        "includepkgs=docker-compose-plugin" in installer or "includepkgs=${PLUGIN_PKG}" in installer
+    )
+    assert "gpgcheck=1" in installer
+    assert "repo_gpgcheck=1" in installer
+    assert "download.docker.com/linux/rhel/9/" in installer
+    assert "write_docker_repo 0" in installer
+    assert "enabled=0" in installer
+    assert "_cleanup_docker_repo" in installer
+    assert "restore_repo_locked_disabled" in installer
+    assert "trap _cleanup_docker_repo EXIT" in installer
+    # Locked-repo helper must require repo_gpgcheck (not only gpgcheck/enabled).
+    locked_start = installer.index("repo_locked_disabled()")
+    locked_body = installer[locked_start : installer.index("\nalready_satisfied()", locked_start)]
+    assert "repo_gpgcheck=1" in locked_body
+    assert "gpgcheck=1" in locked_body
+    assert "enabled=0" in locked_body
+    assert "includepkgs=" in locked_body
+
+    # Denylist: never erase Amazon packages / never install docker-ce stack.
+    assert "--allowerasing" not in installer
+    assert "--allowerasing" not in ud
+    assert "dnf -y install docker-ce" not in installer
+    assert "dnf install docker-ce" not in installer
+    assert "dnf -y install docker-ce-cli" not in installer
+    assert "dnf -y install containerd.io" not in installer
+    assert "dnf -y install docker-buildx-plugin" not in installer
+    # Install target is plugin variable / name only.
+    assert 'dnf -y install "$PLUGIN_PKG"' in installer
+    assert "docker-compose-plugin" in installer
+
+    # Bootstrap invokes installer and hard-gates Compose before bootstrap.ok.
+    assert "/opt/dealbrain/bin/install-compose-plugin.sh" in ud
+    assert "install-compose-plugin.sh" in ud
+    compose_gate = ud.index("docker compose version >/dev/null")
+    bootstrap_ok = ud.index("touch /opt/dealbrain/bootstrap.ok")
+    assert compose_gate < bootstrap_ok
+    assert "deferred" not in ud.lower()
+
+    # Amazon engine from AL2023 repos; no docker-ce install in user_data package list.
+    assert "\n  docker \\\n" in ud or "dnf -y install \\\n  docker \\" in ud
     assert "command -v docker >/dev/null" in ud
     assert "systemctl enable docker" in ud
     assert "systemctl start docker" in ud
-    # Deploy orchestrator still fail-closes without Compose.
+    assert "rpm -q docker >/dev/null" in ud
+    # Successful bootstrap artifacts still modeled.
+    assert "touch /opt/dealbrain/bootstrap.ok" in ud
+    assert "/opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
+    assert "chmod 0755 /opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
+
+    # Production must not gain user_data / compose installer wiring.
+    prod = _read(PROD_TF / "main.tf")
+    assert "staging_user_data" not in prod
+    assert "install-compose-plugin" not in prod
+    assert "user_data" not in prod
+
+    # Deploy orchestrator still fail-closes without Compose (defense in depth).
     orch = _read(HOST_SCRIPTS / "dealbrain-staging-deploy.sh")
     assert 'docker compose version >/dev/null || die "docker compose missing"' in orch
+
+
+def test_compose_plugin_install_failure_restores_disabled_repo(tmp_path: Path) -> None:
+    """Forced dnf failure must restore enabled=0 and preserve the failure status."""
+    script, repo_file, import_log = _compose_installer_harness(tmp_path, dnf_exit=42)
+    mock_bin = tmp_path / "mock-bin"
+    proc = _run_compose_installer(script, mock_bin)
+    assert proc.returncode == 42, proc.stderr
+    assert repo_file.is_file()
+    _assert_repo_locked_disabled(repo_file)
+    assert "enabled=1" not in repo_file.read_text(encoding="utf-8")
+    # GPG import happened before enable; cleanup must not convert failure→success.
+    assert import_log.is_file()
+
+
+def test_compose_plugin_success_finishes_with_repo_disabled(tmp_path: Path) -> None:
+    """Happy path ends with locked disabled repo (enabled=0 + gpg knobs)."""
+    script, repo_file, import_log = _compose_installer_harness(tmp_path, dnf_exit=0)
+    mock_bin = tmp_path / "mock-bin"
+    proc = _run_compose_installer(script, mock_bin)
+    assert proc.returncode == 0, proc.stderr + proc.stdout
+    _assert_repo_locked_disabled(repo_file)
+    assert "IMPORT:" in import_log.read_text(encoding="utf-8")
+
+
+def test_compose_plugin_rejects_fingerprint_mismatch_before_import(tmp_path: Path) -> None:
+    script, repo_file, import_log = _compose_installer_harness(tmp_path, gpg_mode="mismatch")
+    mock_bin = tmp_path / "mock-bin"
+    proc = _run_compose_installer(script, mock_bin)
+    assert proc.returncode != 0
+    assert "fingerprint mismatch" in proc.stderr
+    assert not import_log.exists()
+    assert not repo_file.exists()
+
+
+def test_compose_plugin_rejects_multiple_fingerprints_before_import(tmp_path: Path) -> None:
+    script, repo_file, import_log = _compose_installer_harness(tmp_path, gpg_mode="multiple")
+    mock_bin = tmp_path / "mock-bin"
+    proc = _run_compose_installer(script, mock_bin)
+    assert proc.returncode != 0
+    assert "exactly one primary" in proc.stderr
+    assert not import_log.exists()
+    assert not repo_file.exists()
+
+
+def test_compose_plugin_repo_locked_disabled_requires_repo_gpgcheck(tmp_path: Path) -> None:
+    """Weakened repo (missing repo_gpgcheck=1) must not satisfy the locked helper."""
+    script = HOST_SCRIPTS / "install-compose-plugin.sh"
+    helper = tmp_path / "repo_locked_disabled.sh"
+    # Extract helper to a tempfile (process substitution + source is unreliable on macOS bash).
+    extracted = subprocess.run(
+        ["sed", "-n", "/^repo_locked_disabled()/,/^}/p", str(script)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    helper.write_text(extracted.stdout, encoding="utf-8")
+    repo = tmp_path / "weak.repo"
+    repo.write_text(
+        textwrap.dedent(
+            """\
+            [docker-ce-stable]
+            enabled=0
+            includepkgs=docker-compose-plugin
+            gpgcheck=1
+            """
+        ),
+        encoding="utf-8",
+    )
+    proc = subprocess.run(
+        [
+            "bash",
+            "-c",
+            textwrap.dedent(
+                f"""\
+                set -euo pipefail
+                REPO_FILE={shlex.quote(str(repo))}
+                REPO_ID=docker-ce-stable
+                PLUGIN_PKG=docker-compose-plugin
+                # shellcheck disable=SC1090
+                source {shlex.quote(str(helper))}
+                if repo_locked_disabled; then
+                  echo ACCEPTED
+                  exit 0
+                fi
+                echo REJECTED
+                exit 1
+                """
+            ),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 1
+    assert "REJECTED" in proc.stdout
+
+    # Full invariants should be accepted.
+    repo.write_text(
+        textwrap.dedent(
+            """\
+            [docker-ce-stable]
+            enabled=0
+            includepkgs=docker-compose-plugin
+            gpgcheck=1
+            repo_gpgcheck=1
+            """
+        ),
+        encoding="utf-8",
+    )
+    proc_ok = subprocess.run(
+        [
+            "bash",
+            "-c",
+            textwrap.dedent(
+                f"""\
+                set -euo pipefail
+                REPO_FILE={shlex.quote(str(repo))}
+                REPO_ID=docker-ce-stable
+                PLUGIN_PKG=docker-compose-plugin
+                source {shlex.quote(str(helper))}
+                repo_locked_disabled
+                echo ACCEPTED
+                """
+            ),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc_ok.returncode == 0, proc_ok.stderr
+    assert "ACCEPTED" in proc_ok.stdout
 
 
 def test_architecture_lock_trailing_newline() -> None:

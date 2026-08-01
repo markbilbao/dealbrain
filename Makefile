@@ -52,6 +52,7 @@ validate-staging-deploy:
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
 	bash -n scripts/deploy/host/verify-staging.sh
 
@@ -66,5 +67,6 @@ validate-pre-live:
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
 	bash -n scripts/deploy/host/verify-staging.sh

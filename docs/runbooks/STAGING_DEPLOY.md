@@ -10,7 +10,7 @@
 - [ ] GitHub Environment `staging` exists (`main` only)
 - [ ] Vars set: `AWS_ROLE_ARN` (= `dealbrain-staging-gha-deploy`), `AWS_REGION=us-east-1`, `AWS_ACCOUNT_ID`, `STAGING_TARGET_GROUP_ARN` (exact Terraform `alb_target_group_arn` output)
 - [ ] Secrets populated under `dealbrain/staging/*` including `ghcr_pull`
-- [ ] EC2 SSM Online; `/opt/dealbrain/bootstrap.ok` present
+- [ ] EC2 SSM Online; `/opt/dealbrain/bootstrap.ok` present (implies Docker engine + signed Compose plugin — Sprint 25b.5a)
 - [ ] Successful **Build Image** workflow run on `main` (note run ID)
 
 ## Dispatch

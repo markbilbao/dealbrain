@@ -13,7 +13,7 @@
 | Release bundle | `scripts/deploy/build_staging_bundle.py`, `verify_staging_bundle.py` |
 | Host orchestrator + helpers | `scripts/deploy/host/*` |
 | Staging evidence schema | `schemas/staging-deploy-evidence.schema.json`, `scripts/deploy/evidence.py` |
-| Host bootstrap user_data | `infra/ec2/user_data/staging.sh` |
+| Host bootstrap user_data | `infra/ec2/user_data/staging.sh` (+ `scripts/deploy/host/install-compose-plugin.sh` since 25b.5a) |
 | Release-artifacts S3 module | `infra/terraform/modules/release_artifacts/` |
 | Custom SSM document | `infra/terraform/modules/ssm_deploy_document/` (`DealBrain-StagingDeploy`) |
 | Staging TF wiring | `infra/terraform/environments/staging/` |
@@ -46,7 +46,7 @@
 3. GitHub Environment exactly named `staging`, deployment branches **`main` only**
 4. Environment vars: `AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUNT_ID`, `STAGING_TARGET_GROUP_ARN`
 5. Staging secrets populated (app + `ghcr_pull` classic PAT `read:packages`)
-6. Instance SSM Agent Online; `bootstrap.ok` present after user_data
+6. Instance SSM Agent Online; `bootstrap.ok` present after user_data (25b.5a: implies signed Compose plugin + Amazon Docker engine)
 7. First successful digest deploy with evidence artifact + S3 object
 
 ## Operator first-deploy checklist
