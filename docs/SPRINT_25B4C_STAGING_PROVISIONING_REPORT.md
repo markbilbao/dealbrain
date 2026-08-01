@@ -12,7 +12,7 @@
 |------|--------|
 | Terraform init (remote S3 backend + `use_lockfile`) | Done — account + staging |
 | Apply account stack (saved plan) | Done — GitHub OIDC provider |
-| Apply staging stack (saved plans) | Done — after free-plan sizing + SG ASCII fix |
+| Apply staging stack (saved plans) | Done — after free-plan sizing (operator workaround for SG descriptions; see below) |
 | GitHub Environment `staging` | Done — `main` only + required vars |
 | Verify SSM / RDS / ALB / outputs | Done (see Validation) |
 | Deploy DealBrain application | **Stopped** (out of scope) |
@@ -64,19 +64,49 @@ Terraform staging state: **no drift** after final apply (`terraform plan` clean)
 | ALB active | **PASS** | Load balancer `State=active` |
 | ALB target healthy | **EXPECTED FAIL** | Target `unhealthy` / HTTP `502` — no app container yet |
 | Required TF outputs | **PASS** | All staging outputs present (see below) |
-| Host `bootstrap.ok` | **FAIL** | `/opt/dealbrain/bootstrap.ok` missing (user_data aborted) |
+| Host `bootstrap.ok` | **FAIL (live host)** | Live instance still on pre-fix user_data; see Bootstrap |
 | Secrets populated | **NOT DONE** | Containers only; values out-of-band |
 | App deploy | **NOT DONE** | Explicit stop |
 
-### Bootstrap failure detail
+## Bootstrap failure and Sprint 25b.4c solution
 
-Initial `user_data` aborted on AL2023 package conflict:
+### Confirmed root cause
 
-`curl` (requested) vs preinstalled `curl-minimal`.
+Amazon Linux 2023 **cannot install `docker-compose-plugin` from its default dnf repositories**. Staging `user_data` previously treated Compose as a hard bootstrap gate:
 
-Directories under `/opt/dealbrain` were created; Docker/AWS CLI are present via partial install, but entrypoint scripts and `bootstrap.ok` were never written. Deploy entrypoint refuses to run without `bootstrap.ok`.
+1. Attempt `dnf -y install docker-compose-plugin` when `docker compose` was missing.
+2. With `set -e`, cloud-init aborted when that package was not found.
+3. `/opt/dealbrain/bin/dealbrain-staging-deploy.sh` and `/opt/dealbrain/bootstrap.ok` were never written.
 
-**Repo fix applied (not yet on the live instance):** remove `curl` from `infra/ec2/user_data/staging.sh` package list. EC2 recreate / re-bootstrap was not applied (operator skipped instance replace).
+An earlier abort also occurred when installing the full `curl` package against preinstalled `curl-minimal`. That package conflict was removed from `user_data` as part of this sprint. The **confirmed** failure that still blocked a complete bootstrap after curl was removed is the missing Compose plugin package.
+
+Unsigned GitHub Compose binary downloads are **forbidden** and were not used.
+
+### Sprint 25b.4c solution (repository)
+
+Defer Compose **out of bootstrap**. Staging user_data now:
+
+- Installs Docker Engine and bootstrap tools from AL2023 default repos only.
+- Fail-closes if Docker / awscli / jq / curl / python3 / flock / timeout are missing.
+- Soft-detects Compose if already present; otherwise logs deferral and continues.
+- Still creates the fixed SSM entrypoint and `/opt/dealbrain/bootstrap.ok` after bootstrap-owned checks pass.
+- Does **not** install Compose via `dnf`, Docker CE third-party repos, or unsigned binaries.
+
+`bootstrap.ok` therefore means: Docker engine + host layout + entrypoint are ready. It does **not** mean Compose CLI is present.
+
+### Deploy still requires Docker Compose
+
+The release orchestrator (`scripts/deploy/host/dealbrain-staging-deploy.sh`) remains fail-closed:
+
+```text
+docker compose version >/dev/null || die "docker compose missing"
+```
+
+**No signed AL2023 installation path for Docker Compose has been implemented yet.** First Deploy Staging will fail closed until an operator/follow-on sprint provides a reviewed Compose delivery method (for example an AL2023-packaged plugin when Amazon ships it, or another signed/reviewed path). This sprint intentionally does not add unsigned binary installs.
+
+### Live host status
+
+The running instance (`i-0d09a608f9c776b8c`) still has the pre-fix user_data outcome (no `bootstrap.ok`). Applying the 25b.4c script requires a clean EC2 replacement (prefer `terraform plan -replace=...`, not `taint`). After replace + successful cloud-init, expect `bootstrap.ok` and the entrypoint; Compose CLI will still be absent until a signed path exists.
 
 ## Outputs (non-secret)
 
@@ -131,18 +161,23 @@ AWS Free Plan blocked the example sizing. Local staging tfvars (gitignored) were
 | `rds_max_allocated_storage` | `100` | `20` |
 | `backup_retention_days` | `7` | `1` |
 
-## Repo fixes required during provisioning
+## Repo fixes included in this branch
 
-1. **Security group descriptions** — replaced Unicode em dashes with ASCII `-` in `infra/terraform/modules/security_groups/main.tf` (AWS rejects non-ASCII `GroupDescription`).
-2. **Staging user_data** — removed conflicting `curl` package install in `infra/ec2/user_data/staging.sh` (not yet applied to running instance).
+1. **Staging user_data (`infra/ec2/user_data/staging.sh`)** — remove full `curl` package install; defer Compose out of bootstrap; keep Docker bootstrap fail-closed; still write entrypoint + `bootstrap.ok`.
+2. **Tests / operator docs** — AL2023 Compose-unavailable coverage; Terraform README bootstrap note; 25b.3 architecture bootstrap wording aligned to deferred Compose; this report.
+
+### Security group descriptions (not in this PR)
+
+During live apply, AWS rejected non-ASCII em dashes (`—`) in security group `GroupDescription` values. Operators worked around that for the live staging apply. **That ASCII description change is not included in this PR** (no Terraform behavior change in this branch). Track separately if a future apply should carry ASCII-only descriptions in `infra/terraform/modules/security_groups/main.tf`.
 
 ## Remaining blockers (before first Deploy Staging)
 
-1. **Complete host bootstrap** — recreate EC2 (preferred, picks up fixed user_data) or finish bootstrap on-instance so `/opt/dealbrain/bootstrap.ok` and `/opt/dealbrain/bin/dealbrain-staging-deploy.sh` exist.
-2. **Populate Secrets Manager values** out-of-band (`app_secret_key`, `cors_origins`, AI keys as needed, `ghcr_pull` classic PAT with `read:packages` only). Never put values in Terraform or GitHub secrets.
-3. **Successful image build on `main`** — note `build_workflow_run_id` for deploy dispatch.
-4. **ALB target health** — will remain unhealthy until first digest deploy brings up the API on `:8000`.
-5. **Optional:** upgrade AWS account off Free Plan if staging must use `db.t4g.small` / 7-day backups as originally modeled.
+1. **Replace the staging EC2 instance** with the 25b.4c user_data so `/opt/dealbrain/bootstrap.ok` and the deploy entrypoint exist on the live host.
+2. **Provide a signed/reviewed Docker Compose CLI path** — deploy remains fail-closed without `docker compose`. No AL2023 default-repo package and no signed install path exist in-repo yet. Do **not** use unsigned GitHub binaries.
+3. **Populate Secrets Manager values** out-of-band (`app_secret_key`, `cors_origins`, AI keys as needed, `ghcr_pull` classic PAT with `read:packages` only). Never put values in Terraform or GitHub secrets.
+4. **Successful image build on `main`** — note `build_workflow_run_id` for deploy dispatch.
+5. **ALB target health** — will remain unhealthy until first digest deploy brings up the API on `:8000`.
+6. **Optional:** upgrade AWS account off Free Plan if staging must use `db.t4g.small` / 7-day backups as originally modeled.
 
 ## Explicit stop
 

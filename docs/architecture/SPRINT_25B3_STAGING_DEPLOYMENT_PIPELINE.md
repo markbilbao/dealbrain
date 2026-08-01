@@ -285,15 +285,16 @@ Do **not** add production Environment behavior in 25b.3.
 
 **Design:** Staging EC2 module receives cloud-init/`user_data` that:
 
-1. `dnf` install docker, awscli, jq, curl  
+1. `dnf` install docker, awscli, jq (and other AL2023 default-repo tools; not full `curl` — use preinstalled `curl-minimal`)  
 2. Enable/start `docker`  
-3. Install Compose plugin  
-4. Create directory layout + empty marker `/opt/dealbrain/bootstrap.ok`  
+3. **Do not** install Compose from default AL2023 repos (package unavailable) or via unsigned binaries (Sprint 25b.4c)  
+4. Create directory layout + marker `/opt/dealbrain/bootstrap.ok` after Docker/tooling checks  
 5. Never embeds tokens, PAT, or DB passwords  
 
-**Idempotence:** Re-run safe package installs; marker file written only after `docker compose version` succeeds.  
+**Idempotence:** Re-run safe package installs; marker written after bootstrap-owned Docker/tooling checks (Compose is optional at bootstrap).  
 **Verification:** Deploy script aborts if `bootstrap.ok` missing or `docker`/`compose` fail.  
-**Package failures:** Instance unhealthy until fixed; SSM deploy fails closed (no partial Compose).
+**Compose:** Required at deploy time; fail-closed in the orchestrator until a signed/reviewed Compose CLI path exists.  
+**Package failures:** Instance unhealthy until fixed; SSM deploy fails closed without Compose.
 
 Bootstrap script content lives in-repo (`infra/ec2/user_data/staging.sh` or Terraform `templatefile`) — **no secrets**.
 
@@ -912,7 +913,7 @@ Assert at minimum:
 - [ ] Account + staging Terraform applied; remote state active  
 - [ ] GitHub `staging` Environment: exact name, `main` only  
 - [ ] Vars: role ARN / account / region  
-- [ ] Instance SSM Online; Docker/Compose present (`bootstrap.ok`)  
+- [ ] Instance SSM Online; Docker present (`bootstrap.ok`); Compose available via signed path before deploy  
 - [ ] App secrets + GHCR classic PAT populated  
 - [ ] RDS reachable from host; ALB TG attached  
 
