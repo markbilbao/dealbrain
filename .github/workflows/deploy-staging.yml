@@ -111,7 +111,8 @@ jobs:
           if [ -n "${OPTIONAL_RELEASE_ID}" ]; then
             EXTRA_ARGS+=(--release-id "$OPTIONAL_RELEASE_ID")
           fi
-          python scripts/deploy/validate_staging_release.py "$MANIFEST_PATH" "${EXTRA_ARGS[@]}"
+          # Module form keeps the repository root on sys.path for scripts.* imports.
+          python -m scripts.deploy.validate_staging_release "$MANIFEST_PATH" "${EXTRA_ARGS[@]}"
 
           RELEASE_ID="$(jq -r '.release_id' "$MANIFEST_PATH")"
           IMAGE_REPO="$(jq -r '.image_repository' "$MANIFEST_PATH")"
