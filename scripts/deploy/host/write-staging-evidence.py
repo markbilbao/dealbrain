@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Write append-only staging deploy evidence with deterministic checksum.
 
-Fail closed if the canonical evidence module cannot be imported. Never fall
-back to an inline writer (Sprint 25b.4a).
+Fail closed if the canonical evidence module cannot be loaded. Never fall
+back to an inline writer (Sprint 25b.4a / 25b.5g).
+
+Loads the sibling ``evidence.py`` via ``importlib`` (bundle ``bin/`` layout)
+or the ``scripts.deploy.evidence`` package (repository checkout). No
+``PYTHONPATH`` / ``sys.path`` mutation is required for the sibling contract.
 """
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import sys
 from pathlib import Path
@@ -14,26 +19,29 @@ from pathlib import Path
 
 def _load_evidence_api():
     """Import canonical evidence helpers only — no duplicate fallback writer."""
-    _bin = Path(__file__).resolve().parent
-    if str(_bin) not in sys.path:
-        sys.path.insert(0, str(_bin))
-    _scripts = Path(__file__).resolve().parents[1]
-    if str(_scripts) not in sys.path:
-        sys.path.insert(0, str(_scripts))
-
-    try:
-        from evidence import create_evidence, write_evidence
-
-        return create_evidence, write_evidence
-    except ImportError:
-        pass
+    sibling = Path(__file__).resolve().parent / "evidence.py"
+    if sibling.is_file():
+        spec = importlib.util.spec_from_file_location(
+            "dealbrain_canonical_staging_evidence", sibling
+        )
+        if spec is not None and spec.loader is not None:
+            module = importlib.util.module_from_spec(spec)
+            try:
+                spec.loader.exec_module(module)
+                create_evidence = getattr(module, "create_evidence", None)
+                write_evidence = getattr(module, "write_evidence", None)
+                if callable(create_evidence) and callable(write_evidence):
+                    return create_evidence, write_evidence
+            except Exception:
+                # Fall through to package import / fail-closed below.
+                # Do not print exception text — it may embed paths or env hints.
+                pass
 
     try:
         from scripts.deploy.evidence import create_evidence, write_evidence
 
         return create_evidence, write_evidence
     except ImportError as exc:
-        # Redacted: do not dump paths that may embed release ids / secrets.
         print(
             "ERROR: canonical evidence module unavailable; refusing to write deployment evidence",
             file=sys.stderr,

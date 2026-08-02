@@ -38,6 +38,9 @@ REQUIRED_MEMBERS = (
     "bin/verify-staging.sh",
     "bin/alb_target_health.py",
     "bin/evidence.py",
+    "bin/write-staging-evidence.py",
+    "bin/staging-deploy-evidence.schema.json",
+    "bin/log_redaction.py",
     "manifest/release-manifest.json",
     "bundle-meta.json",
 )

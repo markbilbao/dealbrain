@@ -3,11 +3,8 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
-
 from app.core.config import settings
+from app.infrastructure.database.alembic_url import set_alembic_sqlalchemy_url
 from app.infrastructure.database.base import Base
 
 # Import models here so Alembic can detect them.
@@ -18,12 +15,17 @@ from app.infrastructure.database.models import (  # noqa: F401
     PriceSnapshotModel,
     Product,
 )
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
+
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Percent-encoded credentials must be %%-escaped for ConfigParser interpolation.
+set_alembic_sqlalchemy_url(config, settings.database_url)
 
 target_metadata = Base.metadata
 

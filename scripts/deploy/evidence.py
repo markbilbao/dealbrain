@@ -14,14 +14,36 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Final
 
-from jsonschema import Draft202012Validator
-from jsonschema.exceptions import SchemaError
-from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
+try:
+    from jsonschema import Draft202012Validator
+    from jsonschema.exceptions import SchemaError
+    from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
+
+    _HAS_JSONSCHEMA = True
+except ImportError:  # Host bootstrap ships stdlib-only Python3.
+    Draft202012Validator = None  # type: ignore[assignment, misc]
+    SchemaError = Exception  # type: ignore[assignment, misc]
+    JsonSchemaValidationError = Exception  # type: ignore[assignment, misc]
+    _HAS_JSONSCHEMA = False
 
 SCHEMA_VERSION: Final[int] = 1
-SCHEMA_PATH: Final[Path] = (
-    Path(__file__).resolve().parents[2] / "schemas" / "staging-deploy-evidence.schema.json"
-)
+
+
+def resolve_schema_path(module_file: Path | None = None) -> Path:
+    """Resolve schema for repo layout and flat release-bundle ``bin/`` layout."""
+    here = (module_file or Path(__file__)).resolve().parent
+    candidates = (
+        here / "staging-deploy-evidence.schema.json",
+        here.parents[1] / "schemas" / "staging-deploy-evidence.schema.json",
+    )
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return candidates[-1]
+
+
+# Resolved at import for callers/tests; ``_load_schema`` re-resolves per process.
+SCHEMA_PATH: Final[Path] = resolve_schema_path()
 
 ALLOWED_STATUSES: Final[frozenset[str]] = frozenset({"staging_ok", "failed"})
 GIT_SHA_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{40}$")
@@ -42,6 +64,16 @@ GHCR_REPO_RE: Final[re.Pattern[str]] = re.compile(
 INSTANCE_ID_RE: Final[re.Pattern[str]] = re.compile(r"^i-[0-9a-f]{8,17}$")
 ACCOUNT_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9]{12}$")
 MIGRATION_REV_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-fA-Z][0-9a-zA-Z_:-]{0,255}$")
+# Secret-bearing values (URLs / credential assignments) — never accept in evidence.
+SECRET_VALUE_RE: Final[re.Pattern[str]] = re.compile(
+    r"(?i)(?:postgresql(?:\+\w+)?|postgres(?:\+\w+)?|mysql(?:\+\w+)?"
+    r"|mariadb(?:\+\w+)?|sqlite(?:\+\w+)?|mssql(?:\+\w+)?)://"
+    r"|DATABASE_URL\s*[:=]"
+    r"|\b(?:password|passwd|secret|token|api_key|access_key)\s*[:=]\s*\S"
+)
+PRODUCTION_VALUE_RE: Final[re.Pattern[str]] = re.compile(
+    r"(?i)(?:^|[^a-z0-9])production(?:[^a-z0-9]|$)"
+)
 
 FORBIDDEN_FIELD_FRAGMENTS: Final[tuple[str, ...]] = (
     "password",
@@ -54,6 +86,72 @@ FORBIDDEN_FIELD_FRAGMENTS: Final[tuple[str, ...]] = (
     "database_url",
     "access_key",
 )
+
+# Exact staging-deploy-evidence.schema.json contract (stdlib host fallback).
+# Keep in lockstep with schemas/staging-deploy-evidence.schema.json — drift fails closed.
+REQUIRED_EVIDENCE_KEYS: Final[tuple[str, ...]] = (
+    "schema_version",
+    "release_id",
+    "git_sha",
+    "image_repository",
+    "image_digest",
+    "source_manifest_sha256",
+    "deploy_workflow_run_id",
+    "aws_account_id",
+    "aws_region",
+    "assumed_role_arn",
+    "role_session_name",
+    "ec2_instance_id",
+    "ssm_command_id",
+    "migration_revision_before",
+    "migration_revision_after",
+    "localhost_live",
+    "localhost_ready",
+    "alb_target_healthy",
+    "smoke_ok",
+    "image_id",
+    "repo_digest",
+    "image_created_at",
+    "deployment_started_at",
+    "deployment_finished_at",
+    "deployment_duration_seconds",
+    "final_status",
+    "failure_reason",
+    "evidence_sha256",
+)
+ALLOWED_EVIDENCE_KEYS: Final[frozenset[str]] = frozenset(REQUIRED_EVIDENCE_KEYS)
+
+# JSON-Schema-shaped field contract: types are JSON types (boolean ≠ integer).
+_EVIDENCE_FIELD_CONTRACT: Final[dict[str, dict[str, Any]]] = {
+    "schema_version": {"types": ("integer",), "const": 1},
+    "release_id": {"types": ("string",), "pattern": RELEASE_ID_RE},
+    "git_sha": {"types": ("string",), "pattern": GIT_SHA_RE},
+    "image_repository": {"types": ("string",), "pattern": GHCR_REPO_RE},
+    "image_digest": {"types": ("string",), "pattern": DIGEST_RE},
+    "source_manifest_sha256": {"types": ("string",), "pattern": SHA256_HEX_RE},
+    "deploy_workflow_run_id": {"types": ("string",), "pattern": RUN_ID_RE},
+    "aws_account_id": {"types": ("string",), "pattern": ACCOUNT_RE},
+    "aws_region": {"types": ("string",), "min_length": 1},
+    "assumed_role_arn": {"types": ("string",), "min_length": 1},
+    "role_session_name": {"types": ("string",), "min_length": 1},
+    "ec2_instance_id": {"types": ("string",), "min_length": 1},
+    "ssm_command_id": {"types": ("string", "null")},
+    "migration_revision_before": {"types": ("string", "null")},
+    "migration_revision_after": {"types": ("string", "null")},
+    "localhost_live": {"types": ("boolean", "null")},
+    "localhost_ready": {"types": ("boolean", "null")},
+    "alb_target_healthy": {"types": ("boolean", "null")},
+    "smoke_ok": {"types": ("boolean", "null")},
+    "image_id": {"types": ("string", "null")},
+    "repo_digest": {"types": ("string", "null")},
+    "image_created_at": {"types": ("string", "null")},
+    "deployment_started_at": {"types": ("string",), "pattern": UTC_Z_RE},
+    "deployment_finished_at": {"types": ("string",), "pattern": UTC_Z_RE},
+    "deployment_duration_seconds": {"types": ("integer",), "minimum": 0},
+    "final_status": {"types": ("string",), "enum": ALLOWED_STATUSES},
+    "failure_reason": {"types": ("string", "null")},
+    "evidence_sha256": {"types": ("string",), "pattern": SHA256_HEX_RE},
+}
 
 # Post-gate failure reasons that may coexist with all health gates true.
 POST_GATE_FAILURE_PREFIXES: Final[tuple[str, ...]] = (
@@ -84,7 +182,8 @@ def compute_evidence_sha256(payload: dict[str, Any]) -> str:
 
 @lru_cache(maxsize=1)
 def _load_schema() -> dict[str, Any]:
-    with SCHEMA_PATH.open(encoding="utf-8") as handle:
+    path = resolve_schema_path()
+    with path.open(encoding="utf-8") as handle:
         return json.load(handle)
 
 
@@ -101,6 +200,116 @@ def _reject_secret_like_keys(obj: Any, path: str = "") -> None:
     elif isinstance(obj, list):
         for idx, item in enumerate(obj):
             _reject_secret_like_keys(item, f"{path}[{idx}]")
+    elif isinstance(obj, str):
+        if SECRET_VALUE_RE.search(obj):
+            raise EvidenceError(f"secret-bearing value forbidden at {path or '<root>'}")
+        if PRODUCTION_VALUE_RE.search(obj):
+            raise EvidenceError(f"production environment value forbidden at {path or '<root>'}")
+
+
+def _json_type_name(value: Any) -> str:
+    if value is None:
+        return "null"
+    if type(value) is bool:
+        return "boolean"
+    if type(value) is int:
+        return "integer"
+    if type(value) is float:
+        return "number"
+    if type(value) is str:
+        return "string"
+    if type(value) is list:
+        return "array"
+    if type(value) is dict:
+        return "object"
+    return type(value).__name__
+
+
+def _normalize_schema_types(type_field: Any) -> tuple[str, ...]:
+    if isinstance(type_field, str):
+        return (type_field,)
+    if isinstance(type_field, list) and all(isinstance(item, str) for item in type_field):
+        return tuple(type_field)
+    raise EvidenceError("unsupported schema type declaration")
+
+
+def _assert_supported_evidence_schema(schema: dict[str, Any]) -> None:
+    """Fail closed if the on-disk schema drifts from the reviewed stdlib contract."""
+    if schema.get("type") != "object":
+        raise EvidenceError("unsupported evidence schema: root type")
+    if schema.get("additionalProperties") is not False:
+        raise EvidenceError("unsupported evidence schema: additionalProperties")
+    required = schema.get("required")
+    if required != list(REQUIRED_EVIDENCE_KEYS):
+        raise EvidenceError("unsupported evidence schema: required properties")
+    properties = schema.get("properties")
+    if not isinstance(properties, dict) or set(properties) != ALLOWED_EVIDENCE_KEYS:
+        raise EvidenceError("unsupported evidence schema: properties set")
+
+    for key, contract in _EVIDENCE_FIELD_CONTRACT.items():
+        prop = properties[key]
+        if not isinstance(prop, dict):
+            raise EvidenceError(f"unsupported evidence schema: property {key}")
+        schema_types = _normalize_schema_types(prop.get("type"))
+        if set(schema_types) != set(contract["types"]):
+            raise EvidenceError(f"unsupported evidence schema: types for {key}")
+        if "const" in contract and prop.get("const") != contract["const"]:
+            raise EvidenceError(f"unsupported evidence schema: const for {key}")
+        if "enum" in contract and set(prop.get("enum", ())) != set(contract["enum"]):
+            raise EvidenceError(f"unsupported evidence schema: enum for {key}")
+        if "pattern" in contract and prop.get("pattern") != contract["pattern"].pattern:
+            raise EvidenceError(f"unsupported evidence schema: pattern for {key}")
+        if "min_length" in contract and prop.get("minLength") != contract["min_length"]:
+            raise EvidenceError(f"unsupported evidence schema: minLength for {key}")
+        if "minimum" in contract and prop.get("minimum") != contract["minimum"]:
+            raise EvidenceError(f"unsupported evidence schema: minimum for {key}")
+
+
+def _validate_field_against_contract(key: str, value: Any, contract: dict[str, Any]) -> None:
+    allowed_types: tuple[str, ...] = contract["types"]
+    actual = _json_type_name(value)
+    if actual not in allowed_types:
+        raise EvidenceError(
+            f"schema validation failed: {key} type {actual!r} not in {allowed_types}"
+        )
+    if value is None:
+        return
+    if "const" in contract and value != contract["const"]:
+        raise EvidenceError(f"schema validation failed: {key} must be {contract['const']!r}")
+    if "enum" in contract and value not in contract["enum"]:
+        raise EvidenceError(f"schema validation failed: {key} invalid enum value")
+    if actual == "string":
+        pattern = contract.get("pattern")
+        if pattern is not None and not pattern.fullmatch(value):
+            raise EvidenceError(f"schema validation failed: {key} failed pattern")
+        min_length = contract.get("min_length")
+        if min_length is not None and len(value) < min_length:
+            raise EvidenceError(f"schema validation failed: {key} shorter than minLength")
+    if actual == "integer":
+        minimum = contract.get("minimum")
+        if minimum is not None and value < minimum:
+            raise EvidenceError(f"schema validation failed: {key} below minimum")
+
+
+def _validate_evidence_schema_stdlib(payload: dict[str, Any]) -> None:
+    """Strict stdlib-only validator for the fixed evidence JSON Schema contract."""
+    schema_path = resolve_schema_path()
+    if not schema_path.is_file():
+        raise EvidenceError("evidence schema file missing; refusing validation")
+    schema = _load_schema()
+    _assert_supported_evidence_schema(schema)
+
+    unknown = sorted(set(payload) - ALLOWED_EVIDENCE_KEYS)
+    if unknown:
+        raise EvidenceError(
+            f"schema validation failed: additional properties not allowed: {unknown}"
+        )
+    missing = [key for key in REQUIRED_EVIDENCE_KEYS if key not in payload]
+    if missing:
+        raise EvidenceError(f"schema validation failed: missing required properties: {missing}")
+
+    for key in REQUIRED_EVIDENCE_KEYS:
+        _validate_field_against_contract(key, payload[key], _EVIDENCE_FIELD_CONTRACT[key])
 
 
 def _parse_utc_z(value: str) -> datetime:
@@ -211,11 +420,15 @@ def validate_evidence(payload: dict[str, Any]) -> None:
     if not isinstance(payload, dict):
         raise EvidenceError("evidence must be a JSON object")
     _reject_secret_like_keys(payload)
-    try:
-        Draft202012Validator.check_schema(_load_schema())
-        Draft202012Validator(_load_schema()).validate(payload)
-    except (JsonSchemaValidationError, SchemaError) as exc:
-        raise EvidenceError(f"schema validation failed: {exc}") from exc
+    if _HAS_JSONSCHEMA:
+        try:
+            Draft202012Validator.check_schema(_load_schema())
+            Draft202012Validator(_load_schema()).validate(payload)
+        except (JsonSchemaValidationError, SchemaError) as exc:
+            raise EvidenceError(f"schema validation failed: {exc}") from exc
+    else:
+        # Host bootstrap is stdlib-only: enforce the reviewed schema contract explicitly.
+        _validate_evidence_schema_stdlib(payload)
 
     if payload.get("schema_version") != SCHEMA_VERSION:
         raise EvidenceError("unsupported schema_version")
@@ -236,7 +449,8 @@ def validate_evidence(payload: dict[str, Any]) -> None:
     for key in ("deployment_started_at", "deployment_finished_at"):
         if not UTC_Z_RE.fullmatch(str(payload.get(key, ""))):
             raise EvidenceError(f"invalid {key}")
-    if not isinstance(payload.get("deployment_duration_seconds"), int):
+    # bool is a subclass of int — require an exact integer (JSON Schema parity).
+    if type(payload.get("deployment_duration_seconds")) is not int:
         raise EvidenceError("deployment_duration_seconds must be int")
     if payload["deployment_duration_seconds"] < 0:
         raise EvidenceError("deployment_duration_seconds must be >= 0")

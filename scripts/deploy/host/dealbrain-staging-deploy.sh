@@ -162,6 +162,7 @@ SSM_COMMAND_ID="$(discover_ssm_command_id)"
 SOURCE_MANIFEST_SHA256=""
 EVIDENCE_UPLOADED=0
 PREVIOUS_CURRENT=""
+MIGRATE_LOG=""
 if [[ -L "${ROOT}/current" || -e "${ROOT}/current" ]]; then
   PREVIOUS_CURRENT="$(readlink -f "${ROOT}/current" 2>/dev/null || true)"
 fi
@@ -253,6 +254,11 @@ PY
 
 on_exit() {
   local code=$?
+  # Always scrub migrate temp log (signals / die / abnormal exit). Never mask status.
+  if [[ -n "${MIGRATE_LOG:-}" ]]; then
+    rm -f -- "$MIGRATE_LOG" || true
+    MIGRATE_LOG=""
+  fi
   if [[ $code -ne 0 && -z "$FAILURE_REASON" ]]; then
     FAILURE_REASON="host_script_exit_${code}"
   fi
@@ -350,6 +356,9 @@ install -o root -g root -m 0755 \
   "${RELEASE_DIR}/bin/evidence.py" \
   "${ROOT}/bin/evidence.py" 2>/dev/null || true
 install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/log_redaction.py" \
+  "${ROOT}/bin/log_redaction.py" 2>/dev/null || true
+install -o root -g root -m 0755 \
   "${RELEASE_DIR}/bin/verify_staging_bundle.py" \
   "${ROOT}/bin/verify_staging_bundle.py" 2>/dev/null || true
 install -o root -g root -m 0644 \
@@ -420,6 +429,14 @@ compose config >/dev/null
 MIGRATION_BEFORE="$(compose --profile migrate run --rm --no-deps migrate alembic current 2>/dev/null | tail -1 | tr -d '\r' || true)"
 log "migration_revision_before=${MIGRATION_BEFORE:-unknown}"
 
+REDACT_BIN=""
+if [[ -f "${BIN}/log_redaction.py" ]]; then
+  REDACT_BIN="${BIN}/log_redaction.py"
+elif [[ -f "${ROOT}/bin/log_redaction.py" ]]; then
+  REDACT_BIN="${ROOT}/bin/log_redaction.py"
+fi
+
+MIGRATE_LOG="$(mktemp "${RUNTIME_DIR}/.migrate.XXXXXX.log")"
 set +e
 timeout --signal=TERM --kill-after=30s "$MIGRATE_TIMEOUT_SEC" \
   docker compose \
@@ -427,9 +444,18 @@ timeout --signal=TERM --kill-after=30s "$MIGRATE_TIMEOUT_SEC" \
     --env-file "$ENV_FILE" \
     -f "$COMPOSE_BASE" \
     -f "$COMPOSE_STAGING" \
-    --profile migrate run --rm migrate
+    --profile migrate run --rm migrate \
+    >"$MIGRATE_LOG" 2>&1
 MIGRATE_RC=$?
 set -e
+# Emit only structurally redacted migrate output (never raw DATABASE_URL).
+if [[ -n "$REDACT_BIN" ]]; then
+  python3 "$REDACT_BIN" <"$MIGRATE_LOG" || true
+else
+  log "migrate log redactor missing; suppressing raw migrate output"
+fi
+rm -f -- "$MIGRATE_LOG"
+MIGRATE_LOG=""
 if [[ $MIGRATE_RC -eq 124 || $MIGRATE_RC -eq 137 ]]; then
   FAILURE_REASON="migration_timeout"
   die "migration timed out after ${MIGRATE_TIMEOUT_SEC}s; API left untouched"
