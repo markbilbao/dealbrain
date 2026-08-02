@@ -143,12 +143,16 @@ def test_staging_trust_pins_environment_staging() -> None:
     staging_main = _read(STAGING / "main.tf")
     assert "environment:${var.environment}" in trust
     assert (
-        'expected_sub      = "repo:${local.github_repository}:environment:${var.environment}"'
+        'expected_sub = "repo:${local.github_repository_sub}:environment:${var.environment}"'
         in trust
     )
+    assert "github_repository_sub" in trust
     assert re.search(r"environment\s+=\s+local\.environment", staging_main)
     assert 'environment = "staging"' in staging_main
     assert GITHUB_ENVIRONMENT_STAGING == "staging"
+    # Staging must wire immutable owner/repo IDs into the deploy-role module.
+    assert "github_repository_owner_id" in staging_main
+    assert "github_repository_id" in staging_main
 
 
 def test_production_trust_pins_environment_production() -> None:

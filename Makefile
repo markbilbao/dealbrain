@@ -37,9 +37,11 @@ docker-migrate:
 validate-infra:
 	bash scripts/validate_infra_25a.sh
 
-# Sprint 25b.2 targeted checks (OIDC/IAM static tests + infra validate helpers)
+# Sprint 25b.2 / 25b.5f targeted checks (OIDC/IAM static tests + infra validate helpers)
 validate-oidc:
-	uv run pytest tests/unit/test_sprint25b2_oidc_iam.py -q
+	uv run pytest \
+		tests/unit/test_sprint25b2_oidc_iam.py \
+		tests/unit/test_sprint25b5f_immutable_oidc_subject.py -q
 	bash scripts/validate_infra_25a.sh
 
 # Sprint 25b.3 staging deploy contract + predecessor infra tests
@@ -51,7 +53,8 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
-		tests/unit/test_sprint25b2_oidc_iam.py -q
+		tests/unit/test_sprint25b2_oidc_iam.py \
+		tests/unit/test_sprint25b5f_immutable_oidc_subject.py -q
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
@@ -69,7 +72,8 @@ validate-pre-live:
 		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
-		tests/unit/test_sprint25b2_oidc_iam.py -q
+		tests/unit/test_sprint25b2_oidc_iam.py \
+		tests/unit/test_sprint25b5f_immutable_oidc_subject.py -q
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh

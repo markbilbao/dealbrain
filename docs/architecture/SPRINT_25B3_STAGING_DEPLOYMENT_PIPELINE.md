@@ -934,7 +934,8 @@ Assert at minimum:
 ## 21. Assumptions
 
 1. Single AWS account; region `us-east-1` (25a freeze).
-2. Repo identity `markbilbao/dealbrain` (legacy OIDC `sub`).
+2. Repo identity `markbilbao/dealbrain`; staging OIDC `sub` uses immutable IDs
+   (`repo:markbilbao@309556720/dealbrain@1314423275:environment:staging`, Sprint 25b.5f).
 3. One staging EC2 Compose host.
 4. AL2023 + NAT for SSM/GHCR/SM.
 5. GHCR private; classic PAT `read:packages`.

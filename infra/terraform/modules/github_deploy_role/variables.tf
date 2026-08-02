@@ -28,6 +28,44 @@ variable "github_repository_name" {
   }
 }
 
+variable "github_repository_owner_id" {
+  description = <<-EOT
+    Numeric GitHub owner (user/org) ID for the immutable OIDC sub claim.
+    When set with github_repository_id, trust uses:
+      repo:<owner>@<owner_id>/<repo>@<repo_id>:environment:<env>
+    Leave empty for legacy name-only sub (production until separately migrated).
+    Staging must supply a non-empty numeric ID (no wildcards).
+  EOT
+  type        = string
+  default     = ""
+
+  validation {
+    condition = (
+      trimspace(var.github_repository_owner_id) == ""
+      || can(regex("^[0-9]+$", trimspace(var.github_repository_owner_id)))
+    )
+    error_message = "github_repository_owner_id must be empty or a numeric GitHub owner ID (digits only)."
+  }
+}
+
+variable "github_repository_id" {
+  description = <<-EOT
+    Numeric GitHub repository ID for the immutable OIDC sub claim.
+    Must be supplied together with github_repository_owner_id (both empty or both numeric).
+    Staging must supply a non-empty numeric ID (no wildcards).
+  EOT
+  type        = string
+  default     = ""
+
+  validation {
+    condition = (
+      trimspace(var.github_repository_id) == ""
+      || can(regex("^[0-9]+$", trimspace(var.github_repository_id)))
+    )
+    error_message = "github_repository_id must be empty or a numeric GitHub repository ID (digits only)."
+  }
+}
+
 variable "github_oidc_provider_arn" {
   description = "ARN of the account-level GitHub Actions OIDC provider (from account root)."
   type        = string

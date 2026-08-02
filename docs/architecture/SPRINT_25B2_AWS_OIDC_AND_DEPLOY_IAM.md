@@ -29,7 +29,7 @@ Sprint 25b.2 establishes the **authorization foundation** for later SSM-based st
 |----------|--------|
 | OIDC provider | **One** account-level Terraform root (`infra/terraform/account/`) owns `aws_iam_openid_connect_provider` for `https://token.actions.githubusercontent.com` |
 | Deploy roles | Two roles: `dealbrain-staging-gha-deploy`, `dealbrain-production-gha-deploy` — **never** one shared role |
-| Trust | Exact `sub` = `repo:<owner>/<repo>:environment:<env>` + `aud` = `sts.amazonaws.com` + `repository` claim |
+| Trust | Exact `StringEquals` on `sub` + `aud` = `sts.amazonaws.com` + `repository` claim; staging uses immutable GitHub IDs in `sub` (25b.5f) |
 | Live security gate | Roles are **not operationally approved** until GitHub Environments exist with **exact names**, **`main`-only deployment branches**, and production **required reviewers** with **admin bypass disabled or formally audited** |
 | Secrets from GHA | **Denied** — hosts read Secrets Manager; GHA only orchestrates SSM |
 | GHCR pull | **Classic PAT** with **`read:packages` only**, preferably a dedicated DealBrain machine account; Secrets Manager containers `dealbrain/staging/ghcr_pull` and `dealbrain/production/ghcr_pull`; values out-of-band only |
@@ -282,7 +282,14 @@ infra/terraform/account/
 - `token.actions.githubusercontent.com:sub`
 - `token.actions.githubusercontent.com:repository`
 
-### Staging trust (exact)
+### Staging trust (exact — Sprint 25b.5f immutable subject)
+
+This repository’s GitHub OIDC customization uses `use_default: true`, so issued
+`sub` claims include stable owner and repository IDs:
+
+`repo:markbilbao@309556720/dealbrain@1314423275:environment:staging`
+
+(`sub_claim_prefix` = `repo:markbilbao@309556720/dealbrain@1314423275`)
 
 ```json
 {
@@ -297,7 +304,7 @@ infra/terraform/account/
     "Condition": {
       "StringEquals": {
         "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-        "token.actions.githubusercontent.com:sub": "repo:markbilbao/dealbrain:environment:staging",
+        "token.actions.githubusercontent.com:sub": "repo:markbilbao@309556720/dealbrain@1314423275:environment:staging",
         "token.actions.githubusercontent.com:repository": "markbilbao/dealbrain"
       }
     }
@@ -305,21 +312,31 @@ infra/terraform/account/
 }
 ```
 
+The `repository` claim remains name-based (`markbilbao/dealbrain`). Only `sub`
+carries the immutable `@owner_id` / `@repository_id` segments.
+
 ### Production trust
 
-Same with `…:environment:production`.
+Production still uses the legacy name-only subject until a separate migration:
 
-Terraform variables (mandatory):
+`repo:markbilbao/dealbrain:environment:production`
 
-- `github_repository_owner` (e.g. `markbilbao`)
-- `github_repository_name` (e.g. `dealbrain`)
-- Construct `sub` as `repo:${owner}/${name}:environment:${environment}`
+(same `aud` / `repository` / `StringEquals` contract; no production ID wiring in 25b.5f).
+
+Terraform variables:
+
+- `github_repository_owner` / `github_repository_name` (mandatory; name claim + sub base)
+- Staging also requires `github_repository_owner_id` / `github_repository_id` (numeric; no wildcards)
+- Construct `sub` as:
+  - staging: `repo:${owner}@${owner_id}/${name}@${repo_id}:environment:staging`
+  - production (current): `repo:${owner}/${name}:environment:production`
 
 ### Environment `sub` vs branch enforcement (critical)
 
 An environment-based OIDC subject has the form:
 
-`repo:<owner>/<repo>:environment:<environment_name>`
+- Immutable (this repo / staging): `repo:<owner>@<owner_id>/<repo>@<repo_id>:environment:<environment_name>`
+- Legacy name-only: `repo:<owner>/<repo>:environment:<environment_name>`
 
 That claim proves the job declared GitHub Environment `staging` or `production`. It does **not** encode `refs/heads/main` and does **not** independently reject a job that somehow obtains that Environment from a non-`main` ref.
 
@@ -354,15 +371,34 @@ Therefore:
 | `workflow` / `job_workflow_ref` | **Defer** | Reusable workflows rewrite `job_workflow_ref`; revisit when deploy paths are stable |
 | `actor` / `event_name` | **No** | Too brittle |
 
-### Immutable subject claims (GitHub 2026)
+### Immutable subject claims (GitHub / Sprint 25b.5f)
 
-Existing repo uses **legacy** `sub` unless opted into immutable IDs. Launch design: legacy exact `StringEquals`. If org opts into immutable subjects, update Terraform `expected_sub` before deploy workflows go live.
+GitHub Actions OIDC may emit **immutable** `sub` values when customization uses
+`use_default: true` (or an equivalent custom claim including owner/repo IDs).
+
+For `markbilbao/dealbrain`:
+
+| Field | Value |
+|-------|--------|
+| owner | `markbilbao` |
+| owner_id | `309556720` |
+| repository | `dealbrain` |
+| repository_id | `1314423275` |
+| staging `sub` | `repo:markbilbao@309556720/dealbrain@1314423275:environment:staging` |
+
+**Staging (25b.5f):** Terraform trust `StringEquals` on that exact immutable `sub`.
+Name-only `repo:markbilbao/dealbrain:environment:staging` is **rejected** by AWS
+and must not appear in the staging trust policy.
+
+**Production:** Still legacy name-only `sub` until a dedicated production migration
+supplies the same numeric ID inputs. Do not broaden staging trust with wildcards
+or dual-accept both forms.
 
 ### Repository rename / transfer
 
-1. Update Terraform `github_repository_*` + re-apply trust  
-2. Re-verify GitHub Environment hard gates  
-3. Revoke old trust immediately on transfer away from controlled owner  
+1. Update Terraform `github_repository_*` (and staging ID inputs if IDs change) + re-apply trust
+2. Re-verify GitHub Environment hard gates
+3. Revoke old trust immediately on transfer away from controlled owner
 
 ### GitHub Environment binding contract
 
@@ -832,7 +868,8 @@ Full suite; save this architecture doc; additive lock; CI includes 25b.2 tests; 
 
 1. Staging and production share **one AWS account** for launch (VPC CIDR isolation as in 25a).  
 2. Region remains the frozen Sprint 25a region (default `us-east-1`).  
-3. Repository identity is currently `markbilbao/dealbrain` (legacy OIDC `sub`).  
+3. Repository identity is `markbilbao/dealbrain`; staging OIDC `sub` uses immutable
+   owner/repo IDs (Sprint 25b.5f). Production remains legacy name-only until migrated.
 4. AL2023 includes SSM Agent; NAT remains enabled.  
 5. GHCR packages remain private.  
 6. Private GHCR Docker pulls use a **classic PAT** with **`read:packages` only**, per current GitHub Packages documentation.  
@@ -853,7 +890,7 @@ Non-blocking future items (explicitly **not** open launch choices):
 | Item | Disposition |
 |------|-------------|
 | GitHub App / short-lived GHCR auth | Post-launch hardening only |
-| Opt into GitHub immutable `sub` IDs | Optional migration runbook; not required to start 25b.2 coding |
+| GitHub immutable `sub` IDs | Staging adopted in Sprint 25b.5f; production migration still deferred |
 | Custom SSM document | Decide in 25b.3 |
 | Separate AWS accounts | P30+ |
 | VPC SSM interface endpoints | Optional when NAT strategy changes |

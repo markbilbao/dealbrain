@@ -35,7 +35,9 @@ perform `terraform apply` unless an operator explicitly runs it.
   lockfiles** (`use_lockfile = true`). DynamoDB lock tables are obsolete and must not be
   created for new backends.
 - ACM certificate ARN (optional until TLS cutover; leave empty for HTTP bootstrap)
-- GitHub repository owner/name for OIDC trust variables (25b.2)
+- GitHub repository owner/name for OIDC trust variables (25b.2); staging also
+  requires numeric `github_repository_owner_id` / `github_repository_id` for the
+  immutable OIDC `sub` (25b.5f; see `environments/staging/terraform.tfvars.example`)
 
 ## Remote state locking (Sprint 25b.4b)
 
@@ -134,7 +136,7 @@ must not assume production shares the modernized locking model.
 | GHCR pull secret | `dealbrain/staging/ghcr_pull` | `dealbrain/production/ghcr_pull` |
 | RDS master secret | AWS-managed (staging instance) | Separate AWS-managed ARN |
 | GHA deploy role | `dealbrain-staging-gha-deploy` | `dealbrain-production-gha-deploy` |
-| OIDC subject | `…:environment:staging` | `…:environment:production` |
+| OIDC subject | immutable `repo:…@owner_id/…@repo_id:environment:staging` (25b.5f) | legacy name-only `…:environment:production` until migrated |
 | SSM document | `DealBrain-StagingDeploy` only | Interim `AWS-RunShellScript` (until 25b.4) |
 | Release artifacts bucket | `dealbrain-staging-release-artifacts-<account>` | none (25b.3) |
 | State key | `staging/terraform.tfstate` | `production/terraform.tfstate` |

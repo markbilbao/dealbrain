@@ -63,6 +63,7 @@ jobs:
             tests/unit/test_sprint25a_infrastructure.py \
             tests/unit/test_sprint25b1_image_publication.py \
             tests/unit/test_sprint25b2_oidc_iam.py \
+            tests/unit/test_sprint25b5f_immutable_oidc_subject.py \
             -q
 
       - name: Full pytest suite

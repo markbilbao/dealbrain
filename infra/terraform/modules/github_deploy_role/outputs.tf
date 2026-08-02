@@ -9,11 +9,16 @@ output "gha_deploy_role_name" {
 }
 
 output "expected_oidc_sub" {
-  description = "Exact OIDC subject claim required to assume this role."
+  description = "Exact OIDC subject claim required to assume this role (immutable IDs when configured)."
   value       = local.expected_sub
 }
 
 output "github_repository" {
   description = "Exact repository claim (owner/name) pinned in trust."
   value       = local.github_repository
+}
+
+output "uses_immutable_oidc_sub" {
+  description = "True when trust sub includes GitHub owner_id and repository_id."
+  value       = local.use_immutable_oidc_sub
 }
