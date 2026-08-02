@@ -1,5 +1,6 @@
-# GitHub Actions deploy orchestration role (Sprint 25b.2).
+# GitHub Actions deploy orchestration role (Sprint 25b.2 / 25b.5f).
 # Trust: Exact repo + exact GitHub Environment subject via OIDC.
+# Staging: immutable sub repo:<owner>@<owner_id>/<repo>@<repo_id>:environment:staging
 # Permissions: SSM SendCommand prep + describe APIs only.
 # Explicitly withheld: secret value reads, IAM admin, Terraform/state,
 # rds:CreateDBSnapshot (deferred to 25b.4), SSH, PassRole.
@@ -9,8 +10,23 @@ data "aws_caller_identity" "current" {}
 locals {
   role_name = "dealbrain-${var.environment}-gha-deploy"
 
+  # repository claim stays name-based (owner/name). sub may use immutable IDs.
   github_repository = "${var.github_repository_owner}/${var.github_repository_name}"
-  expected_sub      = "repo:${local.github_repository}:environment:${var.environment}"
+
+  owner_id = trimspace(var.github_repository_owner_id)
+  repo_id  = trimspace(var.github_repository_id)
+
+  # Both IDs required together. Staging must set them (precondition below).
+  # Format matches GitHub Actions use_default immutable subjects:
+  #   repo:<owner>@<owner_id>/<repo>@<repo_id>:environment:<env>
+  # Empty IDs keep legacy name-only sub (production until migrated).
+  use_immutable_oidc_sub = local.owner_id != "" && local.repo_id != ""
+  github_repository_sub = (
+    local.use_immutable_oidc_sub
+    ? "${var.github_repository_owner}@${local.owner_id}/${var.github_repository_name}@${local.repo_id}"
+    : local.github_repository
+  )
+  expected_sub = "repo:${local.github_repository_sub}:environment:${var.environment}"
 
   opposite_environment = var.environment == "staging" ? "production" : "staging"
 
@@ -60,6 +76,21 @@ resource "aws_iam_role" "gha_deploy" {
   description          = "DealBrain ${var.environment} GitHub Actions deploy orchestration (OIDC; no static keys)."
   assume_role_policy   = data.aws_iam_policy_document.trust.json
   max_session_duration = var.max_session_duration
+
+  lifecycle {
+    precondition {
+      condition = (
+        (local.owner_id == "" && local.repo_id == "")
+        || (local.owner_id != "" && local.repo_id != "")
+      )
+      error_message = "github_repository_owner_id and github_repository_id must both be empty or both be set (no partial immutable OIDC subjects)."
+    }
+    precondition {
+      # Staging trust must match GitHub use_default immutable subjects exactly.
+      condition     = var.environment != "staging" || local.use_immutable_oidc_sub
+      error_message = "Staging deploy role requires numeric github_repository_owner_id and github_repository_id for the immutable OIDC sub claim."
+    }
+  }
 
   tags = merge(var.tags, {
     Name        = local.role_name

@@ -167,6 +167,8 @@ module "github_deploy_role" {
   environment                  = local.environment
   github_repository_owner      = var.github_repository_owner
   github_repository_name       = var.github_repository_name
+  github_repository_owner_id   = var.github_repository_owner_id
+  github_repository_id         = var.github_repository_id
   github_oidc_provider_arn     = var.github_oidc_provider_arn
   aws_region                   = var.aws_region
   allowed_ssm_document_arns    = [module.ssm_deploy_document.document_arn]

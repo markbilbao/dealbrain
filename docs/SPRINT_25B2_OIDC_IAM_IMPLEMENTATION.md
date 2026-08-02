@@ -79,20 +79,23 @@ Mandatory Terraform variables (no wildcards, no hard-coded account IDs in module
 - `github_repository_owner`
 - `github_repository_name`
 - `github_oidc_provider_arn`
+- Staging also: `github_repository_owner_id`, `github_repository_id` (Sprint 25b.5f)
 
 ## Trust-policy contract
 
 Each deploy role allows only `sts:AssumeRoleWithWebIdentity` from the account OIDC provider when **all** of the following match:
 
-| Claim | Value |
-|-------|--------|
-| `aud` | `sts.amazonaws.com` |
-| `sub` | `repo:<owner>/<repo>:environment:<staging\|production>` |
-| `repository` | `<owner>/<repo>` |
+| Claim | Staging (25b.5f) | Production (current) |
+|-------|------------------|----------------------|
+| `aud` | `sts.amazonaws.com` | `sts.amazonaws.com` |
+| `sub` | `repo:markbilbao@309556720/dealbrain@1314423275:environment:staging` | `repo:<owner>/<repo>:environment:production` |
+| `repository` | `<owner>/<repo>` (name-based) | `<owner>/<repo>` |
 
-- Max session duration: `3600`  
-- No IAM user / AWS principal trust  
-- Staging trust cannot assume production; production trust cannot assume staging  
+- Matching uses `StringEquals` only (no `StringLike` / wildcards on `sub`)
+- Max session duration: `3600`
+- No IAM user / AWS principal trust
+- Staging trust cannot assume production; production trust cannot assume staging
+- This repo’s GitHub OIDC `use_default: true` emits immutable `sub` IDs; staging trust must match that exact form
 
 ## Permissions granted (orchestration)
 

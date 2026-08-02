@@ -233,6 +233,7 @@ Sprint 25b.2 owns the **authorization foundation** for later SSM deploys:
 |---------|--------|
 | Account-level GitHub Actions OIDC provider | `infra/terraform/account/` + `modules/github_oidc/` (exactly once) |
 | Staging / production deploy IAM roles + OIDC trust | `modules/github_deploy_role/` via environment roots |
+| Staging immutable GitHub OIDC `sub` (owner_id/repo_id) | Sprint 25b.5f — staging root ID inputs; production legacy until migrated |
 | Deploy-role orchestration permissions (SSM SendCommand prep + describe) | Sprint 25b.2 — **no** secret value reads, **no** `rds:CreateDBSnapshot` |
 | EC2 host SSM managed-instance capability | `modules/iam` attaches `AmazonSSMManagedInstanceCore` |
 | GHCR pull secret **containers** (`dealbrain/<env>/ghcr_pull`) | `modules/secrets` — values out-of-band only |

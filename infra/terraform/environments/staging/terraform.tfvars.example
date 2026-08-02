@@ -9,10 +9,15 @@
 
 aws_region = "us-east-1"
 
-# Sprint 25b.2 — OIDC trust inputs (mandatory; no wildcards).
-github_repository_owner  = "markbilbao"
-github_repository_name   = "dealbrain"
-github_oidc_provider_arn = "arn:aws:iam::REPLACE_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+# Sprint 25b.2 / 25b.5f — OIDC trust inputs (mandatory; no wildcards).
+# Staging uses GitHub's immutable OIDC sub (use_default):
+#   repo:markbilbao@309556720/dealbrain@1314423275:environment:staging
+# repository claim remains markbilbao/dealbrain.
+github_repository_owner    = "markbilbao"
+github_repository_name     = "dealbrain"
+github_repository_owner_id = "309556720"
+github_repository_id       = "1314423275"
+github_oidc_provider_arn   = "arn:aws:iam::REPLACE_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
 
 vpc_cidr             = "10.10.0.0/16"
 public_subnet_cidrs  = ["10.10.0.0/24", "10.10.1.0/24"]

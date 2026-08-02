@@ -168,6 +168,34 @@ variable "github_repository_name" {
   }
 }
 
+variable "github_repository_owner_id" {
+  description = <<-EOT
+    Numeric GitHub owner ID for the immutable staging OIDC sub claim.
+    Confirmed for markbilbao/dealbrain: 309556720.
+    Required — staging trust must not use name-only subjects.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+$", trimspace(var.github_repository_owner_id)))
+    error_message = "github_repository_owner_id must be a numeric GitHub owner ID (digits only)."
+  }
+}
+
+variable "github_repository_id" {
+  description = <<-EOT
+    Numeric GitHub repository ID for the immutable staging OIDC sub claim.
+    Confirmed for markbilbao/dealbrain: 1314423275.
+    Required — staging trust must not use name-only subjects.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+$", trimspace(var.github_repository_id)))
+    error_message = "github_repository_id must be a numeric GitHub repository ID (digits only)."
+  }
+}
+
 variable "github_oidc_provider_arn" {
   description = <<-EOT
     ARN of the account-level GitHub Actions OIDC provider created by
