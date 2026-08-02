@@ -76,9 +76,12 @@ jobs:
           OPTIONAL_RELEASE_ID: ${{ inputs.release_id }}
         run: |
           set -euo pipefail
-          mkdir -p .deploy-work
+          # Deterministic workspace path for release-manifest download (--dest required).
+          ARTIFACT_DEST=".deploy-work/artifact"
+          mkdir -p .deploy-work "$ARTIFACT_DEST"
           python scripts/deploy/fetch_release_artifact.py \
             --build-workflow-run-id "$BUILD_RUN_ID" \
+            --dest "$ARTIFACT_DEST" \
             --assert-only > .deploy-work/build-run.json
 
           BUILD_SHA="$(jq -r '.headSha' .deploy-work/build-run.json)"
@@ -96,7 +99,7 @@ jobs:
           MANIFEST_PATH="$(
             python scripts/deploy/fetch_release_artifact.py \
               --build-workflow-run-id "$BUILD_RUN_ID" \
-              --dest .deploy-work/artifact
+              --dest "$ARTIFACT_DEST"
           )"
           echo "manifest_path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
 
