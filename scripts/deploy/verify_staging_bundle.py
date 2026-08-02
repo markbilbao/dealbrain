@@ -33,6 +33,7 @@ REQUIRED_MEMBERS = (
     "compose/docker-compose.base.yml",
     "compose/docker-compose.staging.yml",
     "bin/dealbrain-staging-deploy.sh",
+    "bin/deploy_atomicity.sh",
     "bin/assemble-runtime-env.py",
     "bin/ghcr-login.sh",
     "bin/verify-staging.sh",

@@ -161,11 +161,37 @@ IMAGE_CREATED_AT=""
 SSM_COMMAND_ID="$(discover_ssm_command_id)"
 SOURCE_MANIFEST_SHA256=""
 EVIDENCE_UPLOADED=0
+# Deployment commit / atomicity contract (Sprint 25b.5i Design — OUTCOME 2):
+# Forward migrations run before API replacement; previous-image rollback is NOT
+# assumed schema-safe. After API replacement begins, every failure path must
+# leave running API image, /opt/dealbrain/current, and current/DEPLOY_VERSION
+# describing the same release (candidate reconciliation), or emit an explicit
+# unrecoverable invariant failure. Pointer-only rollback after replacement is
+# forbidden. Post-commit evidence failures retain the committed candidate.
+# Reconciliation never claims staging_ok.
+RELEASE_COMMITTED=0
+IN_ON_EXIT_EVIDENCE=0
 PREVIOUS_CURRENT=""
 MIGRATE_LOG=""
 if [[ -L "${ROOT}/current" || -e "${ROOT}/current" ]]; then
   PREVIOUS_CURRENT="$(readlink -f "${ROOT}/current" 2>/dev/null || true)"
 fi
+
+# Atomicity library ships beside the orchestrator in the release bundle.
+# Prefer BASH_SOURCE dir (release bin/) so first deploy of this sprint works
+# before helpers are copied into /opt/dealbrain/bin.
+# shellcheck source=deploy_atomicity.sh
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ATOMICITY_LIB=""
+if [[ -f "${_SCRIPT_DIR}/deploy_atomicity.sh" ]]; then
+  ATOMICITY_LIB="${_SCRIPT_DIR}/deploy_atomicity.sh"
+elif [[ -f "${ROOT}/bin/deploy_atomicity.sh" ]]; then
+  ATOMICITY_LIB="${ROOT}/bin/deploy_atomicity.sh"
+fi
+[[ -n "$ATOMICITY_LIB" && -f "$ATOMICITY_LIB" ]] || die "deploy_atomicity.sh missing"
+# shellcheck disable=SC1090
+source "$ATOMICITY_LIB"
+set_deploy_phase "PRE_MIGRATION"
 
 normalize_image_created_at() {
   local raw="$1"
@@ -194,6 +220,77 @@ else:
     dt = datetime.strptime(text, "%Y-%m-%dT%H:%M:%S.%f%z" if frac else "%Y-%m-%dT%H:%M:%S%z")
 print(dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 PY
+}
+
+# Resolve canonical evidence.py for revision normalization (release bin, then host bin).
+_evidence_py() {
+  if [[ -f "${RELEASE_DIR}/bin/evidence.py" ]]; then
+    echo "${RELEASE_DIR}/bin/evidence.py"
+  elif [[ -f "${ROOT}/bin/evidence.py" ]]; then
+    echo "${ROOT}/bin/evidence.py"
+  else
+    return 1
+  fi
+}
+
+# Strict Alembic revision normalization — fail closed (never first-token split).
+normalize_alembic_revision() {
+  local raw="$1"
+  local evidence_py
+  evidence_py="$(_evidence_py)" || die "evidence.py missing; cannot normalize alembic revision"
+  DEALBRAIN_ALEMBIC_RAW="$raw" python3 - "$evidence_py" <<'PY'
+import importlib.util
+import os
+import sys
+
+path = sys.argv[1]
+spec = importlib.util.spec_from_file_location("dealbrain_staging_evidence", path)
+if spec is None or spec.loader is None:
+    print("invalid alembic revision output: evidence module unreadable", file=sys.stderr)
+    raise SystemExit(1)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+try:
+    print(mod.normalize_alembic_revision(os.environ.get("DEALBRAIN_ALEMBIC_RAW", "")))
+except Exception as exc:
+    # Do not print raw alembic text — may include unexpected operator output.
+    print(f"invalid alembic revision output: {exc}", file=sys.stderr)
+    raise SystemExit(1) from exc
+PY
+}
+
+# Capture ``alembic current``, normalize, fail closed. allow_empty=1 → "" on empty/soft-fail.
+capture_migration_revision() {
+  local label="$1"
+  local allow_empty="${2:-0}"
+  local out rc normalized
+  # pipefail (script-wide) makes the substitution fail if alembic current fails.
+  set +e
+  out="$(compose --profile migrate run --rm --no-deps migrate alembic current 2>/dev/null | tr -d '\r')"
+  rc=$?
+  set -e
+  if [[ $rc -ne 0 ]]; then
+    if [[ "$allow_empty" -eq 1 ]]; then
+      echo ""
+      return 0
+    fi
+    die "alembic current failed for migration_revision_${label} (exit ${rc})"
+  fi
+  if [[ -z "${out//[[:space:]]/}" ]]; then
+    if [[ "$allow_empty" -eq 1 ]]; then
+      echo ""
+      return 0
+    fi
+    die "migration_revision_${label} empty"
+  fi
+  set +e
+  normalized="$(normalize_alembic_revision "$out")"
+  rc=$?
+  set -e
+  if [[ $rc -ne 0 || -z "$normalized" ]]; then
+    die "migration_revision_${label} failed revision normalization"
+  fi
+  echo "$normalized"
 }
 
 write_evidence() {
@@ -259,22 +356,44 @@ on_exit() {
     rm -f -- "$MIGRATE_LOG" || true
     MIGRATE_LOG=""
   fi
-  if [[ $code -ne 0 && -z "$FAILURE_REASON" ]]; then
-    FAILURE_REASON="host_script_exit_${code}"
-  fi
-  # Ensure current never points at a failed candidate release.
-  if [[ $code -ne 0 && -n "$PREVIOUS_CURRENT" && -d "$PREVIOUS_CURRENT" ]]; then
-    if [[ -L "${ROOT}/current" ]]; then
-      local cur
-      cur="$(readlink -f "${ROOT}/current" 2>/dev/null || true)"
-      if [[ "$cur" == "$RELEASE_DIR" ]]; then
-        ln -sfn "$PREVIOUS_CURRENT" "${ROOT}/current.new"
-        mv -Tf "${ROOT}/current.new" "${ROOT}/current"
-        log "restored current symlink to prior release after failure"
+
+  # Any trapped non-zero failure must force canonical failed status BEFORE evidence.
+  # Preserves original exit code; never emit staging_ok + failure_reason.
+  if [[ $code -ne 0 ]]; then
+    FINAL_STATUS="failed"
+    if [[ -z "$FAILURE_REASON" ]]; then
+      if [[ "${RELEASE_COMMITTED:-0}" -eq 1 ]]; then
+        FAILURE_REASON="evidence_upload_failed"
+      else
+        FAILURE_REASON="host_script_exit_${code}"
       fi
     fi
+    # Post-health gates true ⇒ failure_reason must use an allowed post-gate prefix.
+    if [[ "$LOCAL_LIVE" == "true" && "$LOCAL_READY" == "true" \
+       && "$ALB_HEALTH" == "true" && "$SMOKE_OK" == "true" ]]; then
+      case "$FAILURE_REASON" in
+        post_gate_*|evidence_upload_*|deploy_version_*|symlink_*|post_replacement_*|release_alignment_*) ;;
+        *) FAILURE_REASON="post_gate_${FAILURE_REASON}" ;;
+      esac
+    fi
   fi
-  if [[ "$EVIDENCE_UPLOADED" -eq 0 ]]; then
+
+  # Post-replacement pre-commit → candidate reconciliation (OUTCOME 2).
+  # Post-commit → retain current (no pointer-only rollback).
+  # Pre-replacement failures leave previous API + current untouched.
+  if [[ $code -ne 0 ]]; then
+    atomicity_on_failure "$code" || true
+  fi
+
+  # Secret-free invariant check before evidence. Does not overwrite exit code.
+  if [[ "${IN_ON_EXIT_EVIDENCE:-0}" -eq 0 ]]; then
+    atomicity_invariant_before_evidence || true
+  fi
+
+  # Best-effort evidence once. Guard against recursive/repeated trap execution
+  # if evidence writing itself fails (do not re-enter the success evidence path).
+  if [[ "$EVIDENCE_UPLOADED" -eq 0 && "${IN_ON_EXIT_EVIDENCE:-0}" -eq 0 ]]; then
+    IN_ON_EXIT_EVIDENCE=1
     write_evidence || log "evidence write/upload failed (best-effort on error path)"
   fi
   exit "$code"
@@ -361,6 +480,9 @@ install -o root -g root -m 0755 \
 install -o root -g root -m 0755 \
   "${RELEASE_DIR}/bin/verify_staging_bundle.py" \
   "${ROOT}/bin/verify_staging_bundle.py" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/deploy_atomicity.sh" \
+  "${ROOT}/bin/deploy_atomicity.sh" 2>/dev/null || true
 install -o root -g root -m 0644 \
   "${RELEASE_DIR}/bin/staging-deploy-evidence.schema.json" \
   "${ROOT}/bin/staging-deploy-evidence.schema.json" 2>/dev/null || true
@@ -426,7 +548,7 @@ compose config >/dev/null
 # -------------------------------------------------------------------------
 # 6. Migrate with 20-minute timeout — API untouched on failure.
 # -------------------------------------------------------------------------
-MIGRATION_BEFORE="$(compose --profile migrate run --rm --no-deps migrate alembic current 2>/dev/null | tail -1 | tr -d '\r' || true)"
+MIGRATION_BEFORE="$(capture_migration_revision before 1)"
 log "migration_revision_before=${MIGRATION_BEFORE:-unknown}"
 
 REDACT_BIN=""
@@ -465,14 +587,20 @@ if [[ $MIGRATE_RC -ne 0 ]]; then
   die "migration failed with exit ${MIGRATE_RC}; API left untouched"
 fi
 
-MIGRATION_AFTER="$(compose --profile migrate run --rm --no-deps migrate alembic current 2>/dev/null | tail -1 | tr -d '\r' || true)"
+MIGRATION_AFTER="$(capture_migration_revision after 0)"
 [[ -n "$MIGRATION_AFTER" ]] || die "migration_revision_after empty"
 log "migration_revision_after=${MIGRATION_AFTER}"
+set_deploy_phase "MIGRATION_COMPLETE"
 
 # -------------------------------------------------------------------------
 # 7–8. Recreate API only after migration success; verify health.
 # -------------------------------------------------------------------------
+# Mark replacement BEFORE compose up so a partial recreate failure is visible
+# to the exit trap (do not infer solely from health variables).
+set_deploy_phase "API_REPLACEMENT_STARTED"
+API_REPLACEMENT_OCCURRED=1
 compose up -d --force-recreate --no-deps api
+set_deploy_phase "CANDIDATE_RUNNING"
 
 TG_ARN_FILE="${RELEASE_DIR}/manifest/alb-nonsecret.json"
 bash "${BIN}/verify-staging.sh" \
@@ -490,27 +618,21 @@ LOCAL_READY="$(jq -r '.localhost_ready' "${EVIDENCE_DIR}/verify-${RELEASE_ID}.js
 ALB_HEALTH="$(jq -r '.alb_target_healthy' "${EVIDENCE_DIR}/verify-${RELEASE_ID}.json")"
 SMOKE_OK="$(jq -r '.smoke_ok' "${EVIDENCE_DIR}/verify-${RELEASE_ID}.json")"
 
-[[ "$LOCAL_LIVE" == "true" ]] || die "localhost /live failed"
-[[ "$LOCAL_READY" == "true" ]] || die "localhost /ready failed"
-[[ "$ALB_HEALTH" == "true" ]] || die "ALB target unhealthy"
-[[ "$SMOKE_OK" == "true" ]] || die "smoke check failed"
+[[ "$LOCAL_LIVE" == "true" ]] || { FAILURE_REASON="localhost_live_failed"; die "localhost /live failed"; }
+[[ "$LOCAL_READY" == "true" ]] || { FAILURE_REASON="localhost_ready_failed"; die "localhost /ready failed"; }
+[[ "$ALB_HEALTH" == "true" ]] || { FAILURE_REASON="alb_health_failed"; die "ALB target unhealthy"; }
+[[ "$SMOKE_OK" == "true" ]] || { FAILURE_REASON="smoke_check_failed"; die "smoke check failed"; }
+set_deploy_phase "HEALTH_VERIFIED"
 
 # -------------------------------------------------------------------------
-# 9–10. DEPLOY_VERSION then atomically update current (success only).
+# 9–10. DEPLOY_VERSION + atomic current (commit point) with post-checks.
 # -------------------------------------------------------------------------
-DEPLOYED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-cat >"${RELEASE_DIR}/DEPLOY_VERSION" <<EOF
-{
-  "release_id": "${RELEASE_ID}",
-  "git_sha": "${GIT_SHA}",
-  "image_digest": "${IMAGE_DIGEST}",
-  "deployed_at": "${DEPLOYED_AT}"
-}
-EOF
-chmod 0644 "${RELEASE_DIR}/DEPLOY_VERSION"
-
-ln -sfn "$RELEASE_DIR" "${ROOT}/current.new"
-mv -Tf "${ROOT}/current.new" "${ROOT}/current"
+# commit_release_pointer writes/validates DEPLOY_VERSION, atomically switches
+# current, verifies readlink + DEPLOY_VERSION + running digest, then sets
+# RELEASE_COMMITTED=1. Evidence finalization must not pointer-only-rollback.
+if ! commit_release_pointer; then
+  die "release pointer commit failed (${FAILURE_REASON:-unknown})"
+fi
 
 # Retain current + previous; prune older.
 python3 - <<'PY'
@@ -541,11 +663,20 @@ PY
     sleep 2
   done
 }
-[[ -n "$SSM_COMMAND_ID" ]] || die "ssm_command_id unavailable for staging_ok evidence"
+[[ -n "$SSM_COMMAND_ID" ]] || {
+  FAILURE_REASON="evidence_upload_ssm_command_id_missing"
+  die "ssm_command_id unavailable for staging_ok evidence"
+}
 
 FINAL_STATUS="staging_ok"
 FAILURE_REASON=""
-write_evidence
+if ! write_evidence; then
+  # Host release state stays committed; workflow fails on missing/failed evidence.
+  FINAL_STATUS="failed"
+  FAILURE_REASON="evidence_upload_failed"
+  die "success evidence write/upload failed after release commit"
+fi
+set_deploy_phase "FINALIZATION_COMPLETE"
 log "staging deploy succeeded for ${RELEASE_ID}"
 
 rm -f "$LOCK_INFO"

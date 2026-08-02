@@ -54,6 +54,7 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5g_migration_url_evidence.py \
 		tests/unit/test_sprint25b5h_python39_evidence_alb.py \
 		tests/unit/test_sprint25b5h_bootstrap_safeextract.py \
+		tests/unit/test_sprint25b5i_deploy_finalization_atomicity.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -61,6 +62,7 @@ validate-staging-deploy:
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/deploy_atomicity.sh
 	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
 	bash -n scripts/deploy/host/verify-staging.sh
@@ -76,6 +78,7 @@ validate-pre-live:
 		tests/unit/test_sprint25b5g_migration_url_evidence.py \
 		tests/unit/test_sprint25b5h_python39_evidence_alb.py \
 		tests/unit/test_sprint25b5h_bootstrap_safeextract.py \
+		tests/unit/test_sprint25b5i_deploy_finalization_atomicity.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -83,6 +86,7 @@ validate-pre-live:
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/deploy_atomicity.sh
 	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
 	bash -n scripts/deploy/host/verify-staging.sh

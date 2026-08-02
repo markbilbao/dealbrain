@@ -420,11 +420,13 @@ def test_current_previous_release_retention() -> None:
 
 def test_deploy_version_marker() -> None:
     host = _read(HOST_SCRIPTS / "dealbrain-staging-deploy.sh")
+    atom = _read(HOST_SCRIPTS / "deploy_atomicity.sh")
     assert "DEPLOY_VERSION" in host
-    assert "release_id" in host
-    assert "git_sha" in host
-    assert "image_digest" in host
-    assert "deployed_at" in host
+    assert "commit_release_pointer" in host
+    assert "release_id" in atom
+    assert "git_sha" in atom
+    assert "image_digest" in atom
+    assert "deployed_at" in atom
 
 
 def test_live_and_ready_gates() -> None:
@@ -749,13 +751,18 @@ def test_live_response_content_verified() -> None:
 
 def test_current_symlink_remains_prior_on_migration_failure() -> None:
     host = _read(HOST_SCRIPTS / "dealbrain-staging-deploy.sh")
+    atom = _read(HOST_SCRIPTS / "deploy_atomicity.sh")
     assert "PREVIOUS_CURRENT" in host
-    assert "restored current symlink to prior release after failure" in host
-    # current is updated only after health gates / DEPLOY_VERSION.
-    current_idx = host.index('ln -sfn "$RELEASE_DIR" "${ROOT}/current.new"')
+    # Migration failure leaves API untouched; current is only switched via
+    # commit_release_pointer after health (or candidate reconciliation after
+    # API replacement — never on the migration-failure path).
+    assert "API left untouched" in host
+    assert "commit_release_pointer" in host
+    assert 'ln -sfn "$target" "${ROOT}/current.new"' in atom
     migrate_idx = host.index("MIGRATE_TIMEOUT_SEC")
-    assert migrate_idx < current_idx
-    assert "force-recreate" in host[:current_idx]
+    commit_idx = host.index("commit_release_pointer")
+    assert migrate_idx < commit_idx
+    assert "force-recreate" in host[:commit_idx]
 
 
 def test_lock_acquired_before_extraction() -> None:
