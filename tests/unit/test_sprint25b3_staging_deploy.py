@@ -187,6 +187,10 @@ def test_manifest_validation_required_in_workflow() -> None:
     assert "validate_staging_release.py" in text
     assert "fetch_release_artifact.py" in text
     assert "Build Image" in text
+    # Sprint 25b.5d: every fetch_release_artifact.py invocation must pass --dest.
+    assert 'ARTIFACT_DEST=".deploy-work/artifact"' in text
+    assert text.count('--dest "$ARTIFACT_DEST"') >= 2
+    assert "--assert-only" in text
 
 
 def test_upstream_ci_and_build_verification() -> None:
