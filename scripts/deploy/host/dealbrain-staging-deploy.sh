@@ -118,32 +118,171 @@ require_disk_gib() {
   [[ "$free" -ge "$need" ]] || die "insufficient disk free space (${label}): ${free} GiB < ${need} GiB"
 }
 
+# Strict canonical UUID from a binder file. Stdout is UUID-only on success;
+# diagnostics go to stderr only. Never emits polluted/partial content.
+parse_canonical_ssm_command_id_file() {
+  local path="$1"
+  python3 -c '
+import sys
+import uuid
+from pathlib import Path
+
+path = Path(sys.argv[1])
+raw = path.read_bytes()
+if not raw:
+    print("FAIL: ssm-command-id.txt is empty", file=sys.stderr)
+    raise SystemExit(1)
+try:
+    text = raw.decode("ascii")
+except UnicodeDecodeError:
+    print("FAIL: ssm-command-id.txt is not ASCII", file=sys.stderr)
+    raise SystemExit(1)
+if text.endswith("\r\n"):
+    body = text[:-2]
+elif text.endswith("\n"):
+    body = text[:-1]
+else:
+    body = text
+if not body:
+    print("FAIL: ssm-command-id.txt empty after newline trim", file=sys.stderr)
+    raise SystemExit(1)
+if any(ch in body for ch in " \t\r\n\v\f"):
+    print("FAIL: ssm-command-id.txt must be exactly one canonical UUID line", file=sys.stderr)
+    raise SystemExit(1)
+if any(ord(ch) < 32 for ch in body):
+    print("FAIL: ssm-command-id.txt contains control characters", file=sys.stderr)
+    raise SystemExit(1)
+try:
+    parsed = uuid.UUID(body)
+except ValueError:
+    print("FAIL: ssm-command-id.txt is not a valid UUID", file=sys.stderr)
+    raise SystemExit(1)
+canonical = str(parsed)
+if body != canonical:
+    print("FAIL: ssm-command-id.txt is not canonical UUID form", file=sys.stderr)
+    raise SystemExit(1)
+sys.stdout.write(canonical)
+' "$path"
+}
+
+# Sole authority for evidence ssm_command_id: the release/run-specific S3 binder
+#   evidence/${RELEASE_ID}/${DEPLOY_RUN_ID}/ssm-command-id.txt
+#
+# Contract (Sprint 25b.5k):
+# - stdout is exactly one canonical lowercase UUID on success (rc=0)
+# - temporary object absence: empty stdout, rc=0 (bounded poll may retry)
+# - permanent AWS / parse failure: empty stdout, rc!=0 (fail closed; no fallback)
+# - never consults /var/lib/amazon/ssm/.../orchestration
+# - never accepts env overrides as an evidence authority
+# - never captures aws s3 cp stdout into the command id
 discover_ssm_command_id() {
-  local found=""
-  if [[ -n "${AWS_SSM_COMMAND_ID:-}" ]]; then
-    echo "$AWS_SSM_COMMAND_ID"
-    return 0
-  fi
-  # Prefer the workflow-published binder object (exact command id for this run).
   local binder="evidence/${RELEASE_ID}/${DEPLOY_RUN_ID}/ssm-command-id.txt"
-  local tmp
+  local tmp=""
+  local err=""
+  local found=""
+  local rc=0
+  local err_text=""
+  local aws_err_code=""
+  local temporary_absence=0
+
   tmp="$(mktemp)"
-  if aws s3 cp "s3://${BUNDLE_BUCKET}/${binder}" "$tmp" --region "$REGION" 2>/dev/null; then
-    found="$(tr -d '[:space:]' <"$tmp")"
-    rm -f "$tmp"
-    if [[ -n "$found" ]]; then
-      echo "$found"
+  err="$(mktemp)"
+  set +e
+  aws s3 cp \
+    "s3://${BUNDLE_BUCKET}/${binder}" \
+    "$tmp" \
+    --region "$REGION" \
+    --only-show-errors \
+    >/dev/null \
+    2>"$err"
+  rc=$?
+  set -e
+
+  if [[ "$rc" -ne 0 ]]; then
+    # Sanitize: classify from a short error snippet; never emit raw AWS bodies.
+    err_text="$(tr '\n' ' ' <"$err" 2>/dev/null | head -c 400 || true)"
+    rm -f "$tmp" "$err"
+
+    # Prefer explicit AWS error-code classification from CLI formats such as:
+    #   An error occurred (NoSuchKey) when calling the GetObject operation: ...
+    #   An error occurred (404) when calling the HeadObject operation: Not Found
+    # Loose natural-language phrases (does not exist / not found / missing) are
+    # NEVER sufficient — they appear inside permanent failures too
+    # (InvalidAccessKeyId, NoSuchBucket, etc.).
+    aws_err_code=""
+    temporary_absence=0
+    if [[ "$err_text" =~ An\ error\ occurred\ \(([A-Za-z0-9]+)\) ]]; then
+      aws_err_code="${BASH_REMATCH[1]}"
+    fi
+    case "$aws_err_code" in
+      NoSuchKey)
+        # Missing object at the expected binder key — retryable during publish window.
+        temporary_absence=1
+        ;;
+      404)
+        # Narrow object-level 404 from aws s3 cp HeadObject/GetObject only.
+        # Bare "Not Found" / bare "404" without this code+operation shape is permanent.
+        if [[ "$err_text" == *"HeadObject"* || "$err_text" == *"GetObject"* ]]; then
+          temporary_absence=1
+        fi
+        ;;
+    esac
+
+    if [[ "$temporary_absence" -eq 1 ]]; then
+      echo "ssm-command-id binder temporarily absent (retryable)" >&2
+      echo ""
       return 0
     fi
+    # Permanent: every other code, unrecognized output, network/DNS/TLS, auth, etc.
+    if [[ -n "$aws_err_code" ]]; then
+      echo "ssm-command-id binder download failed (permanent; fail closed; code=${aws_err_code})" >&2
+    else
+      echo "ssm-command-id binder download failed (permanent; fail closed)" >&2
+    fi
+    echo ""
+    return 1
   fi
-  rm -f "$tmp"
-  # Best-effort discovery from SSM agent orchestration directories.
-  local base="/var/lib/amazon/ssm/${INSTANCE_ID}/document/orchestration"
-  if [[ -d "$base" ]]; then
-    found="$(find "$base" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null \
-      | sort -nr | head -1 | awk '{print $2}' || true)"
+
+  if found="$(parse_canonical_ssm_command_id_file "$tmp")"; then
+    rm -f "$tmp" "$err"
+    echo "$found"
+    return 0
   fi
-  echo "${found:-}"
+
+  # Binder present but malformed: fail closed; do not fall through to any other source.
+  rm -f "$tmp" "$err"
+  echo "ssm-command-id binder content malformed (fail closed)" >&2
+  echo ""
+  return 1
+}
+
+# Bound binder wait before staging_ok evidence (poll interval × attempts).
+# Interval: 2s. Attempts: 60. Total timeout: 120s. Not infinite.
+SSM_BINDER_POLL_INTERVAL_SEC=2
+SSM_BINDER_POLL_ATTEMPTS=60
+
+resolve_ssm_command_id_for_evidence() {
+  # Resolve SSM_COMMAND_ID exclusively from the release/run binder.
+  # Empty after a successful (rc=0) discover means temporary absence → poll.
+  # Non-zero discover means permanent failure → die immediately.
+  local discovered=""
+  if [[ -n "${SSM_COMMAND_ID:-}" ]]; then
+    return 0
+  fi
+  local attempt
+  for attempt in $(seq 1 "$SSM_BINDER_POLL_ATTEMPTS"); do
+    if ! discovered="$(discover_ssm_command_id)"; then
+      FAILURE_REASON="evidence_upload_ssm_command_id_binder_failed"
+      die "ssm_command_id binder discovery failed permanently"
+    fi
+    if [[ -n "$discovered" ]]; then
+      SSM_COMMAND_ID="$discovered"
+      return 0
+    fi
+    sleep "$SSM_BINDER_POLL_INTERVAL_SEC"
+  done
+  FAILURE_REASON="evidence_upload_ssm_command_id_missing"
+  die "ssm_command_id unavailable for staging_ok evidence (binder wait expired)"
 }
 
 DEPLOYMENT_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -158,7 +297,12 @@ SMOKE_OK=""
 IMAGE_ID=""
 REPO_DIGEST=""
 IMAGE_CREATED_AT=""
-SSM_COMMAND_ID="$(discover_ssm_command_id)"
+# Early best-effort binder read (may be empty if binder not yet published).
+# Permanent binder failures abort immediately; orchestration dirs are never consulted.
+SSM_COMMAND_ID=""
+if ! SSM_COMMAND_ID="$(discover_ssm_command_id)"; then
+  die "ssm_command_id binder discovery failed permanently at deploy start"
+fi
 SOURCE_MANIFEST_SHA256=""
 EVIDENCE_UPLOADED=0
 # Deployment commit / atomicity contract (Sprint 25b.5i Design — OUTCOME 2):
@@ -655,14 +799,10 @@ PY
 # -------------------------------------------------------------------------
 # 11. Write/upload final success evidence.
 # -------------------------------------------------------------------------
-[[ -n "$SSM_COMMAND_ID" ]] || {
-  # Poll for workflow-published binder (uploaded immediately after SendCommand).
-  for _ in $(seq 1 60); do
-    SSM_COMMAND_ID="$(discover_ssm_command_id)"
-    [[ -n "$SSM_COMMAND_ID" ]] && break
-    sleep 2
-  done
-}
+# Binder-only authority: poll the exact release/run key until a canonical UUID
+# appears, a permanent AWS/parse failure occurs, or the 120s bound expires.
+# Non-binder values must never populate SSM_COMMAND_ID and skip this wait.
+resolve_ssm_command_id_for_evidence
 [[ -n "$SSM_COMMAND_ID" ]] || {
   FAILURE_REASON="evidence_upload_ssm_command_id_missing"
   die "ssm_command_id unavailable for staging_ok evidence"
