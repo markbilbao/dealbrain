@@ -26,6 +26,7 @@ INCLUDE_FILES: tuple[tuple[str, str], ...] = (
     ("infra/compose/docker-compose.base.yml", "compose/docker-compose.base.yml"),
     ("infra/compose/docker-compose.staging.yml", "compose/docker-compose.staging.yml"),
     ("scripts/deploy/host/dealbrain-staging-deploy.sh", "bin/dealbrain-staging-deploy.sh"),
+    ("scripts/deploy/host/deploy_atomicity.sh", "bin/deploy_atomicity.sh"),
     ("scripts/deploy/host/assemble-runtime-env.py", "bin/assemble-runtime-env.py"),
     ("scripts/deploy/host/ghcr-login.sh", "bin/ghcr-login.sh"),
     ("scripts/deploy/host/verify-staging.sh", "bin/verify-staging.sh"),

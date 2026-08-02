@@ -67,6 +67,18 @@ GHCR_REPO_RE: Final[re.Pattern[str]] = re.compile(
 INSTANCE_ID_RE: Final[re.Pattern[str]] = re.compile(r"^i-[0-9a-f]{8,17}$")
 ACCOUNT_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9]{12}$")
 MIGRATION_REV_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-fA-Z][0-9a-zA-Z_:-]{0,255}$")
+# Alembic ``current`` may annotate the single head; only the `` (head)`` suffix is allowed.
+_ALEMBIC_REV_LINE_RE: Final[re.Pattern[str]] = re.compile(
+    r"^([0-9a-fA-Z][0-9a-zA-Z_:-]{0,255})( \(head\))?$"
+)
+_ALEMBIC_LOG_PREFIXES: Final[tuple[str, ...]] = (
+    "INFO ",
+    "DEBUG ",
+    "WARNING ",
+    "WARN ",
+    "ERROR ",
+    "CRITICAL ",
+)
 # Secret-bearing values (URLs / credential assignments) — never accept in evidence.
 SECRET_VALUE_RE: Final[re.Pattern[str]] = re.compile(
     r"(?i)(?:postgresql(?:\+\w+)?|postgres(?:\+\w+)?|mysql(?:\+\w+)?"
@@ -162,11 +174,58 @@ POST_GATE_FAILURE_PREFIXES: Final[tuple[str, ...]] = (
     "evidence_upload_",
     "deploy_version_",
     "symlink_",
+    "post_replacement_",
+    "release_alignment_",
 )
 
 
 class EvidenceError(ValueError):
     """Raised when staging deploy evidence fails validation."""
+
+
+def normalize_alembic_revision(raw: str | None) -> str:
+    """Return the canonical Alembic revision id from ``alembic current`` output.
+
+    Accepts a plain revision (``d4e5f6a7b8c9``) or the single-head display form
+    (``d4e5f6a7b8c9 (head)``). Returns only the revision identifier.
+
+    Fails closed for empty/whitespace input, multiple revision lines, multiple
+    heads, unexpected annotations, malformed identifiers, or arbitrary text.
+    Does not blindly accept an unchecked first token.
+    """
+    if raw is None:
+        raise EvidenceError("alembic revision output is empty")
+    if not isinstance(raw, str):
+        raise EvidenceError("alembic revision output must be a string")
+
+    text = raw.replace("\r\n", "\n").replace("\r", "\n")
+    lines = [line.strip() for line in text.split("\n") if line.strip()]
+    if not lines:
+        raise EvidenceError("alembic revision output is empty")
+
+    revision_lines: list[str] = []
+    for line in lines:
+        if line.startswith(_ALEMBIC_LOG_PREFIXES):
+            continue
+        # Alembic multi-head / error banners are never revision records.
+        lowered = line.lower()
+        if "multiple heads" in lowered or lowered.startswith("failed"):
+            raise EvidenceError("alembic revision output reports multiple heads or failure")
+        revision_lines.append(line)
+
+    if not revision_lines:
+        raise EvidenceError("alembic revision output has no revision line")
+    if len(revision_lines) != 1:
+        raise EvidenceError("alembic revision output has multiple revision lines")
+
+    line = revision_lines[0]
+    match = _ALEMBIC_REV_LINE_RE.fullmatch(line)
+    if match is None:
+        raise EvidenceError("alembic revision output failed revision contract")
+    revision = match.group(1)
+    if not MIGRATION_REV_RE.fullmatch(revision):
+        raise EvidenceError("alembic revision output failed migration contract")
+    return revision
 
 
 def utc_now_z() -> str:
@@ -539,6 +598,16 @@ def create_evidence(
     final_status: str,
     failure_reason: str | None,
 ) -> dict[str, Any]:
+    # Canonicalize human-formatted Alembic output before schema/semantic checks.
+    if migration_revision_before is not None and migration_revision_before != "":
+        migration_revision_before = normalize_alembic_revision(migration_revision_before)
+    elif migration_revision_before == "":
+        migration_revision_before = None
+    if migration_revision_after is not None and migration_revision_after != "":
+        migration_revision_after = normalize_alembic_revision(migration_revision_after)
+    elif migration_revision_after == "":
+        migration_revision_after = None
+
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "release_id": release_id,
