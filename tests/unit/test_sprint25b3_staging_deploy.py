@@ -437,7 +437,7 @@ def test_live_and_ready_gates() -> None:
 def test_alb_health_verification() -> None:
     verify = _read(HOST_SCRIPTS / "verify-staging.sh")
     assert "describe-target-health" in verify
-    assert "300" in verify
+    assert "ALB_STABILIZATION_TIMEOUT_SEC=600" in verify
     assert "healthy" in verify
 
 

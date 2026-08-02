@@ -227,3 +227,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local toolchains (e.g. workspace-scoped CPython for host-compat probes)
+.tools/

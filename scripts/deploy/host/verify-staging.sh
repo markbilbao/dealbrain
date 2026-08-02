@@ -1,7 +1,22 @@
 #!/bin/bash
-# Staging post-deploy verification gates (Sprint 25b.3 / 25b.4a).
+# Staging post-deploy verification gates (Sprint 25b.3 / 25b.4a / 25b.5h).
 # Does not alter application /live or /ready semantics.
 # ALB acceptance is strict: sole expected instance target must be exactly healthy.
+#
+# Health-gate timing contract (bounded; no infinite wait):
+#   LOCAL_INTERVAL_SEC=5
+#   LOCAL_TIMEOUT_SEC=180          # per local probe (/live, then /ready)
+#   ALB_INTERVAL_SEC=10
+#   ALB_STABILIZATION_TIMEOUT_SEC=600  # ALB window after local readiness
+#   Maximum local wait:  2 * LOCAL_TIMEOUT_SEC = 360s
+#   Maximum ALB wait:    ALB_STABILIZATION_TIMEOUT_SEC = 600s
+#   Maximum health-gate total: 960s
+# ALB evaluator exit-code contract (alb_target_health.py):
+#   0 — healthy (success)
+#   2 — explicitly allowlisted transient state (sleep + retry in-window)
+#   1 — permanent / malformed / unknown (fail closed immediately)
+#   any other code — unexpected evaluator failure (fail closed immediately)
+# AWS CLI / jq parse failures are also permanent (never converted to empty targets).
 set -euo pipefail
 set +x
 
@@ -13,9 +28,16 @@ TG_JSON=""
 REGION=""
 INSTANCE_ID=""
 OUT_JSON="/tmp/dealbrain-verify.json"
-LOCAL_INTERVAL=5
-LOCAL_TIMEOUT=180
-ALB_TIMEOUT=300
+
+# Named retry/timeout contract (Sprint 25b.5h).
+LOCAL_INTERVAL_SEC=5
+LOCAL_TIMEOUT_SEC=180
+ALB_INTERVAL_SEC=10
+ALB_STABILIZATION_TIMEOUT_SEC=600
+# Backward-compatible aliases referenced by older docs/tests.
+LOCAL_INTERVAL="$LOCAL_INTERVAL_SEC"
+LOCAL_TIMEOUT="$LOCAL_TIMEOUT_SEC"
+ALB_TIMEOUT="$ALB_STABILIZATION_TIMEOUT_SEC"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -87,7 +109,7 @@ wait_http() {
   local path="$1"
   local kind="$2"
   local elapsed=0
-  while [[ $elapsed -lt $LOCAL_TIMEOUT ]]; do
+  while [[ $elapsed -lt $LOCAL_TIMEOUT_SEC ]]; do
     if curl -fsS "http://127.0.0.1:8000${path}" -o /tmp/dealbrain-probe.json; then
       if [[ "$kind" == "live" ]] && probe_live /tmp/dealbrain-probe.json; then
         return 0
@@ -96,8 +118,8 @@ wait_http() {
         return 0
       fi
     fi
-    sleep "$LOCAL_INTERVAL"
-    elapsed=$((elapsed + LOCAL_INTERVAL))
+    sleep "$LOCAL_INTERVAL_SEC"
+    elapsed=$((elapsed + LOCAL_INTERVAL_SEC))
   done
   return 1
 }
@@ -107,6 +129,7 @@ LOCAL_READY=false
 ALB_OK=false
 SMOKE_OK=false
 
+# Local container readiness must pass before ALB acceptance.
 if wait_http "/live" "live"; then
   LOCAL_LIVE=true
 fi
@@ -132,25 +155,80 @@ echo "$RUNNING_DIGEST" | grep -q "$IMAGE_DIGEST" || {
   }
 }
 
+# Require local readiness before spending the ALB stabilization window.
+if [[ "$LOCAL_LIVE" != "true" || "$LOCAL_READY" != "true" ]]; then
+  echo "ERROR: local readiness failed before ALB stabilization window" >&2
+  jq -n \
+    --argjson live "$LOCAL_LIVE" \
+    --argjson ready "$LOCAL_READY" \
+    --argjson alb false \
+    --argjson smoke false \
+    '{localhost_live:$live, localhost_ready:$ready, alb_target_healthy:$alb, smoke_ok:$smoke}' \
+    >"$OUT_JSON"
+  exit 1
+fi
+
 # Strict ALB target health — one structured acceptance path only.
 # No substring "healthy" fallback. Bounded poll; timeout fails closed.
+#
+# Retry contract (only evaluator exit 2 is retried):
+#   ALB_RC == 0 → success
+#   ALB_RC == 2 → sleep ALB_INTERVAL_SEC and retry until ALB_STABILIZATION_TIMEOUT_SEC
+#   ALB_RC == 1 → immediate permanent failure
+#   any other ALB_RC / AWS CLI failure / jq parse failure → immediate permanent failure
+_write_alb_fail_json() {
+  jq -n \
+    --argjson live "$LOCAL_LIVE" \
+    --argjson ready "$LOCAL_READY" \
+    --argjson alb false \
+    --argjson smoke false \
+    '{localhost_live:$live, localhost_ready:$ready, alb_target_healthy:$alb, smoke_ok:$smoke}' \
+    >"$OUT_JSON"
+}
+
 elapsed=0
-while [[ $elapsed -lt $ALB_TIMEOUT ]]; do
+while [[ $elapsed -lt $ALB_STABILIZATION_TIMEOUT_SEC ]]; do
+  set +e
   HEALTH_JSON="$(
     aws elbv2 describe-target-health \
       --region "$REGION" \
       --target-group-arn "$TG_ARN" \
-      --output json 2>/dev/null || echo '{"TargetHealthDescriptions":[]}'
+      --output json 2>/tmp/dealbrain-alb-aws.err
   )"
-  if printf '%s' "$HEALTH_JSON" | python3 "$ALB_EVAL" \
+  AWS_RC=$?
+  set -e
+  if [[ $AWS_RC -ne 0 ]]; then
+    echo "ERROR: aws elbv2 describe-target-health failed (exit ${AWS_RC}; fail closed)" >&2
+    _write_alb_fail_json
+    exit 1
+  fi
+  if ! printf '%s' "$HEALTH_JSON" | jq -e 'type == "object"' >/dev/null 2>&1; then
+    echo "ERROR: describe-target-health returned malformed/non-object JSON (fail closed)" >&2
+    _write_alb_fail_json
+    exit 1
+  fi
+
+  set +e
+  printf '%s' "$HEALTH_JSON" | python3 "$ALB_EVAL" \
     --target-group-arn "$TG_ARN" \
     --instance-id "$INSTANCE_ID" \
-    --input - >/dev/null; then
+    --input -
+  ALB_RC=$?
+  set -e
+  if [[ $ALB_RC -eq 0 ]]; then
     ALB_OK=true
     break
   fi
-  sleep 5
-  elapsed=$((elapsed + 5))
+  if [[ $ALB_RC -eq 2 ]]; then
+    # Explicitly allowlisted transient stabilization state — retry in-window.
+    sleep "$ALB_INTERVAL_SEC"
+    elapsed=$((elapsed + ALB_INTERVAL_SEC))
+    continue
+  fi
+  # Exit 1 (permanent) or any unexpected evaluator code — fail closed immediately.
+  echo "ERROR: ALB target health rejection (evaluator exit ${ALB_RC}; fail closed)" >&2
+  _write_alb_fail_json
+  exit 1
 done
 
 # Stable read-only smoke: /live again with content verification
@@ -169,7 +247,10 @@ jq -n \
 
 [[ "$LOCAL_LIVE" == "true" ]] || exit 1
 [[ "$LOCAL_READY" == "true" ]] || exit 1
-[[ "$ALB_OK" == "true" ]] || exit 1
+[[ "$ALB_OK" == "true" ]] || {
+  echo "ERROR: ALB target did not become healthy within ${ALB_STABILIZATION_TIMEOUT_SEC}s" >&2
+  exit 1
+}
 [[ "$SMOKE_OK" == "true" ]] || exit 1
 
 echo "ok: staging verification gates passed"

@@ -105,7 +105,8 @@ def test_alb_verify_script_has_one_structured_path_no_grep_fallback() -> None:
     verify = _read(HOST_SCRIPTS / "verify-staging.sh")
     assert "alb_target_health.py" in verify
     assert "--instance-id" in verify
-    assert "ALB_TIMEOUT=300" in verify
+    assert "ALB_STABILIZATION_TIMEOUT_SEC=600" in verify
+    assert "ALB_TIMEOUT=" in verify
     # No generic substring healthy acceptance.
     assert "grep -qw healthy" not in verify
     assert "grep -w healthy" not in verify
@@ -183,7 +184,7 @@ def test_alb_malformed_output_rejected() -> None:
             expected_instance_id=INSTANCE,
             target_group_arn=STAGING_TG,
         )
-    with pytest.raises(AlbTargetHealthError, match="malformed"):
+    with pytest.raises(AlbTargetHealthError, match="missing TargetHealthDescriptions|malformed"):
         evaluate_target_health(
             {"oops": []},
             expected_instance_id=INSTANCE,
