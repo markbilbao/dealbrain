@@ -627,9 +627,40 @@ install -o root -g root -m 0755 \
 install -o root -g root -m 0755 \
   "${RELEASE_DIR}/bin/deploy_atomicity.sh" \
   "${ROOT}/bin/deploy_atomicity.sh" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/dealbrain-staging-rollback.sh" \
+  "${ROOT}/bin/dealbrain-staging-rollback.sh" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/write-staging-rollback-evidence.py" \
+  "${ROOT}/bin/write-staging-rollback-evidence.py" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/rollback_evidence.py" \
+  "${ROOT}/bin/rollback_evidence.py" 2>/dev/null || true
 install -o root -g root -m 0644 \
   "${RELEASE_DIR}/bin/staging-deploy-evidence.schema.json" \
   "${ROOT}/bin/staging-deploy-evidence.schema.json" 2>/dev/null || true
+install -o root -g root -m 0644 \
+  "${RELEASE_DIR}/bin/staging-rollback-evidence.schema.json" \
+  "${ROOT}/bin/staging-rollback-evidence.schema.json" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/prior_staging_evidence.py" \
+  "${ROOT}/bin/prior_staging_evidence.py" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/verify_host_rollback_tooling.py" \
+  "${ROOT}/bin/verify_host_rollback_tooling.py" 2>/dev/null || true
+install -o root -g root -m 0755 \
+  "${RELEASE_DIR}/bin/resolve-rollback-migration.py" \
+  "${ROOT}/bin/resolve-rollback-migration.py" 2>/dev/null || true
+
+# Refresh trusted host rollback tooling capability inventory (preflight authority).
+if [[ -f "${ROOT}/bin/verify_host_rollback_tooling.py" ]]; then
+  python3 "${ROOT}/bin/verify_host_rollback_tooling.py" \
+    --bin-dir "${ROOT}/bin" \
+    --capability-path "${ROOT}/bin/staging-host-tooling.json" \
+    --expected-tooling-version "25b.5" \
+    --write \
+    || die "failed to write staging host tooling capability"
+fi
 
 # Validate bundle-meta.json
 META="${RELEASE_DIR}/bundle-meta.json"
@@ -778,20 +809,35 @@ if ! commit_release_pointer; then
   die "release pointer commit failed (${FAILURE_REASON:-unknown})"
 fi
 
-# Retain current + previous; prune older.
+# Retention contract (Sprint 25b.5): keep current + previous pointer targets.
+# Never prune a release referenced by current or previous (rollback / forward-recovery).
 python3 - <<'PY'
 import shutil
 from pathlib import Path
+
+root = Path("/opt/dealbrain")
 releases = Path("/opt/dealbrain/releases")
-current = Path("/opt/dealbrain/current").resolve()
-dirs = sorted([p for p in releases.iterdir() if p.is_dir()], key=lambda p: p.stat().st_mtime, reverse=True)
-keep = {current}
-for p in dirs:
-    if p.resolve() != current:
-        keep.add(p)
-        break
-for p in dirs:
-    if p.resolve() not in {k.resolve() for k in keep}:
+keep: set[Path] = set()
+for link_name in ("current", "previous"):
+    link = root / link_name
+    if link.exists() or link.is_symlink():
+        try:
+            keep.add(link.resolve())
+        except OSError:
+            pass
+if not keep and releases.is_dir():
+    # First-deploy fallback: retain newest directory only.
+    dirs = sorted(
+        [p for p in releases.iterdir() if p.is_dir()],
+        key=lambda p: p.stat().st_mtime,
+        reverse=True,
+    )
+    if dirs:
+        keep.add(dirs[0].resolve())
+for p in list(releases.iterdir()) if releases.is_dir() else []:
+    if not p.is_dir():
+        continue
+    if p.resolve() not in keep:
         shutil.rmtree(p, ignore_errors=True)
 print("retained:", ", ".join(sorted(str(k) for k in keep)))
 PY

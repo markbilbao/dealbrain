@@ -1,7 +1,8 @@
 # Staging deploy runbook (Sprint 25b.3 / 25b.4a)
 
 **Audience:** operators performing the first (and subsequent) staging digest deploys  
-**Does not cover:** production promotion (25b.4+), automated rollback (25b.5)  
+**Does not cover:** production promotion (25b.4+)
+**Rollback:** see `docs/runbooks/STAGING_ROLLBACK.md` (Sprint 25b.5)
 **25b.4a note:** repository pre-live refinements only — **no live AWS action** occurred in 25b.4a; **25b.4b** remains separately gated for apply / Environment / secrets / first deploy.
 
 ## Preconditions

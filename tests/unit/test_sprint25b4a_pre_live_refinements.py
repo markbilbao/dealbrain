@@ -447,7 +447,9 @@ def test_archive_symlink_and_hardlink_still_rejected() -> None:
 
 def test_no_production_workflow_snapshot_or_terraform_apply() -> None:
     assert not (WORKFLOWS / "deploy-production.yml").is_file()
-    assert not (WORKFLOWS / "rollback.yml").is_file()
+    # Sprint 25b.5 staging rollback is allowed; production rollback is not.
+    assert (WORKFLOWS / "rollback.yml").is_file()
+    assert "environment: production" not in (WORKFLOWS / "rollback.yml").read_text(encoding="utf-8")
     text = _read(DEPLOY_WF)
     assert "terraform apply" not in text
     assert "CreateDBSnapshot" not in text

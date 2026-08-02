@@ -72,8 +72,14 @@ def test_staging_root_requires_numeric_owner_and_repo_ids() -> None:
     assert owner_block is not None and "default" not in owner_block.group(1)
     assert repo_block is not None and "default" not in repo_block.group(1)
     assert "^[0-9]+$" in vars_tf or "^[0-9]+$" in vars_tf
-    assert "github_repository_owner_id   = var.github_repository_owner_id" in staging_main
-    assert "github_repository_id         = var.github_repository_id" in staging_main
+    assert re.search(
+        r"github_repository_owner_id\s*=\s*var\.github_repository_owner_id",
+        staging_main,
+    )
+    assert re.search(
+        r"github_repository_id\s*=\s*var\.github_repository_id",
+        staging_main,
+    )
 
 
 def test_immutable_subject_contains_confirmed_ids_and_staging_suffix() -> None:

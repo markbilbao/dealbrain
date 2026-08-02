@@ -97,6 +97,16 @@ output "ssm_deploy_document_arn" {
   value       = module.ssm_deploy_document.document_arn
 }
 
+output "ssm_rollback_document_name" {
+  description = "Custom staging SSM rollback document name (Sprint 25b.5)."
+  value       = module.ssm_rollback_document.document_name
+}
+
+output "ssm_rollback_document_arn" {
+  description = "Custom staging SSM rollback document ARN (Sprint 25b.5)."
+  value       = module.ssm_rollback_document.document_arn
+}
+
 output "domain_name" {
   value = var.domain_name
 }

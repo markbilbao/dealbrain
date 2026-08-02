@@ -87,8 +87,22 @@ fi
 
 write_candidate_deploy_version() {
   local deployed_at
+  local migration_revision="${MIGRATION_AFTER:-${MIGRATION_REVISION:-}}"
   deployed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  cat >"${RELEASE_DIR}/DEPLOY_VERSION" <<EOF
+  # migration_revision is recorded when known so rollback can prove DB compatibility
+  # without inventing a separate release authority.
+  if [[ -n "$migration_revision" ]]; then
+    cat >"${RELEASE_DIR}/DEPLOY_VERSION" <<EOF
+{
+  "release_id": "${RELEASE_ID}",
+  "git_sha": "${GIT_SHA}",
+  "image_digest": "${IMAGE_DIGEST}",
+  "deployed_at": "${deployed_at}",
+  "migration_revision": "${migration_revision}"
+}
+EOF
+  else
+    cat >"${RELEASE_DIR}/DEPLOY_VERSION" <<EOF
 {
   "release_id": "${RELEASE_ID}",
   "git_sha": "${GIT_SHA}",
@@ -96,6 +110,7 @@ write_candidate_deploy_version() {
   "deployed_at": "${deployed_at}"
 }
 EOF
+  fi
   chmod 0644 "${RELEASE_DIR}/DEPLOY_VERSION"
 }
 
@@ -120,26 +135,155 @@ raise SystemExit(0)
 PY
 }
 
-atomic_point_current() {
-  local target="$1"
+_atomic_point_symlink() {
+  local link_name="$1"
+  local target="$2"
   [[ -d "$target" ]] || return 1
-  ln -sfn "$target" "${ROOT}/current.new"
+  ln -sfn "$target" "${ROOT}/${link_name}.new"
   # Prefer GNU mv -Tf (staging EC2). Portable fallback for macOS unit-test hosts.
-  if mv -Tf "${ROOT}/current.new" "${ROOT}/current" 2>/dev/null; then
+  if mv -Tf "${ROOT}/${link_name}.new" "${ROOT}/${link_name}" 2>/dev/null; then
     return 0
   fi
-  local tmp="${ROOT}/current.prev.$$"
-  if [[ -L "${ROOT}/current" || -e "${ROOT}/current" ]]; then
-    mv -f "${ROOT}/current" "$tmp" || return 1
+  local tmp="${ROOT}/${link_name}.prev.$$"
+  if [[ -L "${ROOT}/${link_name}" || -e "${ROOT}/${link_name}" ]]; then
+    mv -f "${ROOT}/${link_name}" "$tmp" || return 1
   fi
-  if mv -f "${ROOT}/current.new" "${ROOT}/current"; then
+  if mv -f "${ROOT}/${link_name}.new" "${ROOT}/${link_name}"; then
     rm -f "$tmp"
     return 0
   fi
   if [[ -e "$tmp" || -L "$tmp" ]]; then
-    mv -f "$tmp" "${ROOT}/current" || true
+    mv -f "$tmp" "${ROOT}/${link_name}" || true
   fi
   return 1
+}
+
+atomic_point_current() {
+  _atomic_point_symlink current "$1"
+}
+
+atomic_point_previous() {
+  _atomic_point_symlink previous "$1"
+}
+
+_atomicity_readlink_previous() {
+  if [[ -L "${ROOT}/previous" || -e "${ROOT}/previous" ]]; then
+    readlink -f "${ROOT}/previous" 2>/dev/null || true
+  fi
+}
+
+# Validate a path is a release directory under the approved release root.
+_assert_release_dir_under_root() {
+  local path="$1"
+  [[ -n "$path" && -d "$path" ]] || return 1
+  local releases="${ROOT}/releases"
+  local resolved
+  resolved="$(readlink -f "$path" 2>/dev/null || true)"
+  [[ -n "$resolved" && -d "$resolved" ]] || return 1
+  case "$resolved" in
+    "${releases}"/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Restore one pointer to its exact pre-mutation state (path or absent).
+# Two symlinks are not one filesystem transaction; this is compensating restore.
+_restore_pointer_state() {
+  local link_name="$1"
+  local original_target="$2" # empty => must be absent
+  local had_link="$3"        # 1 if link existed before mutation
+  rm -f "${ROOT}/${link_name}.new" || true
+  if [[ "$had_link" -eq 1 && -n "$original_target" ]]; then
+    _assert_release_dir_under_root "$original_target" || return 1
+    _atomic_point_symlink "$link_name" "$original_target" || return 1
+    return 0
+  fi
+  # Original was absent — restore absence (no fabricated pointer).
+  rm -f "${ROOT}/${link_name}" || return 1
+  if [[ -L "${ROOT}/${link_name}" || -e "${ROOT}/${link_name}" ]]; then
+    return 1
+  fi
+  return 0
+}
+
+# After health success: previous <- displaced current (if any), current <- candidate.
+# Pointers mutate only here for successful deploy/rollback commit paths.
+#
+# Compensating transaction (honest dual-symlink model):
+#   1) Capture exact original current/previous states (path or absence)
+#   2) Validate intended release directories under ROOT/releases
+#   3) Prepare/replace each pointer atomically
+#   4) On any failure, restore BOTH pointers to their exact originals
+# Two symlink replacements are not a single filesystem transaction.
+commit_current_and_previous_pointers() {
+  local new_dir="$1"
+  local displaced_dir="${2:-}"
+  [[ -d "$new_dir" ]] || return 1
+  _assert_release_dir_under_root "$new_dir" || {
+    FAILURE_REASON="pointer_target_not_under_releases"
+    return 1
+  }
+
+  local orig_current="" orig_previous=""
+  local had_current=0 had_previous=0
+  if [[ -L "${ROOT}/current" || -e "${ROOT}/current" ]]; then
+    had_current=1
+    orig_current="$(_atomicity_readlink_current || true)"
+  fi
+  if [[ -L "${ROOT}/previous" || -e "${ROOT}/previous" ]]; then
+    had_previous=1
+    orig_previous="$(_atomicity_readlink_previous || true)"
+  fi
+
+  if [[ "$had_current" -eq 1 ]]; then
+    _assert_release_dir_under_root "$orig_current" || {
+      FAILURE_REASON="pointer_original_current_invalid"
+      return 1
+    }
+  fi
+  if [[ "$had_previous" -eq 1 ]]; then
+    _assert_release_dir_under_root "$orig_previous" || {
+      FAILURE_REASON="pointer_original_previous_invalid"
+      return 1
+    }
+  fi
+  if [[ -n "$displaced_dir" && -d "$displaced_dir" && "$displaced_dir" != "$new_dir" ]]; then
+    _assert_release_dir_under_root "$displaced_dir" || {
+      FAILURE_REASON="pointer_displaced_not_under_releases"
+      return 1
+    }
+  fi
+
+  _compensate_restore_pointer_pair() {
+    local restore_rc=0
+    if ! _restore_pointer_state current "$orig_current" "$had_current"; then
+      restore_rc=1
+    fi
+    if ! _restore_pointer_state previous "$orig_previous" "$had_previous"; then
+      restore_rc=1
+    fi
+    rm -f "${ROOT}/current.new" "${ROOT}/previous.new" || true
+    return "$restore_rc"
+  }
+
+  if [[ -n "$displaced_dir" && -d "$displaced_dir" && "$displaced_dir" != "$new_dir" ]]; then
+    if ! atomic_point_previous "$displaced_dir"; then
+      FAILURE_REASON="pointer_previous_update_failed"
+      if ! _compensate_restore_pointer_pair; then
+        FAILURE_REASON="pointer_pair_restore_failed"
+      fi
+      return 1
+    fi
+  fi
+
+  if ! atomic_point_current "$new_dir"; then
+    FAILURE_REASON="symlink_prepare_or_replace_failed"
+    if ! _compensate_restore_pointer_pair; then
+      FAILURE_REASON="pointer_pair_restore_failed"
+    fi
+    return 1
+  fi
+  return 0
 }
 
 verify_current_aligned_to() {
@@ -155,8 +299,10 @@ verify_current_aligned_to() {
   return 0
 }
 
-# Commit contract: DEPLOY_VERSION validated, atomic current, post-checks, then flag.
+# Commit contract: DEPLOY_VERSION validated, atomic current(+previous), post-checks, then flag.
+# previous is updated only when a displaced prior release directory exists.
 commit_release_pointer() {
+  local displaced="${PREVIOUS_CURRENT:-}"
   write_candidate_deploy_version || {
     FAILURE_REASON="deploy_version_write_failed"
     return 1
@@ -166,10 +312,10 @@ commit_release_pointer() {
     FAILURE_REASON="deploy_version_validation_failed"
     return 1
   }
-  atomic_point_current "$RELEASE_DIR" || {
-    FAILURE_REASON="symlink_prepare_or_replace_failed"
-    return 1
-  }
+  if [[ -z "$displaced" ]]; then
+    displaced="$(_atomicity_readlink_current)"
+  fi
+  commit_current_and_previous_pointers "$RELEASE_DIR" "$displaced" || return 1
   verify_current_aligned_to "$RELEASE_DIR" "$RELEASE_ID" "$GIT_SHA" "$IMAGE_DIGEST" || {
     FAILURE_REASON="symlink_verification_failed"
     return 1
@@ -179,6 +325,15 @@ commit_release_pointer() {
   if [[ -z "$running_digest" || "$running_digest" != "$IMAGE_DIGEST" ]]; then
     FAILURE_REASON="symlink_verification_failed"
     return 1
+  fi
+  # When a prior release was displaced, previous must point at it (forward-recovery).
+  if [[ -n "$displaced" && -d "$displaced" && "$displaced" != "$RELEASE_DIR" ]]; then
+    local prev_link
+    prev_link="$(_atomicity_readlink_previous)"
+    if [[ "$prev_link" != "$displaced" ]]; then
+      FAILURE_REASON="pointer_previous_verification_failed"
+      return 1
+    fi
   fi
   RELEASE_COMMITTED=1
   set_deploy_phase "RELEASE_COMMITTED"
