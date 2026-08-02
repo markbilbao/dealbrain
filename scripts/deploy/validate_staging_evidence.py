@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Validate staging deploy evidence (schema + checksum)."""
+"""Validate staging deploy evidence (schema + checksum).
+
+Invoke from the repository root as a module so ``scripts.*`` imports resolve:
+
+  python -m scripts.deploy.validate_staging_evidence PATH
+"""
 
 from __future__ import annotations
 
