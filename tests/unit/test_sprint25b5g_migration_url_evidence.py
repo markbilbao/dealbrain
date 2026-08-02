@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
+from collections.abc import Callable
 from configparser import ConfigParser
 from pathlib import Path
 
@@ -30,6 +31,7 @@ from scripts.deploy.evidence import (
     create_evidence,
     resolve_schema_path,
     validate_evidence,
+    write_evidence,
 )
 from scripts.deploy.log_redaction import redact_deploy_text
 from scripts.deploy.verify_staging_bundle import REQUIRED_MEMBERS, verify_bundle
@@ -864,3 +866,211 @@ def test_dangerous_percent_chars_round_trip_via_configparser() -> None:
     pw_enc = userinfo.split(":", 1)[1]
     assert unquote_plus(pw_enc) == password
     assert quote_plus(password, safe="") == pw_enc
+
+
+# ---------------------------------------------------------------------------
+# H. Missing schema + schema-drift fail-closed (stdlib path)
+# ---------------------------------------------------------------------------
+
+_CANONICAL_SCHEMA_PATH = ROOT / "schemas" / "staging-deploy-evidence.schema.json"
+
+
+def _load_canonical_schema() -> dict:
+    return json.loads(_CANONICAL_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def _write_temp_schema(tmp_path: Path, schema: dict) -> Path:
+    path = tmp_path / "staging-deploy-evidence.schema.json"
+    path.write_text(json.dumps(schema, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _force_stdlib_schema_path(monkeypatch: pytest.MonkeyPatch, schema_path: Path) -> None:
+    """Force stdlib validation against a deterministic schema path."""
+    monkeypatch.setattr(evidence_mod, "_HAS_JSONSCHEMA", False)
+    monkeypatch.setattr(
+        evidence_mod,
+        "resolve_schema_path",
+        lambda module_file=None: schema_path,
+    )
+    evidence_mod._load_schema.cache_clear()
+
+
+def _mutate_additional_properties_true(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["additionalProperties"] = True
+    return mutated
+
+
+def _mutate_required_field_removed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["required"] = [k for k in mutated["required"] if k != "aws_region"]
+    return mutated
+
+
+def _mutate_unexpected_required_added(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["required"] = list(mutated["required"]) + ["unexpected_required_field"]
+    return mutated
+
+
+def _mutate_property_removed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    del mutated["properties"]["aws_region"]
+    return mutated
+
+
+def _mutate_field_type_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["schema_version"]["type"] = "string"
+    return mutated
+
+
+def _mutate_nullable_contract_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["ssm_command_id"]["type"] = "string"
+    return mutated
+
+
+def _mutate_schema_version_const_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["schema_version"]["const"] = 2
+    return mutated
+
+
+def _mutate_enum_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["final_status"]["enum"] = ["staging_ok", "failed", "pending"]
+    return mutated
+
+
+def _mutate_regex_pattern_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["git_sha"]["pattern"] = "^[0-9a-f]{7}$"
+    return mutated
+
+
+def _mutate_min_length_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["aws_region"]["minLength"] = 2
+    return mutated
+
+
+def _mutate_minimum_changed(schema: dict) -> dict:
+    mutated = copy.deepcopy(schema)
+    mutated["properties"]["deployment_duration_seconds"]["minimum"] = 1
+    return mutated
+
+
+_SCHEMA_DRIFT_CASES: list[tuple[str, Callable[[dict], dict]]] = [
+    ("additional_properties_true", _mutate_additional_properties_true),
+    ("required_field_removed", _mutate_required_field_removed),
+    ("unexpected_required_added", _mutate_unexpected_required_added),
+    ("property_removed", _mutate_property_removed),
+    ("field_type_changed", _mutate_field_type_changed),
+    ("nullable_contract_changed", _mutate_nullable_contract_changed),
+    ("schema_version_const_changed", _mutate_schema_version_const_changed),
+    ("enum_changed", _mutate_enum_changed),
+    ("regex_pattern_changed", _mutate_regex_pattern_changed),
+    ("min_length_changed", _mutate_min_length_changed),
+    ("minimum_changed", _mutate_minimum_changed),
+]
+
+
+def test_stdlib_missing_schema_fail_closed_no_evidence_written(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Isolated layout with no resolvable schema must refuse validation fail-closed."""
+    evidence_mod._load_schema.cache_clear()
+    try:
+        # Build otherwise-valid evidence against the real schema first.
+        payload = _valid_failed_evidence()
+
+        bin_dir = tmp_path / "bundle" / "bin"
+        bin_dir.mkdir(parents=True)
+        fake_module = bin_dir / "evidence.py"
+        fake_module.write_text("# isolated bundle evidence module\n", encoding="utf-8")
+        # No sibling schema and no ../schemas/ — resolution returns a missing path.
+        missing_schema = resolve_schema_path(fake_module)
+        assert not missing_schema.is_file()
+        assert missing_schema.name == "staging-deploy-evidence.schema.json"
+        assert not (tmp_path / "bundle" / "schemas").exists()
+
+        _force_stdlib_schema_path(monkeypatch, missing_schema)
+        assert evidence_mod._HAS_JSONSCHEMA is False
+
+        out = tmp_path / "out" / "staging-deploy-evidence.json"
+        sidecar = out.with_suffix(out.suffix + ".sha256")
+
+        with pytest.raises(EvidenceError, match="schema file missing") as excinfo:
+            validate_evidence(copy.deepcopy(payload))
+        assert "refusing validation" in str(excinfo.value)
+        # Fail-closed: no silent accept / unchecked fallback.
+        assert "ACCEPTED" not in str(excinfo.value)
+
+        with pytest.raises(EvidenceError, match="schema file missing"):
+            write_evidence(out, copy.deepcopy(payload))
+        assert not out.exists()
+        assert not sidecar.exists()
+    finally:
+        evidence_mod._load_schema.cache_clear()
+
+
+@pytest.mark.parametrize(
+    ("drift_id", "mutator"),
+    _SCHEMA_DRIFT_CASES,
+    ids=[case[0] for case in _SCHEMA_DRIFT_CASES],
+)
+def test_stdlib_schema_drift_rejected_fail_closed(
+    drift_id: str,
+    mutator: Callable[[dict], dict],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Each security-relevant schema mutation must fail closed on the stdlib path."""
+    evidence_mod._load_schema.cache_clear()
+    try:
+        # Build otherwise-valid evidence against the real schema first.
+        payload = _valid_failed_evidence()
+
+        canonical = _load_canonical_schema()
+        mutated = mutator(canonical)
+        assert mutated != canonical, f"{drift_id} mutator left schema unchanged"
+        schema_path = _write_temp_schema(tmp_path, mutated)
+        _force_stdlib_schema_path(monkeypatch, schema_path)
+        assert evidence_mod._HAS_JSONSCHEMA is False
+
+        out = tmp_path / "evidence.json"
+        sidecar = out.with_suffix(out.suffix + ".sha256")
+
+        with pytest.raises(EvidenceError, match="unsupported evidence schema") as excinfo:
+            validate_evidence(copy.deepcopy(payload))
+        assert "unsupported evidence schema" in str(excinfo.value)
+
+        with pytest.raises(EvidenceError, match="unsupported evidence schema"):
+            write_evidence(out, copy.deepcopy(payload))
+        assert not out.exists()
+        assert not sidecar.exists()
+    finally:
+        evidence_mod._load_schema.cache_clear()
+
+
+def test_stdlib_canonical_schema_accepts_valid_success_and_failed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Control: unmodified canonical schema must still accept valid evidence."""
+    evidence_mod._load_schema.cache_clear()
+    try:
+        # Capture valid payloads before forcing the stdlib-only path.
+        success = _valid_success_evidence()
+        failed = _valid_failed_evidence()
+
+        _force_stdlib_schema_path(monkeypatch, _CANONICAL_SCHEMA_PATH)
+        assert evidence_mod._HAS_JSONSCHEMA is False
+        assert _CANONICAL_SCHEMA_PATH.is_file()
+
+        validate_evidence(success)
+        validate_evidence(failed)
+    finally:
+        evidence_mod._load_schema.cache_clear()
