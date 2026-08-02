@@ -471,10 +471,10 @@ def test_no_real_token_like_values_in_terraform_tree() -> None:
 
 
 def test_no_production_or_rollback_deploy_workflows_exist() -> None:
-    """Sprint 25b.3 introduces staging deploy only; production/rollback remain deferred."""
+    """Staging deploy + rollback exist; production deploy remains deferred."""
     assert (WORKFLOWS / "deploy-staging.yml").is_file()
-    for name in ("deploy-production.yml", "rollback.yml"):
-        assert not (WORKFLOWS / name).is_file(), f"{name} must not exist yet"
+    assert (WORKFLOWS / "rollback.yml").is_file()
+    assert not (WORKFLOWS / "deploy-production.yml").is_file()
 
 
 def test_no_terraform_apply_in_github_actions() -> None:

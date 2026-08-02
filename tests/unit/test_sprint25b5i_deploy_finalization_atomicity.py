@@ -1096,7 +1096,10 @@ def test_successful_deploy_order_in_host_script() -> None:
 
 def test_production_remains_untouched() -> None:
     assert not (WORKFLOWS / "deploy-production.yml").is_file()
-    assert not (WORKFLOWS / "rollback.yml").is_file()
+    # Sprint 25b.5 adds staging rollback.yml; production deploy/rollback remain absent.
+    rb = WORKFLOWS / "rollback.yml"
+    assert rb.is_file()
+    assert "environment: production" not in rb.read_text(encoding="utf-8")
     text = _read(DEPLOY_SH)
     assert "production overlay forbidden" in text or "production compose overlay forbidden" in text
     assert '[[ "$ENV_TAG" == "staging" ]]' in text

@@ -339,18 +339,25 @@ ALLOWED_TOP_LEVEL = frozenset({"compose", "bin", "manifest", "bundle-meta.json"}
 REQUIRED_MEMBERS = (
     "compose/docker-compose.base.yml",
     "compose/docker-compose.staging.yml",
+    "manifest/release-manifest.json",
+    "bundle-meta.json",
     "bin/dealbrain-staging-deploy.sh",
+    "bin/dealbrain-staging-rollback.sh",
     "bin/deploy_atomicity.sh",
     "bin/assemble-runtime-env.py",
     "bin/ghcr-login.sh",
     "bin/verify-staging.sh",
     "bin/alb_target_health.py",
     "bin/evidence.py",
+    "bin/rollback_evidence.py",
     "bin/write-staging-evidence.py",
+    "bin/write-staging-rollback-evidence.py",
+    "bin/prior_staging_evidence.py",
+    "bin/verify_host_rollback_tooling.py",
+    "bin/resolve-rollback-migration.py",
     "bin/staging-deploy-evidence.schema.json",
+    "bin/staging-rollback-evidence.schema.json",
     "bin/log_redaction.py",
-    "manifest/release-manifest.json",
-    "bundle-meta.json",
 )
 
 

@@ -57,6 +57,8 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5i_deploy_finalization_atomicity.py \
 		tests/unit/test_sprint25b5j_gha_evidence_module_invocation.py \
 		tests/unit/test_sprint25b5k_ssm_command_id_retrieval.py \
+		tests/unit/test_sprint25b5_rollback_workflow.py \
+		tests/unit/test_sprint25b5_rollback_authority.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -64,6 +66,7 @@ validate-staging-deploy:
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/dealbrain-staging-rollback.sh
 	bash -n scripts/deploy/host/deploy_atomicity.sh
 	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
@@ -83,6 +86,8 @@ validate-pre-live:
 		tests/unit/test_sprint25b5i_deploy_finalization_atomicity.py \
 		tests/unit/test_sprint25b5j_gha_evidence_module_invocation.py \
 		tests/unit/test_sprint25b5k_ssm_command_id_retrieval.py \
+		tests/unit/test_sprint25b5_rollback_workflow.py \
+		tests/unit/test_sprint25b5_rollback_authority.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -90,6 +95,7 @@ validate-pre-live:
 	bash scripts/validate_infra_25a.sh
 	bash -n infra/ec2/user_data/staging.sh
 	bash -n scripts/deploy/host/dealbrain-staging-deploy.sh
+	bash -n scripts/deploy/host/dealbrain-staging-rollback.sh
 	bash -n scripts/deploy/host/deploy_atomicity.sh
 	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh

@@ -20,23 +20,39 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-BUNDLE_SCHEMA_VERSION = 1
+# Schema 2 ships application runtime + host deploy/rollback tooling.
+# Schema 1 historical bundles (Build Image #15 era) omit rollback tooling and
+# are validated via APPLICATION_RUNTIME_MEMBERS + their own file_checksums.
+BUNDLE_SCHEMA_VERSION = 2
 
 INCLUDE_FILES: tuple[tuple[str, str], ...] = (
     ("infra/compose/docker-compose.base.yml", "compose/docker-compose.base.yml"),
     ("infra/compose/docker-compose.staging.yml", "compose/docker-compose.staging.yml"),
     ("scripts/deploy/host/dealbrain-staging-deploy.sh", "bin/dealbrain-staging-deploy.sh"),
+    ("scripts/deploy/host/dealbrain-staging-rollback.sh", "bin/dealbrain-staging-rollback.sh"),
     ("scripts/deploy/host/deploy_atomicity.sh", "bin/deploy_atomicity.sh"),
     ("scripts/deploy/host/assemble-runtime-env.py", "bin/assemble-runtime-env.py"),
     ("scripts/deploy/host/ghcr-login.sh", "bin/ghcr-login.sh"),
     ("scripts/deploy/host/verify-staging.sh", "bin/verify-staging.sh"),
     ("scripts/deploy/host/write-staging-evidence.py", "bin/write-staging-evidence.py"),
+    (
+        "scripts/deploy/host/write-staging-rollback-evidence.py",
+        "bin/write-staging-rollback-evidence.py",
+    ),
+    (
+        "scripts/deploy/host/resolve-rollback-migration.py",
+        "bin/resolve-rollback-migration.py",
+    ),
     ("scripts/deploy/evidence.py", "bin/evidence.py"),
+    ("scripts/deploy/rollback_evidence.py", "bin/rollback_evidence.py"),
+    ("scripts/deploy/prior_staging_evidence.py", "bin/prior_staging_evidence.py"),
+    ("scripts/deploy/verify_host_rollback_tooling.py", "bin/verify_host_rollback_tooling.py"),
     ("scripts/deploy/log_redaction.py", "bin/log_redaction.py"),
     ("scripts/deploy/alb_target_health.py", "bin/alb_target_health.py"),
     ("scripts/deploy/verify_staging_bundle.py", "bin/verify_staging_bundle.py"),
     ("scripts/deploy/probe_checks.py", "bin/probe_checks.py"),
     ("schemas/staging-deploy-evidence.schema.json", "bin/staging-deploy-evidence.schema.json"),
+    ("schemas/staging-rollback-evidence.schema.json", "bin/staging-rollback-evidence.schema.json"),
 )
 
 FORBIDDEN_NAMES = (

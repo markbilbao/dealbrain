@@ -127,6 +127,16 @@ module "ssm_deploy_document" {
   })
 }
 
+# Sprint 25b.5 — custom SSM Command document for staging rollback (code only until applied).
+module "ssm_rollback_document" {
+  source = "../../modules/ssm_rollback_document"
+
+  environment = local.environment
+  tags = merge(local.common_tags, {
+    Sprint = "25b.5"
+  })
+}
+
 # IAM after RDS so the instance role may read this env's application secrets
 # and the AWS-managed RDS master-user secret ARN only (no plaintext values).
 module "iam" {
@@ -158,20 +168,24 @@ module "ec2" {
   tags                      = local.common_tags
 }
 
-# Sprint 25b.2/25b.3 — GitHub Actions OIDC deploy role.
-# Staging: custom DealBrain-StagingDeploy document only (no managed RunShellScript allow).
+# Sprint 25b.2/25b.3/25b.5 — GitHub Actions OIDC deploy role.
+# Staging: DealBrain-StagingDeploy + DealBrain-StagingRollback only
+# (no managed RunShellScript allow).
 # Operationally approved only after GitHub Environment hard gates are live.
 module "github_deploy_role" {
   source = "../../modules/github_deploy_role"
 
-  environment                  = local.environment
-  github_repository_owner      = var.github_repository_owner
-  github_repository_name       = var.github_repository_name
-  github_repository_owner_id   = var.github_repository_owner_id
-  github_repository_id         = var.github_repository_id
-  github_oidc_provider_arn     = var.github_oidc_provider_arn
-  aws_region                   = var.aws_region
-  allowed_ssm_document_arns    = [module.ssm_deploy_document.document_arn]
+  environment                = local.environment
+  github_repository_owner    = var.github_repository_owner
+  github_repository_name     = var.github_repository_name
+  github_repository_owner_id = var.github_repository_owner_id
+  github_repository_id       = var.github_repository_id
+  github_oidc_provider_arn   = var.github_oidc_provider_arn
+  aws_region                 = var.aws_region
+  allowed_ssm_document_arns = [
+    module.ssm_deploy_document.document_arn,
+    module.ssm_rollback_document.document_arn,
+  ]
   release_artifacts_bucket_arn = module.release_artifacts.bucket_arn
   tags = merge(local.common_tags, {
     Sprint = "25b.3"

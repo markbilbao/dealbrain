@@ -120,9 +120,12 @@ def test_staging_workflow_exists() -> None:
     assert DEPLOY_WF.is_file()
 
 
-def test_production_and_rollback_workflows_absent() -> None:
+def test_production_workflow_absent_rollback_present() -> None:
     assert not (WORKFLOWS / "deploy-production.yml").is_file()
-    assert not (WORKFLOWS / "rollback.yml").is_file()
+    # Sprint 25b.5 adds staging-only rollback.yml; production rollback remains absent.
+    assert (WORKFLOWS / "rollback.yml").is_file()
+    assert "environment: staging" in (WORKFLOWS / "rollback.yml").read_text(encoding="utf-8")
+    assert "environment: production" not in (WORKFLOWS / "rollback.yml").read_text(encoding="utf-8")
 
 
 def test_workflow_dispatch_only() -> None:
@@ -243,10 +246,12 @@ def test_no_aws_run_shell_script_staging_allow() -> None:
     staging_main = _read(STAGING_TF / "main.tf")
     assert "allowed_ssm_document_arns" in staging_main
     assert "ssm_deploy_document.document_arn" in staging_main
-    # Must not leave the variable unset (empty → managed RunShellScript default).
-    assert "[module.ssm_deploy_document.document_arn]" in staging_main
-    # Production root must not wire the staging custom document in this sprint.
+    # Sprint 25b.5: deploy + rollback custom documents only (never empty → RunShellScript).
+    assert "ssm_rollback_document.document_arn" in staging_main
+    assert "AWS-RunShellScript" not in staging_main
+    # Production root must not wire the staging custom documents in this sprint.
     assert "ssm_deploy_document" not in _read(PROD_TF / "main.tf")
+    assert "ssm_rollback_document" not in _read(PROD_TF / "main.tf")
 
 
 def test_no_ssh() -> None:
@@ -399,7 +404,7 @@ def test_no_api_alembic_startup() -> None:
 
 def test_workflow_concurrency_cancel_false() -> None:
     text = _read(DEPLOY_WF)
-    assert "group: deploy-staging" in text
+    assert "group: staging-release-mutation" in text
     assert "cancel-in-progress: false" in text
     assert "timeout-minutes: 60" in text
 
@@ -758,7 +763,9 @@ def test_current_symlink_remains_prior_on_migration_failure() -> None:
     # API replacement — never on the migration-failure path).
     assert "API left untouched" in host
     assert "commit_release_pointer" in host
-    assert 'ln -sfn "$target" "${ROOT}/current.new"' in atom
+    # Sprint 25b.5: shared atomic symlink helper for current + previous.
+    assert 'ln -sfn "$target" "${ROOT}/${link_name}.new"' in atom
+    assert "atomic_point_current" in atom
     migrate_idx = host.index("MIGRATE_TIMEOUT_SEC")
     commit_idx = host.index("commit_release_pointer")
     assert migrate_idx < commit_idx

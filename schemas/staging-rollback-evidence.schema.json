@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dealbrain.local/schemas/staging-rollback-evidence.schema.json",
+  "title": "DealBrain Staging Rollback Evidence",
+  "description": "Sprint 25b.5 host-authored staging rollback evidence. Separate from deploy evidence and the immutable build release-manifest.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_type",
+    "rollback_workflow_run_id",
+    "aws_account_id",
+    "aws_region",
+    "assumed_role_arn",
+    "role_session_name",
+    "ec2_instance_id",
+    "ssm_command_id",
+    "rollback_started_at",
+    "rollback_finished_at",
+    "rollback_duration_seconds",
+    "source_release_id",
+    "source_image_digest",
+    "target_release_id",
+    "target_image_digest",
+    "target_git_sha",
+    "target_image_repository",
+    "target_manifest_sha256",
+    "migration_revision_before",
+    "migration_revision_after",
+    "target_migration_revision_authority",
+    "current_pointer_before",
+    "current_pointer_after",
+    "previous_pointer_before",
+    "previous_pointer_after",
+    "running_digest_after",
+    "localhost_live",
+    "localhost_ready",
+    "alb_target_healthy",
+    "final_status",
+    "failure_reason",
+    "evidence_sha256"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "evidence_type": { "type": "string", "const": "staging_rollback" },
+    "rollback_workflow_run_id": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "aws_account_id": {
+      "type": "string",
+      "pattern": "^[0-9]{12}$"
+    },
+    "aws_region": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumed_role_arn": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role_session_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ec2_instance_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ssm_command_id": { "type": ["string", "null"] },
+    "rollback_started_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "rollback_finished_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "rollback_duration_seconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "source_release_id": {
+      "type": ["string", "null"],
+      "pattern": "^rel-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{7,40}$"
+    },
+    "source_image_digest": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_release_id": {
+      "type": "string",
+      "pattern": "^rel-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{7,40}$"
+    },
+    "target_image_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_git_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "target_image_repository": {
+      "type": "string",
+      "pattern": "^ghcr\\.io/[a-z0-9]([a-z0-9._-]*/)+[a-z0-9._-]+$"
+    },
+    "target_manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "migration_revision_before": { "type": ["string", "null"] },
+    "migration_revision_after": { "type": ["string", "null"] },
+    "target_migration_revision_authority": {
+      "type": ["string", "null"],
+      "enum": ["deploy_version", "validated_prior_staging_evidence", null]
+    },
+    "current_pointer_before": { "type": ["string", "null"] },
+    "current_pointer_after": { "type": ["string", "null"] },
+    "previous_pointer_before": { "type": ["string", "null"] },
+    "previous_pointer_after": { "type": ["string", "null"] },
+    "running_digest_after": { "type": ["string", "null"] },
+    "localhost_live": { "type": ["boolean", "null"] },
+    "localhost_ready": { "type": ["boolean", "null"] },
+    "alb_target_healthy": { "type": ["boolean", "null"] },
+    "final_status": {
+      "type": "string",
+      "enum": ["rollback_ok", "failed"]
+    },
+    "failure_reason": { "type": ["string", "null"] },
+    "evidence_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
