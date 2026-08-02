@@ -51,6 +51,7 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5d_manifest_fetch.py \
 		tests/unit/test_sprint25b5e_staging_manifest_import.py \
 		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
+		tests/unit/test_sprint25b5g_migration_url_evidence.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -70,6 +71,7 @@ validate-pre-live:
 		tests/unit/test_sprint25b5d_manifest_fetch.py \
 		tests/unit/test_sprint25b5e_staging_manifest_import.py \
 		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
+		tests/unit/test_sprint25b5g_migration_url_evidence.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
