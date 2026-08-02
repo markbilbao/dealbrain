@@ -416,48 +416,50 @@ jobs:
 
           # Read exclusively from the downloaded file; strip only a single
           # trailing CR/LF terminator; accept exactly one canonical UUID.
+          # Heredoc keeps Python indented as YAML block content; after YAML
+          # strips the common indent, the PY terminator is at column 1 for shell.
           COMMAND_ID="$(
-            python -c '
-import sys
-import uuid
-from pathlib import Path
+            python - "$COMMAND_ID_FILE" <<'PY'
+          import sys
+          import uuid
+          from pathlib import Path
 
-path = Path(sys.argv[1])
-raw = path.read_bytes()
-if not raw:
-    print("FAIL: ssm-command-id.txt is empty", file=sys.stderr)
-    raise SystemExit(1)
-try:
-    text = raw.decode("ascii")
-except UnicodeDecodeError:
-    print("FAIL: ssm-command-id.txt is not ASCII", file=sys.stderr)
-    raise SystemExit(1)
-if text.endswith("\r\n"):
-    body = text[:-2]
-elif text.endswith("\n"):
-    body = text[:-1]
-else:
-    body = text
-if not body:
-    print("FAIL: ssm-command-id.txt empty after newline trim", file=sys.stderr)
-    raise SystemExit(1)
-if any(ch in body for ch in " \t\r\n\v\f"):
-    print("FAIL: ssm-command-id.txt must be exactly one canonical UUID line", file=sys.stderr)
-    raise SystemExit(1)
-if any(ord(ch) < 32 for ch in body):
-    print("FAIL: ssm-command-id.txt contains control characters", file=sys.stderr)
-    raise SystemExit(1)
-try:
-    parsed = uuid.UUID(body)
-except ValueError:
-    print("FAIL: ssm-command-id.txt is not a valid UUID", file=sys.stderr)
-    raise SystemExit(1)
-canonical = str(parsed)
-if body != canonical:
-    print("FAIL: ssm-command-id.txt is not canonical UUID form", file=sys.stderr)
-    raise SystemExit(1)
-sys.stdout.write(canonical)
-' "$COMMAND_ID_FILE"
+          path = Path(sys.argv[1])
+          raw = path.read_bytes()
+          if not raw:
+              print("FAIL: ssm-command-id.txt is empty", file=sys.stderr)
+              raise SystemExit(1)
+          try:
+              text = raw.decode("ascii")
+          except UnicodeDecodeError:
+              print("FAIL: ssm-command-id.txt is not ASCII", file=sys.stderr)
+              raise SystemExit(1)
+          if text.endswith("\r\n"):
+              body = text[:-2]
+          elif text.endswith("\n"):
+              body = text[:-1]
+          else:
+              body = text
+          if not body:
+              print("FAIL: ssm-command-id.txt empty after newline trim", file=sys.stderr)
+              raise SystemExit(1)
+          if any(ch in body for ch in " \t\r\n\v\f"):
+              print("FAIL: ssm-command-id.txt must be exactly one canonical UUID line", file=sys.stderr)
+              raise SystemExit(1)
+          if any(ord(ch) < 32 for ch in body):
+              print("FAIL: ssm-command-id.txt contains control characters", file=sys.stderr)
+              raise SystemExit(1)
+          try:
+              parsed = uuid.UUID(body)
+          except ValueError:
+              print("FAIL: ssm-command-id.txt is not a valid UUID", file=sys.stderr)
+              raise SystemExit(1)
+          canonical = str(parsed)
+          if body != canonical:
+              print("FAIL: ssm-command-id.txt is not canonical UUID form", file=sys.stderr)
+              raise SystemExit(1)
+          sys.stdout.write(canonical)
+          PY
           )"
           echo "ssm_command_id_validated=1"
 
