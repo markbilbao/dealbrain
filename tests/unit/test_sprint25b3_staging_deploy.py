@@ -184,7 +184,7 @@ def test_no_image_build_in_deploy_workflow() -> None:
 
 def test_manifest_validation_required_in_workflow() -> None:
     text = _read(DEPLOY_WF)
-    assert "validate_staging_release.py" in text
+    assert "python -m scripts.deploy.validate_staging_release" in text
     assert "fetch_release_artifact.py" in text
     assert "Build Image" in text
     # Sprint 25b.5d: every fetch_release_artifact.py invocation must pass --dest.

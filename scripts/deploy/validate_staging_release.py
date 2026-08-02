@@ -3,6 +3,10 @@
 
 Does not mutate the original build manifest. Rejects previously staged
 manifests, mutable-tag authority, and mismatched workflow evidence.
+
+Invoke from the repository root as a module so ``scripts.*`` imports resolve:
+
+  python -m scripts.deploy.validate_staging_release MANIFEST [options]
 """
 
 from __future__ import annotations

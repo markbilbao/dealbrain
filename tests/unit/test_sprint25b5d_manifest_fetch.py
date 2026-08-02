@@ -100,12 +100,12 @@ def test_deploy_staging_release_id_cross_check_intact() -> None:
     assert "OPTIONAL_RELEASE_ID: ${{ inputs.release_id }}" in text
     assert 'if [ -n "${OPTIONAL_RELEASE_ID}" ]; then' in step
     assert 'EXTRA_ARGS+=(--release-id "$OPTIONAL_RELEASE_ID")' in step
-    assert "validate_staging_release.py" in step
+    assert "python -m scripts.deploy.validate_staging_release" in step
 
 
 def test_deploy_staging_manifest_validation_fail_closed() -> None:
     step = _manifest_step(_read(DEPLOY_WF))
-    assert "validate_staging_release.py" in step
+    assert "python -m scripts.deploy.validate_staging_release" in step
     assert "imagetools inspect" in step
     assert 'test "$BUILD_CONCLUSION" = "success"' in step
     assert 'test "$BUILD_BRANCH" = "main"' in step
