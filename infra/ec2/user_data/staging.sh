@@ -343,6 +343,11 @@ REQUIRED_MEMBERS = (
     "bin/assemble-runtime-env.py",
     "bin/ghcr-login.sh",
     "bin/verify-staging.sh",
+    "bin/alb_target_health.py",
+    "bin/evidence.py",
+    "bin/write-staging-evidence.py",
+    "bin/staging-deploy-evidence.schema.json",
+    "bin/log_redaction.py",
     "manifest/release-manifest.json",
     "bundle-meta.json",
 )
@@ -361,6 +366,7 @@ def _sha256_file(path: Path) -> str:
 
 
 def validate_archive_members(tar: tarfile.TarFile):
+    """Reject absolute paths, traversal, links, devices, FIFOs, and layout surprises."""
     members = tar.getmembers()
     if not members:
         raise BundleVerifyError("archive is empty")
@@ -372,7 +378,10 @@ def validate_archive_members(tar: tarfile.TarFile):
         if name in seen:
             raise BundleVerifyError(f"duplicate archive member: {name}")
         seen.add(name)
+        # Absolute paths (Unix and Windows).
         if name.startswith("/") or name.startswith("\\") or Path(name).is_absolute():
+            raise BundleVerifyError(f"absolute path rejected: {name}")
+        if ":" in name.split("/")[0] and name[1:3] in (":/", ":\\"):
             raise BundleVerifyError(f"absolute path rejected: {name}")
         parts = Path(name).parts
         if ".." in parts:
@@ -385,13 +394,28 @@ def validate_archive_members(tar: tarfile.TarFile):
             raise BundleVerifyError(f"special file rejected: {name}")
         if not (member.isfile() or member.isdir()):
             raise BundleVerifyError(f"unsupported archive member type: {name}")
+        mode = member.mode
+        if mode & (stat.S_ISUID | stat.S_ISGID | getattr(stat, "S_ISVTX", 0)):
+            raise BundleVerifyError(f"setuid/setgid/sticky mode rejected: {name}")
         for forbidden in FORBIDDEN:
             if forbidden in name:
                 raise BundleVerifyError(f"forbidden member in bundle: {name}")
     return members
 
 
+def _is_unsupported_filter_typeerror(exc: TypeError) -> bool:
+    """True only for interpreters that reject the ``filter=`` keyword."""
+    msg = str(exc)
+    return "unexpected keyword argument" in msg and "filter" in msg
+
+
 def _extract_members(tar, dest: Path, members) -> None:
+    """Extract pre-validated members one-by-one (never a raw bulk extract).
+
+    Prefer ``filter="data"`` when supported. On Python 3.9 the keyword raises
+    TypeError; fall back to per-member extract after validation. Unrelated
+    TypeErrors stay fail-closed.
+    """
     dest = dest.resolve()
     for member in members:
         target = (dest / member.name).resolve()
@@ -399,7 +423,13 @@ def _extract_members(tar, dest: Path, members) -> None:
             target.relative_to(dest)
         except ValueError as exc:
             raise BundleVerifyError(f"extract path escaped destination: {member.name}") from exc
-        tar.extract(member, path=dest, filter="data")
+        try:
+            tar.extract(member, path=dest, filter="data")
+        except TypeError as exc:
+            if not _is_unsupported_filter_typeerror(exc):
+                raise
+            # Python 3.9: no filter= support. Members already validated above.
+            tar.extract(member, path=dest)
 
 
 def extract_validated_bundle(tarball, dest_dir, *, expected_checksum, expected_release_id=None, expected_digest=None):

@@ -101,7 +101,20 @@ def validate_archive_members(tar: tarfile.TarFile) -> list[tarfile.TarInfo]:
     return members
 
 
+def _is_unsupported_filter_typeerror(exc: TypeError) -> bool:
+    """True only for interpreters that reject the ``filter=`` keyword."""
+    msg = str(exc)
+    return "unexpected keyword argument" in msg and "filter" in msg
+
+
 def _extract_members(tar: tarfile.TarFile, dest: Path, members: list[tarfile.TarInfo]) -> None:
+    """Extract pre-validated members one-by-one (never a raw bulk extract).
+
+    Prefer ``filter="data"`` when the interpreter supports it (3.12+). On
+    Python 3.9 the keyword raises TypeError; fall back to per-member extract
+    only after ``validate_archive_members`` has rejected traversal, links,
+    devices, and layout surprises. Unrelated TypeErrors stay fail-closed.
+    """
     dest = dest.resolve()
     for member in members:
         target = (dest / member.name).resolve()
@@ -109,7 +122,13 @@ def _extract_members(tar: tarfile.TarFile, dest: Path, members: list[tarfile.Tar
             target.relative_to(dest)
         except ValueError as exc:
             raise BundleVerifyError(f"extract path escaped destination: {member.name}") from exc
-        tar.extract(member, path=dest, filter="data")
+        try:
+            tar.extract(member, path=dest, filter="data")
+        except TypeError as exc:
+            if not _is_unsupported_filter_typeerror(exc):
+                raise
+            # Python 3.9: no filter= support. Members already validated above.
+            tar.extract(member, path=dest)
 
 
 def verify_bundle(
@@ -222,9 +241,7 @@ def extract_validated_bundle(
 
         # Atomic replace: move validated tree into place.
         if dest_dir.exists():
-            backup = Path(
-                tempfile.mkdtemp(prefix=f".{dest_dir.name}.bak-", dir=str(parent))
-            )
+            backup = Path(tempfile.mkdtemp(prefix=f".{dest_dir.name}.bak-", dir=str(parent)))
             dest_dir.rename(backup)
             try:
                 tmp_root.rename(dest_dir)

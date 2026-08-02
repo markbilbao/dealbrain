@@ -9,10 +9,13 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Final
+
+# Host bootstrap runs Python 3.9 — prefer timezone.utc (UTC alias is 3.11+).
+# ruff: noqa: UP017
 
 try:
     from jsonschema import Draft202012Validator
@@ -167,7 +170,7 @@ class EvidenceError(ValueError):
 
 
 def utc_now_z() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def canonicalize_for_checksum(payload: dict[str, Any]) -> str:
@@ -313,7 +316,7 @@ def _validate_evidence_schema_stdlib(payload: dict[str, Any]) -> None:
 
 
 def _parse_utc_z(value: str) -> datetime:
-    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+    return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
 def _require_nonempty_str(payload: dict[str, Any], key: str) -> str:
