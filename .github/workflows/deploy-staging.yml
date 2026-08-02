@@ -352,7 +352,6 @@ jobs:
         env:
           BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
           RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
-          COMMAND_ID: ${{ steps.ssm.outputs.command_id }}
           EXPECTED_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
           EXPECTED_REGION: ${{ vars.AWS_REGION }}
         run: |
@@ -360,6 +359,8 @@ jobs:
           mkdir -p .deploy-work/evidence
           EVIDENCE_PATH=".deploy-work/evidence/staging-deploy-evidence.json"
           EVIDENCE_KEY="evidence/${RELEASE_ID}/${{ github.run_id }}/staging-deploy-evidence.json"
+          COMMAND_ID_KEY="evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt"
+          COMMAND_ID_FILE="${RUNNER_TEMP}/ssm-command-id.txt"
 
           # Fail closed: host must have uploaded checksummed evidence to the exact key.
           if ! aws s3api head-object --bucket "$BUCKET" --key "$EVIDENCE_KEY" >/dev/null 2>&1; then
@@ -367,7 +368,11 @@ jobs:
             echo "Refusing to fabricate staging_ok." >&2
             exit 1
           fi
-          aws s3 cp "s3://${BUCKET}/${EVIDENCE_KEY}" "$EVIDENCE_PATH"
+          aws s3 cp \
+            "s3://${BUCKET}/${EVIDENCE_KEY}" \
+            "$EVIDENCE_PATH" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors
 
           # Reject unexpected keys under the run prefix (allow evidence + optional sidecar + command-id binder).
           aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "evidence/${RELEASE_ID}/${{ github.run_id }}/" \
@@ -389,11 +394,72 @@ jobs:
           # Optional sidecar checksum check when present.
           if aws s3api head-object --bucket "$BUCKET" \
             --key "${EVIDENCE_KEY}.sha256" >/dev/null 2>&1; then
-            aws s3 cp "s3://${BUCKET}/${EVIDENCE_KEY}.sha256" "${EVIDENCE_PATH}.sha256"
+            aws s3 cp \
+              "s3://${BUCKET}/${EVIDENCE_KEY}.sha256" \
+              "${EVIDENCE_PATH}.sha256" \
+              --region "$EXPECTED_REGION" \
+              --only-show-errors
             EXPECTED_SHA="$(awk '{print $1}' "${EVIDENCE_PATH}.sha256")"
             ACTUAL_SHA="$(jq -r '.evidence_sha256' "$EVIDENCE_PATH")"
             test "$EXPECTED_SHA" = "$ACTUAL_SHA"
           fi
+
+          # Defense-in-depth (Sprint 25b.5k): re-download the binder and parse
+          # strictly so GitHub expected COMMAND_ID cannot be polluted by AWS CLI
+          # progress. Primary remediation is host discover_ssm_command_id;
+          # authoritative binder key selection is unchanged.
+          aws s3 cp \
+            "s3://${BUCKET}/${COMMAND_ID_KEY}" \
+            "$COMMAND_ID_FILE" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors
+
+          # Read exclusively from the downloaded file; strip only a single
+          # trailing CR/LF terminator; accept exactly one canonical UUID.
+          COMMAND_ID="$(
+            python -c '
+import sys
+import uuid
+from pathlib import Path
+
+path = Path(sys.argv[1])
+raw = path.read_bytes()
+if not raw:
+    print("FAIL: ssm-command-id.txt is empty", file=sys.stderr)
+    raise SystemExit(1)
+try:
+    text = raw.decode("ascii")
+except UnicodeDecodeError:
+    print("FAIL: ssm-command-id.txt is not ASCII", file=sys.stderr)
+    raise SystemExit(1)
+if text.endswith("\r\n"):
+    body = text[:-2]
+elif text.endswith("\n"):
+    body = text[:-1]
+else:
+    body = text
+if not body:
+    print("FAIL: ssm-command-id.txt empty after newline trim", file=sys.stderr)
+    raise SystemExit(1)
+if any(ch in body for ch in " \t\r\n\v\f"):
+    print("FAIL: ssm-command-id.txt must be exactly one canonical UUID line", file=sys.stderr)
+    raise SystemExit(1)
+if any(ord(ch) < 32 for ch in body):
+    print("FAIL: ssm-command-id.txt contains control characters", file=sys.stderr)
+    raise SystemExit(1)
+try:
+    parsed = uuid.UUID(body)
+except ValueError:
+    print("FAIL: ssm-command-id.txt is not a valid UUID", file=sys.stderr)
+    raise SystemExit(1)
+canonical = str(parsed)
+if body != canonical:
+    print("FAIL: ssm-command-id.txt is not canonical UUID form", file=sys.stderr)
+    raise SystemExit(1)
+sys.stdout.write(canonical)
+' "$COMMAND_ID_FILE"
+          )"
+          echo "ssm_command_id_validated=1"
 
           # Module form keeps the repository root on sys.path for scripts.* imports.
           python -m scripts.deploy.write_gha_staging_evidence \

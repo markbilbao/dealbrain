@@ -56,6 +56,7 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5h_bootstrap_safeextract.py \
 		tests/unit/test_sprint25b5i_deploy_finalization_atomicity.py \
 		tests/unit/test_sprint25b5j_gha_evidence_module_invocation.py \
+		tests/unit/test_sprint25b5k_ssm_command_id_retrieval.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -81,6 +82,7 @@ validate-pre-live:
 		tests/unit/test_sprint25b5h_bootstrap_safeextract.py \
 		tests/unit/test_sprint25b5i_deploy_finalization_atomicity.py \
 		tests/unit/test_sprint25b5j_gha_evidence_module_invocation.py \
+		tests/unit/test_sprint25b5k_ssm_command_id_retrieval.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
