@@ -395,7 +395,8 @@ jobs:
             test "$EXPECTED_SHA" = "$ACTUAL_SHA"
           fi
 
-          python scripts/deploy/write_gha_staging_evidence.py \
+          # Module form keeps the repository root on sys.path for scripts.* imports.
+          python -m scripts.deploy.write_gha_staging_evidence \
             --evidence "$EVIDENCE_PATH" \
             --release-id "$RELEASE_ID" \
             --git-sha "${{ steps.manifest.outputs.git_sha }}" \
@@ -408,7 +409,7 @@ jobs:
             --ec2-instance-id "${{ steps.targets.outputs.instance_id }}" \
             --ssm-command-id "$COMMAND_ID"
 
-          python scripts/deploy/validate_staging_evidence.py "$EVIDENCE_PATH"
+          python -m scripts.deploy.validate_staging_evidence "$EVIDENCE_PATH"
 
           # Do not re-upload synthetic evidence — host object is authoritative.
           # Re-upload only if we need GitHub artifact packaging (same bytes).

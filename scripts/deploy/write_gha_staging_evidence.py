@@ -4,6 +4,10 @@
 The workflow downloads host-uploaded evidence from the release/run-specific S3
 key and validates schema, checksum, semantic gates, and authority bindings.
 Missing evidence fails closed. This script refuses to create staging_ok.
+
+Invoke from the repository root as a module so ``scripts.*`` imports resolve:
+
+  python -m scripts.deploy.write_gha_staging_evidence [options]
 """
 
 from __future__ import annotations
