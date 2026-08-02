@@ -27,6 +27,7 @@ import textwrap
 import time
 from pathlib import Path
 
+import yaml
 from scripts.deploy.evidence import compute_evidence_sha256, create_evidence
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -547,11 +548,11 @@ def _run_module(args: list[str]) -> subprocess.CompletedProcess[str]:
 def _extract_workflow_uuid_parser() -> str:
     step = _evidence_step(_read(DEPLOY_WF))
     match = re.search(
-        r"COMMAND_ID=\"\$\(\s*\n\s*python -c '\n(.*?\n)' \"\$COMMAND_ID_FILE\"\s*\n\s*\)\"",
+        r"COMMAND_ID=\"\$\(\s*\n\s*python - \"\$COMMAND_ID_FILE\" <<'PY'\n(.*?)\n\s*PY\s*\n\s*\)\"",
         step,
         flags=re.DOTALL,
     )
-    assert match is not None, "workflow UUID parser block not found"
+    assert match is not None, "workflow UUID parser heredoc block not found"
     return textwrap.dedent(match.group(1))
 
 
@@ -564,6 +565,26 @@ def _run_workflow_uuid_parser(file_path: Path) -> subprocess.CompletedProcess[st
         text=True,
         cwd=str(ROOT),
     )
+
+
+def _evidence_step_run_script() -> str:
+    """Return the parsed ``run`` scalar for the host-evidence collection step."""
+    workflow = yaml.safe_load(_read(DEPLOY_WF))
+    assert isinstance(workflow, dict)
+    jobs = workflow.get("jobs")
+    assert isinstance(jobs, dict)
+    deploy = jobs.get("deploy")
+    assert isinstance(deploy, dict), "expected jobs.deploy"
+    steps = deploy.get("steps")
+    assert isinstance(steps, list)
+    for step in steps:
+        if isinstance(step, dict) and step.get("name") == (
+            "Collect and validate authoritative host evidence"
+        ):
+            run = step.get("run")
+            assert isinstance(run, str) and run.strip(), "evidence step run scalar missing"
+            return run
+    raise AssertionError("evidence collection step not found in parsed workflow")
 
 
 # ---------------------------------------------------------------------------
@@ -1190,6 +1211,30 @@ def test_github_defensive_binder_redownload_present() -> None:
     # Same release/run key; no fallback to steps.ssm output.
     assert "COMMAND_ID_KEY=" in step
     assert "steps.ssm.outputs.command_id" not in step
+
+
+def test_deploy_staging_yaml_keeps_command_id_parser_inside_run_scalar() -> None:
+    """Sprint 25b.5l: embedded Python must remain inside the evidence ``run`` scalar.
+
+    The 25b.5k ``python -c`` form put ``import sys`` at column 1 and terminated the
+    YAML block scalar. Prefer a YAML-safe heredoc; prove via parse, not indent-only.
+    """
+    workflow = yaml.safe_load(_read(DEPLOY_WF))
+    assert isinstance(workflow, dict)
+    run = _evidence_step_run_script()
+    assert "import sys" in run
+    assert "import uuid" in run
+    assert "path.read_bytes()" in run
+    assert "sys.stdout.write(canonical)" in run
+    assert "file=sys.stderr" in run
+    assert "python - \"$COMMAND_ID_FILE\" <<'PY'" in run
+    assert "python -c '" not in run
+    # Heredoc terminator must be at column 0 in the stripped scalar (shell contract).
+    assert re.search(r"(?m)^PY$", run), "heredoc terminator PY must be at column 0 after YAML strip"
+    # Parser source must still be extractable and executable for defense-in-depth tests.
+    parser = _extract_workflow_uuid_parser()
+    assert "path.read_bytes()" in parser
+    assert "sys.stdout.write(canonical)" in parser
 
 
 def test_github_defensive_parser_rejects_polluted_binder_bytes() -> None:
