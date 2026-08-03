@@ -55,9 +55,40 @@ EXTRACT_CONTRACT_MARKERS = (
     "special file rejected",
     "path traversal rejected",
     "absolute path rejected",
+    "setuid/setgid/sticky mode rejected",
+    "duplicate archive member",
     "forbidden member in bundle",
     "bundle checksum mismatch",
     "missing required member",
+)
+
+# Rollback-specific members ship via Deploy Staging schema-2 bundles only.
+ROLLBACK_ONLY_REQUIRED_MEMBERS = (
+    "bin/dealbrain-staging-rollback.sh",
+    "bin/rollback_evidence.py",
+    "bin/write-staging-rollback-evidence.py",
+    "bin/prior_staging_evidence.py",
+    "bin/verify_host_rollback_tooling.py",
+    "bin/resolve-rollback-migration.py",
+    "bin/staging-rollback-evidence.schema.json",
+)
+
+# Pre-PR #40 / Sprint 25b.5h bootstrap REQUIRED_MEMBERS (no rollback tooling).
+BOOTSTRAP_BASELINE_REQUIRED_MEMBERS = (
+    "compose/docker-compose.base.yml",
+    "compose/docker-compose.staging.yml",
+    "bin/dealbrain-staging-deploy.sh",
+    "bin/deploy_atomicity.sh",
+    "bin/assemble-runtime-env.py",
+    "bin/ghcr-login.sh",
+    "bin/verify-staging.sh",
+    "bin/alb_target_health.py",
+    "bin/evidence.py",
+    "bin/write-staging-evidence.py",
+    "bin/staging-deploy-evidence.schema.json",
+    "bin/log_redaction.py",
+    "manifest/release-manifest.json",
+    "bundle-meta.json",
 )
 
 # ---------------------------------------------------------------------------
@@ -306,6 +337,8 @@ def test_embedded_fallback_rejects_unsafe_corpus(
     cases = [
         ("../escape", None, "traversal|absolute|unexpected"),
         ("/absolute/path", None, "absolute|unexpected"),
+        ("C:/Windows/System32/evil", None, "absolute"),
+        ("D:\\Windows\\evil", None, "absolute"),
         ("bin/link", "symlink", "symlink|hardlink"),
         ("bin/hard", "hardlink", "symlink|hardlink"),
         ("bin/link-escape", "symlink", "symlink|hardlink"),
@@ -541,8 +574,17 @@ def test_canonical_bootstrap_security_corpus_parity(
 
 
 def test_required_members_aligned_with_canonical() -> None:
+    """Bootstrap keeps the pre-PR baseline; rollback members stay bundle-only."""
     mod = _load_embedded_verifier()
-    assert frozenset(mod.REQUIRED_MEMBERS) == frozenset(CANONICAL_REQUIRED)
+    assert frozenset(mod.REQUIRED_MEMBERS) == frozenset(BOOTSTRAP_BASELINE_REQUIRED_MEMBERS)
+    assert frozenset(mod.REQUIRED_MEMBERS).issubset(frozenset(CANONICAL_REQUIRED))
+    for rel in ROLLBACK_ONLY_REQUIRED_MEMBERS:
+        assert rel not in mod.REQUIRED_MEMBERS
+        assert rel in CANONICAL_REQUIRED
+    # Canonical schema-2 still requires full host tooling including rollback.
+    assert frozenset(CANONICAL_REQUIRED) - frozenset(mod.REQUIRED_MEMBERS) == frozenset(
+        ROLLBACK_ONLY_REQUIRED_MEMBERS
+    )
 
 
 def test_host_repair_plan_constants_document_contracts() -> None:
@@ -601,19 +643,53 @@ def test_real_python39_loads_embedded_safeextract(tmp_path: Path) -> None:
 
 def test_setuid_rejected_by_embedded(tmp_path: Path) -> None:
     mod = _load_embedded_verifier()
-    tar_path = tmp_path / "setuid.tar.gz"
+    for mode, label in (
+        (0o4755, "setuid"),
+        (0o2755, "setgid"),
+        (0o1755, "sticky"),
+    ):
+        tar_path = tmp_path / f"{label}.tar.gz"
+        with tarfile.open(tar_path, "w:gz") as tar:
+            data = b"x"
+            info = tarfile.TarInfo(name=f"bin/{label}.sh")
+            info.size = len(data)
+            info.mode = mode
+            tar.addfile(info, fileobj=io.BytesIO(data))
+        with pytest.raises(mod.BundleVerifyError, match="setuid|setgid|sticky"):
+            mod.extract_validated_bundle(
+                tar_path,
+                tmp_path / f"out-{label}",
+                expected_checksum=hashlib.sha256(tar_path.read_bytes()).hexdigest(),
+            )
+
+
+def test_duplicate_normalized_path_rejected_by_embedded(tmp_path: Path) -> None:
+    mod = _load_embedded_verifier()
+    tar_path = tmp_path / "dup.tar.gz"
     with tarfile.open(tar_path, "w:gz") as tar:
         data = b"x"
-        info = tarfile.TarInfo(name="bin/suid.sh")
-        info.size = len(data)
-        info.mode = 0o4755
-        tar.addfile(info, fileobj=io.BytesIO(data))
-    with pytest.raises(mod.BundleVerifyError, match="setuid|setgid|sticky"):
+        for _ in range(2):
+            info = tarfile.TarInfo(name="bin/dup.sh")
+            info.size = len(data)
+            tar.addfile(info, fileobj=io.BytesIO(data))
+    with pytest.raises(mod.BundleVerifyError, match="duplicate archive member"):
         mod.extract_validated_bundle(
             tar_path,
-            tmp_path / "out",
+            tmp_path / "out-dup",
             expected_checksum=hashlib.sha256(tar_path.read_bytes()).hexdigest(),
         )
+
+
+def test_windows_absolute_path_rejected_by_embedded(tmp_path: Path) -> None:
+    mod = _load_embedded_verifier()
+    for name in ("C:/Windows/System32/evil", "D:\\Temp\\evil"):
+        evil = _malicious_tarball(tmp_path, name)
+        with pytest.raises(mod.BundleVerifyError, match="absolute"):
+            mod.extract_validated_bundle(
+                evil,
+                tmp_path / f"out-{hashlib.sha256(name.encode()).hexdigest()[:8]}",
+                expected_checksum=hashlib.sha256(evil.read_bytes()).hexdigest(),
+            )
 
 
 def test_staging_sh_bash_syntax() -> None:

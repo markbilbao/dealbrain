@@ -21,6 +21,51 @@ Rollback target authority comes **only** from:
 
 Mutable tags (`latest`, `staging`, branch tags) are never authority.
 
+## Host tooling delivery model
+
+Rollback host binaries are **not** installed by EC2 `user_data` / cloud-init.
+
+1. **Terraform / EC2 `user_data`** provides the hardened baseline bootstrap only
+   (approved SAFEEXTRACT protections + deploy/evidence/ALB helper members). It
+   does **not** embed rollback-specific tooling in `REQUIRED_MEMBERS`.
+2. **Deploy Staging** builds/uploads a schema-2 release bundle (SAFEEXTRACT-
+   protected), extracts it on the host, installs rollback binaries/schemas under
+   `/opt/dealbrain/bin/` (and refreshes `verify_staging_bundle.py` from the
+   bundle), and writes `/opt/dealbrain/bin/staging-host-tooling.json` only after
+   verified installation (`tooling_version=25b.5` + checksum inventory).
+3. **Rollback Staging** preflight verifies that capability/version/checksums
+   before any mutation. Missing or outdated tooling fails closed.
+
+**Prerequisite order:** after an approved Terraform apply, run **Deploy Staging**
+to install current host rollback tooling before any rollback rehearsal.
+
+## Combined infrastructure apply gate
+
+The rollback SSM/IAM Terraform changes and staging bootstrap `user_data`
+reconciliation may appear together in the same plan. This plan is **not**
+SSM/IAM-only.
+
+The EC2 `user_data_base64` update is intentional: the declarative staging
+bootstrap contains approved Sprint 25b.5h SAFEEXTRACT protections that are not
+reflected in the older live instance attribute. Do **not** pin live EC2 bytes,
+add `lifecycle { ignore_changes = [user_data_base64] }`, or use
+`terraform -target` to hide that drift.
+
+**No Terraform apply is allowed** until an independent combined infrastructure
+apply-readiness audit verifies all of the following:
+
+- exact `user_data` / `user_data_base64` diff
+- `replace = 0` and `destroy = 0` (no instance replacement)
+- expected instance behavior after cloud-init / attribute update
+- maintenance and downtime implications
+- rollback and recovery plan
+- unchanged EC2 identity (same instance id / no replacement)
+- no unrelated infrastructure drift (no production, RDS, ALB, network,
+  security-group, bucket, or DNS changes outside the expected set)
+
+Until that audit passes, the EC2 update remains unauthorized even when the
+SSM document create and IAM policy update are otherwise desired.
+
 ### Historical Build Image #15 contract
 
 **HISTORICAL BUILD IMAGE #15 RECONSTRUCTION IS SAFE** under this audited model:
