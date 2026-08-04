@@ -556,6 +556,54 @@ staging_maintenance_verify_iam_policies() {
   staging_maintenance_assert_py validate-iam-allowlist "$allow_json" --deny-path "$deny_json"
 }
 
+staging_maintenance_ssm_document_version_from_meta() {
+  # usage: staging_maintenance_ssm_document_version_from_meta <describe-meta.json>
+  # Prints a CLI-safe DocumentVersion. Fail-closed on null/None/invalid values so
+  # get-document never receives a ValidationException-inducing argument.
+  local meta_json="$1"
+  [[ -f "$meta_json" ]] || return 1
+  python3 - "$meta_json" <<'PY'
+import json
+import re
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
+except (OSError, json.JSONDecodeError) as exc:
+    print(f"SSM describe-document metadata unreadable: {exc}", file=sys.stderr)
+    raise SystemExit(2) from exc
+if not isinstance(data, dict):
+    print("SSM describe-document metadata must be an object", file=sys.stderr)
+    raise SystemExit(2)
+version = data.get("DocumentVersion")
+if version is None:
+    print(
+        "SSM describe-document metadata missing DocumentVersion "
+        "(require Document.* JMESPath projection)",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+text = str(version).strip()
+if not text or text in {"None", "null"}:
+    print(
+        "SSM describe-document metadata has null/empty DocumentVersion "
+        "(require Document.* JMESPath projection)",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+# Mirror AWS GetDocument DocumentVersion constraint (safe error class only).
+if not re.fullmatch(
+    r"(\$LATEST|\$DEFAULT|\$APPROVED|\$PENDING_REVIEW|[1-9][0-9]*)",
+    text,
+):
+    print("SSM DocumentVersion failed AWS pattern validation", file=sys.stderr)
+    raise SystemExit(2)
+print(text)
+PY
+}
+
 staging_maintenance_verify_ssm_document() {
   local meta_json="$1"
   local content_json="$2"
