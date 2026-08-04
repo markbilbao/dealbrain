@@ -60,6 +60,7 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5_rollback_workflow.py \
 		tests/unit/test_sprint25b5_rollback_authority.py \
 		tests/unit/test_sprint25b5m_user_data_plan_isolation.py \
+		tests/unit/test_sprint25b5n_staging_maintenance_gate.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -72,6 +73,10 @@ validate-staging-deploy:
 	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
 	bash -n scripts/deploy/host/verify-staging.sh
+	bash -n scripts/deploy/staging_maintenance_gate_lib.sh
+	bash -n scripts/deploy/staging_maintenance_pre_apply_capture.sh
+	bash -n scripts/deploy/staging_maintenance_controlled_apply.sh
+	python3 -m py_compile scripts/deploy/staging_maintenance_assert.py
 
 # Sprint 25b.4a pre-live refinements + staging deploy contract
 validate-pre-live:
@@ -90,6 +95,7 @@ validate-pre-live:
 		tests/unit/test_sprint25b5_rollback_workflow.py \
 		tests/unit/test_sprint25b5_rollback_authority.py \
 		tests/unit/test_sprint25b5m_user_data_plan_isolation.py \
+		tests/unit/test_sprint25b5n_staging_maintenance_gate.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -102,3 +108,7 @@ validate-pre-live:
 	bash -n scripts/deploy/host/install-compose-plugin.sh
 	bash -n scripts/deploy/host/ghcr-login.sh
 	bash -n scripts/deploy/host/verify-staging.sh
+	bash -n scripts/deploy/staging_maintenance_gate_lib.sh
+	bash -n scripts/deploy/staging_maintenance_pre_apply_capture.sh
+	bash -n scripts/deploy/staging_maintenance_controlled_apply.sh
+	python3 -m py_compile scripts/deploy/staging_maintenance_assert.py
