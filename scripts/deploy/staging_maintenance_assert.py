@@ -14,9 +14,11 @@ import re
 import secrets
 import stat
 import sys
+import tempfile
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 INSTANCE_ID = "i-0edd57f32296aa323"
 ACCOUNT_ID = "941035169846"
@@ -1094,44 +1096,48 @@ def validate_plan_file(path: Path) -> None:
 
 
 def _require_regular_file(
-    path: Path, *, exact_mode: int | None = None, max_mode: int | None = 0o600
+    path: Path,
+    *,
+    exact_mode: int | None = None,
+    max_mode: int | None = 0o600,
+    phase: str = "plan_identity_mode",
 ) -> os.stat_result:
     if path.is_symlink():
-        _die(f"refusing symlink: {path}", code=10, phase="plan_identity_mode")
+        _die(f"refusing symlink: {path}", code=10, phase=phase)
     if not path.is_file():
-        _die(f"not a regular file: {path}", code=10, phase="plan_identity_mode")
+        _die(f"not a regular file: {path}", code=10, phase=phase)
     st = path.stat()
     mode = stat.S_IMODE(st.st_mode)
     if mode & (stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX):
         _die(
             f"setuid/setgid/sticky bits forbidden on {path}: {oct(mode)}",
-            phase="plan_identity_mode",
+            phase=phase,
         )
     if exact_mode is not None:
         if mode != exact_mode:
             _die(
                 f"file mode {oct(mode)} != required {oct(exact_mode)} on {path}",
                 code=10,
-                phase="plan_identity_mode",
+                phase=phase,
             )
     elif max_mode is not None:
         if mode & ~max_mode:
             _die(
                 f"file mode {oct(mode)} broader than allowed {oct(max_mode)} on {path}",
                 code=10,
-                phase="plan_identity_mode",
+                phase=phase,
             )
         if mode & 0o022:
             _die(
                 f"group/other writable permissions {oct(mode)} on {path}",
                 code=10,
-                phase="plan_identity_mode",
+                phase=phase,
             )
         if mode & 0o044 and mode != 0o600 and mode & 0o077:
             _die(
                 f"group/world-readable permissions {oct(mode)} on {path}",
                 code=10,
-                phase="plan_identity_mode",
+                phase=phase,
             )
     return st
 
@@ -1427,8 +1433,11 @@ def validate_host_evidence_file(
     expected_nonce: str | None = None,
     expected_repository_sha: str | None = None,
     max_age_seconds: int = 3600,
+    file_safety_phase: str = "plan_identity_mode",
 ) -> dict[str, Any]:
-    _require_regular_file(path, exact_mode=None, max_mode=0o600)
+    _require_regular_file(
+        path, exact_mode=None, max_mode=0o600, phase=file_safety_phase
+    )
     data = _load_json(path)
     if not isinstance(data, dict):
         _die("host evidence must be a JSON object", code=11, phase="host_evidence")
@@ -1441,6 +1450,476 @@ def validate_host_evidence_file(
     )
     print(f"OK host evidence ({phase})")
     return data
+
+
+HOST_EVIDENCE_RETAINED_NAMES = {
+    "pre-apply": "host-evidence-pre.json",
+    "post-apply": "host-evidence-post.json",
+}
+
+HOST_EVIDENCE_RETENTION_PHASE = "host_evidence_retention"
+
+
+class _PublishedRetentionArtifact(NamedTuple):
+    """Identity of a final path published by the current retain invocation."""
+
+    path: Path
+    expected_name: str
+    work_dir: Path
+    st_dev: int
+    st_ino: int
+    st_uid: int
+    st_gid: int
+
+
+def _read_regular_file_bytes_nofollow(
+    path: Path, *, phase: str = HOST_EVIDENCE_RETENTION_PHASE
+) -> bytes:
+    """Read exact file bytes without following symlinks and without shell interpolation."""
+    if path.is_symlink():
+        _die(f"refusing symlink: {path}", code=11, phase=phase)
+    flags = os.O_RDONLY
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        _die(f"cannot open evidence file {path}: {exc}", code=11, phase=phase)
+    try:
+        st = os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode):
+            _die(
+                f"evidence path is not a regular file: {path}",
+                code=11,
+                phase=phase,
+            )
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(fd, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
+def _safe_unlink_published_retention_artifact(
+    artifact: _PublishedRetentionArtifact, *, phase: str = HOST_EVIDENCE_RETENTION_PHASE
+) -> None:
+    """Unlink a final path only when it still matches this invocation's publication.
+
+    Uses lstat (no symlink follow). Refuses ambiguous cleanup rather than deleting.
+    Never removes a pre-existing destination this invocation did not publish.
+    """
+    path = artifact.path
+    if path.name != artifact.expected_name:
+        _die(
+            f"refusing cleanup: basename mismatch for {path}",
+            code=11,
+            phase=phase,
+        )
+    try:
+        parent = path.parent.resolve()
+    except OSError as exc:
+        _die(f"refusing cleanup: cannot resolve parent of {path}: {exc}", code=11, phase=phase)
+    if parent != artifact.work_dir:
+        _die(
+            f"refusing cleanup: {path} is outside authoritative workdir {artifact.work_dir}",
+            code=11,
+            phase=phase,
+        )
+    try:
+        st = os.lstat(path)
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        _die(f"refusing cleanup: cannot lstat {path}: {exc}", code=11, phase=phase)
+    if stat.S_ISLNK(st.st_mode):
+        _die(f"refusing cleanup: {path} is a symlink", code=11, phase=phase)
+    if not stat.S_ISREG(st.st_mode):
+        _die(f"refusing cleanup: {path} is not a regular file", code=11, phase=phase)
+    if st.st_dev != artifact.st_dev or st.st_ino != artifact.st_ino:
+        _die(
+            f"refusing cleanup: {path} device/inode changed since publication",
+            code=11,
+            phase=phase,
+        )
+    if st.st_uid != artifact.st_uid or st.st_gid != artifact.st_gid:
+        _die(
+            f"refusing cleanup: {path} ownership changed since publication",
+            code=11,
+            phase=phase,
+        )
+    try:
+        os.unlink(path)
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        _die(f"failed to cleanup published retention artifact {path}: {exc}", code=11, phase=phase)
+
+
+def _atomic_publish_exclusive(
+    raw: bytes, *, work_dir: Path, dest: Path
+) -> _PublishedRetentionArtifact:
+    """Write bytes via a private temp file in work_dir, then publish without replace.
+
+    Destination must not already exist. Temp files are cleaned up on any failure.
+    The published file is never partially visible under the final name.
+    Returns publication identity for invocation-scoped transactional cleanup.
+    """
+    fail_phase = HOST_EVIDENCE_RETENTION_PHASE
+    euid = os.geteuid()
+    egid = os.getegid()
+    if dest.name == "" or dest.parent.resolve() != work_dir:
+        _die(
+            f"retention destination must be a direct child of workdir: {dest}",
+            code=11,
+            phase=fail_phase,
+        )
+    if dest.exists() or dest.is_symlink():
+        _die(f"refusing to overwrite existing path: {dest}", code=11, phase=fail_phase)
+
+    tmp_path: Path | None = None
+    linked = False
+    try:
+        fd, tmp_name = tempfile.mkstemp(
+            prefix=f".{dest.name}.",
+            suffix=".tmp",
+            dir=str(work_dir),
+        )
+        tmp_path = Path(tmp_name)
+        try:
+            os.write(fd, raw)
+            os.fsync(fd)
+            os.fchmod(fd, 0o600)
+        finally:
+            os.close(fd)
+
+        if tmp_path.is_symlink():
+            _die("temporary evidence file must not be a symlink", code=11, phase=fail_phase)
+        tst = tmp_path.stat()
+        if tst.st_uid != euid or tst.st_gid != egid:
+            _die(
+                "temporary evidence file ownership mismatch with current euid/egid",
+                code=11,
+                phase=fail_phase,
+            )
+        if stat.S_IMODE(tst.st_mode) != 0o600:
+            _die(
+                f"temporary evidence file mode {oct(stat.S_IMODE(tst.st_mode))} != 0600",
+                code=11,
+                phase=fail_phase,
+            )
+
+        # Hard-link publish is atomic and fails closed if dest already exists.
+        try:
+            os.link(tmp_path, dest)
+            linked = True
+        except FileExistsError:
+            _die(f"refusing to overwrite existing path: {dest}", code=11, phase=fail_phase)
+        except OSError as exc:
+            _die(f"failed to publish retained file {dest}: {exc}", code=11, phase=fail_phase)
+
+        try:
+            published = os.lstat(dest)
+        except OSError as exc:
+            _die(f"failed to lstat published file {dest}: {exc}", code=11, phase=fail_phase)
+        if stat.S_ISLNK(published.st_mode) or not stat.S_ISREG(published.st_mode):
+            _die(f"published path is not a regular file: {dest}", code=11, phase=fail_phase)
+        if published.st_uid != euid or published.st_gid != egid:
+            _die(
+                "published file ownership mismatch with current euid/egid",
+                code=11,
+                phase=fail_phase,
+            )
+        if stat.S_IMODE(published.st_mode) != 0o600:
+            _die(
+                f"published file mode {oct(stat.S_IMODE(published.st_mode))} != 0600",
+                code=11,
+                phase=fail_phase,
+            )
+        return _PublishedRetentionArtifact(
+            path=dest,
+            expected_name=dest.name,
+            work_dir=work_dir,
+            st_dev=published.st_dev,
+            st_ino=published.st_ino,
+            st_uid=published.st_uid,
+            st_gid=published.st_gid,
+        )
+    except BaseException as exc:
+        if linked:
+            with suppress(OSError):
+                os.unlink(dest)
+        if isinstance(exc, AssertError):
+            raise
+        if isinstance(exc, Exception):
+            _die(f"atomic evidence publish failed: {exc}", code=11, phase=fail_phase)
+        raise
+    finally:
+        if tmp_path is not None:
+            with suppress(OSError):
+                tmp_path.unlink(missing_ok=True)
+
+
+def _resolve_retention_work_dir(work_dir: Path, *, phase: str) -> Path:
+    """Validate workdir via lstat (no follow), then resolve and bind identity."""
+    try:
+        lst = os.lstat(work_dir)
+    except OSError as exc:
+        _die(f"work directory missing: {work_dir}: {exc}", code=11, phase=phase)
+    if stat.S_ISLNK(lst.st_mode):
+        _die("work directory must not be a symlink", code=11, phase=phase)
+    if not stat.S_ISDIR(lst.st_mode):
+        _die(f"work directory is not a directory: {work_dir}", code=11, phase=phase)
+
+    try:
+        work_resolved = work_dir.resolve()
+    except OSError as exc:
+        _die(f"cannot resolve work directory {work_dir}: {exc}", code=11, phase=phase)
+    if not work_resolved.is_dir():
+        _die(f"work directory missing: {work_resolved}", code=11, phase=phase)
+    try:
+        rst = os.lstat(work_resolved)
+    except OSError as exc:
+        _die(f"cannot lstat resolved work directory: {exc}", code=11, phase=phase)
+    if stat.S_ISLNK(rst.st_mode):
+        _die("resolved work directory must not be a symlink", code=11, phase=phase)
+    if (rst.st_dev, rst.st_ino) != (lst.st_dev, lst.st_ino):
+        _die(
+            "work directory resolve escaped authoritative directory identity",
+            code=11,
+            phase=phase,
+        )
+
+    euid = os.geteuid()
+    if rst.st_uid != euid:
+        _die(
+            f"work directory uid {rst.st_uid} != current euid {euid}",
+            code=11,
+            phase=phase,
+        )
+    if stat.S_IMODE(rst.st_mode) != 0o700:
+        _die(
+            f"work directory mode {oct(stat.S_IMODE(rst.st_mode))} != 0700",
+            code=11,
+            phase=phase,
+        )
+    return work_resolved
+
+
+def _retention_reraise(exc: BaseException, *, phase: str) -> None:
+    """Normalize retain-path failures to FAIL_PHASE=host_evidence_retention."""
+    if isinstance(exc, AssertError):
+        if exc.phase == phase:
+            raise exc
+        _die(str(exc), code=exc.code, phase=phase)
+    _die(f"host evidence retention failed: {exc}", code=11, phase=phase)
+
+
+def retain_validated_host_evidence(
+    source: Path,
+    *,
+    work_dir: Path,
+    phase: str,
+    expected_nonce: str,
+    expected_repository_sha: str | None = None,
+    max_age_seconds: int = 3600,
+) -> dict[str, Any]:
+    """Retain validated host evidence into the authoritative work directory.
+
+    Order of authority:
+      1) validate external/operator-supplied source with existing evidence rules
+      2) atomically publish an exact byte copy into work_dir
+      3) re-parse and revalidate the retained destination
+      4) bind SHA-256 so audits can prove retained == validated source
+
+    Evidence JSON and its `.sha256` sidecar are one logical publication unit.
+    On any failure after this invocation publishes a final path, those
+    invocation-owned finals are removed (never pre-existing paths). Retention
+    failure raises AssertError with FAIL_PHASE=host_evidence_retention.
+    """
+    fail_phase = HOST_EVIDENCE_RETENTION_PHASE
+    if phase not in HOST_EVIDENCE_RETAINED_NAMES:
+        _die(f"unsupported evidence phase for retention: {phase!r}", code=11, phase=fail_phase)
+    validate_nonce_format(expected_nonce)
+
+    work_resolved = _resolve_retention_work_dir(work_dir, phase=fail_phase)
+    euid = os.geteuid()
+    egid = os.getegid()
+
+    dest_name = HOST_EVIDENCE_RETAINED_NAMES[phase]
+    binding_name = f"{dest_name}.sha256"
+    dest = work_resolved / dest_name
+    binding_path = work_resolved / binding_name
+
+    if dest.exists() or dest.is_symlink():
+        _die(
+            f"refusing to overwrite existing retained evidence: {dest} "
+            "(do not manually inject evidence into a completed workdir)",
+            code=11,
+            phase=fail_phase,
+        )
+    if binding_path.exists() or binding_path.is_symlink():
+        _die(
+            f"refusing to overwrite existing evidence binding: {binding_path}",
+            code=11,
+            phase=fail_phase,
+        )
+
+    # Source must pass the existing validator before any retained copy is created.
+    if source.is_symlink():
+        _die(f"refusing symlink source evidence: {source}", code=11, phase=fail_phase)
+    source_st = _require_regular_file(
+        source, exact_mode=None, max_mode=0o600, phase=fail_phase
+    )
+    if source_st.st_uid != euid or source_st.st_gid != egid:
+        _die(
+            "source evidence ownership mismatch with current euid/egid",
+            code=11,
+            phase=fail_phase,
+        )
+    # Source semantic authority keeps host_evidence_* phases; file-safety uses
+    # host_evidence_retention via file_safety_phase.
+    validate_host_evidence_file(
+        source,
+        phase=phase,
+        expected_nonce=expected_nonce,
+        expected_repository_sha=expected_repository_sha,
+        max_age_seconds=max_age_seconds,
+        file_safety_phase=fail_phase,
+    )
+
+    raw = _read_regular_file_bytes_nofollow(source, phase=fail_phase)
+    source_digest = hashlib.sha256(raw).hexdigest()
+
+    published_dest: _PublishedRetentionArtifact | None = None
+    published_binding: _PublishedRetentionArtifact | None = None
+    try:
+        published_dest = _atomic_publish_exclusive(raw, work_dir=work_resolved, dest=dest)
+
+        # Destination file-safety: regular, non-symlink, euid/egid, mode 0600.
+        if dest.is_symlink():
+            _die(f"retained evidence must not be a symlink: {dest}", code=11, phase=fail_phase)
+        st = _require_regular_file(dest, exact_mode=0o600, phase=fail_phase)
+        if st.st_uid != euid:
+            _die(
+                f"retained evidence uid {st.st_uid} != current euid {euid}",
+                code=11,
+                phase=fail_phase,
+            )
+        if st.st_gid != egid:
+            _die(
+                f"retained evidence gid {st.st_gid} != current egid {egid}",
+                code=11,
+                phase=fail_phase,
+            )
+
+        # Re-parse and revalidate retained destination with the same evidence authority.
+        try:
+            validate_host_evidence_file(
+                dest,
+                phase=phase,
+                expected_nonce=expected_nonce,
+                expected_repository_sha=expected_repository_sha,
+                max_age_seconds=max_age_seconds,
+                file_safety_phase=fail_phase,
+            )
+        except AssertError as exc:
+            _retention_reraise(exc, phase=fail_phase)
+
+        retained_raw = _read_regular_file_bytes_nofollow(dest, phase=fail_phase)
+        retained_digest = hashlib.sha256(retained_raw).hexdigest()
+        if retained_raw != raw or retained_digest != source_digest:
+            _die(
+                "retained evidence is not byte-for-byte identical to the validated source",
+                code=11,
+                phase=fail_phase,
+            )
+
+        binding_body = (f"{retained_digest}  {dest_name}\n").encode("ascii")
+        published_binding = _atomic_publish_exclusive(
+            binding_body, work_dir=work_resolved, dest=binding_path
+        )
+        if binding_path.is_symlink():
+            _die(
+                f"evidence binding must not be a symlink: {binding_path}",
+                code=11,
+                phase=fail_phase,
+            )
+        bst = _require_regular_file(binding_path, exact_mode=0o600, phase=fail_phase)
+        if bst.st_uid != euid or bst.st_gid != egid:
+            _die("evidence binding ownership mismatch", code=11, phase=fail_phase)
+        if binding_path.read_bytes() != binding_body:
+            _die("evidence binding contents corrupted", code=11, phase=fail_phase)
+
+        # Complete-pair authority: both finals must still be the published artifacts.
+        for artifact in (published_dest, published_binding):
+            cur = os.lstat(artifact.path)
+            if stat.S_ISLNK(cur.st_mode) or not stat.S_ISREG(cur.st_mode):
+                _die(
+                    f"retained pair member is not a regular file: {artifact.path}",
+                    code=11,
+                    phase=fail_phase,
+                )
+            if cur.st_dev != artifact.st_dev or cur.st_ino != artifact.st_ino:
+                _die(
+                    f"retained pair member identity changed: {artifact.path}",
+                    code=11,
+                    phase=fail_phase,
+                )
+            if cur.st_uid != euid or cur.st_gid != egid:
+                _die(
+                    f"retained pair ownership mismatch: {artifact.path}",
+                    code=11,
+                    phase=fail_phase,
+                )
+            if stat.S_IMODE(cur.st_mode) != 0o600:
+                _die(
+                    f"retained pair mode != 0600: {artifact.path}",
+                    code=11,
+                    phase=fail_phase,
+                )
+
+        binding = {
+            "phase": phase,
+            "path": str(dest),
+            "sha256": retained_digest,
+            "source_sha256": source_digest,
+            "size": len(raw),
+            "mode": 0o600,
+            "uid": euid,
+            "gid": egid,
+            "nonce": expected_nonce,
+            "binding_path": str(binding_path),
+        }
+        print(f"OK retained host evidence ({phase}) sha256={retained_digest}")
+        print(canonical_json(binding))
+        return binding
+    except BaseException as exc:
+        # Roll back only finals published by this invocation (sidecar first).
+        cleanup_error: AssertError | None = None
+        for artifact in (published_binding, published_dest):
+            if artifact is None:
+                continue
+            try:
+                _safe_unlink_published_retention_artifact(artifact, phase=fail_phase)
+            except AssertError as cleanup_exc:
+                cleanup_error = cleanup_exc
+        # Scrub any private temps left in the workdir for these basenames.
+        for pattern in (f".{dest_name}.*.tmp", f".{binding_name}.*.tmp"):
+            for tmp in work_resolved.glob(pattern):
+                with suppress(OSError):
+                    try:
+                        if not stat.S_ISLNK(os.lstat(tmp).st_mode):
+                            tmp.unlink(missing_ok=True)
+                    except OSError:
+                        pass
+        if cleanup_error is not None:
+            _retention_reraise(cleanup_error, phase=fail_phase)
+        _retention_reraise(exc, phase=fail_phase)
+        raise  # pragma: no cover — _retention_reraise always raises
 
 
 def compare_host_evidence(
@@ -1608,6 +2087,23 @@ def _cmd_validate_host_evidence(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_retain_host_evidence(args: argparse.Namespace) -> int:
+    if not args.nonce:
+        _die(
+            "retain-host-evidence requires --nonce (run-generated nonce)",
+            phase="host_evidence_nonce",
+        )
+    retain_validated_host_evidence(
+        Path(args.path),
+        work_dir=Path(args.work_dir),
+        phase=args.phase,
+        expected_nonce=args.nonce,
+        expected_repository_sha=args.repository_sha or None,
+        max_age_seconds=args.max_age_seconds,
+    )
+    return 0
+
+
 def _cmd_compare_host_evidence(args: argparse.Namespace) -> int:
     pre = _load_json(Path(args.pre))
     post = _load_json(Path(args.post))
@@ -1719,6 +2215,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--repository-sha", default=None)
     sp.add_argument("--max-age-seconds", type=int, default=3600)
     sp.set_defaults(func=_cmd_validate_host_evidence)
+
+    sp = sub.add_parser("retain-host-evidence")
+    sp.add_argument("path", help="Validated external/operator-supplied host-evidence JSON")
+    sp.add_argument("--work-dir", required=True)
+    sp.add_argument("--phase", required=True, choices=("pre-apply", "post-apply"))
+    sp.add_argument("--nonce", required=True)
+    sp.add_argument("--repository-sha", default=None)
+    sp.add_argument("--max-age-seconds", type=int, default=3600)
+    sp.set_defaults(func=_cmd_retain_host_evidence)
 
     sp = sub.add_parser("compare-host-evidence")
     sp.add_argument("pre")

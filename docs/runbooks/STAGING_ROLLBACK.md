@@ -269,10 +269,10 @@ bash scripts/deploy/staging_maintenance_pre_apply_capture.sh
 Do **not** use `terraform -target`. Apply only the exact reviewed saved-plan
 file after acknowledgements and checksum confirmation. Work files use
 `mktemp -d` with mode `0700` and EXIT cleanup (failure retains non-secret
-diagnostics; plan-only retains the workdir for collect snippets).
-`STAGING_MAINTENANCE_SKIP_INIT` is forbidden. Do **not** set
-`STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE` (rejected; nonce is internally
-generated per run).
+diagnostics; successful plan-only and apply-capable runs retain the workdir,
+including validated host evidence). `STAGING_MAINTENANCE_SKIP_INIT` is
+forbidden. Do **not** set `STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE` (rejected;
+nonce is internally generated per run).
 
 1. Verify clean, synced `main` at the approved SHA.
 2. Verify AWS account `941035169846` and region `us-east-1`.
@@ -280,7 +280,9 @@ generated per run).
    write Session Manager collect snippets that embed that nonce.
 4. `terraform init` against the expected backend; verify bucket/key/workspace.
 5. Validate pre-apply host-evidence JSON against the generated nonce (and phase,
-   freshness, instance/account/region); verify live EC2/ALB/`/live`/`/ready`.
+   freshness, instance/account/region); **atomically retain** the validated copy
+   as `${WORK_DIR}/host-evidence-pre.json` (mode `0600`, SHA-256 binding);
+   verify live EC2/ALB/`/live`/`/ready`.
 6. Generate a fresh saved Terraform plan into the temporary workdir; `chmod 0600`
    plan/JSON/human artifacts.
 7. Structurally validate `terraform show -json` (resources, reads, outputs,
@@ -288,10 +290,12 @@ generated per run).
 8. Record plan identity (path/dev/inode/size/sha256/uid/gid/mode=`0600`).
 9. For apply mode: require exact maintenance ACK, demo clearance, recovery ACK,
    and exact plan checksum confirmation; re-check live health; re-verify every
-   plan identity field; apply that saved plan only (never regenerate after confirm).
+   plan identity field and retained pre evidence; apply that saved plan only
+   (never regenerate after confirm).
 10. Fail-closed waits: EC2 running/ok/ok, ALB healthy, `/live`+`/ready` 200.
 11. Validate post-apply host-evidence JSON with the **same** generated nonce;
-    compare release/digest/pointers; record boot ID/uptime consistency; require
+    **atomically retain** as `${WORK_DIR}/host-evidence-post.json`; compare
+    release/digest/pointers; record boot ID/uptime consistency; require
     accepted cloud-init status.
 12. Structurally verify SSM document metadata **and** canonical content for the
     active default version; structurally verify IAM allow + deny policies
@@ -302,9 +306,20 @@ generated per run).
     Report `FAIL_PHASE=...` and nonzero exit on any failure — never print
     overall success when health/integrity/IAM/SSM verification failed.
 
+A successful retained **plan-only** workdir contains: saved Terraform plan,
+plan JSON/text, plan identity, nonce, collect snippets, and completed validated
+`host-evidence-pre.json`. Plan-only does not invent post-apply evidence. Apply
+mode additionally retains completed validated `host-evidence-post.json`.
+**Do not manually inject evidence into an already completed workdir** — retention
+refuses an existing destination and fails closed
+(`FAIL_PHASE=host_evidence_retention`). Evidence JSON and its `.sha256` sidecar
+are one publication unit; if retention fails after this run publishes a final
+path, only that invocation’s published finals are removed (pre-existing
+destinations/sidecars are never deleted).
+
 ```bash
 # Plan-only (default). Does not apply. Prints HOST_EVIDENCE_RUN_NONCE and
-# retains workdir collect snippets.
+# retains workdir (plan + identity + nonce + snippets + host-evidence-pre.json).
 bash scripts/deploy/staging_maintenance_controlled_apply.sh
 
 # Apply path — only after independent audit APPROVE + all gates.
@@ -326,10 +341,11 @@ The normal script does **not** automatically perform recovery mutations. On
 failure it exits nonzero, preserves non-secret diagnostics, identifies
 `FAIL_PHASE` (preflight, plan_validation, apply, ec2_recovery_timeout,
 alb_recovery_timeout, application_health, host_evidence, host_evidence_nonce,
-host_evidence_phase, host_evidence_stale, release_integrity, post_plan_drift,
-plan_identity_owner, plan_identity_mode, plan_identity_checksum,
-iam_policy_verification, ssm_document_content_verification), and directs the
-operator to the same-instance recovery procedure.
+host_evidence_phase, host_evidence_stale, host_evidence_retention,
+release_integrity, post_plan_drift, plan_identity_owner, plan_identity_mode,
+plan_identity_checksum, iam_policy_verification,
+ssm_document_content_verification), and directs the operator to the
+same-instance recovery procedure.
 
 If any post-apply gate fails, prioritize in this order:
 

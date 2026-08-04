@@ -104,15 +104,59 @@ before/after equality except `user_data_base64`, and no critical
 
 Apply/capture work directories are created with `mktemp -d`, mode `0700`, owned by
 the current user, and are never repository `.tmp/` paths. Apply installs an EXIT
-cleanup trap that deletes only the owned temp directory on apply-path success and
-retains non-secret diagnostics on failure. Plan-only success retains the work
-directory so operators can copy collect snippets. Caller-supplied arbitrary paths
-are never deleted.
+cleanup trap that retains non-secret diagnostics on failure. Successful plan-only
+and successful apply-capable runs retain the work directory (including validated
+host evidence). Caller-supplied arbitrary paths are never deleted.
 
 Plan binary, JSON plan evidence, and human-readable plan output in the temporary
 workspace must be regular files with exact mode `0600` (no symlink; no
 group/world read or write; no setuid/setgid/sticky). Parent temp directory remains
 mode `0700`.
+
+### Retained validated host evidence (Sprint 25b.5p)
+
+After external operator-supplied host evidence passes the existing validator, the
+controlled maintenance run atomically retains a byte-for-byte identical copy
+inside the authoritative work directory:
+
+| Mode | Retained evidence |
+|------|-------------------|
+| Plan-only success | `${WORK_DIR}/host-evidence-pre.json` (+ `${WORK_DIR}/host-evidence-pre.json.sha256`) |
+| Apply success | pre as above **and** `${WORK_DIR}/host-evidence-post.json` (+ `.sha256` binding) |
+
+A successful retained **plan-only** workdir therefore contains:
+
+- saved Terraform plan
+- plan JSON/text
+- plan identity
+- host-evidence nonce
+- pre/post collect snippets
+- completed validated `host-evidence-pre.json` (and SHA-256 binding)
+
+Plan-only does **not** invent or require post-apply evidence. Apply mode retains
+completed validated `host-evidence-post.json` only after post-apply validation.
+
+Retention rules (fail closed):
+
+- destination is a regular file, non-symlink, owned by current euid/egid, mode `0600`
+- published via a private temporary file in `$WORK_DIR` then atomic exclusive publish
+- never partially visible under the final name; never overwritten if the destination exists
+- evidence JSON and its `.sha256` sidecar are one logical publication unit; success
+  requires the complete pair
+- if this invocation publishes a final path and a later retention step fails, only
+  invocation-owned finals are removed (device/inode + ownership checked via `lstat`);
+  pre-existing destinations/sidecars are never deleted
+- retained destination is re-parsed and revalidated (schema/phase/nonce/account/region/
+  instance/repository SHA/freshness/release/digest/boot/uptime/cloud-init/pointers/
+  rollback marker false)
+- SHA-256 binding proves retained bytes match the validated source
+- retention failure → clear `FAIL_PHASE=host_evidence_retention`, nonzero exit, no
+  plan-only success message, no apply authorization, no Terraform apply
+
+**Operators must not manually inject evidence into an already completed workdir.**
+Post-hoc injection is rejected (existing destination fails closed). The external
+operator-supplied path remains the source of authority until validation succeeds;
+the retained copy is not authoritative before that point.
 
 ## Backend / state verification
 
@@ -223,6 +267,7 @@ never print overall success. Distinguished phases include:
 - preflight, plan_validation, apply
 - ec2_recovery_timeout, alb_recovery_timeout, application_health
 - host_evidence, host_evidence_nonce, host_evidence_phase, host_evidence_stale
+- host_evidence_retention
 - release_integrity, post_plan_drift
 - plan_identity_owner, plan_identity_mode, plan_identity_checksum
 - iam_policy_verification, ssm_document_content_verification
