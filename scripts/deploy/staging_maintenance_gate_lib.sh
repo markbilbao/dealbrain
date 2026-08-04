@@ -250,19 +250,78 @@ staging_maintenance_write_host_evidence_collect_snippet() {
 # Phase: ${phase}
 # Run nonce (embed exactly; do not invent another): ${nonce}
 # Do not dump env, DATABASE_URL, tokens, or secrets. Do not use SSM SendCommand.
+# Rollback-marker existence may use passwordless sudo (-n) for a read-only
+# test -e only; never create/remove/chmod/chown/alter the marker.
 set -Eeuo pipefail
 python3 - <<'PY'
-import json, time
+import json, subprocess, time
 from pathlib import Path
+
+ROLLBACK_MARKER_PATH = "/opt/dealbrain/runtime/rollback-execution.marker"
 
 def read_text(path: str) -> str:
     return Path(path).read_text(encoding="utf-8").strip()
+
+def rollback_marker_present() -> bool:
+    """Read-only sudo-assisted marker existence check. Fail closed on ambiguity.
+
+    Unprivileged Path.exists() is not authoritative: PermissionError while
+    traversing /opt/dealbrain/runtime must not be treated as absence.
+    """
+    try:
+        probe = subprocess.run(
+            ["sudo", "-n", "true"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SystemExit(
+            f"sudo probe failed for rollback-marker check: {exc}"
+        ) from exc
+    if probe.returncode != 0:
+        detail = (probe.stderr or probe.stdout or "").strip()
+        raise SystemExit(
+            "passwordless sudo unavailable for rollback-marker check"
+            + (f": {detail}" if detail else "")
+        )
+
+    try:
+        check = subprocess.run(
+            ["sudo", "-n", "test", "-e", ROLLBACK_MARKER_PATH],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SystemExit(
+            f"rollback-marker existence check failed: {exc}"
+        ) from exc
+
+    # Explicit classification only:
+    #   0 -> present
+    #   1 with empty stderr -> absent (POSIX test false)
+    #   anything else -> fail closed (do not map all nonzero to absent)
+    if check.returncode == 0:
+        return True
+    if check.returncode == 1:
+        err = (check.stderr or "").strip()
+        if err:
+            raise SystemExit(
+                f"rollback-marker existence check denied or failed: {err}"
+            )
+        return False
+    detail = (check.stderr or check.stdout or "").strip()
+    raise SystemExit(
+        f"ambiguous rollback-marker existence check (rc={check.returncode}"
+        + (f": {detail}" if detail else "")
+        + ")"
+    )
 
 boot_id = read_text("/proc/sys/kernel/random/boot_id")
 uptime_seconds = int(float(read_text("/proc/uptime").split()[0]))
 cloud = "cloud-init-missing"
 if Path("/usr/bin/cloud-init").exists() or Path("/usr/local/bin/cloud-init").exists():
-    import subprocess
     out = subprocess.check_output(["cloud-init", "status"], text=True, stderr=subprocess.STDOUT)
     line = out.strip().splitlines()[-1]
     cloud = line.split(":", 1)[-1].strip() if ":" in line else line
@@ -277,7 +336,7 @@ previous_pointer = previous.resolve().name if previous.exists() else None
 dv = json.loads((current / "DEPLOY_VERSION").read_text(encoding="utf-8"))
 release_id = dv["release_id"]
 image_digest = dv.get("image_digest") or dv.get("digest")
-marker = Path("/opt/dealbrain/runtime/rollback-execution.marker").exists()
+marker = rollback_marker_present()
 
 payload = {
     "schema_version": 1,

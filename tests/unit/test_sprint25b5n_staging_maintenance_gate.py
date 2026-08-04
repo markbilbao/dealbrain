@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import textwrap
+import unittest.mock as mock
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -1788,3 +1789,285 @@ def test_docs_align_with_executable_nonce_and_verification() -> None:
     # Stronger-than-code claims should not remain
     assert "impossible for cloud-init to rerun" not in runbook
     assert "line breaks optional" not in runbook
+
+
+# ---------------------------------------------------------------------------
+# Sprint 25b.5o — host-evidence rollback-marker permission (sudo read-only)
+# ---------------------------------------------------------------------------
+
+ROLLBACK_MARKER_PATH = "/opt/dealbrain/runtime/rollback-execution.marker"
+
+
+def _generate_collect_snippets(tmp_path: Path) -> tuple[Path, Path]:
+    """Write pre/post collect snippets via the real gate-lib helper."""
+    work = tmp_path / "snippet-work"
+    work.mkdir()
+    pre = work / "host-evidence-collect-pre.sh"
+    post = work / "host-evidence-collect-post.sh"
+    script = textwrap.dedent(
+        f"""\
+        #!/usr/bin/env bash
+        set -Eeuo pipefail
+        source {GATE_LIB!s}
+        STAGING_MAINTENANCE_RUN_NONCE={NONCE!r}
+        staging_maintenance_write_host_evidence_collect_snippet \\
+          {pre!s} pre-apply {NONCE!r} deadbeefcafebabe0123456789abcdef01234567
+        staging_maintenance_write_host_evidence_collect_snippet \\
+          {post!s} post-apply {NONCE!r} deadbeefcafebabe0123456789abcdef01234567
+        """
+    )
+    proc = subprocess.run(
+        ["bash", "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr + proc.stdout
+    assert pre.is_file() and post.is_file()
+    return pre, post
+
+
+def _load_rollback_marker_present(snippet: Path):
+    """Extract and exec rollback_marker_present() from a generated snippet."""
+    text = snippet.read_text(encoding="utf-8")
+    # Snippet wraps Python in a quoted heredoc; extract the helper body.
+    start = text.index("def rollback_marker_present() -> bool:")
+    end = text.index("\nboot_id = read_text(")
+    helper_src = text[start:end]
+    assert "ROLLBACK_MARKER_PATH" in text
+    ns: dict[str, Any] = {"subprocess": __import__("subprocess")}
+    # Bind the module-level constant used by the helper.
+    const_line = [line for line in text.splitlines() if line.startswith("ROLLBACK_MARKER_PATH = ")][
+        0
+    ]
+    exec(const_line, ns)  # noqa: S102 — test loads generated helper source
+    exec(helper_src, ns)  # noqa: S102
+    return ns["rollback_marker_present"]
+
+
+class _FakeCompleted:
+    def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+def _sudo_marker_run_fake(
+    *,
+    probe_rc: int = 0,
+    probe_err: str = "",
+    check_rc: int = 0,
+    check_err: str = "",
+    allow_check: bool = True,
+    calls: list[list[str]] | None = None,
+):
+    """Build a subprocess.run side_effect for rollback_marker_present()."""
+
+    def fake_run(cmd, **kwargs):  # noqa: ANN001, ANN003
+        if calls is not None:
+            calls.append(list(cmd))
+        if cmd[:3] == ["sudo", "-n", "true"]:
+            return _FakeCompleted(probe_rc, stderr=probe_err)
+        if cmd[:4] == ["sudo", "-n", "test", "-e"]:
+            if not allow_check:
+                raise AssertionError("test -e must not run when sudo probe fails")
+            assert cmd[4] == ROLLBACK_MARKER_PATH
+            return _FakeCompleted(check_rc, stderr=check_err)
+        raise AssertionError(f"unexpected cmd: {cmd}")
+
+    return fake_run
+
+
+def test_marker_present_via_successful_sudo_check(tmp_path: Path) -> None:
+    pre, post = _generate_collect_snippets(tmp_path)
+    for snippet in (pre, post):
+        helper = _load_rollback_marker_present(snippet)
+        calls: list[list[str]] = []
+        fake_run = _sudo_marker_run_fake(check_rc=0, calls=calls)
+        with mock.patch("subprocess.run", side_effect=fake_run):
+            assert helper() is True
+        assert ["sudo", "-n", "true"] in calls
+        assert ["sudo", "-n", "test", "-e", ROLLBACK_MARKER_PATH] in calls
+
+
+def test_marker_absent_via_successful_sudo_check(tmp_path: Path) -> None:
+    pre, post = _generate_collect_snippets(tmp_path)
+    for snippet in (pre, post):
+        helper = _load_rollback_marker_present(snippet)
+        fake_run = _sudo_marker_run_fake(check_rc=1, check_err="")
+        with mock.patch("subprocess.run", side_effect=fake_run):
+            assert helper() is False
+
+
+@pytest.mark.parametrize(
+    "probe_rc,probe_err",
+    [
+        (1, "sudo: a password is required"),
+        (1, ""),
+        (127, "sudo: command not found"),
+    ],
+)
+def test_sudo_unavailable_or_denied_fails_closed_no_json(
+    tmp_path: Path, probe_rc: int, probe_err: str
+) -> None:
+    pre, _post = _generate_collect_snippets(tmp_path)
+    helper = _load_rollback_marker_present(pre)
+    fake_run = _sudo_marker_run_fake(probe_rc=probe_rc, probe_err=probe_err, allow_check=False)
+    with (
+        mock.patch("subprocess.run", side_effect=fake_run),
+        pytest.raises(SystemExit) as excinfo,
+    ):
+        helper()
+    msg = str(excinfo.value)
+    assert "sudo" in msg.lower()
+    # Must not look like valid evidence JSON
+    assert not msg.strip().startswith("{")
+    assert "rollback_execution_marker_present" not in msg
+
+
+@pytest.mark.parametrize(
+    "check_rc,check_err",
+    [
+        (1, "sudo: a password is required"),  # denial on test (stderr)
+        (2, "test: binary operator expected"),
+        (126, "permission denied"),
+        (255, ""),
+    ],
+)
+def test_sudo_command_error_or_ambiguous_fails_closed_no_json(
+    tmp_path: Path, check_rc: int, check_err: str
+) -> None:
+    pre, _post = _generate_collect_snippets(tmp_path)
+    helper = _load_rollback_marker_present(pre)
+    fake_run = _sudo_marker_run_fake(check_rc=check_rc, check_err=check_err)
+    with (
+        mock.patch("subprocess.run", side_effect=fake_run),
+        pytest.raises(SystemExit) as excinfo,
+    ):
+        helper()
+    msg = str(excinfo.value)
+    assert "rollback-marker" in msg.lower() or "ambiguous" in msg.lower()
+    assert not msg.strip().startswith("{")
+    assert "rollback_execution_marker_present" not in msg
+
+
+def test_unprivileged_path_exists_not_authoritative_for_marker(tmp_path: Path) -> None:
+    pre, post = _generate_collect_snippets(tmp_path)
+    for snippet in (pre, post):
+        text = snippet.read_text(encoding="utf-8")
+        assert "def rollback_marker_present()" in text
+        assert '["sudo", "-n", "test", "-e", ROLLBACK_MARKER_PATH]' in text
+        assert '["sudo", "-n", "true"]' in text
+        # Direct unprivileged exists() on the marker path must not be authoritative.
+        assert 'Path("/opt/dealbrain/runtime/rollback-execution.marker").exists()' not in text
+        assert "Path(ROLLBACK_MARKER_PATH).exists()" not in text
+        assert "marker = rollback_marker_present()" in text
+
+
+def test_marker_helper_remains_read_only_and_no_mutation_commands(tmp_path: Path) -> None:
+    pre, post = _generate_collect_snippets(tmp_path)
+    for snippet in (pre, post):
+        text = snippet.read_text(encoding="utf-8")
+        py_start = text.index("python3 - <<'PY'")
+        py_body = text[py_start:]
+        # Read-only Session Manager model preserved.
+        assert "Read-only Session Manager collection" in text
+        assert "Do not use SSM SendCommand" in text
+        assert "never create/remove/chmod/chown/alter the marker" in text.lower() or (
+            "never create" in text.lower() and "alter the marker" in text.lower()
+        )
+        # No marker mutation primitives in the collect helper Python body.
+        for bad in (
+            "touch ",
+            "unlink(",
+            "os.remove",
+            "os.unlink",
+            "os.rename",
+            "shutil.move",
+            "shutil.rmtree",
+            "chmod(",
+            "chown(",
+            ".write_text(",
+            ".write_bytes(",
+            ".unlink(",
+            ".mkdir(",
+            ".touch(",
+            ".rename(",
+            "truncate(",
+            f"tee {ROLLBACK_MARKER_PATH}",
+            f"> {ROLLBACK_MARKER_PATH}",
+            f">> {ROLLBACK_MARKER_PATH}",
+            f"rm {ROLLBACK_MARKER_PATH}",
+            f"mv {ROLLBACK_MARKER_PATH}",
+        ):
+            assert bad not in py_body, bad
+        # sudo usage is existence-only (probe + test -e).
+        assert '"sudo", "-n", "true"' in py_body
+        assert '"sudo", "-n", "test", "-e"' in py_body
+        assert "sudoedit" not in py_body.lower()
+        assert "visudo" not in py_body.lower()
+        # Must not open the marker for write.
+        assert "open(" not in py_body or "DEPLOY_VERSION" in py_body
+
+
+def test_collect_snippet_preserves_nonce_and_evidence_bindings(tmp_path: Path) -> None:
+    pre, post = _generate_collect_snippets(tmp_path)
+    repo_sha = "deadbeefcafebabe0123456789abcdef01234567"
+    for phase, snippet in (("pre-apply", pre), ("post-apply", post)):
+        text = snippet.read_text(encoding="utf-8")
+        assert f"Run nonce (embed exactly; do not invent another): {NONCE}" in text
+        assert f'"phase": "{phase}"' in text
+        assert f'"nonce": "{NONCE}"' in text
+        assert f'"instance_id": "{INSTANCE_ID}"' in text
+        assert f'"account_id": "{ACCOUNT_ID}"' in text
+        assert f'"region": "{REGION}"' in text
+        assert "boot_id" in text
+        assert "uptime_seconds" in text
+        assert "cloud_init_status" in text
+        assert "release_id" in text
+        assert "image_digest" in text
+        assert "current_pointer" in text
+        assert "previous_pointer" in text
+        assert "rollback_execution_marker_present" in text
+        assert "captured_at" in text
+        assert repo_sha in text
+        assert "repository_sha" in text
+        assert "Do not dump env" in text
+        assert "Do not use SSM SendCommand" in text
+
+
+def test_pre_and_post_evidence_helpers_share_corrected_marker_behavior(
+    tmp_path: Path,
+) -> None:
+    pre, post = _generate_collect_snippets(tmp_path)
+    pre_text = pre.read_text(encoding="utf-8")
+    post_text = post.read_text(encoding="utf-8")
+    # Same helper definition and call site in both phases.
+    for text in (pre_text, post_text):
+        assert "def rollback_marker_present() -> bool:" in text
+        assert "marker = rollback_marker_present()" in text
+        assert 'Path("/opt/dealbrain/runtime/rollback-execution.marker").exists()' not in text
+
+    # Helper bodies are identical aside from phase string binding.
+    def _helper_body(text: str) -> str:
+        start = text.index("def rollback_marker_present() -> bool:")
+        end = text.index("\nboot_id = read_text(")
+        return text[start:end]
+
+    assert _helper_body(pre_text) == _helper_body(post_text)
+
+
+def test_docs_state_sudo_readonly_marker_check_and_fail_closed() -> None:
+    runbook = re.sub(r"\s+", " ", _read(RUNBOOK).lower())
+    sprint = re.sub(r"\s+", " ", _read(SPRINT_DOC).lower())
+    for doc in (runbook, sprint):
+        assert "passwordless sudo" in doc
+        assert "read-only" in doc
+        assert "rollback-marker" in doc or "rollback marker" in doc
+        assert "fail" in doc and "closed" in doc
+        assert "never creates" in doc or "never create" in doc
+        assert "removes" in doc or "remove" in doc
+        assert "alters the marker" in doc or "alter the marker" in doc
+    # Must not broaden maintenance authorization beyond the existing ACK.
+    assert ACK in _read(SPRINT_DOC)
+    assert ACK in _read(RUNBOOK)

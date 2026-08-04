@@ -139,6 +139,12 @@ The run writes Session Manager collect snippets that embed the nonce explicitly:
 - `${WORK_DIR}/host-evidence-collect-pre.sh`
 - `${WORK_DIR}/host-evidence-collect-post.sh`
 
+Session Manager evidence collection may require passwordless sudo solely for the
+read-only rollback-marker existence check (`sudo -n test -e` on
+`/opt/dealbrain/runtime/rollback-execution.marker`). Failure to obtain an
+unambiguous marker result fails closed (nonzero; no valid evidence JSON). The
+collector never creates, removes, or alters the marker.
+
 Optional `STAGING_MAINTENANCE_EVIDENCE_WAIT_SECONDS` may wait for evidence files
 to become valid after the nonce is printed (default `0` = fail immediately).
 

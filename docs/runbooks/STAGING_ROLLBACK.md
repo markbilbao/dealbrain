@@ -245,6 +245,10 @@ timestamp, **internally generated run nonce** (operator cannot choose
 key required; value may be null), rollback marker=`false`. When `repository_sha`
 is present it must match the approved repository SHA. Evidence phases and
 freshness are enforced; pre/post must carry the same generated nonce.
+Session Manager collection may require passwordless sudo solely for the
+read-only rollback-marker existence check; an unambiguous marker result is
+required (fail closed). The collector never creates, removes, or alters the
+marker.
 **ALB:** expected TG identity, exact instance registered and `healthy`, `/live`
 and `/ready` HTTP 200 on the Terraform ALB DNS only
 **RDS:** instance identity and status only (no credentials or database URL)
