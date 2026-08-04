@@ -385,16 +385,19 @@ DOC_ARN="$(terraform output -raw ssm_rollback_document_arn)" \
 [[ "$DOC_ARN" == arn:aws:ssm:${STAGING_MAINTENANCE_REGION}:${STAGING_MAINTENANCE_ACCOUNT_ID}:document/${STAGING_MAINTENANCE_SSM_DOC_NAME} ]] \
   || staging_maintenance_fail preflight "ssm_rollback_document_arn unexpected: ${DOC_ARN}"
 
-# SSM metadata + exact document content (default active version)
+# SSM metadata + exact document content (default active version).
+# describe-document nests fields under Document; top-level Name/DocumentVersion
+# JMESPath returns nulls and must not be used (Sprint 25b.5r).
 aws ssm describe-document \
   --region "$STAGING_MAINTENANCE_REGION" \
   --name "$STAGING_MAINTENANCE_SSM_DOC_NAME" \
-  --query '{Name:Name,Status:Status,DocumentType:DocumentType,DocumentVersion:DocumentVersion,DefaultVersion:DefaultVersion,Owner:Owner}' \
+  --query 'Document.{Name:Name,Status:Status,DocumentType:DocumentType,DocumentVersion:DocumentVersion,DefaultVersion:DefaultVersion,Owner:Owner}' \
   --output json >"${WORK_DIR}/ssm-document.json" \
   || staging_maintenance_fail ssm_document_content_verification "ssm describe-document failed"
 chmod 600 "${WORK_DIR}/ssm-document.json"
-DOC_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["DocumentVersion"])' \
-  "${WORK_DIR}/ssm-document.json")"
+DOC_VERSION="$(staging_maintenance_ssm_document_version_from_meta "${WORK_DIR}/ssm-document.json")" \
+  || staging_maintenance_fail ssm_document_content_verification \
+    "ssm describe-document metadata missing/invalid DocumentVersion"
 aws ssm get-document \
   --region "$STAGING_MAINTENANCE_REGION" \
   --name "$STAGING_MAINTENANCE_SSM_DOC_NAME" \

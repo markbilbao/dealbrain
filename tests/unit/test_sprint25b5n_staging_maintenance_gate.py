@@ -440,7 +440,7 @@ def _install_mocks(bin_dir: Path, state_dir: Path, *, plan_bytes: bytes, plan_js
         textwrap.dedent(
             f"""\
             #!/usr/bin/env python3
-            import json, os, sys
+            import json, os, re, sys
             from pathlib import Path
             state = Path({str(state_dir)!r})
             (state / "invocations.log").open("a").write("aws " + " ".join(sys.argv[1:]) + "\\n")
@@ -498,19 +498,54 @@ def _install_mocks(bin_dir: Path, state_dir: Path, *, plan_bytes: bytes, plan_js
                 print(json.dumps({{"TargetGroupArn":"{TG_ARN}","TargetGroupName":"dealbrain-staging","Port":80,"Protocol":"HTTP","VpcId":"vpc-1"}}))
                 raise SystemExit(0)
             if args[:2] == ["ssm", "describe-document"]:
+                # Simulate real AWS nesting under Document. Apply a minimal
+                # JMESPath stand-in for the queries used by the apply gate.
                 meta_path = state / "ssm_meta.json"
                 if meta_path.is_file():
-                    print(meta_path.read_text()); raise SystemExit(0)
-                print(json.dumps({{
-                    "Name":"DealBrain-StagingRollback",
-                    "Status":"Active",
-                    "DocumentType":"Command",
-                    "DocumentVersion":"1",
-                    "DefaultVersion":"1",
-                    "Owner":"{ACCOUNT_ID}",
-                }}))
-                raise SystemExit(0)
+                    meta = json.loads(meta_path.read_text())
+                else:
+                    meta = {{
+                        "Name":"DealBrain-StagingRollback",
+                        "Status":"Active",
+                        "DocumentType":"Command",
+                        "DocumentVersion":"1",
+                        "DefaultVersion":"1",
+                        "Owner":"{ACCOUNT_ID}",
+                    }}
+                q = args[args.index("--query")+1] if "--query" in args else ""
+                if q.startswith("Document."):
+                    print(json.dumps(meta)); raise SystemExit(0)
+                if "Name:Name" in q and "Document." not in q:
+                    # Buggy top-level projection against nested Document payload.
+                    print(json.dumps({{
+                        "Name": None,
+                        "Status": None,
+                        "DocumentType": None,
+                        "DocumentVersion": None,
+                        "DefaultVersion": None,
+                        "Owner": None,
+                    }}))
+                    raise SystemExit(0)
+                print(json.dumps({{"Document": meta}})); raise SystemExit(0)
             if args[:2] == ["ssm", "get-document"]:
+                fail_path = state / "ssm_get_fail.txt"
+                if fail_path.is_file():
+                    print(fail_path.read_text(), file=sys.stderr)
+                    raise SystemExit(254)
+                # Reject invalid --document-version the way AWS CLI does.
+                if "--document-version" in args:
+                    ver = args[args.index("--document-version")+1]
+                    if not re.fullmatch(
+                        r"([$]LATEST|[$]DEFAULT|[$]APPROVED|[$]PENDING_REVIEW|[1-9][0-9]*)",
+                        ver or "",
+                    ):
+                        print(
+                            "aws: [ERROR]: An error occurred (ValidationException) "
+                            "when calling the GetDocument operation: Value at "
+                            "'documentVersion' failed to satisfy constraint",
+                            file=sys.stderr,
+                        )
+                        raise SystemExit(254)
                 content_path = state / "ssm_content.json"
                 if content_path.is_file():
                     print(content_path.read_text()); raise SystemExit(0)
