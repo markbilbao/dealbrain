@@ -144,17 +144,20 @@ substring acceptance, prefix/suffix text, or alternate punctuation.
 I confirm a backup operator and same-instance recovery procedure are available for staging instance i-0edd57f32296aa323.
 ```
 
-4. **Plan checksum confirmation** — after the script generates and validates the
-   saved plan, it prints the plan SHA-256. Apply requires
-   `STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM` equal to that exact digest. The
-   script records plan identity (path, device, inode, size, SHA-256, UID, GID,
-   exact mode `0600`) and revalidates every field immediately before
-   `terraform apply`, rejects symlinks and broader modes (`0604`/`0640`/`0644`
-   and any group/world-readable or writable mode), and applies only that saved
-   plan file. Plan JSON and human plan artifacts in the temp workspace must also
-   be mode `0600`; the temp directory must remain mode `0700` and owned by the
-   current user. Caller-supplied UID/GID/mode values are never accepted as
-   authority.
+4. **Exact audited plan workdir + checksum confirmation** — plan-only creates the
+   immutable candidate plan workdir and prints its SHA-256. Independent audit
+   approves that exact binary. Apply requires
+   `STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR` pointing at that exact workdir
+   (no latest-dir search / globs) and
+   `STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM` equal to that audited digest.
+   Apply mode does not regenerate a replacement maintenance plan; it applies
+   the exact retained binary from its authoritative path after revalidating plan
+   identity (path, device, inode, size, SHA-256, UID, GID, exact mode `0600`),
+   rejecting symlinks and broader modes (`0604`/`0640`/`0644` and any
+   group/world-readable or writable mode). Plan JSON/human artifacts must remain
+   mode `0600`; workdirs remain mode `0700` and owned by the current user.
+   Caller-supplied UID/GID/mode values are never accepted as authority. Fresh
+   apply-run pre/post host evidence (new nonce) remains mandatory.
 
 Scripts enforce these via `scripts/deploy/staging_maintenance_gate_lib.sh` and
 `scripts/deploy/staging_maintenance_assert.py`.
@@ -266,10 +269,10 @@ bash scripts/deploy/staging_maintenance_pre_apply_capture.sh
 
 ### Controlled apply procedure (prepared — execute only under separate approval)
 
-Do **not** use `terraform -target`. Apply only the exact reviewed saved-plan
-file after acknowledgements and checksum confirmation. Work files use
-`mktemp -d` with mode `0700` and EXIT cleanup (failure retains non-secret
-diagnostics; successful plan-only and apply-capable runs retain the workdir,
+Do **not** use `terraform -target`. Apply only the exact independently audited
+saved-plan binary after acknowledgements and checksum confirmation. Work files
+use `mktemp -d` with mode `0700` and EXIT cleanup (failure retains non-secret
+diagnostics; successful plan-only and apply-capable runs retain their workdirs,
 including validated host evidence). `STAGING_MAINTENANCE_SKIP_INIT` is
 forbidden. Do **not** set `STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE` (rejected;
 nonce is internally generated per run).
@@ -279,39 +282,43 @@ nonce is internally generated per run).
 3. Create owned temp workdir (`0700`); **internally generate** the run nonce;
    write Session Manager collect snippets that embed that nonce.
 4. `terraform init` against the expected backend; verify bucket/key/workspace.
-5. Validate pre-apply host-evidence JSON against the generated nonce (and phase,
-   freshness, instance/account/region); **atomically retain** the validated copy
-   as `${WORK_DIR}/host-evidence-pre.json` (mode `0600`, SHA-256 binding);
-   verify live EC2/ALB/`/live`/`/ready`.
-6. Generate a fresh saved Terraform plan into the temporary workdir; `chmod 0600`
-   plan/JSON/human artifacts.
-7. Structurally validate `terraform show -json` (resources, reads, outputs,
-   EC2 `user_data_base64`-only, empty `replace_paths`, after_unknown safety).
-8. Record plan identity (path/dev/inode/size/sha256/uid/gid/mode=`0600`).
-9. For apply mode: require exact maintenance ACK, demo clearance, recovery ACK,
-   and exact plan checksum confirmation; re-check live health; re-verify every
-   plan identity field and retained pre evidence; apply that saved plan only
-   (never regenerate after confirm).
-10. Fail-closed waits: EC2 running/ok/ok, ALB healthy, `/live`+`/ready` 200.
-11. Validate post-apply host-evidence JSON with the **same** generated nonce;
-    **atomically retain** as `${WORK_DIR}/host-evidence-post.json`; compare
+5. **Plan-only:** validate/retain pre-apply host evidence for the plan-only
+   nonce; verify live EC2/ALB/`/live`/`/ready`; generate the immutable candidate
+   saved plan; structurally validate `terraform show -json`; record plan
+   identity; write `plan-only.complete` / `plan-only.authority.log` /
+   `repository.sha`; exit without apply.
+6. **Apply mode:** require `STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR` = that
+   exact audited plan-only workdir; validate complete artifact inventory,
+   identity, checksum, repository SHA, plan-only completion authority, and
+   retained plan-only pre-evidence pair; read-only `terraform show` against the
+   exact retained binary (do **not** regenerate the maintenance plan).
+7. Generate a **fresh apply-run nonce**; validate/retain fresh apply-run
+   pre-evidence in the apply-run private workdir; re-check live health.
+8. Require exact maintenance ACK, demo clearance, recovery ACK, and exact plan
+   checksum confirmation; re-verify every plan identity field; apply that exact
+   saved plan path only (never copy/regenerate/replace).
+9. Fail-closed waits: EC2 running/ok/ok, ALB healthy, `/live`+`/ready` 200.
+10. Validate post-apply host-evidence JSON with the **same apply-run** nonce;
+    **atomically retain** as `${APPLY_WORK_DIR}/host-evidence-post.json`; compare
     release/digest/pointers; record boot ID/uptime consistency; require
     accepted cloud-init status.
-12. Structurally verify SSM document metadata **and** canonical content for the
+11. Structurally verify SSM document metadata **and** canonical content for the
     active default version; structurally verify IAM allow + deny policies
     (PassRole/production ARNs rejected). Verification failures stop before
     Deploy Staging.
-13. Fresh post-apply plan must show no residual drift.
-14. **Stop before Deploy Staging.** Rollback Staging remains unauthorized.
+12. Fresh post-apply residual plan must show no residual drift (this is not a
+    replacement for the audited maintenance plan).
+13. **Stop before Deploy Staging.** Rollback Staging remains unauthorized.
     Report `FAIL_PHASE=...` and nonzero exit on any failure — never print
     overall success when health/integrity/IAM/SSM verification failed.
 
 A successful retained **plan-only** workdir contains: saved Terraform plan,
-plan JSON/text, plan identity, nonce, collect snippets, and completed validated
-`host-evidence-pre.json`. Plan-only does not invent post-apply evidence. Apply
-mode additionally retains completed validated `host-evidence-post.json`.
-**Do not manually inject evidence into an already completed workdir** — retention
-refuses an existing destination and fails closed
+plan JSON/text, plan identity, nonce, collect snippets, completed validated
+`host-evidence-pre.json`, `plan-only.complete`, `plan-only.authority.log`, and
+`repository.sha`. Plan-only does not invent post-apply evidence. Apply mode
+keeps the audited plan immutable and retains fresh apply-run pre/post evidence
+in a separate private workdir. **Do not manually inject evidence into an already
+completed workdir** — retention refuses an existing destination and fails closed
 (`FAIL_PHASE=host_evidence_retention`). Evidence JSON and its `.sha256` sidecar
 are one publication unit; if retention fails after this run publishes a final
 path, only that invocation’s published finals are removed (pre-existing
@@ -319,19 +326,21 @@ destinations/sidecars are never deleted).
 
 ```bash
 # Plan-only (default). Does not apply. Prints HOST_EVIDENCE_RUN_NONCE and
-# retains workdir (plan + identity + nonce + snippets + host-evidence-pre.json).
+# retains workdir (immutable candidate plan + identity + nonce + snippets +
+# host-evidence-pre.json + plan-only authority markers).
 bash scripts/deploy/staging_maintenance_controlled_apply.sh
 
-# Apply path — only after independent audit APPROVE + all gates.
-# Collect pre/post evidence using the apply run's printed nonce + snippets
+# Apply path — only after independent audit APPROVE of that exact plan workdir.
+# Collect fresh pre/post evidence using the apply run's printed nonce + snippets
 # (optional: STAGING_MAINTENANCE_EVIDENCE_WAIT_SECONDS while collecting).
 # Do NOT set STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE.
+# export STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR='<exact plan-only workdir from audit>'
 # export STAGING_MAINTENANCE_ACK='I authorize temporary staging downtime caused by one EC2 stop/start for i-0edd57f32296aa323. I do not authorize replacement, destroy, production changes, or unrelated infrastructure changes.'
 # export STAGING_MAINTENANCE_RECOVERY_ACK='I confirm a backup operator and same-instance recovery procedure are available for staging instance i-0edd57f32296aa323.'
 # export STAGING_MAINTENANCE_DEMO_CLEAR=1
-# export STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM='<sha256 from the apply run reviewed plan>'
-# export STAGING_MAINTENANCE_HOST_EVIDENCE_PRE=/path/to/pre-apply-evidence.json
-# export STAGING_MAINTENANCE_HOST_EVIDENCE_POST=/path/to/post-apply-evidence.json
+# export STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM='<sha256 of the audited plan binary>'
+# export STAGING_MAINTENANCE_HOST_EVIDENCE_PRE=/path/to/apply-run-pre-evidence.json
+# export STAGING_MAINTENANCE_HOST_EVIDENCE_POST=/path/to/apply-run-post-evidence.json
 # EXECUTE_MAINTENANCE_APPLY=1 bash scripts/deploy/staging_maintenance_controlled_apply.sh
 ```
 

@@ -55,6 +55,7 @@ TG_ARN = f"arn:aws:elasticloadbalancing:{REGION}:{ACCOUNT_ID}:targetgroup/dealbr
 BOOT_A = "11111111-1111-1111-1111-111111111111"
 BOOT_B = "22222222-2222-2222-2222-222222222222"
 NONCE = "a" * 32
+APPLY_NONCE = "b" * 32
 
 UV = Path.home() / ".local" / "bin" / "uv"
 PYTHON = "python3"
@@ -603,6 +604,13 @@ def _install_mocks(bin_dir: Path, state_dir: Path, *, plan_bytes: bytes, plan_js
                 print("Terraform will perform the following actions")
                 raise SystemExit(0)
             if args[:1] == ["apply"]:
+                stale = state / "stale_plan"
+                if stale.is_file() and stale.read_text().strip() == "1":
+                    print(
+                        "Error: Saved plan is stale — please run plan again",
+                        file=sys.stderr,
+                    )
+                    raise SystemExit(1)
                 count = int((state/"apply_count").read_text().strip() or "0")
                 count += 1
                 (state/"apply_count").write_text(str(count), encoding="utf-8")
@@ -662,7 +670,7 @@ def _make_repo(tmp_path: Path) -> Path:
     (repo / "infra" / "terraform" / "environments" / "staging").mkdir(parents=True)
     for src in (GATE_LIB, CAPTURE_SH, APPLY_SH, ASSERT_PY):
         shutil.copy2(src, repo / "scripts" / "deploy" / src.name)
-    # Deterministic nonce for harness: gate still "generates" via assert helper.
+    # Deterministic nonce for harness: plan-only and apply use distinct nonces.
     assert_py = repo / "scripts" / "deploy" / "staging_maintenance_assert.py"
     text = assert_py.read_text(encoding="utf-8")
     text = text.replace(
@@ -671,7 +679,9 @@ def _make_repo(tmp_path: Path) -> Path:
         "    nonce = secrets.token_hex(16)\n",
         "def generate_nonce() -> str:\n"
         '    """Return a cryptographically strong 32-hex-char run nonce."""\n'
-        f"    nonce = {NONCE!r}  # test harness fixed nonce\n"
+        "    import os as _os\n"
+        f"    nonce = {APPLY_NONCE!r} if _os.environ.get('EXECUTE_MAINTENANCE_APPLY') == '1' "
+        f"else {NONCE!r}  # test harness fixed nonces\n"
         "    if False:\n"
         "        nonce = secrets.token_hex(16)\n",
     )
@@ -729,6 +739,14 @@ def _run_apply(
     )
 
 
+def _workdir_from_output(proc_stdout: str) -> Path:
+    match = re.search(r"work_dir=(\S+)", proc_stdout)
+    assert match, f"work_dir not found in output:\n{proc_stdout}"
+    work = Path(match.group(1))
+    assert work.is_dir(), work
+    return work
+
+
 def _prep_success(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, str]:
     repo = _make_repo(tmp_path)
     state = tmp_path / "mockstate"
@@ -743,6 +761,53 @@ def _prep_success(tmp_path: Path) -> tuple[Path, Path, Path, Path, Path, str]:
     )
     digest = hashlib.sha256(plan_bytes).hexdigest()
     return repo, bin_dir, state, pre, post, digest
+
+
+def _prep_approved_apply(
+    tmp_path: Path,
+) -> tuple[Path, Path, Path, Path, Path, Path, str]:
+    """Plan-only then return apply-ready fixtures bound to the audited workdir."""
+    repo, bin_dir, state, pre, _post, digest = _prep_success(tmp_path)
+    proc = _run_apply(
+        repo,
+        bin_dir,
+        {"STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre)},
+        execute=False,
+    )
+    assert proc.returncode == 0, proc.stderr + proc.stdout
+    approved = _workdir_from_output(proc.stdout)
+    # Clear invocations so apply-path assertions measure the apply run only.
+    (state / "invocations.log").write_text("", encoding="utf-8")
+    (state / "apply_count").write_text("0", encoding="utf-8")
+    pre_apply = _write_json(
+        tmp_path / "pre-apply-run.json",
+        _host_evidence("pre-apply", nonce=APPLY_NONCE, uptime=9000),
+    )
+    post_apply = _write_json(
+        tmp_path / "post-apply-run.json",
+        _host_evidence("post-apply", nonce=APPLY_NONCE, boot_id=BOOT_B, uptime=25),
+    )
+    return repo, bin_dir, state, approved, pre_apply, post_apply, digest
+
+
+def _apply_gate_env(
+    approved: Path,
+    pre: Path,
+    post: Path,
+    digest: str,
+    **extra: str,
+) -> dict[str, str]:
+    env = {
+        "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR": str(approved),
+        "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
+        "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
+        "STAGING_MAINTENANCE_ACK": ACK,
+        "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
+        "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
+        "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
+    }
+    env.update(extra)
+    return env
 
 
 def test_default_mode_never_calls_terraform_apply(tmp_path: Path) -> None:
@@ -764,11 +829,12 @@ def test_default_mode_never_calls_terraform_apply(tmp_path: Path) -> None:
 
 
 def test_execute_alone_cannot_apply(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
     proc = _run_apply(
         repo,
         bin_dir,
         {
+            "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR": str(approved),
             "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
             "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
             # missing ACK/recovery/demo/checksum
@@ -793,17 +859,13 @@ def test_execute_alone_cannot_apply(tmp_path: Path) -> None:
     ],
 )
 def test_ack_must_be_exact(tmp_path: Path, ack: str) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
     proc = _run_apply(
         repo,
         bin_dir,
         {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
+            **_apply_gate_env(approved, pre, post, digest),
             "STAGING_MAINTENANCE_ACK": ack,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
         },
         execute=True,
     )
@@ -812,8 +874,9 @@ def test_ack_must_be_exact(tmp_path: Path, ack: str) -> None:
 
 
 def test_missing_demo_and_recovery_fail(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "demo")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "demo")
     base = {
+        "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR": str(approved),
         "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
         "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
         "STAGING_MAINTENANCE_ACK": ACK,
@@ -825,11 +888,14 @@ def test_missing_demo_and_recovery_fail(tmp_path: Path) -> None:
     assert proc.returncode != 0
     assert "DEMO_CLEAR" in proc.stderr
 
-    repo2, bin_dir2, state2, pre2, post2, digest2 = _prep_success(tmp_path / "recovery")
+    repo2, bin_dir2, state2, approved2, pre2, post2, digest2 = _prep_approved_apply(
+        tmp_path / "recovery"
+    )
     proc = _run_apply(
         repo2,
         bin_dir2,
         {
+            "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR": str(approved2),
             "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre2),
             "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post2),
             "STAGING_MAINTENANCE_ACK": ACK,
@@ -917,23 +983,20 @@ def test_missing_host_fields_fail(tmp_path: Path) -> None:
 
 
 def test_changed_checksum_symlink_unsafe_perms(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
     # wrong checksum
     proc = _run_apply(
         repo,
         bin_dir,
         {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
+            **_apply_gate_env(approved, pre, post, digest),
             "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": "f" * 64,
         },
         execute=True,
     )
     assert proc.returncode != 0
     assert "checksum" in proc.stderr.lower() or "CHECKSUM" in proc.stderr
+    assert "APPLY_PATH" not in (state / "invocations.log").read_text(encoding="utf-8")
 
     # symlink plan file via assert helper already covered; unsafe perms on evidence
     pre.chmod(0o666)
@@ -945,33 +1008,13 @@ def test_changed_checksum_symlink_unsafe_perms(tmp_path: Path) -> None:
 
 
 def test_post_apply_timeouts_and_integrity_fail(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
     base = {
-        "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-        "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-        "STAGING_MAINTENANCE_ACK": ACK,
-        "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-        "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-        "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
+        **_apply_gate_env(approved, pre, post, digest),
         "STAGING_MAINTENANCE_EC2_ATTEMPTS": "1",
         "STAGING_MAINTENANCE_ALB_ATTEMPTS": "1",
     }
 
-    # EC2 wait timeout: healthy pre, then stuck stopped after apply.
-    # Mock always reads current files; simulate by setting ec2_state stopped and
-    # also making pre-apply check use healthy first — need staged mode.
-    # Simpler: run success path pieces via assert compare / wait by setting state
-    # after plan-only isn't enough. Use env to shorten and set impaired after apply
-    # by encoding apply mock to flip state.
-    aws = bin_dir / "aws"
-    text = aws.read_text(encoding="utf-8")
-    aws.write_text(
-        text.replace(
-            'if args[:1] == ["apply"]:' if False else "count += 1",
-            "count += 1",
-        ),
-        encoding="utf-8",
-    )
     # Patch terraform apply mock to mark ec2 stopped for subsequent polls.
     tf = bin_dir / "terraform"
     tf_text = tf.read_text(encoding="utf-8")
@@ -987,7 +1030,7 @@ def test_post_apply_timeouts_and_integrity_fail(tmp_path: Path) -> None:
     assert "FAIL_PHASE=ec2_recovery_timeout" in proc.stderr
 
     # reset mocks for ALB timeout
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "alb")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "alb")
     tf = bin_dir / "terraform"
     tf.write_text(
         tf.read_text(encoding="utf-8").replace(
@@ -996,23 +1039,19 @@ def test_post_apply_timeouts_and_integrity_fail(tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    base["STAGING_MAINTENANCE_HOST_EVIDENCE_PRE"] = str(pre)
-    base["STAGING_MAINTENANCE_HOST_EVIDENCE_POST"] = str(post)
-    base["STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM"] = digest
+    base = {
+        **_apply_gate_env(approved, pre, post, digest),
+        "STAGING_MAINTENANCE_EC2_ATTEMPTS": "1",
+        "STAGING_MAINTENANCE_ALB_ATTEMPTS": "1",
+    }
     proc = _run_apply(repo, bin_dir, base, execute=True)
     assert proc.returncode != 0
     assert "FAIL_PHASE=alb_recovery_timeout" in proc.stderr
 
 
 def test_post_live_ready_release_digest_pointer_cloudinit_drift(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
-    base = {
-        "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-        "STAGING_MAINTENANCE_ACK": ACK,
-        "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-        "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-        "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-    }
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
+    base = _apply_gate_env(approved, pre, post, digest)
 
     # /live failure after apply
     tf = bin_dir / "terraform"
@@ -1024,7 +1063,8 @@ def test_post_live_ready_release_digest_pointer_cloudinit_drift(tmp_path: Path) 
         encoding="utf-8",
     )
     post_ok = _write_json(
-        tmp_path / "post1.json", _host_evidence("post-apply", boot_id=BOOT_B, uptime=20)
+        tmp_path / "post1.json",
+        _host_evidence("post-apply", nonce=APPLY_NONCE, boot_id=BOOT_B, uptime=20),
     )
     proc = _run_apply(
         repo,
@@ -1036,31 +1076,33 @@ def test_post_live_ready_release_digest_pointer_cloudinit_drift(tmp_path: Path) 
     assert "FAIL_PHASE=application_health" in proc.stderr
 
     # release mismatch
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "rel")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "rel")
     bad_post = _write_json(
         tmp_path / "rel" / "badpost.json",
-        _host_evidence("post-apply", boot_id=BOOT_B, uptime=20, release_id="rel-other-9999"),
+        _host_evidence(
+            "post-apply",
+            nonce=APPLY_NONCE,
+            boot_id=BOOT_B,
+            uptime=20,
+            release_id="rel-other-9999",
+        ),
     )
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            **base,
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(bad_post),
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, bad_post, digest),
         execute=True,
     )
     assert proc.returncode != 0
     assert "FAIL_PHASE=release_integrity" in proc.stderr or "release" in proc.stderr.lower()
 
     # digest mismatch
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "dig")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "dig")
     bad_post = _write_json(
         tmp_path / "dig" / "badpost.json",
         _host_evidence(
             "post-apply",
+            nonce=APPLY_NONCE,
             boot_id=BOOT_B,
             uptime=20,
             image_digest="sha256:" + "ab" * 32,
@@ -1069,66 +1111,58 @@ def test_post_live_ready_release_digest_pointer_cloudinit_drift(tmp_path: Path) 
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(bad_post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, bad_post, digest),
         execute=True,
     )
     assert proc.returncode != 0
 
     # pointer mismatch
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "ptr")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "ptr")
     bad_post = _write_json(
         tmp_path / "ptr" / "badpost.json",
-        _host_evidence("post-apply", boot_id=BOOT_B, uptime=20, current_pointer="rel-other-0002"),
+        _host_evidence(
+            "post-apply",
+            nonce=APPLY_NONCE,
+            boot_id=BOOT_B,
+            uptime=20,
+            current_pointer="rel-other-0002",
+        ),
     )
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(bad_post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, bad_post, digest),
         execute=True,
     )
     assert proc.returncode != 0
 
     # cloud-init error
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "ci")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "ci")
     bad_post = _write_json(
         tmp_path / "ci" / "badpost.json",
-        _host_evidence("post-apply", boot_id=BOOT_B, uptime=20, cloud_init_status="error"),
+        _host_evidence(
+            "post-apply",
+            nonce=APPLY_NONCE,
+            boot_id=BOOT_B,
+            uptime=20,
+            cloud_init_status="error",
+        ),
     )
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(bad_post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, bad_post, digest),
         execute=True,
     )
     assert proc.returncode != 0
 
     # missing post evidence
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "miss")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "miss")
     proc = _run_apply(
         repo,
         bin_dir,
         {
+            "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR": str(approved),
             "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
             "STAGING_MAINTENANCE_ACK": ACK,
             "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
@@ -1141,19 +1175,12 @@ def test_post_live_ready_release_digest_pointer_cloudinit_drift(tmp_path: Path) 
     assert "HOST_EVIDENCE_POST" in proc.stderr or "host evidence" in proc.stderr.lower()
 
     # post-plan drift
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "drift")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "drift")
     (state / "post_plan_code").write_text("2", encoding="utf-8")
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, post, digest),
         execute=True,
     )
     assert proc.returncode != 0
@@ -1161,18 +1188,11 @@ def test_post_live_ready_release_digest_pointer_cloudinit_drift(tmp_path: Path) 
 
 
 def test_successful_mocked_path_applies_once_and_stops(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, post, digest),
         execute=True,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -1182,7 +1202,16 @@ def test_successful_mocked_path_applies_once_and_stops(tmp_path: Path) -> None:
     assert "STOP before Deploy Staging" in proc.stdout
     assert "Deploy Staging" in proc.stdout
     assert "Rollback Staging remains unauthorized" in proc.stdout
-    assert "HOST_EVIDENCE_RUN_NONCE=" + NONCE in proc.stdout
+    assert "HOST_EVIDENCE_RUN_NONCE=" + APPLY_NONCE in proc.stdout
+    assert str(approved / "staging-combined.tfplan") in log
+    assert "Using exact independently audited plan" in proc.stdout
+    # Apply mode must not regenerate the maintenance plan (post residual plan is ok).
+    maint_plans = [
+        line
+        for line in log.splitlines()
+        if line.startswith("terraform plan") and "-detailed-exitcode" not in line
+    ]
+    assert maint_plans == []
     assert "workflow_dispatch" not in log
     assert "Rollback Staging" not in log
     assert "rollback.yml" not in log
@@ -1229,41 +1258,28 @@ def test_no_rollback_or_target_in_scripts() -> None:
 
 
 def test_automatic_nonce_binding_and_mismatches(tmp_path: Path) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
-    # 1/2: generated nonce used and required for pre/post success path
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
+    # 1/2: generated apply nonce used and required for pre/post success path
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, post, digest),
         execute=True,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
-    assert f"HOST_EVIDENCE_RUN_NONCE={NONCE}" in proc.stdout
+    assert f"HOST_EVIDENCE_RUN_NONCE={APPLY_NONCE}" in proc.stdout
+    assert APPLY_NONCE != NONCE
 
     # 3: pre/post nonce mismatch
     bad_post = _write_json(
         tmp_path / "bad-nonce-post.json",
-        _host_evidence("post-apply", boot_id=BOOT_B, uptime=20, nonce="b" * 32),
+        _host_evidence("post-apply", boot_id=BOOT_B, uptime=20, nonce="c" * 32),
     )
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "mm")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "mm")
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(bad_post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, bad_post, digest),
         execute=True,
     )
     assert proc.returncode != 0
@@ -1709,7 +1725,7 @@ def test_plan_identity_owner_mode_and_toctou(tmp_path: Path) -> None:
 
 def test_iam_and_ssm_failures_block_success_and_deploy(tmp_path: Path) -> None:
     # 48/50 IAM verification failure
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "iam")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "iam")
     evil = _approved_allow_policy()
     evil["Statement"].append(
         {
@@ -1723,14 +1739,7 @@ def test_iam_and_ssm_failures_block_success_and_deploy(tmp_path: Path) -> None:
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, post, digest),
         execute=True,
     )
     assert proc.returncode != 0
@@ -1741,21 +1750,14 @@ def test_iam_and_ssm_failures_block_success_and_deploy(tmp_path: Path) -> None:
     assert "Deploy Staging" not in log or "STOP before Deploy Staging" not in proc.stdout
 
     # 49/51 SSM content verification failure
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path / "ssm")
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path / "ssm")
     bad_content = _approved_ssm_content()
     bad_content["mainSteps"][0]["inputs"]["runCommand"][-1] = "exec /tmp/evil.sh"
     _write_json(state / "approved_ssm_content.json", bad_content)
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, post, digest),
         execute=True,
     )
     assert proc.returncode != 0

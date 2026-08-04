@@ -18,18 +18,19 @@ from pathlib import Path
 import pytest
 
 from tests.unit.test_sprint25b5n_staging_maintenance_gate import (
-    ACK,
+    APPLY_NONCE,
     APPLY_SH,
     ASSERT,
     ASSERT_PY,
     GATE_LIB,
     NONCE,
     PYTHON,
-    RECOVERY_ACK,
     ROOT,
     RUNBOOK,
     SPRINT_DOC,
+    _apply_gate_env,
     _host_evidence,
+    _prep_approved_apply,
     _prep_success,
     _run_apply,
     _run_assert,
@@ -106,6 +107,12 @@ def test_plan_only_retains_validated_host_evidence_pre(tmp_path: Path) -> None:
     assert (work / "plan.identity.json").is_file()
     assert (work / "host-evidence.nonce").is_file()
     assert (work / "host-evidence-collect-pre.sh").is_file()
+    assert (work / "plan-only.complete").is_file()
+    assert (work / "plan-only.authority.log").is_file()
+    assert (work / "repository.sha").is_file()
+    assert "Plan-only mode complete. Apply NOT executed." in (
+        work / "plan-only.complete"
+    ).read_text(encoding="utf-8")
 
 
 def test_wrong_nonce_rejected_and_not_retained(tmp_path: Path) -> None:
@@ -204,20 +211,13 @@ def test_no_evidence_retained_before_validation_succeeds(tmp_path: Path) -> None
 def test_apply_mode_retains_pre_before_apply_and_post_after_validation(
     tmp_path: Path,
 ) -> None:
-    repo, bin_dir, state, pre, post, digest = _prep_success(tmp_path)
+    repo, bin_dir, state, approved, pre, post, digest = _prep_approved_apply(tmp_path)
     pre_bytes = pre.read_bytes()
     post_bytes = post.read_bytes()
     proc = _run_apply(
         repo,
         bin_dir,
-        {
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE": str(pre),
-            "STAGING_MAINTENANCE_HOST_EVIDENCE_POST": str(post),
-            "STAGING_MAINTENANCE_ACK": ACK,
-            "STAGING_MAINTENANCE_RECOVERY_ACK": RECOVERY_ACK,
-            "STAGING_MAINTENANCE_DEMO_CLEAR": "1",
-            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM": digest,
-        },
+        _apply_gate_env(approved, pre, post, digest),
         execute=True,
     )
     assert proc.returncode == 0, proc.stderr + proc.stdout
@@ -233,9 +233,12 @@ def test_apply_mode_retains_pre_before_apply_and_post_after_validation(
 
     pre_data = json.loads(retained_pre.read_text(encoding="utf-8"))
     post_data = json.loads(retained_post.read_text(encoding="utf-8"))
-    assert pre_data["nonce"] == post_data["nonce"] == NONCE
+    assert pre_data["nonce"] == post_data["nonce"] == APPLY_NONCE
     assert pre_data["phase"] == "pre-apply"
     assert post_data["phase"] == "post-apply"
+    # Apply-run evidence stays in the apply workdir, not the audited plan workdir.
+    assert work != approved
+    assert not (approved / "host-evidence-post.json").exists()
 
     log = (state / "invocations.log").read_text(encoding="utf-8")
     assert log.count("APPLY_PATH ") == 1
