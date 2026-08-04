@@ -133,17 +133,24 @@ staging_maintenance_verify_backend_workspace
 PRE_EVIDENCE="${STAGING_MAINTENANCE_HOST_EVIDENCE_PRE:-}"
 [[ -n "$PRE_EVIDENCE" ]] || staging_maintenance_fail host_evidence \
   "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE must point to a pre-apply host-evidence JSON file (nonce=${RUN_NONCE})"
+# External operator-supplied evidence is authoritative until it passes validation.
 staging_maintenance_validate_host_evidence "$PRE_EVIDENCE" "pre-apply" "$RUN_NONCE" "$SHA"
+# Only after validation: atomically retain byte-identical copy in the work dir.
+staging_maintenance_retain_host_evidence "$PRE_EVIDENCE" "pre-apply" "$RUN_NONCE" "$SHA" "$WORK_DIR"
+RETAINED_PRE="${WORK_DIR}/host-evidence-pre.json"
+[[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
+  "retained pre-apply host evidence missing after retention"
+_staging_maintenance_note "Retained validated pre-apply host evidence at ${RETAINED_PRE}"
 
 staging_maintenance_require_live_ec2_healthy "pre-plan"
 staging_maintenance_require_live_alb_and_app "pre-plan"
 PRE_TG_ARN="$STAGING_MAINTENANCE_TG_ARN"
 PRE_ALB_DNS="$STAGING_MAINTENANCE_ALB_DNS"
 
-PRE_RELEASE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["release_id"])' "$PRE_EVIDENCE")"
-PRE_DIGEST="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["image_digest"])' "$PRE_EVIDENCE")"
-PRE_CURRENT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["current_pointer"])' "$PRE_EVIDENCE")"
-PRE_PREVIOUS="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1],encoding="utf-8")).get("previous_pointer"); print("" if v is None else v)' "$PRE_EVIDENCE")"
+PRE_RELEASE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["release_id"])' "$RETAINED_PRE")"
+PRE_DIGEST="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["image_digest"])' "$RETAINED_PRE")"
+PRE_CURRENT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["current_pointer"])' "$RETAINED_PRE")"
+PRE_PREVIOUS="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1],encoding="utf-8")).get("previous_pointer"); print("" if v is None else v)' "$RETAINED_PRE")"
 
 # --- 5) Fresh plan + structural authority ---
 staging_maintenance_set_phase plan_validation
@@ -169,9 +176,14 @@ _staging_maintenance_note "Reviewed plan SHA-256: ${PLAN_SHA}"
 _staging_maintenance_note "Reviewed plan identity: ${STAGING_MAINTENANCE_PLAN_IDENTITY_FILE} (uid/gid/mode=0600/dev/inode bound)"
 
 if [[ "$MODE" != "apply" ]]; then
+  [[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
+    "plan-only success requires retained ${WORK_DIR}/host-evidence-pre.json"
   _staging_maintenance_note "Plan-only mode complete. Apply NOT executed."
   _staging_maintenance_note "Host-evidence run nonce for this review: ${RUN_NONCE}"
   _staging_maintenance_note "Collect snippets (same nonce) are in ${WORK_DIR}."
+  _staging_maintenance_note "Validated pre-apply host evidence retained at ${RETAINED_PRE}"
+  _staging_maintenance_note "Plan-only retains pre-apply evidence only (no post-apply evidence invented)."
+  _staging_maintenance_note "Do not manually inject evidence into a completed workdir."
   _staging_maintenance_note "Apply mode generates its own nonce; collect pre/post evidence with that run's snippets."
   _staging_maintenance_note "Do not set STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE (rejected)."
   _staging_maintenance_note "To apply after independent audit APPROVE + all three gates + checksum confirm:"
@@ -183,7 +195,7 @@ if [[ "$MODE" != "apply" ]]; then
   _staging_maintenance_note "  export STAGING_MAINTENANCE_HOST_EVIDENCE_POST=/path/to/post.json"
   _staging_maintenance_note "  EXECUTE_MAINTENANCE_APPLY=1 bash scripts/deploy/staging_maintenance_controlled_apply.sh"
   _staging_maintenance_note "Deploy Staging remains AFTER Terraform verification. Rollback Staging unauthorized here."
-  # Retain work dir on plan-only success so operators can copy collect snippets/nonce.
+  # Retain work dir on plan-only success (plan + identity + nonce + snippets + host-evidence-pre.json).
   STAGING_MAINTENANCE_WORK_OWNED=0
   _staging_maintenance_note "Plan-only artifacts retained at ${WORK_DIR}"
   exit 0
@@ -207,6 +219,12 @@ staging_maintenance_verify_plan_file "$PLAN_OUT" "$WORK_DIR" "$STAGING_MAINTENAN
 [[ -f "$PLAN_OUT" ]] || staging_maintenance_fail plan_identity_checksum "plan path missing before apply"
 staging_maintenance_require_artifact_mode_0600 "$PLAN_JSON"
 staging_maintenance_require_artifact_mode_0600 "$PLAN_TXT"
+
+# Apply eligibility requires retained validated pre-apply evidence already in work dir.
+[[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
+  "apply eligibility requires retained ${WORK_DIR}/host-evidence-pre.json"
+staging_maintenance_require_artifact_mode_0600 "$RETAINED_PRE"
+staging_maintenance_validate_host_evidence "$RETAINED_PRE" "pre-apply" "$RUN_NONCE" "$SHA"
 
 # --- Apply exact reviewed saved plan (never regenerate) ---
 staging_maintenance_set_phase apply
@@ -234,15 +252,22 @@ POST_EVIDENCE="${STAGING_MAINTENANCE_HOST_EVIDENCE_POST:-}"
   "STAGING_MAINTENANCE_HOST_EVIDENCE_POST must point to a post-apply host-evidence JSON file (nonce=${RUN_NONCE})"
 # Same generated nonce — do not create a second nonce for post evidence.
 staging_maintenance_validate_host_evidence "$POST_EVIDENCE" "post-apply" "$RUN_NONCE" "$SHA"
-COMPARE_JSON="$(staging_maintenance_compare_host_evidence "$PRE_EVIDENCE" "$POST_EVIDENCE" "$RUN_NONCE" "$SHA")" \
+# Retain post evidence only after post validation succeeds (never invent in plan-only).
+staging_maintenance_retain_host_evidence "$POST_EVIDENCE" "post-apply" "$RUN_NONCE" "$SHA" "$WORK_DIR"
+RETAINED_POST="${WORK_DIR}/host-evidence-post.json"
+[[ -f "$RETAINED_POST" && ! -L "$RETAINED_POST" ]] || staging_maintenance_fail host_evidence_retention \
+  "retained post-apply host evidence missing after retention"
+_staging_maintenance_note "Retained validated post-apply host evidence at ${RETAINED_POST}"
+
+COMPARE_JSON="$(staging_maintenance_compare_host_evidence "$RETAINED_PRE" "$RETAINED_POST" "$RUN_NONCE" "$SHA")" \
   || staging_maintenance_fail release_integrity "host evidence comparison failed"
 printf '%s\n' "$COMPARE_JSON" >"${WORK_DIR}/host-evidence-compare.json"
 chmod 600 "${WORK_DIR}/host-evidence-compare.json"
 
-POST_RELEASE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["release_id"])' "$POST_EVIDENCE")"
-POST_DIGEST="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["image_digest"])' "$POST_EVIDENCE")"
-POST_CURRENT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["current_pointer"])' "$POST_EVIDENCE")"
-POST_PREVIOUS="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1],encoding="utf-8")).get("previous_pointer"); print("" if v is None else v)' "$POST_EVIDENCE")"
+POST_RELEASE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["release_id"])' "$RETAINED_POST")"
+POST_DIGEST="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["image_digest"])' "$RETAINED_POST")"
+POST_CURRENT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["current_pointer"])' "$RETAINED_POST")"
+POST_PREVIOUS="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1],encoding="utf-8")).get("previous_pointer"); print("" if v is None else v)' "$RETAINED_POST")"
 [[ "$POST_RELEASE" == "$PRE_RELEASE" ]] || staging_maintenance_fail release_integrity \
   "release_id changed (${PRE_RELEASE} -> ${POST_RELEASE})"
 [[ "$POST_DIGEST" == "$PRE_DIGEST" ]] || staging_maintenance_fail release_integrity \
@@ -330,7 +355,16 @@ fi
 _staging_maintenance_note "Post-apply plan: no residual changes"
 
 # --- Stop before Deploy Staging ---
+[[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
+  "apply success requires retained ${WORK_DIR}/host-evidence-pre.json"
+[[ -f "$RETAINED_POST" && ! -L "$RETAINED_POST" ]] || staging_maintenance_fail host_evidence_retention \
+  "apply success requires retained ${WORK_DIR}/host-evidence-post.json"
 _staging_maintenance_note "STOP before Deploy Staging."
 _staging_maintenance_note "Rollback Staging remains unauthorized until Deploy Staging installs tooling and later audits pass."
 _staging_maintenance_note "Do not touch production."
+_staging_maintenance_note "Do not manually inject evidence into a completed workdir."
+_staging_maintenance_note "Validated host evidence retained: ${RETAINED_PRE} and ${RETAINED_POST}"
 _staging_maintenance_note "Maintenance apply verification complete (Terraform apply + health + integrity + IAM/SSM structural checks)."
+# Retain work dir on apply success (plan + identity + nonce + snippets + pre/post evidence).
+STAGING_MAINTENANCE_WORK_OWNED=0
+_staging_maintenance_note "Apply artifacts retained at ${WORK_DIR}"

@@ -456,6 +456,36 @@ staging_maintenance_validate_host_evidence() {
   staging_maintenance_assert_py "${args[@]}"
 }
 
+staging_maintenance_retain_host_evidence() {
+  # After external evidence passes validation, atomically retain a byte-identical
+  # copy inside the authoritative work directory. Fail closed on any retention error.
+  # usage: staging_maintenance_retain_host_evidence <source> <phase> [nonce] [repo_sha] [work_dir]
+  local source_path="$1"
+  local phase="$2"
+  local nonce="${3:-$STAGING_MAINTENANCE_RUN_NONCE}"
+  local repo_sha="${4:-}"
+  local work_dir="${5:-$STAGING_MAINTENANCE_WORK_DIR}"
+  local args
+  [[ -n "$source_path" ]] || staging_maintenance_fail host_evidence_retention \
+    "source host-evidence path required for retention"
+  [[ -n "$work_dir" && -d "$work_dir" ]] || staging_maintenance_fail host_evidence_retention \
+    "work directory required for host-evidence retention"
+  [[ -n "$nonce" ]] || staging_maintenance_fail host_evidence_nonce \
+    "run nonce required for host-evidence retention"
+  [[ "$phase" == "pre-apply" || "$phase" == "post-apply" ]] \
+    || staging_maintenance_fail host_evidence_phase \
+      "retention phase must be pre-apply or post-apply"
+  staging_maintenance_set_phase host_evidence_retention
+  args=(
+    retain-host-evidence "$source_path"
+    --work-dir "$work_dir"
+    --phase "$phase"
+    --nonce "$nonce"
+  )
+  [[ -n "$repo_sha" ]] && args+=(--repository-sha "$repo_sha")
+  staging_maintenance_assert_py "${args[@]}"
+}
+
 staging_maintenance_compare_host_evidence() {
   local pre="$1"
   local post="$2"
