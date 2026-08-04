@@ -55,8 +55,7 @@ def test_apply_script_uses_document_jmespath_projection() -> None:
     text = APPLY_SH.read_text(encoding="utf-8")
     assert (
         "--query 'Document.{Name:Name,Status:Status,DocumentType:DocumentType,"
-        "DocumentVersion:DocumentVersion,DefaultVersion:DefaultVersion,Owner:Owner}'"
-        in text
+        "DocumentVersion:DocumentVersion,DefaultVersion:DefaultVersion,Owner:Owner}'" in text
     )
     assert "--query '{Name:Name,Status:Status,DocumentType:DocumentType," not in text
     assert "staging_maintenance_ssm_document_version_from_meta" in text
