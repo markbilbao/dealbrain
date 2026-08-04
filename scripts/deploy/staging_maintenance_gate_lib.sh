@@ -413,6 +413,57 @@ staging_maintenance_require_plan_checksum_confirm() {
     "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM does not match the reviewed plan checksum"
 }
 
+staging_maintenance_validate_approved_plan_workdir() {
+  # Fail-closed validation of the independently audited plan-only workdir.
+  # usage: staging_maintenance_validate_approved_plan_workdir <repo_sha> <metadata_out>
+  local repo_sha="$1"
+  local metadata_out="$2"
+  local approved="${STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR:-}"
+  local checksum="${STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM:-}"
+  staging_maintenance_set_phase preflight
+  [[ -n "$approved" ]] || staging_maintenance_fail preflight \
+    "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR is required in apply mode (exact audited plan-only workdir)"
+  [[ -n "$repo_sha" ]] || staging_maintenance_fail preflight \
+    "repository SHA required to validate approved plan workdir"
+  [[ -n "$metadata_out" ]] || staging_maintenance_fail preflight \
+    "approved-plan metadata output path required"
+  [[ -n "$checksum" ]] || staging_maintenance_fail preflight \
+    "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM is required (exact SHA-256 of the reviewed plan)"
+  staging_maintenance_assert_py \
+    validate-approved-plan-workdir "$approved" \
+    --repository-sha "$repo_sha" \
+    --plan-checksum "$checksum" \
+    --out "$metadata_out"
+}
+
+staging_maintenance_write_plan_only_authority() {
+  # Persist plan-only completion authority into the retained workdir.
+  # usage: staging_maintenance_write_plan_only_authority <work_dir> <nonce> <repo_sha>
+  local work_dir="$1"
+  local nonce="$2"
+  local repo_sha="$3"
+  local authority="${work_dir}/plan-only.authority.log"
+  local complete="${work_dir}/plan-only.complete"
+  local repo_file="${work_dir}/repository.sha"
+  [[ -n "$work_dir" && -d "$work_dir" ]] || staging_maintenance_fail preflight \
+    "work directory required for plan-only authority marker"
+  [[ -n "$nonce" ]] || staging_maintenance_fail host_evidence_nonce \
+    "plan-only nonce required for authority marker"
+  [[ -n "$repo_sha" ]] || staging_maintenance_fail preflight \
+    "repository SHA required for plan-only authority marker"
+  umask 077
+  printf '%s\n' "$repo_sha" >"$repo_file"
+  chmod 600 "$repo_file"
+  {
+    printf 'HOST_EVIDENCE_RUN_NONCE=%s\n' "$nonce"
+    printf 'REPOSITORY_SHA=%s\n' "$repo_sha"
+    printf 'Plan-only mode complete. Apply NOT executed.\n'
+  } >"$authority"
+  chmod 600 "$authority"
+  printf 'Plan-only mode complete. Apply NOT executed.\n' >"$complete"
+  chmod 600 "$complete"
+}
+
 staging_maintenance_host_evidence_ok() {
   # Non-fatal check (exit 0/1) for wait loops. Does not call staging_maintenance_fail.
   local path="$1"

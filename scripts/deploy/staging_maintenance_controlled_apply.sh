@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sprint 25b.5n — controlled staging maintenance apply (fail closed).
+# Sprint 25b.5n / 25b.5q — controlled staging maintenance apply (fail closed).
 #
 # Hard identity (enforced via staging_maintenance_gate_lib.sh):
 #   account 941035169846 | region us-east-1 | workspace default
@@ -10,10 +10,12 @@
 #   2) exact STAGING_MAINTENANCE_ACK (byte-for-byte canonical)
 #   3) STAGING_MAINTENANCE_DEMO_CLEAR=1
 #   4) exact STAGING_MAINTENANCE_RECOVERY_ACK
-#   5) exact STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM for the reviewed plan
-#   6) live EC2/ALB/live/ready healthy
-#   7) valid pre/post host-evidence JSON bound to the internally generated nonce
-#   8) structural plan authority via terraform show -json
+#   5) STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR = exact independently audited
+#      plan-only workdir (immutable candidate plan; apply does not regenerate)
+#   6) exact STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM for that audited plan
+#   7) live EC2/ALB/live/ready healthy
+#   8) valid pre/post host-evidence JSON bound to the apply-run generated nonce
+#   9) structural plan authority via terraform show -json on the audited binary
 #
 # Forbidden: terraform -target, ignore_changes workarounds, production apply,
 # Deploy Staging / Rollback Staging, STAGING_MAINTENANCE_SKIP_INIT, SSM SendCommand.
@@ -46,6 +48,10 @@ if [[ -n "${STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE:-}" ]]; then
   staging_maintenance_fail host_evidence_nonce \
     "STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE is not permitted; nonce is generated internally per run"
 fi
+if [[ "$MODE" != "apply" && -n "${STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR:-}" ]]; then
+  staging_maintenance_fail preflight \
+    "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR is apply-mode only; omit it for plan-only"
+fi
 
 [[ -d "$STAGING_DIR" ]] || staging_maintenance_fail preflight "missing staging Terraform root: ${STAGING_DIR}"
 command -v terraform >/dev/null 2>&1 || staging_maintenance_fail preflight "terraform is required"
@@ -55,20 +61,18 @@ command -v curl >/dev/null 2>&1 || staging_maintenance_fail preflight "curl is r
 command -v sha256sum >/dev/null 2>&1 || command -v shasum >/dev/null 2>&1 \
   || staging_maintenance_fail preflight "sha256sum or shasum is required"
 
+# Apply-run private workdir (evidence/nonce/logs). Never the approved plan workdir.
 WORK_DIR="$(staging_maintenance_create_work_dir staging-maint-apply)"
 staging_maintenance_install_exit_trap
 chmod 700 "$WORK_DIR"
 
-PLAN_OUT="${WORK_DIR}/staging-combined.tfplan"
-PLAN_TXT="${WORK_DIR}/staging-combined.plan.txt"
-PLAN_JSON="${WORK_DIR}/staging-combined.plan.json"
 POST_PLAN_TXT="${WORK_DIR}/staging-post-apply.plan.txt"
 POST_PLAN_JSON="${WORK_DIR}/staging-post-apply.plan.json"
 INVOCATION_LOG="${WORK_DIR}/invocation.log"
 : >"$INVOCATION_LOG"
 chmod 600 "$INVOCATION_LOG"
 
-# --- Internal run nonce (authoritative; not caller-selectable) ---
+# --- Internal run nonce (authoritative for THIS run; not caller-selectable) ---
 RUN_NONCE="$(staging_maintenance_generate_run_nonce "$WORK_DIR")"
 _staging_maintenance_note "Generated host-evidence run nonce (stored only in work dir, mode 0600)"
 _staging_maintenance_note "HOST_EVIDENCE_RUN_NONCE=${RUN_NONCE}"
@@ -105,6 +109,9 @@ if [[ -n "${STAGING_MAINTENANCE_REQUIRED_SHA:-}" ]]; then
   [[ "$SHA" == "$STAGING_MAINTENANCE_REQUIRED_SHA" ]] || staging_maintenance_fail preflight \
     "HEAD ${SHA} != required ${STAGING_MAINTENANCE_REQUIRED_SHA}"
 fi
+# Persist repository SHA for plan-only authority; apply mode also records it in its workdir.
+printf '%s\n' "$SHA" >"${WORK_DIR}/repository.sha"
+chmod 600 "${WORK_DIR}/repository.sha"
 
 # --- 2) AWS account / region ---
 ACCOUNT="$(aws sts get-caller-identity --query Account --output text)" \
@@ -129,13 +136,142 @@ terraform init -input=false \
   || staging_maintenance_fail preflight "terraform init failed"
 staging_maintenance_verify_backend_workspace
 
-# --- 4) Live pre-apply health + host evidence ---
+APPROVED_PLAN_WORKDIR=""
+PLAN_OUT=""
+PLAN_TXT=""
+PLAN_JSON=""
+PLAN_SHA=""
+PLAN_ONLY_NONCE=""
+
+if [[ "$MODE" == "apply" ]]; then
+  # --- 4a) Exact independently audited plan reuse (Sprint 25b.5q) ---
+  staging_maintenance_set_phase preflight
+  [[ -n "${STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR:-}" ]] || staging_maintenance_fail preflight \
+    "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR is required in apply mode (exact audited plan-only workdir)"
+  APPROVED_META_FILE="${WORK_DIR}/approved-plan.meta.json"
+  staging_maintenance_validate_approved_plan_workdir "$SHA" "$APPROVED_META_FILE"
+  [[ -f "$APPROVED_META_FILE" && ! -L "$APPROVED_META_FILE" ]] || staging_maintenance_fail preflight \
+    "approved plan metadata missing after validation"
+  APPROVED_PLAN_WORKDIR="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["workdir"])' "$APPROVED_META_FILE")"
+  PLAN_OUT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["plan_path"])' "$APPROVED_META_FILE")"
+  PLAN_SHA="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["plan_sha256"])' "$APPROVED_META_FILE")"
+  PLAN_ONLY_NONCE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["plan_only_nonce"])' "$APPROVED_META_FILE")"
+  PLAN_JSON="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["plan_json"])' "$APPROVED_META_FILE")"
+  PLAN_TXT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["plan_txt"])' "$APPROVED_META_FILE")"
+  STAGING_MAINTENANCE_PLAN_IDENTITY_FILE="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["identity_file"])' "$APPROVED_META_FILE")"
+
+  [[ "$RUN_NONCE" != "$PLAN_ONLY_NONCE" ]] || staging_maintenance_fail host_evidence_nonce \
+    "apply-run nonce must not reuse the plan-only nonce; collect fresh apply pre/post evidence"
+  [[ "$APPROVED_PLAN_WORKDIR" != "$WORK_DIR" ]] || staging_maintenance_fail preflight \
+    "approved plan workdir must not be the apply-run private workdir"
+  [[ -f "$PLAN_OUT" && ! -L "$PLAN_OUT" ]] || staging_maintenance_fail plan_identity_checksum \
+    "approved plan binary missing after validation"
+  _staging_maintenance_note "Using exact independently audited plan at ${PLAN_OUT}"
+  _staging_maintenance_note "Reviewed plan SHA-256: ${PLAN_SHA}"
+  _staging_maintenance_note "Approved plan workdir (immutable): ${APPROVED_PLAN_WORKDIR}"
+  _staging_maintenance_note "Apply-run private workdir (fresh evidence): ${WORK_DIR}"
+  _staging_maintenance_note "Apply does NOT regenerate, copy, or replace the audited plan binary."
+
+  # Read-only show against the exact retained binary into the apply workdir only.
+  staging_maintenance_set_phase plan_validation
+  SHOW_JSON="${WORK_DIR}/approved-plan.show.json"
+  SHOW_TXT="${WORK_DIR}/approved-plan.show.txt"
+  umask 077
+  terraform show -no-color "$PLAN_OUT" | tee "$SHOW_TXT" \
+    || staging_maintenance_fail plan_validation "terraform show text failed for approved plan"
+  terraform show -json "$PLAN_OUT" >"$SHOW_JSON" \
+    || staging_maintenance_fail plan_validation "terraform show -json failed for approved plan"
+  chmod 600 "$SHOW_JSON" "$SHOW_TXT"
+  staging_maintenance_require_artifact_mode_0600 "$SHOW_JSON"
+  staging_maintenance_require_artifact_mode_0600 "$SHOW_TXT"
+  staging_maintenance_validate_plan_json "$SHOW_JSON"
+  # Retained plan JSON must still pass structural authority (byte inventory already checked).
+  staging_maintenance_validate_plan_json "$PLAN_JSON"
+  staging_maintenance_require_artifact_mode_0600 "$PLAN_OUT"
+  staging_maintenance_require_artifact_mode_0600 "$PLAN_JSON"
+  staging_maintenance_require_artifact_mode_0600 "$PLAN_TXT"
+  staging_maintenance_verify_plan_file "$PLAN_OUT" "$APPROVED_PLAN_WORKDIR" \
+    "$STAGING_MAINTENANCE_PLAN_IDENTITY_FILE"
+else
+  # --- 4b) Plan-only: generate immutable candidate plan into THIS workdir ---
+  PLAN_OUT="${WORK_DIR}/staging-combined.tfplan"
+  PLAN_TXT="${WORK_DIR}/staging-combined.plan.txt"
+  PLAN_JSON="${WORK_DIR}/staging-combined.plan.json"
+
+  PRE_EVIDENCE="${STAGING_MAINTENANCE_HOST_EVIDENCE_PRE:-}"
+  [[ -n "$PRE_EVIDENCE" ]] || staging_maintenance_fail host_evidence \
+    "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE must point to a pre-apply host-evidence JSON file (nonce=${RUN_NONCE})"
+  staging_maintenance_validate_host_evidence "$PRE_EVIDENCE" "pre-apply" "$RUN_NONCE" "$SHA"
+  staging_maintenance_retain_host_evidence "$PRE_EVIDENCE" "pre-apply" "$RUN_NONCE" "$SHA" "$WORK_DIR"
+  RETAINED_PRE="${WORK_DIR}/host-evidence-pre.json"
+  [[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
+    "retained pre-apply host evidence missing after retention"
+  _staging_maintenance_note "Retained validated pre-apply host evidence at ${RETAINED_PRE}"
+
+  staging_maintenance_require_live_ec2_healthy "pre-plan"
+  staging_maintenance_require_live_alb_and_app "pre-plan"
+
+  staging_maintenance_set_phase plan_validation
+  _staging_maintenance_note "Generating fresh saved plan (no -target)"
+  umask 077
+  terraform plan -input=false -lock=false -out "$PLAN_OUT" | tee "$PLAN_TXT" \
+    || staging_maintenance_fail plan_validation "terraform plan failed"
+  terraform show -no-color "$PLAN_OUT" | tee -a "$PLAN_TXT" \
+    || staging_maintenance_fail plan_validation "terraform show text failed"
+  terraform show -json "$PLAN_OUT" >"$PLAN_JSON" \
+    || staging_maintenance_fail plan_validation "terraform show -json failed"
+  chmod 600 "$PLAN_OUT" "$PLAN_JSON" "$PLAN_TXT"
+  staging_maintenance_require_artifact_mode_0600 "$PLAN_OUT"
+  staging_maintenance_require_artifact_mode_0600 "$PLAN_JSON"
+  staging_maintenance_require_artifact_mode_0600 "$PLAN_TXT"
+  staging_maintenance_validate_plan_json "$PLAN_JSON"
+
+  staging_maintenance_record_plan_identity "$PLAN_OUT" "$WORK_DIR"
+  PLAN_SHA="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["sha256"])' \
+    "$STAGING_MAINTENANCE_PLAN_IDENTITY_FILE")" \
+    || staging_maintenance_fail plan_identity_checksum "failed to read recorded plan checksum"
+  _staging_maintenance_note "Reviewed plan SHA-256: ${PLAN_SHA}"
+  _staging_maintenance_note "Reviewed plan identity: ${STAGING_MAINTENANCE_PLAN_IDENTITY_FILE} (uid/gid/mode=0600/dev/inode bound)"
+
+  [[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
+    "plan-only success requires retained ${WORK_DIR}/host-evidence-pre.json"
+  staging_maintenance_write_plan_only_authority "$WORK_DIR" "$RUN_NONCE" "$SHA"
+  _staging_maintenance_note "Plan-only mode complete. Apply NOT executed."
+  _staging_maintenance_note "Host-evidence run nonce for this review: ${RUN_NONCE}"
+  _staging_maintenance_note "Collect snippets (same nonce) are in ${WORK_DIR}."
+  _staging_maintenance_note "Validated pre-apply host evidence retained at ${RETAINED_PRE}"
+  _staging_maintenance_note "Plan-only retains pre-apply evidence only (no post-apply evidence invented)."
+  _staging_maintenance_note "Do not manually inject evidence into a completed workdir."
+  _staging_maintenance_note "Apply mode generates its own nonce; collect pre/post evidence with that run's snippets."
+  _staging_maintenance_note "Do not set STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE (rejected)."
+  _staging_maintenance_note "To apply after independent audit APPROVE + all gates + checksum confirm:"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR=${WORK_DIR}"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_ACK='…exact canonical string…'"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_RECOVERY_ACK='…exact recovery string…'"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_DEMO_CLEAR=1"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM=${PLAN_SHA}"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_HOST_EVIDENCE_PRE=/path/to/apply-run-pre.json"
+  _staging_maintenance_note "  export STAGING_MAINTENANCE_HOST_EVIDENCE_POST=/path/to/apply-run-post.json"
+  _staging_maintenance_note "  EXECUTE_MAINTENANCE_APPLY=1 bash scripts/deploy/staging_maintenance_controlled_apply.sh"
+  _staging_maintenance_note "Deploy Staging remains AFTER Terraform verification. Rollback Staging unauthorized here."
+  # Retain work dir on plan-only success (plan + identity + nonce + snippets + host-evidence-pre.json).
+  STAGING_MAINTENANCE_WORK_OWNED=0
+  _staging_maintenance_note "Plan-only artifacts retained at ${WORK_DIR}"
+  exit 0
+fi
+
+# --- Apply path continues: fresh apply-run pre-evidence (separate from plan-only) ---
 PRE_EVIDENCE="${STAGING_MAINTENANCE_HOST_EVIDENCE_PRE:-}"
 [[ -n "$PRE_EVIDENCE" ]] || staging_maintenance_fail host_evidence \
   "STAGING_MAINTENANCE_HOST_EVIDENCE_PRE must point to a pre-apply host-evidence JSON file (nonce=${RUN_NONCE})"
-# External operator-supplied evidence is authoritative until it passes validation.
+# Refuse to treat the approved plan workdir's retained evidence as apply-run input by injection.
+case "$PRE_EVIDENCE" in
+  "${APPROVED_PLAN_WORKDIR}" | "${APPROVED_PLAN_WORKDIR}"/*)
+    staging_maintenance_fail host_evidence \
+      "apply-run host evidence must not be sourced from the approved plan workdir; collect fresh evidence"
+    ;;
+esac
 staging_maintenance_validate_host_evidence "$PRE_EVIDENCE" "pre-apply" "$RUN_NONCE" "$SHA"
-# Only after validation: atomically retain byte-identical copy in the work dir.
 staging_maintenance_retain_host_evidence "$PRE_EVIDENCE" "pre-apply" "$RUN_NONCE" "$SHA" "$WORK_DIR"
 RETAINED_PRE="${WORK_DIR}/host-evidence-pre.json"
 [[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
@@ -152,55 +288,6 @@ PRE_DIGEST="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],enco
 PRE_CURRENT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["current_pointer"])' "$RETAINED_PRE")"
 PRE_PREVIOUS="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1],encoding="utf-8")).get("previous_pointer"); print("" if v is None else v)' "$RETAINED_PRE")"
 
-# --- 5) Fresh plan + structural authority ---
-staging_maintenance_set_phase plan_validation
-_staging_maintenance_note "Generating fresh saved plan (no -target)"
-umask 077
-terraform plan -input=false -lock=false -out "$PLAN_OUT" | tee "$PLAN_TXT" \
-  || staging_maintenance_fail plan_validation "terraform plan failed"
-terraform show -no-color "$PLAN_OUT" | tee -a "$PLAN_TXT" \
-  || staging_maintenance_fail plan_validation "terraform show text failed"
-terraform show -json "$PLAN_OUT" >"$PLAN_JSON" \
-  || staging_maintenance_fail plan_validation "terraform show -json failed"
-chmod 600 "$PLAN_OUT" "$PLAN_JSON" "$PLAN_TXT"
-staging_maintenance_require_artifact_mode_0600 "$PLAN_OUT"
-staging_maintenance_require_artifact_mode_0600 "$PLAN_JSON"
-staging_maintenance_require_artifact_mode_0600 "$PLAN_TXT"
-staging_maintenance_validate_plan_json "$PLAN_JSON"
-
-staging_maintenance_record_plan_identity "$PLAN_OUT" "$WORK_DIR"
-PLAN_SHA="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1],encoding="utf-8"))["sha256"])' \
-  "$STAGING_MAINTENANCE_PLAN_IDENTITY_FILE")" \
-  || staging_maintenance_fail plan_identity_checksum "failed to read recorded plan checksum"
-_staging_maintenance_note "Reviewed plan SHA-256: ${PLAN_SHA}"
-_staging_maintenance_note "Reviewed plan identity: ${STAGING_MAINTENANCE_PLAN_IDENTITY_FILE} (uid/gid/mode=0600/dev/inode bound)"
-
-if [[ "$MODE" != "apply" ]]; then
-  [[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
-    "plan-only success requires retained ${WORK_DIR}/host-evidence-pre.json"
-  _staging_maintenance_note "Plan-only mode complete. Apply NOT executed."
-  _staging_maintenance_note "Host-evidence run nonce for this review: ${RUN_NONCE}"
-  _staging_maintenance_note "Collect snippets (same nonce) are in ${WORK_DIR}."
-  _staging_maintenance_note "Validated pre-apply host evidence retained at ${RETAINED_PRE}"
-  _staging_maintenance_note "Plan-only retains pre-apply evidence only (no post-apply evidence invented)."
-  _staging_maintenance_note "Do not manually inject evidence into a completed workdir."
-  _staging_maintenance_note "Apply mode generates its own nonce; collect pre/post evidence with that run's snippets."
-  _staging_maintenance_note "Do not set STAGING_MAINTENANCE_HOST_EVIDENCE_NONCE (rejected)."
-  _staging_maintenance_note "To apply after independent audit APPROVE + all three gates + checksum confirm:"
-  _staging_maintenance_note "  export STAGING_MAINTENANCE_ACK='…exact canonical string…'"
-  _staging_maintenance_note "  export STAGING_MAINTENANCE_RECOVERY_ACK='…exact recovery string…'"
-  _staging_maintenance_note "  export STAGING_MAINTENANCE_DEMO_CLEAR=1"
-  _staging_maintenance_note "  export STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM=<sha256 from the apply run's reviewed plan>"
-  _staging_maintenance_note "  export STAGING_MAINTENANCE_HOST_EVIDENCE_PRE=/path/to/pre.json"
-  _staging_maintenance_note "  export STAGING_MAINTENANCE_HOST_EVIDENCE_POST=/path/to/post.json"
-  _staging_maintenance_note "  EXECUTE_MAINTENANCE_APPLY=1 bash scripts/deploy/staging_maintenance_controlled_apply.sh"
-  _staging_maintenance_note "Deploy Staging remains AFTER Terraform verification. Rollback Staging unauthorized here."
-  # Retain work dir on plan-only success (plan + identity + nonce + snippets + host-evidence-pre.json).
-  STAGING_MAINTENANCE_WORK_OWNED=0
-  _staging_maintenance_note "Plan-only artifacts retained at ${WORK_DIR}"
-  exit 0
-fi
-
 # --- Apply-capable gates ---
 staging_maintenance_set_phase preflight
 staging_maintenance_require_apply_gates
@@ -214,24 +301,28 @@ PRE_TG_ARN="$STAGING_MAINTENANCE_TG_ARN"
 PRE_ALB_DNS="$STAGING_MAINTENANCE_ALB_DNS"
 
 # Immutable plan identity immediately before apply (path/dev/inode/size/uid/gid/mode/sha256).
-staging_maintenance_verify_plan_file "$PLAN_OUT" "$WORK_DIR" "$STAGING_MAINTENANCE_PLAN_IDENTITY_FILE"
+# Bind against the APPROVED plan workdir — never copy the plan into the apply workdir.
+staging_maintenance_verify_plan_file "$PLAN_OUT" "$APPROVED_PLAN_WORKDIR" \
+  "$STAGING_MAINTENANCE_PLAN_IDENTITY_FILE"
 [[ ! -L "$PLAN_OUT" ]] || staging_maintenance_fail plan_identity_mode "plan path must not be a symlink"
 [[ -f "$PLAN_OUT" ]] || staging_maintenance_fail plan_identity_checksum "plan path missing before apply"
 staging_maintenance_require_artifact_mode_0600 "$PLAN_JSON"
 staging_maintenance_require_artifact_mode_0600 "$PLAN_TXT"
 
-# Apply eligibility requires retained validated pre-apply evidence already in work dir.
+# Apply eligibility requires retained validated pre-apply evidence already in apply work dir.
 [[ -f "$RETAINED_PRE" && ! -L "$RETAINED_PRE" ]] || staging_maintenance_fail host_evidence_retention \
   "apply eligibility requires retained ${WORK_DIR}/host-evidence-pre.json"
 staging_maintenance_require_artifact_mode_0600 "$RETAINED_PRE"
 staging_maintenance_validate_host_evidence "$RETAINED_PRE" "pre-apply" "$RUN_NONCE" "$SHA"
 
-# --- Apply exact reviewed saved plan (never regenerate) ---
+# --- Apply exact audited saved plan (never regenerate / never copy) ---
 staging_maintenance_set_phase apply
 _staging_maintenance_note "Applying exact reviewed saved plan ${PLAN_OUT}"
 printf 'terraform_apply %s\n' "$PLAN_OUT" >>"$INVOCATION_LOG"
+# Terraform native saved-plan/state lineage + serial checks remain authoritative:
+# a stale plan against newer state fails closed here without repository bypass.
 terraform apply -input=false "$PLAN_OUT" \
-  || staging_maintenance_fail apply "terraform apply failed"
+  || staging_maintenance_fail apply "terraform apply failed (including native stale saved-plan rejection)"
 
 # --- Post-apply monitoring (fail closed) ---
 AFTER_ID="$(aws ec2 describe-instances \
@@ -250,7 +341,13 @@ staging_maintenance_probe_live_ready "$PRE_ALB_DNS" "post-apply"
 POST_EVIDENCE="${STAGING_MAINTENANCE_HOST_EVIDENCE_POST:-}"
 [[ -n "$POST_EVIDENCE" ]] || staging_maintenance_fail host_evidence \
   "STAGING_MAINTENANCE_HOST_EVIDENCE_POST must point to a post-apply host-evidence JSON file (nonce=${RUN_NONCE})"
-# Same generated nonce — do not create a second nonce for post evidence.
+case "$POST_EVIDENCE" in
+  "${APPROVED_PLAN_WORKDIR}" | "${APPROVED_PLAN_WORKDIR}"/*)
+    staging_maintenance_fail host_evidence \
+      "apply-run host evidence must not be sourced from the approved plan workdir; collect fresh evidence"
+    ;;
+esac
+# Same apply-run generated nonce — do not create a second nonce for post evidence.
 staging_maintenance_validate_host_evidence "$POST_EVIDENCE" "post-apply" "$RUN_NONCE" "$SHA"
 # Retain post evidence only after post validation succeeds (never invent in plan-only).
 staging_maintenance_retain_host_evidence "$POST_EVIDENCE" "post-apply" "$RUN_NONCE" "$SHA" "$WORK_DIR"
@@ -334,6 +431,7 @@ staging_maintenance_verify_iam_policies \
   "${WORK_DIR}/iam-deploy-deny.json"
 
 # --- Fresh post-apply read-only plan: no unexplained residual drift ---
+# This residual check is not a replacement for the audited maintenance plan.
 staging_maintenance_set_phase post_plan_drift
 set +e
 terraform plan -input=false -lock=false -detailed-exitcode -out "${WORK_DIR}/post.tfplan" \
@@ -364,7 +462,8 @@ _staging_maintenance_note "Rollback Staging remains unauthorized until Deploy St
 _staging_maintenance_note "Do not touch production."
 _staging_maintenance_note "Do not manually inject evidence into a completed workdir."
 _staging_maintenance_note "Validated host evidence retained: ${RETAINED_PRE} and ${RETAINED_POST}"
+_staging_maintenance_note "Audited plan remained immutable at ${PLAN_OUT}"
 _staging_maintenance_note "Maintenance apply verification complete (Terraform apply + health + integrity + IAM/SSM structural checks)."
-# Retain work dir on apply success (plan + identity + nonce + snippets + pre/post evidence).
+# Retain apply work dir on success (fresh evidence + show artifacts; approved plan stays separate).
 STAGING_MAINTENANCE_WORK_OWNED=0
 _staging_maintenance_note "Apply artifacts retained at ${WORK_DIR}"

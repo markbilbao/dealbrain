@@ -62,6 +62,7 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5m_user_data_plan_isolation.py \
 		tests/unit/test_sprint25b5n_staging_maintenance_gate.py \
 		tests/unit/test_sprint25b5p_host_evidence_retention.py \
+		tests/unit/test_sprint25b5q_exact_audited_plan_reuse.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
@@ -98,6 +99,7 @@ validate-pre-live:
 		tests/unit/test_sprint25b5m_user_data_plan_isolation.py \
 		tests/unit/test_sprint25b5n_staging_maintenance_gate.py \
 		tests/unit/test_sprint25b5p_host_evidence_retention.py \
+		tests/unit/test_sprint25b5q_exact_audited_plan_reuse.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b1_image_publication.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \

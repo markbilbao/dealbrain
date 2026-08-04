@@ -2018,6 +2018,251 @@ def validate_tg_arn(arn: str) -> None:
         _die(f"target group ARN rejected: {arn!r}", code=13, phase="preflight")
 
 
+# Sprint 25b.5q — exact independently audited plan workdir contract.
+APPROVED_PLAN_COMPLETE_MARKER = "Plan-only mode complete. Apply NOT executed."
+APPROVED_PLAN_REQUIRED_ARTIFACTS: tuple[tuple[str, int], ...] = (
+    ("staging-combined.tfplan", 0o600),
+    ("staging-combined.plan.json", 0o600),
+    ("staging-combined.plan.txt", 0o600),
+    ("plan.identity.json", 0o600),
+    ("host-evidence.nonce", 0o600),
+    ("host-evidence-pre.json", 0o600),
+    ("host-evidence-pre.json.sha256", 0o600),
+    ("host-evidence-collect-pre.sh", 0o700),
+    ("host-evidence-collect-post.sh", 0o700),
+    ("plan-only.complete", 0o600),
+    ("plan-only.authority.log", 0o600),
+    ("repository.sha", 0o600),
+)
+
+
+def _require_artifact_regular_owned(
+    path: Path,
+    *,
+    exact_mode: int,
+    euid: int,
+    egid: int,
+    phase: str = "preflight",
+) -> os.stat_result:
+    try:
+        lst = os.lstat(path)
+    except OSError as exc:
+        _die(f"missing required approved-plan artifact: {path}: {exc}", phase=phase)
+    if stat.S_ISLNK(lst.st_mode):
+        _die(f"approved-plan artifact must not be a symlink: {path}", phase=phase)
+    if not stat.S_ISREG(lst.st_mode):
+        _die(f"approved-plan artifact is not a regular file: {path}", phase=phase)
+    mode = stat.S_IMODE(lst.st_mode)
+    if mode & (stat.S_ISUID | stat.S_ISGID | stat.S_ISVTX):
+        _die(
+            f"setuid/setgid/sticky bits forbidden on approved-plan artifact {path}: {oct(mode)}",
+            phase=phase,
+        )
+    if mode != exact_mode:
+        _die(
+            f"approved-plan artifact mode {oct(mode)} != required {oct(exact_mode)}: {path}",
+            phase="plan_identity_mode",
+        )
+    if lst.st_uid != euid:
+        _die(
+            f"approved-plan artifact uid {lst.st_uid} != euid {euid}: {path}",
+            phase="plan_identity_owner",
+        )
+    if lst.st_gid != egid:
+        _die(
+            f"approved-plan artifact gid {lst.st_gid} != egid {egid}: {path}",
+            phase="plan_identity_owner",
+        )
+    return lst
+
+
+def validate_approved_plan_workdir(
+    workdir: Path,
+    *,
+    expected_repository_sha: str,
+    expected_plan_checksum: str | None = None,
+    out_path: Path | None = None,
+) -> dict[str, Any]:
+    """Validate an independently audited plan-only workdir for exact apply reuse.
+
+    Fail closed on symlink/ambiguous paths, incomplete inventory, identity drift,
+    failed plan-only authority, or mismatched repository/plan checksums.
+    Does not mutate the approved workdir.
+    """
+    phase = "preflight"
+    if not isinstance(expected_repository_sha, str) or not SHA1_OR_SHA256_RE.fullmatch(
+        expected_repository_sha
+    ):
+        _die("expected repository SHA missing or malformed", phase=phase)
+    if expected_plan_checksum is None or not isinstance(expected_plan_checksum, str):
+        _die(
+            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM is required "
+            "(exact SHA-256 of the reviewed plan)",
+            phase=phase,
+        )
+    if not re.fullmatch(r"^[0-9a-f]{64}$", expected_plan_checksum):
+        _die(
+            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM missing or malformed",
+            phase=phase,
+        )
+
+    raw = str(workdir)
+    if not raw or raw.strip() != raw:
+        _die("STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR is empty or padded", phase=phase)
+    if any(ch in raw for ch in ("*", "?", "[", "]", "{", "}", "\n", "\r", "\x00")):
+        _die(
+            "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR must be an exact path "
+            "(no globs or ambiguous selection)",
+            phase=phase,
+        )
+    if ":" in raw and not raw.startswith("/"):
+        # Refuse PATH-like / multi-entry values on POSIX.
+        _die(
+            "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR must be a single absolute directory path",
+            phase=phase,
+        )
+
+    # Original path lstat before resolve (no symlink follow).
+    try:
+        original_lst = os.lstat(workdir)
+    except OSError as exc:
+        _die(
+            f"STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR missing or unreadable: {workdir}: {exc}",
+            phase=phase,
+        )
+    if stat.S_ISLNK(original_lst.st_mode):
+        _die(
+            "STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR must not be a symlink",
+            phase=phase,
+        )
+    if not stat.S_ISDIR(original_lst.st_mode):
+        _die(
+            f"STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR is not a directory: {workdir}",
+            phase=phase,
+        )
+
+    work_resolved = _resolve_retention_work_dir(workdir, phase=phase)
+    euid = os.geteuid()
+    egid = os.getegid()
+
+    for name, mode in APPROVED_PLAN_REQUIRED_ARTIFACTS:
+        _require_artifact_regular_owned(
+            work_resolved / name,
+            exact_mode=mode,
+            euid=euid,
+            egid=egid,
+            phase=phase,
+        )
+
+    repo_sha_text = (work_resolved / "repository.sha").read_text(encoding="utf-8").strip()
+    if repo_sha_text != expected_repository_sha:
+        _die(
+            f"approved plan repository SHA {repo_sha_text} != current {expected_repository_sha}",
+            phase=phase,
+        )
+
+    complete_text = (work_resolved / "plan-only.complete").read_text(encoding="utf-8")
+    if APPROVED_PLAN_COMPLETE_MARKER not in complete_text:
+        _die(
+            "approved plan workdir missing completed plan-only marker "
+            f"{APPROVED_PLAN_COMPLETE_MARKER!r}",
+            phase=phase,
+        )
+
+    authority = (work_resolved / "plan-only.authority.log").read_text(encoding="utf-8")
+    if APPROVED_PLAN_COMPLETE_MARKER not in authority:
+        _die(
+            "approved plan authority log missing plan-only completion line",
+            phase=phase,
+        )
+    plan_only_nonce = (
+        (work_resolved / "host-evidence.nonce").read_text(encoding="utf-8").strip()
+    )
+    validate_nonce_format(plan_only_nonce)
+    nonce_idx = authority.find(f"HOST_EVIDENCE_RUN_NONCE={plan_only_nonce}")
+    if nonce_idx < 0:
+        # Also accept the bare nonce line form written by the operator script.
+        nonce_idx = authority.find(plan_only_nonce)
+    if nonce_idx < 0:
+        _die(
+            "approved plan authority log does not record the plan-only nonce",
+            phase=phase,
+        )
+    after_nonce = authority[nonce_idx:]
+    if "FAIL_PHASE=" in after_nonce:
+        _die(
+            "approved plan workdir authority log contains FAIL_PHASE after plan-only nonce",
+            phase=phase,
+        )
+
+    # Retained plan-only pre-evidence pair must still validate for that run.
+    validate_host_evidence_file(
+        work_resolved / "host-evidence-pre.json",
+        phase="pre-apply",
+        expected_nonce=plan_only_nonce,
+        expected_repository_sha=expected_repository_sha,
+        max_age_seconds=86400,
+    )
+    binding = (work_resolved / "host-evidence-pre.json.sha256").read_text(encoding="utf-8")
+    evidence_digest = sha256_file(work_resolved / "host-evidence-pre.json")
+    if not binding.startswith(evidence_digest):
+        _die(
+            "approved plan retained pre-evidence SHA-256 binding mismatch",
+            phase="host_evidence_retention",
+        )
+
+    plan_path = work_resolved / "staging-combined.tfplan"
+    identity_file = work_resolved / "plan.identity.json"
+    verify_plan_identity(
+        plan_path,
+        expected_sha256="",
+        work_dir=work_resolved,
+        identity_file=identity_file,
+    )
+    plan_sha = sha256_file(plan_path)
+    recorded = _load_json(identity_file)
+    if not isinstance(recorded, dict) or str(recorded.get("sha256")) != plan_sha:
+        _die(
+            "approved plan identity sha256 mismatch with plan bytes",
+            phase="plan_identity_checksum",
+        )
+    if str(recorded.get("path")) != str(plan_path.resolve()):
+        _die(
+            "approved plan identity path does not match authoritative plan path",
+            phase="plan_identity_checksum",
+        )
+    if expected_plan_checksum != plan_sha:
+        _die(
+            "STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM does not match the reviewed plan checksum",
+            phase=phase,
+        )
+
+    # Structural authority from retained plan JSON (read-only; no regeneration).
+    validate_plan_file(work_resolved / "staging-combined.plan.json")
+
+    result = {
+        "workdir": str(work_resolved),
+        "plan_path": str(plan_path.resolve()),
+        "plan_sha256": plan_sha,
+        "plan_only_nonce": plan_only_nonce,
+        "repository_sha": expected_repository_sha,
+        "identity_file": str(identity_file.resolve()),
+        "plan_json": str((work_resolved / "staging-combined.plan.json").resolve()),
+        "plan_txt": str((work_resolved / "staging-combined.plan.txt").resolve()),
+    }
+    if out_path is not None:
+        out_path = Path(out_path)
+        if out_path.exists() or out_path.is_symlink():
+            _die(
+                f"refusing to overwrite approved-plan metadata path: {out_path}",
+                phase=phase,
+            )
+        out_path.write_text(canonical_json(result) + "\n", encoding="utf-8")
+        os.chmod(out_path, 0o600)
+    print("OK approved plan workdir")
+    return result
+
+
 def _cmd_validate_plan(args: argparse.Namespace) -> int:
     validate_plan_file(Path(args.path))
     return 0
@@ -2172,6 +2417,16 @@ def _cmd_canonical_json(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_validate_approved_plan_workdir(args: argparse.Namespace) -> int:
+    validate_approved_plan_workdir(
+        Path(args.path),
+        expected_repository_sha=args.repository_sha,
+        expected_plan_checksum=args.plan_checksum,
+        out_path=Path(args.out) if args.out else None,
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -2261,6 +2516,21 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("canonical-json")
     sp.add_argument("path")
     sp.set_defaults(func=_cmd_canonical_json)
+
+    sp = sub.add_parser("validate-approved-plan-workdir")
+    sp.add_argument("path", help="Exact independently audited plan-only workdir")
+    sp.add_argument("--repository-sha", required=True)
+    sp.add_argument(
+        "--plan-checksum",
+        required=True,
+        help="STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM for the audited plan binary",
+    )
+    sp.add_argument(
+        "--out",
+        default=None,
+        help="Write approved-plan metadata JSON (mode 0600) for the apply run",
+    )
+    sp.set_defaults(func=_cmd_validate_approved_plan_workdir)
 
     return p
 

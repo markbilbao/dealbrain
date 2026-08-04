@@ -62,7 +62,8 @@ I confirm a backup operator and same-instance recovery procedure are available f
 
 ```bash
 STAGING_MAINTENANCE_DEMO_CLEAR=1
-STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM=<sha256 of reviewed plan>
+STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR=<exact independently audited plan-only workdir>
+STAGING_MAINTENANCE_PLAN_CHECKSUM_CONFIRM=<sha256 of that audited plan binary>
 EXECUTE_MAINTENANCE_APPLY=1
 ```
 
@@ -70,6 +71,25 @@ Maintenance ACK and recovery ACK are compared **byte-for-byte** (no whitespace
 normalization, trimming, optional line breaks, case folding, or substrings).
 Demo clearance is separate from recovery readiness and does not replace live
 EC2/ALB/`/live`/`/ready` checks.
+
+### Exact independently audited plan reuse (Sprint 25b.5q)
+
+Contract:
+
+1. **Plan-only** creates the immutable candidate plan workdir (saved plan binary,
+   plan JSON/text, plan identity, plan-only nonce, collect snippets, retained
+   pre-evidence pair, `plan-only.complete` / `plan-only.authority.log`,
+   `repository.sha`).
+2. **Independent audit** approves that exact plan binary (checksum + identity).
+3. **Controlled apply** consumes that same exact plan via
+   `STAGING_MAINTENANCE_APPROVED_PLAN_WORKDIR` (exact path; no latest-dir search,
+   no globs).
+4. Apply mode **does not generate a replacement maintenance plan**. It may use
+   read-only `terraform show` against the retained binary and still runs a
+   post-apply residual drift plan after apply.
+5. Apply generates a **fresh** run nonce and requires **fresh** pre/post host
+   evidence bound to that apply-run nonce (retained in the apply-run private
+   workdir). Plan-only evidence/nonce are not reused.
 
 ## Expected plan resource set
 
@@ -99,6 +119,7 @@ before/after equality except `user_data_base64`, and no critical
 | Pre-apply capture | `scripts/deploy/staging_maintenance_pre_apply_capture.sh` |
 | Controlled apply (gated) | `scripts/deploy/staging_maintenance_controlled_apply.sh` |
 | Behavioral tests | `tests/unit/test_sprint25b5n_staging_maintenance_gate.py` |
+| Exact plan reuse tests | `tests/unit/test_sprint25b5q_exact_audited_plan_reuse.py` |
 
 ## Temporary workspace model
 
@@ -126,15 +147,19 @@ inside the authoritative work directory:
 
 A successful retained **plan-only** workdir therefore contains:
 
-- saved Terraform plan
-- plan JSON/text
-- plan identity
-- host-evidence nonce
+- saved Terraform plan (`staging-combined.tfplan`)
+- plan JSON/text (`staging-combined.plan.json`, `staging-combined.plan.txt`)
+- plan identity (`plan.identity.json`)
+- host-evidence nonce (`host-evidence.nonce`)
 - pre/post collect snippets
 - completed validated `host-evidence-pre.json` (and SHA-256 binding)
+- plan-only authority marker/log (`plan-only.complete`, `plan-only.authority.log`)
+- repository SHA binding (`repository.sha`)
 
 Plan-only does **not** invent or require post-apply evidence. Apply mode retains
-completed validated `host-evidence-post.json` only after post-apply validation.
+fresh validated apply-run `host-evidence-pre.json` / `host-evidence-post.json`
+in the **apply-run private workdir** only after validation (never injected into
+the audited plan-only workdir).
 
 Retention rules (fail closed):
 
@@ -212,16 +237,23 @@ for stop/start consistency without treating either signal alone as proof.
 
 ## Plan identity / TOCTOU binding
 
-After `terraform plan -out`, the script forces plan mode `0600`, then records:
+After plan-only `terraform plan -out`, the script forces plan mode `0600`, then
+records:
 
 - canonical path, regular-file / non-symlink status
 - device ID, inode, size, SHA-256
 - UID, GID (must equal current effective user/group)
 - exact mode `0600`
 
-Immediately before apply, every recorded field is revalidated. Modes such as
-`0604`, `0640`, `0644`, group/world-writable, or setuid/setgid/sticky are
-rejected. Caller-supplied UID/GID/mode values are never accepted as authority.
+Apply mode revalidates every recorded field against that **same** immutable
+path before `terraform apply`. It does not copy the plan into another unbound
+file, rewrite identity, or update modification time. Modes such as `0604`,
+`0640`, `0644`, group/world-writable, or setuid/setgid/sticky are rejected.
+Caller-supplied UID/GID/mode values are never accepted as authority.
+
+Terraform’s native saved-plan / state lineage and serial safeguards remain in
+force: a stale saved plan against newer state fails closed at `terraform apply`
+with no repository bypass.
 
 ## Post-apply IAM structural verification
 
