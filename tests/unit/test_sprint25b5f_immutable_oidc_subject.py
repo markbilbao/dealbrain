@@ -173,8 +173,7 @@ def test_deploy_staging_workflow_oidc_action_pin_and_allowlist() -> None:
     """Pin must support allowed-account-ids (v6.2.3); keep staging OIDC inputs."""
     workflow = _read(WORKFLOWS / "deploy-staging.yml")
     assert (
-        "aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c"
-        in workflow
+        "aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c" in workflow
     )
     assert "configure-aws-credentials@v4" not in workflow
     assert "allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}" in workflow

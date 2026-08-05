@@ -159,10 +159,7 @@ def test_main_only_assertion() -> None:
 
 def test_oidc_no_static_keys() -> None:
     text = _read(DEPLOY_WF)
-    assert (
-        "aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c"
-        in text
-    )
+    assert "aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c" in text
     assert "role-to-assume" in text
     assert "id-token: write" in text
     assert "AWS_ACCESS_KEY_ID" not in text
