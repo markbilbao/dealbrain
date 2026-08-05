@@ -59,6 +59,7 @@ validate-staging-deploy:
 		tests/unit/test_sprint25b5k_ssm_command_id_retrieval.py \
 		tests/unit/test_sprint25b5_rollback_workflow.py \
 		tests/unit/test_sprint25b5_rollback_authority.py \
+		tests/unit/test_sprint25b5w_migration_authority_parent_shell.py \
 		tests/unit/test_sprint25b5m_user_data_plan_isolation.py \
 		tests/unit/test_sprint25b5n_staging_maintenance_gate.py \
 		tests/unit/test_sprint25b5p_host_evidence_retention.py \
@@ -96,6 +97,7 @@ validate-pre-live:
 		tests/unit/test_sprint25b5k_ssm_command_id_retrieval.py \
 		tests/unit/test_sprint25b5_rollback_workflow.py \
 		tests/unit/test_sprint25b5_rollback_authority.py \
+		tests/unit/test_sprint25b5w_migration_authority_parent_shell.py \
 		tests/unit/test_sprint25b5m_user_data_plan_isolation.py \
 		tests/unit/test_sprint25b5n_staging_maintenance_gate.py \
 		tests/unit/test_sprint25b5p_host_evidence_retention.py \

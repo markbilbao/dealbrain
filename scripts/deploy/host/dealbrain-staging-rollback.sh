@@ -324,9 +324,14 @@ download_prior_evidence_candidates() {
     && compgen -G "${dest}/*/staging-deploy-evidence.json.sha256" >/dev/null
 }
 
+# --- BEGIN resolve_target_recorded_migration (test-extractable) ---
 resolve_target_recorded_migration() {
   # Prefer DEPLOY_VERSION; fallback only to fully validated prior staging_ok evidence.
+  # Assigns TARGET_RECORDED_MIGRATION and MIGRATION_AUTHORITY in the calling shell.
+  # Must be invoked directly (not via command substitution) so both survive.
   local candidates_dir out resolver
+  TARGET_RECORDED_MIGRATION=""
+  MIGRATION_AUTHORITY=""
   candidates_dir="$(mktemp -d "${RUNTIME_DIR}/.prior-evidence.XXXXXX")"
   out="${RUNTIME_DIR}/rollback-migration-authority-${TARGET_RELEASE_ID}.json"
   resolver=""
@@ -363,10 +368,19 @@ resolve_target_recorded_migration() {
   [[ "$rc" -eq 0 && -f "$out" ]] || return 1
   TARGET_RECORDED_MIGRATION="$(jq -r '.migration_revision // empty' "$out")"
   MIGRATION_AUTHORITY="$(jq -r '.authority // empty' "$out")"
-  [[ -n "$TARGET_RECORDED_MIGRATION" && -n "$MIGRATION_AUTHORITY" ]] || return 1
-  echo "$TARGET_RECORDED_MIGRATION"
+  [[ -n "$TARGET_RECORDED_MIGRATION" ]] || return 1
+  [[ -n "$MIGRATION_AUTHORITY" ]] || return 1
+  case "$MIGRATION_AUTHORITY" in
+    deploy_version|validated_prior_staging_evidence) ;;
+    *)
+      TARGET_RECORDED_MIGRATION=""
+      MIGRATION_AUTHORITY=""
+      return 1
+      ;;
+  esac
   return 0
 }
+# --- END resolve_target_recorded_migration (test-extractable) ---
 
 capture_migration_revision() {
   local label="$1"
@@ -686,14 +700,26 @@ echo "$REPO_DIGEST" | grep -q "${IMAGE_DIGEST}" || {
 # -------------------------------------------------------------------------
 # 5. Database compatibility — never downgrade; fail before API replacement.
 # -------------------------------------------------------------------------
-if ! TARGET_RECORDED_MIGRATION="$(resolve_target_recorded_migration)"; then
+# Call in the parent shell: command substitution would discard MIGRATION_AUTHORITY.
+if ! resolve_target_recorded_migration; then
   FAILURE_REASON="database_compatibility_unknown"
   die "cannot resolve target recorded migration revision from DEPLOY_VERSION or validated prior evidence"
 fi
+[[ -n "$TARGET_RECORDED_MIGRATION" ]] || {
+  FAILURE_REASON="database_compatibility_unknown"
+  die "target recorded migration unset after resolution"
+}
 [[ -n "$MIGRATION_AUTHORITY" ]] || {
   FAILURE_REASON="database_compatibility_unknown"
   die "migration authority unset after resolution"
 }
+case "$MIGRATION_AUTHORITY" in
+  deploy_version|validated_prior_staging_evidence) ;;
+  *)
+    FAILURE_REASON="database_compatibility_unknown"
+    die "unsupported migration authority after resolution: ${MIGRATION_AUTHORITY}"
+    ;;
+esac
 MIGRATION_BEFORE="$(capture_migration_revision before 0)"
 if [[ "$MIGRATION_BEFORE" != "$TARGET_RECORDED_MIGRATION" ]]; then
   FAILURE_REASON="database_incompatible"
