@@ -204,7 +204,10 @@ def test_rollback_workflow_rejects_forks() -> None:
 
 def test_rollback_workflow_uses_oidc() -> None:
     text = _read(ROLLBACK_WF)
-    assert "aws-actions/configure-aws-credentials@v4" in text
+    assert (
+        "aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c"
+        in text
+    )
     assert "id-token: write" in text
     assert "role-to-assume: ${{ vars.AWS_ROLE_ARN }}" in text
 

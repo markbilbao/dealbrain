@@ -169,10 +169,14 @@ def test_id_variables_reject_wildcards_via_numeric_validation() -> None:
     assert 'default     = ""' in deploy_vars
 
 
-def test_deploy_staging_workflow_unchanged_for_oidc_action_pin() -> None:
-    """allowed-account-ids warning is unrelated; do not alter action pin in this fix."""
+def test_deploy_staging_workflow_oidc_action_pin_and_allowlist() -> None:
+    """Pin must support allowed-account-ids (v6.2.3); keep staging OIDC inputs."""
     workflow = _read(WORKFLOWS / "deploy-staging.yml")
-    assert "aws-actions/configure-aws-credentials@v4" in workflow
+    assert (
+        "aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c"
+        in workflow
+    )
+    assert "configure-aws-credentials@v4" not in workflow
     assert "allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}" in workflow
     assert "audience: sts.amazonaws.com" in workflow
     assert "role-to-assume: ${{ vars.AWS_ROLE_ARN }}" in workflow
