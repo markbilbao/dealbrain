@@ -22,8 +22,15 @@ def _load_prior_module():
             "dealbrain_prior_staging_evidence_host", sibling
         )
         if spec is not None and spec.loader is not None:
+            # Register before exec_module: @dataclass on Python 3.9 resolves
+            # annotations via sys.modules[cls.__module__].
             module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            sys.modules[spec.name] = module
+            try:
+                spec.loader.exec_module(module)
+            except Exception:
+                sys.modules.pop(spec.name, None)
+                raise
             return module
     try:
         from scripts.deploy import prior_staging_evidence as module

@@ -9,10 +9,15 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Host rollback tooling runs Amazon Linux Python 3.9 — prefer timezone.utc
+# (datetime.UTC alias is 3.11+). Keep timezone-aware UTC parsing.
+# ruff: noqa: UP017
 
 
 def _load_deploy_evidence_module():
@@ -29,7 +34,12 @@ def _load_deploy_evidence_module():
         )
         if spec is not None and spec.loader is not None:
             module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
+            sys.modules[spec.name] = module
+            try:
+                spec.loader.exec_module(module)
+            except Exception:
+                sys.modules.pop(spec.name, None)
+                raise
             return module
     raise ImportError("canonical deploy evidence module unavailable")
 
@@ -74,7 +84,7 @@ def _parse_utc_z(value: str) -> datetime:
     if not isinstance(value, str) or not UTC_Z_RE.fullmatch(value):
         raise PriorEvidenceError(f"malformed UTC timestamp: {value!r}")
     try:
-        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
     except ValueError as exc:
         raise PriorEvidenceError(f"malformed UTC timestamp: {value!r}") from exc
 
