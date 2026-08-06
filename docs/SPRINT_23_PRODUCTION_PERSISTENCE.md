@@ -1,7 +1,7 @@
 # Sprint 23 — Production Persistence and Operational Hardening
 
-**Branch:** `sprint-23-production-persistence`  
-**Owner:** Persistence adapters / migrations / readiness depth (not domain logic)  
+**Branch:** `sprint-23-production-persistence`
+**Owner:** Persistence adapters / migrations / readiness depth (not domain logic)
 **Architecture lock:** [docs/architecture/ARCHITECTURE_LOCK.md](architecture/ARCHITECTURE_LOCK.md)
 
 ## Investigation findings (Phase 1)
@@ -66,9 +66,22 @@ Covered under `tests/unit/persistence/`:
 
 `OperationalStore._next_seq` is a best-effort insertion-order hint. Concurrent writers may allocate duplicate `seq` values; `list()` orders by `(seq, id)`. Entity uniqueness remains on `(store, entity_id)` / `(store, secondary_key)`. A dedicated sequence allocator is deferred (would be a broader redesign).
 
-## Deferred (Sprints 24–40)
+## Deferred (historical bucket — superseded for ownership)
 
-Real marketplace connectors, distributed workers, real email/SMS/push, Redis rate limiting/cache, WAF/CDN, billing, full merchant ingestion into organic offers, AI provider expansion, mobile apps, ranking/recommendation changes, large UI redesign.
+> **Superseded for sprint ownership:** The former undifferentiated “Sprints 24–40” deferred bucket is replaced by explicit Global Public Beta sprint ownership in [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (endpoint Sprint 46). Sprint identities 24–40 remain historical.
+
+| Deferred item (Sprint 23 era) | Current owning sprint(s) |
+|-------------------------------|--------------------------|
+| Real marketplace connectors | 31–36, 38 |
+| Real email / SMS / push | 27 (email); SMS/push post-beta unless re-scoped |
+| Large UI / consumer web | 29 |
+| Redis rate limiting/cache, WAF/CDN depth | 40 / 41 decision; depth often post-beta |
+| Billing | Post-beta (`n_a_beta`) |
+| Full merchant ingestion into organic offers | 31 + market sprints |
+| Distributed workers | 43 review / post-beta |
+| AI provider expansion / mobile apps / ranking changes | Post-beta unless master roadmap amended |
+
+Original deferred list (preserved): real marketplace connectors, distributed workers, real email/SMS/push, Redis rate limiting/cache, WAF/CDN, billing, full merchant ingestion into organic offers, AI provider expansion, mobile apps, ranking/recommendation changes, large UI redesign.
 
 ## Definition of Done posture
 

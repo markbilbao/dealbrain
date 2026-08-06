@@ -37,11 +37,14 @@ app/
 
 **Dependency rule:** outer layers depend on inner layers. Domain has no framework imports.
 
-Architecture lock (Sprints 23–40): [docs/architecture/ARCHITECTURE_LOCK.md](docs/architecture/ARCHITECTURE_LOCK.md).  
-Persistence guide: [docs/PERSISTENCE.md](docs/PERSISTENCE.md).  
-API standards (Sprint 24): [docs/API_STANDARDS.md](docs/API_STANDARDS.md) · [Sprint 24 contract](docs/architecture/SPRINT_24_API_STABILITY.md).  
-Production infrastructure (Sprint 25a): [docs/SPRINT_25A_INFRASTRUCTURE.md](docs/SPRINT_25A_INFRASTRUCTURE.md) · [`infra/`](infra/) · [`.github/workflows/ci.yml`](.github/workflows/ci.yml).  
+Architecture lock: [docs/architecture/ARCHITECTURE_LOCK.md](docs/architecture/ARCHITECTURE_LOCK.md).
+Global Public Beta master roadmap (endpoint Sprint 46): [docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md](docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md).
+Persistence guide: [docs/PERSISTENCE.md](docs/PERSISTENCE.md).
+API standards (Sprint 24): [docs/API_STANDARDS.md](docs/API_STANDARDS.md) · [Sprint 24 contract](docs/architecture/SPRINT_24_API_STABILITY.md).
+Production infrastructure (Sprint 25a): [docs/SPRINT_25A_INFRASTRUCTURE.md](docs/SPRINT_25A_INFRASTRUCTURE.md) · [`infra/`](infra/) · [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 Immutable image publication (Sprint 25b.1): [docs/SPRINT_25B_IMAGE_PUBLICATION.md](docs/SPRINT_25B_IMAGE_PUBLICATION.md) · [`.github/workflows/build-image.yml`](.github/workflows/build-image.yml).
+
+> **Claims note:** “Production-ready backend” below describes application architecture maturity. It does **not** mean Global Public Beta launch readiness. See the master roadmap and [Sprint 30 audit summary](docs/roadmap/SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md).
 
 ## Quick Start
 
