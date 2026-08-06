@@ -1,0 +1,377 @@
+# DealBrain — Global Public Beta Gap Inventory
+
+**Status:** Authoritative Phase 1 inventory for roadmap expansion
+**Base HEAD audited:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
+**Sprint 30 audit source:** [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) (2026-08-06; verdict NOT READY, 3/10)
+**Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
+**Classification date:** 2026-08-06
+
+This inventory records every material Global Public Beta requirement and its coverage state.
+**Primary ownership** of each gap is assigned in the master roadmap (**exactly one primary owning sprint** per P0/P1 ID; P1-1 split into P1-1A/P1-1B).
+
+## Classification legend
+
+| Class | Meaning |
+|-------|---------|
+| `implemented_verified` | Code + tests (and/or ops evidence) support the claim |
+| `implemented_needs_staging_proof` | Implemented on main; current-main staging evidence missing |
+| `planned_sufficient_ac` | Already planned with acceptance criteria adequate for beta |
+| `planned_underspecified` | Mentioned or deferred, but lacking sprint ownership / AC |
+| `missing_from_roadmap` | Required for Global Public Beta and not adequately planned |
+| `externally_blocked` | Depends on third-party approval or external provider |
+| `post_beta_improvement` | Explicitly out of Global Public Beta scope |
+
+---
+
+## Executive gap summary
+
+| Domain | Dominant class | Launch impact |
+|--------|----------------|---------------|
+| A Consumer journey / UI | `missing_from_roadmap` | Blocks public UX |
+| B Identity / email / privacy / legal | Mix of partial + missing | Blocks public self-serve |
+| C Merchant platform unification | `planned_underspecified` | Blocks honest multi-path ops |
+| D Real merchant coverage (PH/US/SG/UK/CA) | `missing_from_roadmap` / `externally_blocked` | Blocks named markets |
+| E MarketContext / currency / localization | `missing_from_roadmap` | Blocks multinational honesty |
+| F Connector reliability | Partial design; missing for live HTTP | Blocks live connectors |
+| G Recommendation integrity | `implemented_verified` | Gate/certify only |
+| H Analytics / beta learning | `missing_from_roadmap` | Blocks learning loop |
+| I Security / abuse | Partial; HIGH findings open | Blocks public traffic |
+| J Production infra / ops | Staging partial; prod missing | Blocks production launch |
+| K Performance / capacity | `missing_from_roadmap` | Blocks announced capacity |
+| L Public claims / launch control | `missing_from_roadmap` | Blocks marketing honesty |
+| M External dependencies | Mostly unregistered | Blocks markets / launch |
+
+**Prior roadmap endpoint:** Sprint 40 hard endpoint (`ARCHITECTURE_LOCK.md`) with Sprint 30 “public launch” target (`SPRINT_25_PRODUCTION_INFRASTRUCTURE.md`).
+**Finding:** Sprints 26–29 and 31–39 were undefined; Sprint 40 was an endpoint without product scope; Sprint 30 as launch was not achieved.
+
+---
+
+## A. Consumer product and user journey
+
+| Requirement | Class | Evidence / notes | Owning sprint |
+|-------------|-------|------------------|---------------|
+| Production consumer web application | `missing_from_roadmap` | Only `app/static/demo.html`; no frontend package | 29 |
+| Responsive mobile web experience | `missing_from_roadmap` | No production UI | 29 |
+| Registration | `implemented_verified` | Auth API + tests; needs UI + staging proof | 17 (impl); 29 (UI); 26 (staging) |
+| Login | `implemented_verified` | Same | 17 / 29 / 26 |
+| Logout | `implemented_verified` | Session revoke | 17 / 29 |
+| Durable sessions | `implemented_needs_staging_proof` | SQLAlchemy store when configured | 26 |
+| Session expiry and revocation | `implemented_verified` | Expiry + logout revoke; revoke-all hardening → 27 | 17 / 27 |
+| Password recovery | `planned_underspecified` | Request-only + `NullEmailSender`; no confirm | 27 |
+| Email verification | `planned_underspecified` | Request-only | 27 |
+| Duplicate-account handling | `implemented_verified` | Email uniqueness | 17 |
+| Failed-login handling | `implemented_verified` | Errors + rate limit | 17 / 22 |
+| Account lockout | `missing_from_roadmap` | Rate limit only | 40 |
+| Account persistence | `implemented_needs_staging_proof` | Sprint 23 adapters | 23 / 26 |
+| Selected-market persistence | `missing_from_roadmap` | No MarketContext | 37 (P1-1B) |
+| Search journey | `implemented_needs_staging_proof` | Mock connectors | 4 / 26 / 29 |
+| Normalized results | `implemented_verified` | Normalization docs/tests | 18 |
+| DealScore display | `implemented_verified` | Engine + API; UI pending | 5 / 29 |
+| Recommendation display | `implemented_verified` | Engine + API; UI pending | 6 / 29 |
+| AI explanation | `implemented_verified` | Assistant + fallback | 13 |
+| AI failure fallback | `implemented_verified` | Deterministic fallback | 13 |
+| Merchant-link redirect | `implemented_needs_staging_proof` | Demo affiliate templates | 20 / 32–36 |
+| Affiliate disclosure | `planned_underspecified` | Placeholder disclosure; not legal-final | 28 / 44 |
+| Returning-user experience | `planned_underspecified` | Sessions exist; no email recovery for real users | 27 / 29 |
+| Loading / empty / error / timeout / partial / stale / unsupported-market states | `missing_from_roadmap` | Demo partial only | 29 / 38 |
+| Feedback / bug reports / support contact | `missing_from_roadmap` | Merchant field only | 39 |
+| Accessibility baseline | `missing_from_roadmap` | No a11y program | 29 |
+| Browser compatibility | `missing_from_roadmap` | No matrix | 29 |
+| Frontend production build validation | `missing_from_roadmap` | No frontend package | 29 |
+| End-to-end user-journey testing | `missing_from_roadmap` | No e2e suite | 29 / 45 |
+
+---
+
+## B. Identity, email, privacy, and legal
+
+| Requirement | Class | Evidence / notes | Owning sprint |
+|-------------|-------|------------------|---------------|
+| Transactional email provider | `missing_from_roadmap` | `NullEmailSender` | 27 |
+| Sender-domain verification | `externally_blocked` | Provider + DNS DKIM/SPF/DMARC | 27 |
+| Password-reset email | `missing_from_roadmap` | Demo tokens only | 27 |
+| Verification email | `missing_from_roadmap` | Same | 27 |
+| Reset-token expiry / invalidation | `planned_underspecified` | Partial model; confirm route missing | 27 |
+| Email-change verification | `missing_from_roadmap` | — | 27 |
+| Secure session cookies / documented session architecture | `implemented_verified` | Bearer sessions documented; cookies N/A unless introduced | 17 |
+| Session rotation | `planned_underspecified` | Not fully specified for public | 27 |
+| Session revocation | `implemented_verified` | Logout; broaden revoke-all | 27 |
+| Auth rate limiting | `implemented_verified` | Per-process buckets | 22 |
+| Account enumeration protection | `planned_underspecified` | Needs hardening review | 40 |
+| Brute-force / credential-stuffing protection | `planned_underspecified` | Rate limit only; no lockout/bot | 40 |
+| Terms of Service | `missing_from_roadmap` | — | 28 |
+| Privacy Policy | `missing_from_roadmap` | — | 28 |
+| Cookie/tracking disclosure | `missing_from_roadmap` | — | 28 |
+| Analytics consent | `missing_from_roadmap` | — | 28 / 39 |
+| Registration consent records | `missing_from_roadmap` | — | 28 |
+| Policy-version acceptance records | `missing_from_roadmap` | — | 28 |
+| Account deletion + confirmation + propagation | `missing_from_roadmap` | — | 28 |
+| Data export | `missing_from_roadmap` | — | 28 |
+| Data retention policy | `missing_from_roadmap` | — | 28 |
+| PII inventory | `missing_from_roadmap` | — | 28 |
+| Privacy / support contact | `missing_from_roadmap` | — | 28 / 39 |
+| Minimum age policy | `missing_from_roadmap` | — | 28 |
+| Country-specific notices | `missing_from_roadmap` | — | 28 / 37 |
+| Legal review and approval | `externally_blocked` | Counsel | 28 / 44 |
+| Published legal document URLs | `missing_from_roadmap` | — | 28 / 45 |
+| Data-processing / vendor register | `missing_from_roadmap` | — | 28 |
+
+---
+
+## C. Merchant platform unification
+
+| Requirement | Class | Evidence / notes | Owning sprint |
+|-------------|-------|------------------|---------------|
+| One canonical MerchantConnector contract | `planned_underspecified` | Sprint 4 vs Sprint 18 parallel | 31 |
+| One MerchantRegistry | `planned_underspecified` | Separate registries | 31 |
+| One MarketRouter | `missing_from_roadmap` | — | 31 |
+| MerchantCapability / supported-market metadata | `planned_underspecified` | Partial stubs | 31 |
+| Merchant-country mapping | `missing_from_roadmap` | — | 31 |
+| Query-time + background sync routing | `planned_underspecified` | Split ownership 4/18 | 31 |
+| Normalized listing/offer contracts | `implemented_verified` | Present; unify producers | 18 / 31 |
+| Provenance + freshness timestamp/policy | `implemented_verified` | Freshness model; keep | 18 |
+| Merchant/credential configuration authority | `planned_underspecified` | — | 31 |
+| Feature flags / duplicate registration prevention | `planned_underspecified` | Launch flags exist; merchant kill switch incomplete | 31 / 38 |
+| Sprint 4 and 18 path unification | `planned_underspecified` | Lock forbids silent merge; needs explicit sprint | 31 |
+| Connector certification suite | `missing_from_roadmap` | — | 31 / 32–36 |
+| Merchant legal/terms documentation | `missing_from_roadmap` | — | 31 / 28 |
+| Merchant onboarding runbook | `missing_from_roadmap` | — | 31 |
+| Merchant deactivation / kill switch | `missing_from_roadmap` | Health disable partial | 38 |
+| DealScore / Recommendation / affiliate neutrality boundaries | `implemented_verified` | Preserve; certify | 5 / 6 / 20 / 44 |
+| Shipping-cost / unknown-shipping honesty (P1-2) | `planned_underspecified` | Enrichment free-shipping default risk | 37 |
+
+---
+
+## D. Real merchant coverage
+
+| Market | Class | Evidence / notes | Owning sprint |
+|--------|-------|------------------|---------------|
+| Philippines — merchant selection through production validation | `missing_from_roadmap` / `externally_blocked` | Mock Shopee/Lazada only | 32 |
+| United States — full path | `missing_from_roadmap` / `externally_blocked` | Stubs only | 33 |
+| Singapore — full path | `missing_from_roadmap` / `externally_blocked` | Stubs only | 34 |
+| United Kingdom — full path | `missing_from_roadmap` / `externally_blocked` | Affiliate allow-list only | 35 |
+| Canada — full path | `missing_from_roadmap` / `externally_blocked` | None | 36 |
+| Public coverage disclosure | `planned_underspecified` | Demo honesty present | 44 / 45 |
+| Fixture-as-live prevention | `implemented_verified` | Freshness gates; must remain | 18 / 38 / 45 |
+
+Per-market sub-requirements (provider selection, legal review, credentials, sandbox, real endpoint, mapping, matching, rate limits, quotas, timeouts, retries, credential/quota/outage handling, circuit breaker, provenance, freshness, shipping/availability, affiliate validation, monitoring, staging/limited/production validation, disclosure) are **all** owned by the market certification sprint for that market, with platform primitives from Sprints 31 and 38.
+
+---
+
+## E. Market context, currency, and localization
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Coherent MarketContext (account/detected/selected market, delivery, currencies, locale, language, timezone, tax, shipping) | `missing_from_roadmap` | 37 |
+| Country/market selector + persistence + safe defaults | `missing_from_roadmap` | 37 |
+| Supported/unsupported market configuration + disclosure (P1-1B) | `missing_from_roadmap` | 37 |
+| Currency / number / date formatting; original currency preservation | `planned_underspecified` | 37 |
+| Mixed-currency fail-closed | `implemented_verified` | Keep; extend UI | 5 / 6 / 37 |
+| FX provider, timestamp, staleness, missing-rate, rounding, comparison policy | `missing_from_roadmap` | 37 |
+| Taxes/duties/delivery/shipping disclosures; landed-cost limitations | `missing_from_roadmap` | 37 |
+| Regional variants (model, voltage/plug, warranty, seller-region) | `missing_from_roadmap` | 37 |
+| Localization QA for PH/US/SG/UK/CA; English baseline | `missing_from_roadmap` | 37 |
+| French-Canadian scope decision and disclosure | `missing_from_roadmap` | 37 |
+
+---
+
+## F. Connector reliability and honest degradation
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Timeout budgets / retry / exponential backoff | `planned_underspecified` | 38 |
+| Rate-limit / quota / credential / outage handling | `planned_underspecified` | 38 |
+| Circuit breakers | `missing_from_roadmap` | 38 |
+| Connector health model + per-market health | `implemented_verified` (in-process) | 18 / 38 |
+| Partial-result aggregation + stale-cache + last-updated | `planned_underspecified` | 38 |
+| Incomplete-coverage / no-merchant-available UI disclosure | `missing_from_roadmap` | 29 / 38 |
+| Kill switch / merchant feature flags | `planned_underspecified` | 38 |
+| Alerting / synthetic probes / incident runbook / provider status | `planned_underspecified` | 38 / 42 |
+| AI-provider and affiliate-provider failure behavior | `planned_underspecified` | 38 |
+| App readiness ≠ full merchant availability | `implemented_verified` (principle) | 22 / 38 |
+
+---
+
+## G. Recommendation and commercial integrity
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Single DealScore authority; deterministic organic recommendation | `implemented_verified` | 5 / 6 |
+| Merchant neutrality; affiliate post-selection only | `implemented_verified` | 20 / 21 |
+| Sponsored separation/labeling; personalized/assistant separation | `implemented_verified` | 13 / 16 / 21 |
+| Deterministic tie-breaking; missing-data / low-confidence disclosure | `implemented_verified` | 5 / 6 / 13 |
+| Explanation consistency; AI fallback; prompt-injection protection | `implemented_verified` | 13 |
+| Commercial-term isolation | `implemented_verified` | Lock + tests |
+| Public “independent/neutral” claim review | `missing_from_roadmap` | 44 |
+| Production monitoring for ranking-integrity violations | `missing_from_roadmap` | 42 / 44 |
+| Free-shipping enrichment default disclosure/fix | `planned_underspecified` | 37 (P1-2; 44 verifies wording) |
+
+---
+
+## H. Analytics and beta learning
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Analytics provider decision; consent-gated init | `missing_from_roadmap` | 39 |
+| Event schema; identity strategy; deduplication | `missing_from_roadmap` | 39 |
+| Registrations / verified / login success-failure | `missing_from_roadmap` | 39 |
+| DAU/MAU; searches; success/failure/zero/partial; latency | `missing_from_roadmap` | 39 |
+| Merchant/market coverage metrics | `missing_from_roadmap` | 39 |
+| Recommendation/DealScore/explanation views; CTR; affiliate attribution | `planned_underspecified` | 20 / 39 |
+| Funnel abandonment; retention | `missing_from_roadmap` | 39 |
+| Frontend/backend/merchant/AI errors; slow pages/endpoints | `planned_underspecified` | 39 / 42 |
+| Quality feedback; bug reports; support requests | `missing_from_roadmap` | 39 |
+| Account deletion metrics; privacy consent state; retention | `missing_from_roadmap` | 28 / 39 |
+| Dashboards; beta-learning review cadence | `missing_from_roadmap` | 39 / 46 |
+| Logging ≠ analytics | `implemented_verified` (principle) | — |
+
+---
+
+## I. Security and abuse protection
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| AuthN/AuthZ / object-level authorization review | `planned_underspecified` | 40 |
+| Session security | `implemented_needs_staging_proof` | 27 / 40 |
+| Secure headers / CSP / CORS | `implemented_verified` (gaps: CSP unsafe-inline) | 22 / 40 |
+| CSRF | `planned_underspecified` | Bearer N/A or enforce if cookies | 40 |
+| XSS / SQLi / SSRF / redirect validation / URL allowlisting | `planned_underspecified` | 40 |
+| Command injection / log redaction / body logging policy / PII | `planned_underspecified` | 22 / 40 |
+| Secret / dependency / SAST / container / Terraform scanning | `missing_from_roadmap` | 40 |
+| Supply-chain provenance; immutable-image authority | `implemented_verified` (GHCR digest) | 25b.1 / 40 |
+| Least-privilege IAM; AWS OIDC restrictions | `implemented_needs_staging_proof` | 25b.2 / 41 |
+| Encryption in transit/at rest; DB network isolation | `planned_sufficient_ac` | 25 / 41 |
+| Distributed rate limiting; bot protection; click-fraud | `planned_underspecified` / `post_beta_improvement` for deep WAF | 40 / post-beta |
+| AI prompt-injection; merchant-content sanitation | `implemented_verified` (baseline) | 13 / 40 |
+| Pen-test readiness; security IR runbook; vuln response | `missing_from_roadmap` | 40 / 42 |
+| Every HIGH / launch-blocking MEDIUM finding closed | `missing_from_roadmap` | 40 / 44 |
+
+### Sprint 30 audit security findings mapped
+
+| Severity | Finding | Owning sprint |
+|----------|---------|---------------|
+| HIGH | No production deploy/isolation path | 41 |
+| HIGH | Demo-grade auth/email/reset not production-safe | 27 |
+| HIGH | In-process rate limits only | 40 |
+| HIGH | No CloudWatch/security paging | 42 |
+| HIGH | Production OIDC/SSM interim vs staging hardening | 41 |
+| MEDIUM | CSRF not enforced | 40 |
+| MEDIUM | CSP `'unsafe-inline'` | 40 |
+| MEDIUM | No Dependabot/CodeQL/Trivy/pip-audit | 40 |
+| MEDIUM | URL validation / SSRF hardening incomplete | 40 |
+| MEDIUM | No account deletion / GDPR path | 28 |
+
+---
+
+## J. Production infrastructure and operations
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Current-main staging deployment + smoke | `implemented_needs_staging_proof` | 26 |
+| Production AWS / VPC / DB / secrets / IAM / OIDC / pull / ALB | `planned_sufficient_ac` (TF partial; not applied) | 41 |
+| Domain / DNS / TLS | `externally_blocked` + planned | 41 |
+| CDN / WAF decision | `planned_underspecified` | 41 (decision); deep WAF `post_beta_improvement` |
+| Static asset delivery | `missing_from_roadmap` | 29 / 41 |
+| Production deployment + approval gates + evidence | `missing_from_roadmap` | 41 |
+| Production rollback workflow | `planned_underspecified` | 41 |
+| DB migration / rollback-compat policy | `planned_sufficient_ac` | 25 / 41 |
+| Backup / retention / PITR / restore procedure / successful restore rehearsal | `planned_sufficient_ac` (not evidenced) | 42 |
+| DR plan; RTO/RPO | `planned_sufficient_ac` | 42 |
+| Logging / structured logs / correlation IDs | `implemented_verified` (app); shipping pending | 22 / 42 |
+| Error tracking / metrics / dashboards / alerting / paging | `planned_underspecified` | 42 |
+| Synthetic monitoring; connector/AI monitoring; audit logs | `planned_underspecified` | 38 / 42 |
+| Incident-response plan; runbooks; escalation ownership | `planned_underspecified` | 42 |
+| Maintenance mode; feature flags; kill switches; launch freeze | `planned_underspecified` | 42 / 45 |
+| Production launch rehearsal; rollback rehearsal; post-launch window | `missing_from_roadmap` | 44 / 45 / 46 |
+
+**Note:** Staging deploy/rollback architecture for older digests is proven. Preserve it. Do not mark production complete from Terraform alone.
+
+---
+
+## K. Performance and capacity
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Load-test tooling; representative staging dataset | `missing_from_roadmap` | 43 |
+| API concurrency; search burst; merchant/AI slowdown/outage tests | `missing_from_roadmap` | 43 |
+| DB pool/limits/indexes/slow queries | `planned_underspecified` | 43 |
+| Cache design; distributed cache decision | `planned_underspecified` | 43 |
+| Queue/worker/retry/DLQ/idempotency | `planned_underspecified` / `post_beta_improvement` for full workers | 43 |
+| Horizontal scaling / autoscaling / single-instance risk | `planned_underspecified` | 43 |
+| Static assets / bundle / images / CDN | `missing_from_roadmap` | 29 / 41 / 43 |
+| Rate-limit capacity; AI/merchant quotas; graceful overload | `missing_from_roadmap` | 38 / 43 |
+| Celebrity/creator spike simulation | `missing_from_roadmap` | 43 |
+| Evidence gates: 1k users, 1k DAU, 10k users, 10k DAU, spike | `missing_from_roadmap` | 43 / 45 |
+
+---
+
+## L. Public claims, marketing, and launch control
+
+| Requirement | Class | Owning sprint |
+|-------------|-------|---------------|
+| Public coverage matrix; named markets/merchants; unsupported disclosure | `missing_from_roadmap` | 44 |
+| Price freshness / shipping-tax / affiliate / sponsored / AI disclosures | `planned_underspecified` | 28 / 44 |
+| Privacy/legal links; support; status/incident communication | `missing_from_roadmap` | 28 / 39 / 42 / 44 |
+| Launch description / marketing / social claim review | `missing_from_roadmap` | 44 |
+| Launch checklist; final legal/security/ops approvals; go/no-go | `planned_underspecified` | 44 / 45 |
+| Rollback decision authority; limited rollout %; launch monitoring | `missing_from_roadmap` | 45 |
+| Post-launch stabilization sprint | `missing_from_roadmap` | 46 |
+
+Claim-specific matrix lives in the master roadmap.
+
+---
+
+## M. External dependencies
+
+See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summary classes: mostly `externally_blocked` or unregistered until Sprint 26 register bootstrap.
+
+---
+
+## Sprint 30 audit P0–P3 map
+
+| ID | Priority | Finding | Owning sprint |
+|----|----------|---------|---------------|
+| P0-1 | P0 | No honest live merchant coverage | 32–36 (one primary market sprint per named market) |
+| P0-2 | P0 | No production deploy path / production AWS | 41 |
+| P0-3 | P0 | M30 observability / paging / restore / runbooks incomplete | 42 |
+| P0-4 | P0 | Consumer legal + privacy minimum missing | 28 |
+| P0-5 | P0 | Real transactional email + complete password reset | 27 |
+| P0-6 | P0 | Current main not staging-proven | 26 |
+| P1-1A | P1 | Canonical merchant registration/routing unification | 31 |
+| P1-1B | P1 | Unsupported-market product behavior | 37 |
+| P1-2 | P1 | Shipping-cost and unknown-shipping honesty | 37 (44 verifies public wording only) |
+| P1-3 | P1 | Dependency/container scanning | 40 |
+| P1-4 | P1 | Product analytics + feedback/bug path | 39 |
+| P1-5 | P1 | Account lockout / distributed rate limits | 40 |
+| P1-6 | P1 | Consumer UI beyond demo.html | 29 |
+| P1-7 | P1 | Current launch-candidate staging promotion discipline | 26 (45 final verification only) |
+| P2-* | P2 | FX/MarketContext; WAF/CDN depth; MFA/OAuth | 37 / 41 / post-beta |
+| P3-* | P3 | Multi-region DR; autoscaling depth; formal compliance | post-beta (25h / FUT) |
+
+---
+
+## Already adequate for beta (certify, do not rebuild)
+
+- DealScore engine (Sprint 5)
+- Organic recommendation engine (Sprint 6)
+- Affiliate post-rank attachment + neutrality tests (Sprint 20)
+- Merchant/sponsored separation (Sprint 21)
+- Shopping Assistant safety / AI fallback (Sprint 13)
+- Data freshness honesty for fixtures (Sprint 18)
+- Staging deploy + rollback architecture (Sprint 25b.3 / 25b.5*) — **preserve**
+- Immutable GHCR digest authority (Sprint 25b.1)
+- API contract stability (Sprint 24)
+
+---
+
+## Post-beta improvements (explicit non-goals for Global Public Beta)
+
+- Every retailer worldwide / complete merchant coverage per country
+- Worldwide shipping from every merchant
+- Always-current prices; guaranteed lowest price
+- Automatic scam detection (unless separately proven later)
+- Native iOS/Android app stores
+- Multi-region active-active
+- Full Redis shared-limit / deep CDN-WAF program (beyond launch decision)
+- Billing / subscriptions / payments (unless later required)
+- MFA/OAuth (unless risk acceptance changes)
+- Formal compliance certifications (SOC2, ISO, etc.)

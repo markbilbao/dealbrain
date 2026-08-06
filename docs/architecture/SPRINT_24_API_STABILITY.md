@@ -2,7 +2,7 @@
 
 **Theme:** API Stability & Integration Foundation  
 **Status:** Implemented (Sprint 24) — additive, backward compatible  
-**Depends on:** Sprints 1–23 (merged), Architecture Lock through Sprint 40  
+**Depends on:** Sprints 1–23 (merged), Architecture Lock (launch sequencing now through Sprint 46 per [Global Public Beta master roadmap](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md); Sprint 40 hard endpoint superseded)
 **Audience:** Implementation agents and reviewers executing Sprint 24
 
 ---

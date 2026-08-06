@@ -1,7 +1,10 @@
 # Launch Checklist (Sprint 22)
 
-**Status:** Sprint 22  
+**Status:** Sprint 22
+
 **Also available via API:** `GET /api/v1/launch/checklist`
+
+**Global Public Beta:** Final sign-off checklist is owned by **Sprint 45** per [`roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md). This Sprint 22 list remains the **rehearsal / demo** checklist.
 
 Use this checklist before a public beta rehearsal. Items can be toggled in the
 demo UI or via `PATCH /api/v1/launch/checklist/{item_id}` (admin token).
@@ -56,3 +59,6 @@ demo UI or via `PATCH /api/v1/launch/checklist/{item_id}` (admin token).
 - Real email / SMS / push providers
 - Subscription billing
 - Production secret vault integration
+
+> These non-goals apply to the **Sprint 22 rehearsal checklist only**.
+> They **do block Global Public Beta** and are owned by Sprints 27 / 41 / 42 / 45 in the master roadmap.

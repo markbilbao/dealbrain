@@ -1,12 +1,23 @@
 # Sprint 25 — Production Infrastructure Architecture
 
-**Status:** Implementation-ready architecture contract (documentation only; no infra implemented by this document)  
-**Branch:** `sprint-25`  
-**Hard launch target:** Sprint 30 public launch  
-**Predecessor:** Sprint 24 (API stability) merged to `main`  
-**Owner:** Production infrastructure and operations (not domain logic, not API contracts, not persistence adapters)  
+**Status:** Implementation-ready architecture contract (documentation only; no infra implemented by this document)
+
+**Branch:** `sprint-25`
+
+**Historical launch target:** Sprint 30 public launch — **superseded / unmet**
+
+**Current Global Public Beta sequencing:** [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (endpoint **Sprint 46**; remaining M30 evidence owned primarily by Sprints **26 / 41 / 42 / 44 / 45**)
+
+**Sprint 30 disposition:** Reclassified as Public Beta Readiness Audit — NOT READY ([persisted summary](../roadmap/SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md))
+
+**Predecessor:** Sprint 24 (API stability) merged to `main`
+
+**Owner:** Production infrastructure and operations (not domain logic, not API contracts, not persistence adapters)
+
 **Contract revision:** Finalization (concrete platform, IaC, isolation, release, migration, rollback, SLOs, observability, backup evidence, config gate, M30 evidence matrix, phased DoD)
 
+> **Superseded (launch sequencing):** “Hard launch target: Sprint 30 public launch” is **not** an achieved milestone. M30 evidence rows remain mandatory content for production launch; their execution sprints are assigned in the master roadmap.
+>
 > **Superseded (Sprint 25b.4b):** References to **S3 + DynamoDB** state locking are obsolete.
 > Current operator truth: S3 native lockfiles (`use_lockfile = true`) for `account/` and
 > staging; production backend migration deferred. See [`infra/terraform/README.md`](../../infra/terraform/README.md)
@@ -18,7 +29,7 @@
 
 ### 0.1 What Sprint 25 owns
 
-Sprint 25 owns the **runtime platform and operational practices** required to run DealBrain safely before Sprint 30:
+Sprint 25 owns the **runtime platform and operational practices** required to run DealBrain safely before the *historical* Sprint 30 public-launch target (superseded; see master roadmap endpoint Sprint 46):
 
 - Environments, deployment topology, CI/CD
 - Configuration and secrets handling (ops layer)
@@ -50,7 +61,7 @@ Sprint 25 **consumes** Sprint 22 probes and Sprint 23 readiness depth as black-b
 1. Prefer portable containers, standard probes, env/secret injection — but **implement against one concrete platform** (§2.0).
 2. Single-region first; multi-region deferred.
 3. Reliability over premature optimization.
-4. Minimize operational complexity for Sprint 30.
+4. Minimize operational complexity for the *historical* Sprint 30 launch target (superseded sequencing).
 5. Allow future horizontal scaling without requiring it at day one.
 6. Preserve app contracts — wrap existing `Dockerfile`, Compose migrate pattern, Alembic, and probes.
 
@@ -58,8 +69,8 @@ Sprint 25 **consumes** Sprint 22 probes and Sprint 23 readiness depth as black-b
 
 | Tag | Meaning |
 |-----|---------|
-| **M30** | Mandatory for Sprint 30 public launch |
-| **P30+** | Recommended soon after launch |
+| **M30** | *Historical label:* was “Mandatory for Sprint 30 public launch.” Sprint 30 launch was **superseded/unmet**; M30 rows remain **required evidence content** for Global Public Beta, now owned primarily by Sprints **26 / 41 / 42 / 44 / 45** in the master roadmap (endpoint Sprint 46). |
+| **P30+** | *Historical label:* recommended soon after the superseded Sprint 30 launch target |
 | **FUT** | Future scalability / multi-region / advanced ops |
 
 ---
@@ -117,7 +128,7 @@ Real marketplace connector fleets, distributed workers as launch blockers, billi
 | CI/CD | **GitHub Actions** (build/test/push/deploy); production promote is approval-gated |
 | Migrate | One-shot Compose `migrate` service / host job: `alembic upgrade head` (same image digest) |
 
-#### Why this target (Sprint 30 appropriateness)
+#### Why this target (historical Sprint 30 appropriateness — superseded sequencing)
 
 1. Matches repository evidence: Dockerfile + Compose `api`/`db`/`migrate` are the only deploy artifacts.
 2. Avoids introducing Kubernetes or ECS task-definition complexity before the team has any cloud ops history.
@@ -130,7 +141,7 @@ Real marketplace connector fleets, distributed workers as launch blockers, billi
 
 - Team can operate one AWS account (or staging/prod accounts) with IAM least privilege.
 - Public DNS and ACM certificate are available for the ALB.
-- Production traffic volume for Sprint 30 fits 1–2 small API hosts and a modest RDS instance.
+- Production traffic volume for the *historical* Sprint 30 target fits 1–2 small API hosts and a modest RDS instance.
 - Bearer-token API auth remains (no cookie-session redesign); “secure cookies” gate is N/A unless cookie transport is later introduced.
 - In-process rate limiting / launch cache remain per-process (acceptable at 1–2 replicas).
 
@@ -522,7 +533,7 @@ ALB must not register targets that fail `/ready`. A boot-looping bad config is p
 
 ---
 
-## 12. Initial service objectives (Sprint 30 launch)
+## 12. Initial service objectives (historical Sprint 30 launch target — superseded)
 
 These are **initial launch objectives**, not permanent contractual guarantees. Revisit after 30 days of production data.
 
@@ -622,8 +633,8 @@ If incompatible → do **not** only roll back the app; use 14.C or 14.D.
 
 ### 15.1 Ownership boundary
 
-- **Alembic revision content / schema design:** Sprint 23 (persistence owners)  
-- **Execution in environments:** Sprint 25 release job  
+- **Alembic revision content / schema design:** Sprint 23 (persistence owners)
+- **Execution in environments:** Sprint 25 release job
 
 ### 15.2 Hard rules (**M30**)
 
@@ -651,8 +662,8 @@ Prefer additive migrations so 14.B application rollback remains possible. Destru
 
 ### 15.5 Forbidden
 
-- Manual `psql` DDL as normal production process  
-- `alembic downgrade` in production without incident approval  
+- Manual `psql` DDL as normal production process
+- `alembic downgrade` in production without incident approval
 - Starting API when required migrations are pending (should surface NOT_READY)
 
 ---
@@ -833,7 +844,7 @@ Sprint 25 is **not** complete merely because infrastructure configuration files 
 | Production configuration failure **tested** (fail-closed) | Yes |
 | Architecture locks **preserved** (no domain/API/schema redesign) | Yes |
 
-Until the evidence matrix rows marked **Block launch** are complete (or explicitly risk-accepted in writing), Sprint 25 implementation is **incomplete** and Sprint 30 launch is **blocked**.
+Until the evidence matrix rows marked **Block launch** are complete (or explicitly risk-accepted in writing), Sprint 25 implementation is **incomplete** and **Global Public Beta production launch is blocked** (see master roadmap Sprints 26 / 41 / 42 / 44 / 45). The historical phrase “Sprint 30 launch is blocked” remains true as a sequencing failure mode and is superseded by the Sprint 46 endpoint program.
 
 ### 21.3 Explicit launch limitations (allowed if documented)
 
@@ -884,5 +895,5 @@ Single region; per-process rate limit/cache; simulated connectors / non-live not
 
 ---
 
-**End of Sprint 25 implementation-ready architecture contract.**  
+**End of Sprint 25 implementation-ready architecture contract.**
 No infrastructure was implemented by this documentation change.
