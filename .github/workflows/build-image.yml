@@ -68,6 +68,8 @@ jobs:
         id: resolve
         env:
           GH_TOKEN: ${{ github.token }}
+          # Trusted repo identity for pre-checkout gh (no local .git / no user input).
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_run" ]; then
@@ -79,8 +81,11 @@ jobs:
               SHA="${{ github.sha }}"
             fi
             # Explicit CI-green gate for manual dispatch (no timing assumption).
+            # --repo "$GH_REPO" is required: this step runs before checkout, so
+            # gh cannot discover the repository from a local .git directory.
             TEST_RUN_ID="$(
               gh run list \
+                --repo "$GH_REPO" \
                 --workflow ci.yml \
                 --commit "$SHA" \
                 --branch main \
