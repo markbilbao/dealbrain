@@ -52,19 +52,19 @@ This inventory records every material Global Public Beta requirement and its cov
 |-------------|-------|------------------|---------------|
 | Production consumer web application | `missing_from_roadmap` | Only `app/static/demo.html`; no frontend package | 29 |
 | Responsive mobile web experience | `missing_from_roadmap` | No production UI | 29 |
-| Registration | `implemented_verified` | Auth API + tests; needs UI + staging proof | 17 (impl); 29 (UI); 26 (staging) |
+| Registration | `implemented_verified` | Auth API + tests; staging lifecycle proven on `79bd03f`; UI pending | 17 (impl); 29 (UI); 26 (staging) |
 | Login | `implemented_verified` | Same | 17 / 29 / 26 |
-| Logout | `implemented_verified` | Session revoke | 17 / 29 |
-| Durable sessions | `implemented_needs_staging_proof` | SQLAlchemy store when configured | 26 |
-| Session expiry and revocation | `implemented_verified` | Expiry + logout revoke; revoke-all hardening → 27 | 17 / 27 |
+| Logout | `implemented_verified` | Session revoke; staging logout→401 re-verified in Sprint 26 smoke | 17 / 29 / 26 |
+| Durable sessions | `implemented_verified` | SQLAlchemy store staging-proven on current main (`79bd03f`); see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | 17 (impl); 26 (staging) |
+| Session expiry and revocation | `implemented_verified` | Expiry + logout revoke; revoke-all hardening → 27; logout revoke re-verified in Sprint 26 authenticated smoke | 17 / 27 / 26 |
 | Password recovery | `planned_underspecified` | Request-only + `NullEmailSender`; no confirm | 27 |
 | Email verification | `planned_underspecified` | Request-only | 27 |
 | Duplicate-account handling | `implemented_verified` | Email uniqueness | 17 |
 | Failed-login handling | `implemented_verified` | Errors + rate limit | 17 / 22 |
 | Account lockout | `missing_from_roadmap` | Rate limit only | 40 |
-| Account persistence | `implemented_needs_staging_proof` | Sprint 23 adapters | 23 / 26 |
+| Account persistence | `implemented_verified` | Sprint 23 adapters; SQLAlchemy user-platform binding staging-proven (`79bd03f`) | 23 / 26 |
 | Selected-market persistence | `missing_from_roadmap` | No MarketContext | 37 (P1-1B) |
-| Search journey | `implemented_needs_staging_proof` | Mock connectors | 4 / 26 / 29 |
+| Search journey | `implemented_verified` | Mock connectors; zero-mutation + authenticated DealScore search staging-proven; UI pending | 4 / 26 / 29 |
 | Normalized results | `implemented_verified` | Normalization docs/tests | 18 |
 | DealScore display | `implemented_verified` | Engine + API; UI pending | 5 / 29 |
 | Recommendation display | `implemented_verified` | Engine + API; UI pending | 6 / 29 |
@@ -266,7 +266,7 @@ Per-market sub-requirements (provider selection, legal review, credentials, sand
 
 | Requirement | Class | Owning sprint |
 |-------------|-------|---------------|
-| Current-main staging deployment + smoke | `implemented_needs_staging_proof` | 26 |
+| Current-main staging deployment + smoke | `implemented_verified` — SHA `79bd03f` staging_ok packaged in [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); Sprint 26 still open for EXT bootstrap | 26 |
 | Production AWS / VPC / DB / secrets / IAM / OIDC / pull / ALB | `planned_sufficient_ac` (TF partial; not applied) | 41 |
 | Domain / DNS / TLS | `externally_blocked` + planned | 41 |
 | CDN / WAF decision | `planned_underspecified` | 41 (decision); deep WAF `post_beta_improvement` |
@@ -322,7 +322,7 @@ Claim-specific matrix lives in the master roadmap.
 
 ## M. External dependencies
 
-See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summary classes: mostly `externally_blocked` or unregistered until Sprint 26 register bootstrap.
+See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summary classes: mostly `externally_blocked` or still `not_started`. Sprint 26 technical staging proof is packaged; external bootstrap actions remain — see [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md). No EXT status was advanced by evidence packaging alone.
 
 ---
 
@@ -335,7 +335,7 @@ See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summar
 | P0-3 | P0 | M30 observability / paging / restore / runbooks incomplete | 42 |
 | P0-4 | P0 | Consumer legal + privacy minimum missing | 28 |
 | P0-5 | P0 | Real transactional email + complete password reset | 27 |
-| P0-6 | P0 | Current main not staging-proven | 26 |
+| P0-6 | P0 | Current main not staging-proven | 26 — **technical proof packaged** ([`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); Sprint 26 remains open for EXT bootstrap |
 | P1-1A | P1 | Canonical merchant registration/routing unification | 31 |
 | P1-1B | P1 | Unsupported-market product behavior | 37 |
 | P1-2 | P1 | Shipping-cost and unknown-shipping honesty | 37 (44 verifies public wording only) |
@@ -343,7 +343,7 @@ See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summar
 | P1-4 | P1 | Product analytics + feedback/bug path | 39 |
 | P1-5 | P1 | Account lockout / distributed rate limits | 40 |
 | P1-6 | P1 | Consumer UI beyond demo.html | 29 |
-| P1-7 | P1 | Current launch-candidate staging promotion discipline | 26 (45 final verification only) |
+| P1-7 | P1 | Current launch-candidate staging promotion discipline | 26 technical proof packaged ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); 45 final verification only |
 | P2-* | P2 | FX/MarketContext; WAF/CDN depth; MFA/OAuth | 37 / 41 / post-beta |
 | P3-* | P3 | Multi-region DR; autoscaling depth; formal compliance | post-beta (25h / FUT) |
 

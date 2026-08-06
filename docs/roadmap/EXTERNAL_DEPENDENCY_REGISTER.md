@@ -72,6 +72,10 @@
 
 Sprint 26 must open applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EXT-18, and schedule legal engagement (EXT-19) even though those sprints execute later. Decision latency is on the critical path.
 
+**Action checklist (statuses unchanged until real evidence):** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
+
+Technical current-main staging proof does **not** advance any EXT row. All bootstrap rows above remain `not_started` until an actual application/purchase/engagement is evidenced.
+
 ## Market naming rule
 
 A market may be named as **supported** in public materials only when:

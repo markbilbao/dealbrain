@@ -1,9 +1,12 @@
 # Sprint 26 — Staging Current-Main Proof & Roadmap Bootstrap
 
-**Status:** Planned
+**Status:** Technical staging proof verified; external bootstrap pending — **Sprint open**
 **Primary owner / domain:** Ops / release engineering
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-6; P1-7 (primary)
+**Technical evidence package:** [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
+**External bootstrap checklist:** [`../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
+**Completion draft (not a close):** [`../evidence/SPRINT_26_COMPLETION_DRAFT.md`](../evidence/SPRINT_26_COMPLETION_DRAFT.md)
 
 ## Objective
 
@@ -67,6 +70,39 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 - No production resources mutated beyond read-only verification
 - **P1-7 closed:** current launch-candidate staging promotion discipline is defined and evidenced here; Sprint 45 may only **re-verify** the same gate on the frozen candidate (not a second primary owner)
 
+## Acceptance tracking (technical vs pending)
+
+### Completed (technical)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Current-main deployment to staging | Complete | Deploy Staging `#16`, run `31072785397`, job `92524021958`, result `success` |
+| `staging_ok` host evidence | Complete | `final_status=staging_ok`; S3 evidence + checksum sidecar + validator OK |
+| Identity/digest correlation | Complete | SHA `79bd03f9e3df99efe4a978c48bec79eceec46767`; release `rel-20260806T041533Z-79bd03f9e3df`; digest `sha256:c8f5610d9538bac17db42b456e96455adb59d5a113494e40fae32408f23d87b8`; manifest `fc529721c1f3c819da4ce250460520a5b44c366c133cafcb6b1f11a4e037b95b` |
+| Migration before/after | Complete | `d4e5f6a7b8c9` → `d4e5f6a7b8c9` |
+| Readiness with SQLAlchemy | Complete | `/ready` `200`, `ready=true`, `persistence_level=READY`; SQLAlchemy user-platform bindings selected |
+| Health and OpenAPI | Complete | `/health` `200` `environment=staging`; `/openapi.json` `200` |
+| Zero-mutation search/DealScore/recommendation smoke | Complete | Search, DealScore, Recommendation, affiliate disclosure, empty-query `422`, `X-Request-ID` |
+| Authenticated lifecycle smoke | Complete | Register→duplicate→fail login→login→`/me`→DealScore→logout→post-logout `401`; residue recorded |
+| Staging promotion discipline (P1-7 technical) | Complete | Current-candidate promotion path evidenced; Sprint 45 final re-verify only |
+| No production mutation | Complete | Staging-only deploy and read-only probes |
+
+### Explicitly pending
+
+| Item | Status |
+|------|--------|
+| Required external dependency actions/applications | Pending |
+| Action/application dates | Pending (none invented) |
+| External-dependency register status updates | Pending — statuses remain `not_started` |
+| Final Sprint 26 completion note | Pending — draft only in evidence package |
+| Sprint 26 final go/no-go close | Pending — Sprint remains open |
+
+Technical conclusion recorded in evidence package:
+
+**SPRINT 26 CURRENT-MAIN STAGING PROOF VERIFIED**
+
+That conclusion does **not** close Sprint 26.
+
 ## Predecessor sprints
 
 25b.3, 25b.5*
@@ -78,6 +114,10 @@ Legal counsel scheduling, UI design spike
 ## Go / no-go gate
 
 Go if staging smoke green; No-go blocks 27+ public-path work that assumes staging truth
+
+**Technical staging gate:** satisfied for SHA `79bd03f9e3df99efe4a978c48bec79eceec46767` (see evidence package).
+
+**Sprint close gate:** still blocked on external bootstrap actions and register updates.
 
 ## Rollback or contingency
 

@@ -5,8 +5,9 @@
 **Base HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
 **Supersedes:** Sprint 40 hard endpoint; Sprint 30 “public launch” target as launch achievement
 **Preserves:** Sprint identities 1–40 as historical; Architecture Lock domain ownership for Sprints 1–25
-**Companion docs:** [`GAP_INVENTORY.md`](GAP_INVENTORY.md) · [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) · [`sprints/`](sprints/)
+**Companion docs:** [`GAP_INVENTORY.md`](GAP_INVENTORY.md) · [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) · [`sprints/`](sprints/) · [`evidence/`](evidence/)
 **Sprint 30 audit:** [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) — NOT READY (3/10)
+**Sprint 26 technical evidence:** [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — current-main staging proof verified; Sprint 26 remains open for external bootstrap
 
 ---
 
@@ -131,7 +132,7 @@ Obsolete statements such as “hard launch target: Sprint 30 public launch” an
 
 | Sprint | Name | Primary outcome | Main blockers addressed | External dependencies | Exit gate |
 |--------|------|-----------------|-------------------------|-----------------------|-----------|
-| 26 | Staging Current-Main Proof & Roadmap Bootstrap | `fd25cc`+ launch candidate staging-proven; EXT apps opened | P0-6 | EXT-01…05,08,10,17,18 bootstrap | Staging `/ready` + smoke journey on current digest; register updated |
+| 26 | Staging Current-Main Proof & Roadmap Bootstrap | Launch candidate staging-proven (`79bd03f`); EXT apps bootstrap pending | P0-6 | EXT-01…05,08,10,17,18 bootstrap | Technical: Staging `/ready` + smoke on current digest ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); close still requires register updates |
 | 27 | Transactional Identity & Email | Real email; reset/verify complete | P0-5; HIGH demo-auth | EXT-08, EXT-09 | Staging E2E reset+verify via real provider |
 | 28 | Privacy, Legal, Consent & Deletion | ToS/Privacy/consent/deletion/export | P0-4; MEDIUM GDPR | EXT-17…22 | Legal draft published internally; deletion E2E staging; counsel review started |
 | 29 | Production Consumer Web UI | Public web app + a11y + e2e baseline | P1-6 | None critical | Staging UI journey green; build validation |
@@ -161,7 +162,7 @@ Detailed definitions: [`sprints/`](sprints/).
 
 | Audit requirement | Existing coverage | New owning sprint | Acceptance evidence | Launch blocker? |
 |-------------------|-------------------|-------------------|---------------------|-----------------|
-| Current-main staging proof | Older SHA staging proven | 26 | Evidence JSON + `/ready` on launch candidate | Yes |
+| Current-main staging proof | Older SHA staging proven; **current main `79bd03f` staging_ok packaged** | 26 | Evidence JSON + `/ready` on launch candidate — see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); EXT bootstrap still open | Yes |
 | Real email + password recovery | NullEmailSender / demo tokens | 27 | Inbox delivery + confirm routes | Yes |
 | Email verification | Partial request-only | 27 | Verify confirm E2E | Yes |
 | ToS / Privacy / consent | Missing | 28 | Published URLs + consent records | Yes |
@@ -185,7 +186,7 @@ Detailed definitions: [`sprints/`](sprints/).
 | Public claims approval | Missing | 44 | Signed claim matrix | Yes |
 | Controlled public launch | Missing | 45 | Checklist sign-off | Yes |
 | Post-launch stabilization | Missing | 46 | Stability report | Program close |
-| Staging promotion discipline (P1-7) | Older SHA proven | 26 | Current-candidate staging_ok + smoke; 45 final verify | Yes (P1) |
+| Staging promotion discipline (P1-7) | Current-candidate staging_ok + smoke packaged | 26 | Current-candidate staging_ok + smoke ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); 45 final verify | Yes (P1) |
 | DealScore / organic neutrality | Verified | 5/6 + 44 certify | CI + monitoring | Integrity gate |
 | Fixture never shown as live | Verified | 18 + 38/45 | Freshness gates + release check | Yes |
 
@@ -264,18 +265,18 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 
 | Capability | Implemented | CI tested | Staging proven | Production rehearsed | Launch approved |
 |------------|:-----------:|:---------:|:--------------:|:--------------------:|:---------------:|
-| Auth register/login/logout | Yes | Yes | Pending (26) | Pending (41/45) | Pending (44) |
+| Auth register/login/logout | Yes | Yes | Yes (26 tech evidence; Sprint 26 open for EXT) | Pending (41/45) | Pending (44) |
 | Password reset / email verify | Partial | Partial | Pending (27) | Pending (41) | Pending (44) |
 | Privacy/deletion/legal | No | No | Pending (28) | Pending (45) | Pending (44) |
 | Consumer web UI | No | No | Pending (29) | Pending (45) | Pending (44) |
-| DealScore / Recommendation | Yes | Yes | Pending (26) | Pending (45) | Certify (44) |
+| DealScore / Recommendation | Yes | Yes | Yes (26 tech evidence; mocked-data disclosure observed) | Pending (45) | Certify (44) |
 | Merchant platform unified | No | Partial | Pending (31) | Pending (45) | Pending (44) |
 | PH/US/SG/UK/CA real paths | No | No | Pending (32–36) | Pending (45) | Per-market (44/45) |
 | MarketContext / FX | No | Partial fail-closed | Pending (37) | Pending (45) | Pending (44) |
 | Connector reliability | Partial | Partial | Pending (38) | Pending (45) | Pending (44) |
 | Product analytics | No | No | Pending (39) | Pending (45) | Pending (44) |
 | Security hardening package | Partial | Partial | Pending (40) | Pending (44) | Pending (44) |
-| Staging deploy/rollback arch | Yes | Yes | Yes (older SHA); current pending (26) | N/A | — |
+| Staging deploy/rollback arch | Yes | Yes | Yes (current main `79bd03f` staging_ok; see Sprint 26 evidence) | N/A | — |
 | Production deploy/rollback | No | No | N/A | Pending (41/44) | Pending (44) |
 | Backup restore / paging | No | No | Pending (42) | Pending (42/44) | Pending (44) |
 | Capacity evidence | No | No | Pending (43) | Pending (43) | Pending (44) |
@@ -424,6 +425,8 @@ Sprint 46 **cannot** postpone unresolved Sprint 45 launch blockers. It owns stab
 | [`GAP_INVENTORY.md`](GAP_INVENTORY.md) | Phase 1 complete inventory |
 | [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) | External dependency register |
 | [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) | Persisted Sprint 30 audit summary |
+| [`evidence/`](evidence/) | Packaged sprint evidence (Sprint 26 current-main staging proof + bootstrap checklist + completion draft) |
+| [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | Sprint 26 technical staging proof (Sprint 26 still open) |
 | [`sprints/`](sprints/) | Per-sprint definitions 26–46 |
 | [`../architecture/ARCHITECTURE_LOCK.md`](../architecture/ARCHITECTURE_LOCK.md) | Domain ownership lock (updated cross-link) |
 | [`../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md`](../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md) | Infra contract; M30 matrix still evidential |
@@ -441,7 +444,7 @@ Sprint 46 **cannot** postpone unresolved Sprint 45 launch blockers. It owns stab
 | P0-3 M30 ops evidence | 42 | Yes |
 | P0-4 Legal/privacy | 28 | Yes |
 | P0-5 Email/reset | 27 | Yes |
-| P0-6 Current-main staging | 26 | Yes |
+| P0-6 Current-main staging | 26 (tech evidence packaged; EXT bootstrap pending) | Yes |
 | P1-1A Registry/router unify | 31 | Yes |
 | P1-1B Unsupported-market behavior | 37 | Yes |
 | P1-2 Shipping-cost honesty | 37 (44 verifies wording only) | Yes |
@@ -449,7 +452,7 @@ Sprint 46 **cannot** postpone unresolved Sprint 45 launch blockers. It owns stab
 | P1-4 Analytics/feedback | 39 | Yes |
 | P1-5 Lockout/distributed limits | 40 | Yes |
 | P1-6 Consumer UI | 29 | Yes |
-| P1-7 Staging promote discipline | 26 (45 final verification only) | Yes |
+| P1-7 Staging promote discipline | 26 tech proven ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); 45 final verification only | Yes |
 
 ---
 
