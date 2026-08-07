@@ -1,10 +1,14 @@
-"""DealScore API request and response schemas."""
+"""DealScore API request and response schemas.
+
+Machine contract identifiers retain DealScore/deal_score naming. Human-readable
+OpenAPI descriptions present the public feature name PiqScore.
+"""
 
 from pydantic import BaseModel, Field
 
 
 class DealScoreComponentsPayload(BaseModel):
-    """Named DealScore component scores."""
+    """Named PiqScore component scores."""
 
     price_score: float
     seller_score: float
@@ -16,11 +20,11 @@ class DealScoreComponentsPayload(BaseModel):
 
 
 class DealScorePayload(BaseModel):
-    """Explainable DealScore for a single listing."""
+    """Explainable PiqScore for a single listing."""
 
     listing_id: str
     marketplace: str
-    score: float
+    score: float = Field(title="PiqScore")
     rating: str
     rank: int
     total_cost: float
@@ -31,7 +35,7 @@ class DealScorePayload(BaseModel):
 
 
 class DealScoreListingPayload(BaseModel):
-    """Listing fields returned alongside a DealScore ranking row."""
+    """Listing fields returned alongside a PiqScore ranking row."""
 
     marketplace: str
     product_id: str
@@ -50,15 +54,15 @@ class DealScoreListingPayload(BaseModel):
 
 
 class DealScoreResultItem(BaseModel):
-    """One ranked listing with its DealScore."""
+    """One ranked listing with its PiqScore."""
 
     rank: int
     listing: DealScoreListingPayload
-    deal_score: DealScorePayload
+    deal_score: DealScorePayload = Field(title="PiqScore")
 
 
 class DealScoreSearchResponse(BaseModel):
-    """Ranked DealScore search response."""
+    """Ranked PiqScore search response."""
 
     query: str
     currency: str

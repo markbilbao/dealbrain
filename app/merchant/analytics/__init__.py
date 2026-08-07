@@ -204,9 +204,9 @@ def build_ranking_explanation(
             factor="dealscore_factors",
             contribution="informational",
             detail=(
-                f"DealScore {dealscore}"
+                f"PiqScore {dealscore}"
                 if dealscore is not None
-                else "DealScore not yet computed for this submission."
+                else "PiqScore not yet computed for this submission."
             ),
         )
     )

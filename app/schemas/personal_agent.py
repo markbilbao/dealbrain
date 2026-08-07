@@ -50,8 +50,8 @@ class CustomerProfilePayload(BaseModel):
 class PersonalDealScorePayload(BaseModel):
     product_id: str
     profile_id: str
-    personal_deal_score: float
-    global_deal_score: float | None = None
+    personal_deal_score: float = Field(title="Personalized PiqScore")
+    global_deal_score: float | None = Field(default=None, title="Global PiqScore")
     preference_fit: float
     budget_fit: float
     brand_affinity: float
@@ -70,7 +70,7 @@ class BuyingAdvicePayload(BaseModel):
     explanation: str
     evidence: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
-    personal_deal_score: float | None = None
+    personal_deal_score: float | None = Field(default=None, title="Personalized PiqScore")
     alternative_product_id: str | None = None
     alternative_product_name: str | None = None
 
@@ -84,8 +84,8 @@ class PersonalRecommendationPayload(BaseModel):
     known_price: float | None = None
     currency: str = "PHP"
     marketplace: str | None = None
-    personal_deal_score: float
-    global_deal_score: float | None = None
+    personal_deal_score: float = Field(title="Personalized PiqScore")
+    global_deal_score: float | None = Field(default=None, title="Global PiqScore")
     preference_score: float
     confidence: float
     advice: BuyingAdvicePayload | None = None
@@ -103,7 +103,7 @@ class PersonalDealsResponse(BaseModel):
     generated_at: str | None = None
     processing: dict[str, Any] = Field(default_factory=dict)
     disclaimer: str = (
-        "Personalized deals use fixture customer profiles and DealBrain mock/imported "
+        "Personalized deals use fixture customer profiles and PiqSavi mock/imported "
         "catalog evidence. No login, purchase history, or payment data is used."
     )
 

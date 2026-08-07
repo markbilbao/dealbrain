@@ -75,5 +75,5 @@ def test_legacy_health_fields_still_present() -> None:
     client = TestClient(app)
     data = client.get("/api/v1/health").json()
     assert data["status"] == "up"
-    assert data["service"] == "DealBrain"
+    assert data["service"] == "PiqSavi"
     assert data["database"] == "up"

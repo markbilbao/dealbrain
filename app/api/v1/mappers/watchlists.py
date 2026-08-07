@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.core.public_brand import present_consumer_text
 from app.domain.entities.watchlist import (
     Alert,
     AlertEvaluationResult,
@@ -104,7 +105,7 @@ def to_alert_payload(alert: Alert) -> AlertPayload:
         item_id=alert.item_id,
         canonical_product_id=alert.canonical_product_id,
         alert_type=alert.alert_type.value,
-        message=alert.message,
+        message=present_consumer_text(alert.message),
         previous_value=alert.previous_value,
         current_value=alert.current_value,
         currency=alert.currency,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.core.public_brand import present_consumer_text
 from app.domain.entities.community_intelligence import (
     CommunityDashboard,
     CommunityEvidence,
@@ -17,9 +18,9 @@ from app.schemas.community_intelligence import (
     CommunitySourceMetricsPayload,
     CommunitySummaryPayload,
     CommunityTimelinePayload,
+    CommunityTimelineResponse,
     CommunityTopicPayload,
     CommunityTopicsResponse,
-    CommunityTimelineResponse,
     CommunityTrustPayload,
     CommunityWarningPayload,
     EngagementPayload,
@@ -79,7 +80,7 @@ def to_evidence_payload(item: CommunityEvidence) -> CommunityEvidencePayload:
 def _insight(item) -> CommunityInsightPayload:
     return CommunityInsightPayload(
         kind=item.kind,
-        statement=item.statement,
+        statement=present_consumer_text(item.statement),
         evidence_ids=list(item.evidence_ids),
         confidence=item.confidence,
         topic=item.topic,
@@ -96,13 +97,17 @@ def _summary(summary: CommunitySummary) -> CommunitySummaryPayload:
         who_should_buy=[_insight(item) for item in summary.who_should_buy],
         who_should_avoid=[_insight(item) for item in summary.who_should_avoid],
         buying_advice=[_insight(item) for item in summary.buying_advice],
-        limitations=list(summary.limitations),
+        limitations=[present_consumer_text(item) for item in summary.limitations],
         provider=summary.provider,
         model=summary.model,
         mode=summary.mode,
         providers_used=list(summary.providers_used),
         fallback_used=summary.fallback_used,
-        fallback_reason=summary.fallback_reason,
+        fallback_reason=(
+            present_consumer_text(summary.fallback_reason)
+            if summary.fallback_reason
+            else summary.fallback_reason
+        ),
         agreement_score=summary.agreement_score,
     )
 
@@ -161,7 +166,10 @@ def to_product_response(product: CommunityProductIntelligence) -> CommunityProdu
         source_metrics=[_metrics(item) for item in product.source_metrics],
         timeline=[_timeline(item) for item in product.timeline],
         warnings=[
-            CommunityWarningPayload(message=item.message, code=item.code)
+            CommunityWarningPayload(
+                message=present_consumer_text(item.message),
+                code=item.code,
+            )
             for item in product.warnings
         ],
         data_status=product.data_status,
@@ -191,7 +199,10 @@ def to_dashboard_response(dashboard: CommunityDashboard) -> CommunityDashboardRe
         recent_discussions=[to_evidence_payload(item) for item in dashboard.recent_discussions],
         summary=_summary(dashboard.summary),
         warnings=[
-            CommunityWarningPayload(message=item.message, code=item.code)
+            CommunityWarningPayload(
+                message=present_consumer_text(item.message),
+                code=item.code,
+            )
             for item in dashboard.warnings
         ],
         data_status=dashboard.data_status,

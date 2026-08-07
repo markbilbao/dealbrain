@@ -285,7 +285,7 @@ class ShoppingAssistantService:
         warnings: list[AssistantWarning] = [
             AssistantWarning(
                 message=(
-                    "Assistant answers use mock/imported DealBrain data and cannot guarantee "
+                    "Assistant answers use mock/imported PiqSavi data and cannot guarantee "
                     "live prices, authenticity, or future price changes."
                 ),
                 code="limitations",
@@ -731,7 +731,7 @@ class ShoppingAssistantService:
             "alternative_links": [],
             "disclaimer": (
                 "Affiliate links are generated after recommendation selection. "
-                "Commission never changes DealScore or ranking."
+                "Commission never changes PiqScore or ranking."
             ),
         }
         try:

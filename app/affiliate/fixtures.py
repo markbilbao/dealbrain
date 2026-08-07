@@ -168,8 +168,8 @@ DEFAULT_DISCLOSURES: tuple[dict, ...] = (
         "disclosure_id": "disc-general-en",
         "disclosure_type": "affiliate_general",
         "text": (
-            "DealBrain may earn a commission when you buy through links on this page. "
-            "Commissions never change DealScore or product rankings."
+            "PiqSavi may earn a commission when you buy through links on this page. "
+            "Commissions never change PiqScore or product rankings."
         ),
         "region": None,
         "merchant_id": None,
@@ -205,7 +205,7 @@ DEFAULT_DISCLOSURES: tuple[dict, ...] = (
         "disclosure_id": "disc-merchant-amazon",
         "disclosure_type": "merchant",
         "text": (
-            "As an Amazon Associates placeholder participant, DealBrain may earn from "
+            "As an Amazon Associates placeholder participant, PiqSavi may earn from "
             "qualifying purchases. No real Amazon credentials are configured."
         ),
         "region": "US",

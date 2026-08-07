@@ -37,7 +37,7 @@ class RecommendationPayload(BaseModel):
     known_price: float | None = None
     currency: str = "PHP"
     marketplace: str | None = None
-    deal_score: float | None = None
+    deal_score: float | None = Field(default=None, title="PiqScore")
     confidence: float = 0.0
     evidence_ids: list[str] = Field(default_factory=list)
     rating: float | None = None
@@ -109,7 +109,7 @@ class ShoppingAssistantResponse(BaseModel):
     personal_recommendation: dict[str, Any] | None = None
     profile_id: str | None = None
     disclaimer: str = (
-        "Shopping assistant answers are evidence-grounded over DealBrain mock/imported "
+        "Shopping assistant answers are evidence-grounded over PiqSavi mock/imported "
         "data by default. External AI providers are disabled unless enabled server-side. "
         "The assistant cannot guarantee prices, authenticity, or future price changes. "
         "Personalization uses fixture profiles only when a profile_id is provided."

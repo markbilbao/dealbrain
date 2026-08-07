@@ -111,22 +111,33 @@ Primary implementation sprint: **Sprint 29**. Production hostname cutover eviden
 
 ---
 
-## 8. DealScore naming protection
+## 8. PiqScore / DealScore naming boundary (locked)
 
-**DealScore remains DealScore.**
+Owner-approved strategy through V1.0: **public PiqScore / internal DealScore**.
 
-Do **not** rename DealScore to:
+| Layer | Name | Rule |
+|-------|------|------|
+| Public consumer feature | **PiqScore** | Consumer UI, human-readable OpenAPI prose, disclosures, and public explanations |
+| Internal engineering/scoring contract | **DealScore** | Engines, classes, modules, machine JSON fields, routes, digests, and persistence |
 
-- PiqScore
-- PiqSavi Score
-- SaviScore
-- or any other replacement
+Explicit locked rules:
 
-unless separately approved by the owner.
+- **PiqScore** is the consumer-facing score feature name.
+- **DealScore** remains the internal engineering/scoring contract through V1.0.
+- `WeightedDealScoreEngine` remains unchanged.
+- `DealRecommendationService` remains unchanged.
+- Machine `deal_score` / `personal_deal_score` / `global_deal_score` fields remain unchanged.
+- V1 `/api/v1/dealscore/...` paths and the OpenAPI machine tag `dealscore` remain unchanged.
+- `PersonalDealScore` remains an internal technical identifier.
+- Consumer-visible PersonalDealScore may be displayed as **Personalized PiqScore** (never `PersonalPiqScore` unless separately approved).
+- No protected digest may be regenerated solely for naming.
+- A full internal DealScore→PiqScore technical migration is **not** authorized.
 
-Any user-visible feature name containing **DealBrain**, **Deal**, or **Brain** must be reviewed individually.
+Do **not** treat public PiqScore naming as a mandate to rename internal DealScore identifiers.
 
-Named public features that may be reviewed later but are **not** renamed by this lock:
+Any other user-visible feature name containing **DealBrain**, **Deal**, or **Brain** must still be reviewed individually.
+
+Named public features that remain unchanged by this lock:
 
 - Shopping Assistant
 - Personal Agent
@@ -286,7 +297,7 @@ Do not create SEO implementation files from this documentation task alone.
 Public-brand implementation must eventually prove:
 
 - public brand boundary tests (no unintended consumer-facing DealBrain leakage)
-- DealScore remains DealScore
+- public score feature presents as PiqScore while internal DealScore contracts remain
 - internal DealBrain identifiers remain operational
 - staging pages are non-indexable
 - reset / verification links resolve to PiqSavi public configuration

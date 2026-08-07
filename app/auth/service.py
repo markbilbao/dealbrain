@@ -257,7 +257,7 @@ class AuthService:
         self._email.send(
             EmailMessage(
                 to_address=user.email,
-                subject="DealBrain password reset",
+                subject="PiqSavi password reset",
                 body_text=f"Reset token (demo only, not emailed): {raw}",
                 template_id="password_reset",
             )
@@ -289,7 +289,7 @@ class AuthService:
         self._email.send(
             EmailMessage(
                 to_address=user.email,
-                subject="Verify your DealBrain email",
+                subject="Verify your PiqSavi email",
                 body_text=f"Verification token (demo only, not emailed): {raw}",
                 template_id="email_verification",
             )

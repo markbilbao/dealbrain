@@ -90,17 +90,17 @@ class ShoppingRecommendationService:
         if "mixed currencies" in lowered:
             headline = "Mixed currencies cannot be compared"
             summary = (
-                "Listings use more than one currency, so DealBrain cannot produce "
+                "Listings use more than one currency, so PiqSavi cannot produce "
                 "a reliable purchase recommendation without conversion."
             )
             reason = (
-                "Comparable DealScore ranking requires a single currency; "
+                "Comparable PiqScore ranking requires a single currency; "
                 "mixed currencies were rejected."
             )
         else:
             headline = "Not enough information to recommend"
             summary = (
-                "DealScore validation failed, so DealBrain cannot produce "
+                "PiqScore validation failed, so PiqSavi cannot produce "
                 "trustworthy buying advice for this query."
             )
             reason = message

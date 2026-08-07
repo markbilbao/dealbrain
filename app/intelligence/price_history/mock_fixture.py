@@ -10,7 +10,7 @@ Rules:
 - Never load automatically in production (``APP_ENV=production``).
 - Callers must invoke :func:`load_iphone_demo_mock_history` explicitly.
 - Timestamps and prices are fixed constants — never randomized.
-- Wording for demos: “Lowest recorded price in the available DealBrain history.”
+- Wording for demos: “Lowest recorded price in the available PiqSavi history.”
   and “Development history uses mocked observations.”
 """
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.core.public_brand import present_consumer_text
 from app.domain.entities.deal_score import DealScore, ListingEvaluation, RankingResult
 from app.schemas.dealscore import (
     DealScoreComponentsPayload,
@@ -67,7 +68,7 @@ def _to_deal_score_payload(score: DealScore) -> DealScorePayload:
             warranty_score=components.warranty_score,
             return_policy_score=components.return_policy_score,
         ),
-        explanation=list(score.explanation),
-        warnings=list(score.warnings),
+        explanation=[present_consumer_text(item) for item in score.explanation],
+        warnings=[present_consumer_text(item) for item in score.warnings],
         applied_weights=dict(score.applied_weights),
     )
