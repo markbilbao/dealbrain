@@ -101,6 +101,25 @@ Deliver a production consumer web application covering the core shopping and acc
 - Market-selection UI shell present; domain/policy integration explicitly deferred to Sprint 37
 - Sprint 29 does **not** certify live merchant data or final MarketContext behavior
 
+### Additive PiqSavi public-brand criteria (primary implementation sprint; not marked complete)
+
+Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)
+
+- Public consumer application displays PiqSavi
+- Tagline displayed where appropriate: Your AI Personal Shopper
+- No unintended DealBrain branding in consumer-facing UI
+- Title/meta/social/install surfaces use PiqSavi
+- Approved PiqSavi logo assets used
+- Favicon/PWA/social/email asset slots implemented from approved assets
+- Canonical metadata uses `piqsavi.com`
+- Staging pages are non-indexable
+- Public brand boundary test passes
+- Internal DealBrain identifiers remain operational
+- DealScore remains DealScore
+- No blanket internal rename occurs
+
+Do not implement these items in documentation-only brand-lock tasks.
+
 ## Predecessor sprints
 
 27, 28 (API hooks), 26

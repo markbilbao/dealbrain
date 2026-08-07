@@ -72,6 +72,16 @@ Ship the consumer legal and privacy minimum: policies, consent records, deletion
 - Legal review engaged with dated packet
 - Support and privacy contacts assigned
 
+### Additive PiqSavi brand criteria (not marked complete)
+
+Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)
+
+- Terms identify the consumer product as PiqSavi
+- Privacy Policy identifies PiqSavi
+- Public legal/privacy/support addresses use approved `@piqsavi.com` identities
+- Legal copy does not expose DealBrain as the consumer product
+- Technical/internal DealBrain references may remain where legally or operationally necessary and non-consumer-facing
+
 ## Predecessor sprints
 
 27
