@@ -68,6 +68,22 @@ Execute controlled public launch by performing **final go/no-go verification** a
 - Monitoring handoff to Sprint 46 recorded
 - No documentation-only evidence accepted for runtime criteria
 
+### Additive PiqSavi launch gate (not marked complete)
+
+Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)
+
+- PiqSavi is the only master brand presented to consumers
+- `piqsavi.com` canonical hostname verified
+- `www` redirect verified
+- Live metadata uses PiqSavi
+- Public email identity uses PiqSavi
+- Public legal/support contacts use PiqSavi
+- No fixture/demo DealBrain hostname leaks publicly
+- No accidental DealBrain branding appears in consumer UI/API documentation
+- Internal DealBrain infrastructure continues operating unchanged
+
+Sprint 45 remains controlled Global Public Beta launch.
+
 ## Predecessor sprints
 
 44

@@ -68,6 +68,25 @@ Provision isolated production AWS and validate production deploy/rollback workfl
 - Isolation proof filed
 - CDN/WAF decision recorded
 
+### Additive PiqSavi production-host criteria (not marked complete)
+
+Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)
+
+- Canonical public hostname = `piqsavi.com`
+- `www` redirects to canonical apex
+- Production API hostname decision/config matches approved host map
+- DNS verified
+- TLS verified
+- HTTP→HTTPS verified
+- CORS uses approved PiqSavi origins
+- `TRUSTED_HOSTS` uses approved public hostnames
+- CSP supports approved frontend/API topology
+- Reset/verification links resolve to PiqSavi
+- Internal Terraform/AWS/SSM/resource naming remains DealBrain
+- No infrastructure rename is required for public-brand launch
+
+Do not perform DNS/TLS/AWS changes from documentation-only brand-lock tasks.
+
 ## Predecessor sprints
 
 26, 40 recommended

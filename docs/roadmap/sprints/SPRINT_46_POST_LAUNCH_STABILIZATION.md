@@ -26,6 +26,7 @@ Stabilize the Global Public Beta after an **approved** launch, complete learning
 - Analytics consent-state review
 - Capacity re-check against actual beta traffic
 - Public-claims drift review
+- Monitor public brand/claim drift after launch (PiqSavi; not a new branding implementation sprint)
 - Analytics learning cadence
 - Post-beta backlog classification (WAF depth, Redis, multi-region, MFA/OAuth, more merchants, etc.)
 - Program close report
@@ -36,6 +37,7 @@ Stabilize the Global Public Beta after an **approved** launch, complete learning
 - Silent scope expansion
 - **Using Sprint 46 to postpone unresolved Sprint 45 launch blockers until after public launch**
 - Owning pre-existing launch blockers that should have failed Sprint 45 go/no-go
+- Turning Sprint 46 into a new branding implementation sprint (brand authority remains [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md); endpoint remains Sprint 46)
 
 ## External dependencies
 

@@ -5,9 +5,10 @@
 **Base HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
 **Supersedes:** Sprint 40 hard endpoint; Sprint 30 “public launch” target as launch achievement
 **Preserves:** Sprint identities 1–40 as historical; Architecture Lock domain ownership for Sprints 1–25
-**Companion docs:** [`GAP_INVENTORY.md`](GAP_INVENTORY.md) · [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) · [`sprints/`](sprints/) · [`evidence/`](evidence/)
+**Companion docs:** [`GAP_INVENTORY.md`](GAP_INVENTORY.md) · [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) · [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) · [`sprints/`](sprints/) · [`evidence/`](evidence/)
 **Sprint 30 audit:** [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) — NOT READY (3/10)
 **Sprint 26 technical evidence:** [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — current-main staging proof verified; Sprint 26 remains open for external bootstrap
+**Public brand authority:** [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md)
 
 ---
 
@@ -18,6 +19,20 @@
 3. `docs/architecture/ARCHITECTURE_LOCK.md` remains the domain-ownership lock; this roadmap **extends** launch sequencing and does not silently redistribute DealScore, Recommendation, affiliate, or merchant neutrality ownership.
 4. Future roadmap additions require: gap ID, single owning sprint, acceptance evidence, beta-blocker classification, and an Architecture Lock review if ownership/invariants change.
 5. Do not claim incomplete work complete. Do not mark connectors complete without real provider evidence. Do not mark production complete from Terraform alone.
+
+### 0.1 Public brand authority
+
+| Field | Value |
+|-------|-------|
+| Public product | **PiqSavi** |
+| Public tagline | Your AI Personal Shopper |
+| Primary public domain | piqsavi.com |
+| Canonical public URL | https://piqsavi.com |
+| Internal engineering codename | **DealBrain** |
+| Roadmap endpoint | **Sprint 46** |
+| Brand policy | [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) |
+
+Public consumer brand is PiqSavi; DealBrain remains the internal technical codename. Do not rewrite historical sprint descriptions solely to replace DealBrain. Do not alter sprint numbering. Infrastructure cosmetic renames are out of scope for public-brand launch.
 
 ### Evidence maturity legend
 
@@ -422,6 +437,7 @@ Sprint 46 **cannot** postpone unresolved Sprint 45 launch blockers. It owns stab
 | Document | Role |
 |----------|------|
 | **This file** | Sole master roadmap authority |
+| [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) | Locked PiqSavi public-brand authority (DealBrain internal codename) |
 | [`GAP_INVENTORY.md`](GAP_INVENTORY.md) | Phase 1 complete inventory |
 | [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) | External dependency register |
 | [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) | Persisted Sprint 30 audit summary |

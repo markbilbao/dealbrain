@@ -4,6 +4,8 @@
 
 **Launch roadmap endpoint (current):** Sprint 46 — see [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 
+**Public brand cross-reference:** Public consumer brand is **PiqSavi**; internal technical codename remains **DealBrain**. Internal infrastructure identifiers are intentionally protected from cosmetic rename. Public-brand authority: [`docs/roadmap/PIQSAVI_PUBLIC_BRAND_POLICY.md`](../roadmap/PIQSAVI_PUBLIC_BRAND_POLICY.md).
+
 **Historical note:** A prior **hard endpoint at Sprint 40** is **superseded for launch sequencing** (identities 1–40 preserved). Sprint 30 “public launch” target is **reclassified** as a readiness audit (NOT READY).
 
 **Runtime enforcement:** This document is a change-control policy. It is **not** enforced by a separate runtime policy engine unless a specific check is implemented and documented elsewhere.

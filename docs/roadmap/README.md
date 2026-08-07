@@ -6,6 +6,7 @@
 | Document | Purpose |
 |----------|---------|
 | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) | Sole master roadmap (endpoint Sprint 46) |
+| [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) | Locked PiqSavi public-brand authority (internal codename DealBrain) |
 | [`GAP_INVENTORY.md`](GAP_INVENTORY.md) | Phase 1 gap inventory (sections A–M) |
 | [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) | External dependency register |
 | [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) | Persisted Sprint 30 audit summary |
@@ -13,3 +14,4 @@
 | [`sprints/`](sprints/) | Sprint definitions 26–46 |
 
 Domain ownership remains governed by [`../architecture/ARCHITECTURE_LOCK.md`](../architecture/ARCHITECTURE_LOCK.md).
+Public consumer brand authority: [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md).

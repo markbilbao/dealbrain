@@ -65,6 +65,21 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 - Rehearsal succeeds
 - Rollback authority named
 
+### Additive PiqSavi public-brand / claims criteria (not marked complete)
+
+Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)
+
+- Public claims use PiqSavi
+- No unintended public DealBrain product-brand leakage
+- SEO metadata uses PiqSavi
+- Open Graph/social metadata uses PiqSavi
+- Structured-data organization/application name uses PiqSavi
+- Approved logo/assets present
+- DealScore terminology unchanged unless separately approved
+- Legacy `x-dealbrain-*` compatibility decision finalized
+- Public documentation brand reviewed
+- Legal/marketing approval covers PiqSavi wording
+
 ## Predecessor sprints
 
 27–43 as applicable, 32–36 for any market to be named

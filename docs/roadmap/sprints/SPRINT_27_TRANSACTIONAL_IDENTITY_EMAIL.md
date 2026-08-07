@@ -65,6 +65,19 @@ Make self-serve authentication production-safe with real transactional email, co
 - Tokens expire and invalidate after use
 - Production config cannot enable demo token leakage
 
+### Additive PiqSavi brand criteria (not marked complete)
+
+Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)
+
+- Consumer-visible email subjects/bodies use PiqSavi
+- No unintended DealBrain branding in transactional emails
+- Public email-link base uses approved `piqsavi.com` URL
+- Password-reset URLs use PiqSavi public configuration
+- Verification URLs use PiqSavi public configuration
+- Sender identity is PiqSavi
+- Sender-domain authentication is verified before public use
+- Internal DealBrain technical identifiers remain unchanged
+
 ## Predecessor sprints
 
 26

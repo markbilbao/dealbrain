@@ -142,14 +142,22 @@
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
+| Current documented status | `not_started` (unchanged — not provisioned) |
 | Responsible owner | Ops |
+| Public brand / domain | PiqSavi / `piqsavi.com` (see [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)) |
 | Exact action the user must take | Purchase/register the public domain intended for Global Public Beta hostname |
 | Information/documents needed | Desired domain name(s); registrant identity; registrar account; billing |
+| Owner report | `piqsavi.com` purchased and controlled via Cloudflare |
+| Required evidence | Sanitized registrar/Cloudflare domain-ownership proof (domain name; ownership confirmation; date) |
 | Evidence that must be retained | Registrar confirmation; domain name; registration date; WHOIS/redacted ownership proof |
+| Do not retain in git | Account IDs; billing data; payment information; API tokens; zone secrets; account email where unnecessary |
+| Next status after acceptable proof | `approved` |
+| Not yet | `provisioned` — reserved until the public hostname is genuinely usable |
+| Explicit non-claims | Owner report alone does not prove DNS, TLS, Cloudflare proxy, production routing, email authentication, or application domain cutover |
+| Separation | EXT-11 (DNS) and EXT-12 (TLS) remain independent and `not_started` |
 | Fallback | Delay public hostname |
 | Launch impact | Blocks public web access path (Sprint 41 DNS/TLS chain) |
-| Register fields to update after action | `Application date` (purchase date), `Current status` → `approved` or `provisioned` per legend once owned, evidence notes |
+| Register fields to update after action | `Application date` (purchase date), `Current status` → `approved` only after sanitized ownership proof is retained; `provisioned` only later when hostname is usable; evidence notes |
 
 ---
 

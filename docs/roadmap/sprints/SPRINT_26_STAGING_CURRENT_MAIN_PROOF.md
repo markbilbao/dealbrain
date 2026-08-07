@@ -103,6 +103,19 @@ Technical conclusion recorded in evidence package:
 
 That conclusion does **not** close Sprint 26.
 
+## Brand / domain bootstrap clarification
+
+Additive clarification only — does **not** close Sprint 26:
+
+- Public brand **PiqSavi** is locked ([`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md))
+- `piqsavi.com` is owner-reported acquired
+- Registrar proof remains pending
+- EXT-10 cannot advance until evidence is retained
+- EXT-11 DNS and EXT-12 TLS remain separate and incomplete
+- No application branding or domain cutover is required to close the technical staging-proof portion already completed
+
+**Sprint 26 remains OPEN.**
+
 ## Predecessor sprints
 
 25b.3, 25b.5*
