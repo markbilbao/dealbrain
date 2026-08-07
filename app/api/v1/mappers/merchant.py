@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from app.core.public_brand import present_consumer_text
 from app.domain.entities.merchant import (
     MerchantAnalyticsSummary,
     MerchantCampaign,
@@ -133,7 +134,11 @@ def to_offer_payload(offer: MerchantOfferSubmission) -> MerchantOfferPayload:
 
 
 def to_promotion_payload(promotion: MerchantPromotion) -> MerchantPromotionPayload:
-    return MerchantPromotionPayload(**promotion.to_dict())
+    data = promotion.to_dict()
+    note = data.get("note")
+    if isinstance(note, str):
+        data["note"] = present_consumer_text(note)
+    return MerchantPromotionPayload(**data)
 
 
 def to_campaign_payload(campaign: MerchantCampaign) -> MerchantCampaignPayload:
@@ -149,7 +154,15 @@ def to_analytics_response(summary: MerchantAnalyticsSummary) -> MerchantAnalytic
 def to_ranking_explanation_response(
     explanation: RankingExplanation,
 ) -> MerchantRankingExplanationResponse:
-    return MerchantRankingExplanationResponse(**explanation.to_dict())
+    data = explanation.to_dict()
+    factors = []
+    for factor in data.get("factors") or []:
+        detail = factor.get("detail")
+        if isinstance(detail, str):
+            factor = {**factor, "detail": present_consumer_text(detail)}
+        factors.append(factor)
+    data["factors"] = factors
+    return MerchantRankingExplanationResponse(**data)
 
 
 def parse_optional_datetime(value: str | None) -> datetime | None:

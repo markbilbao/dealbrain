@@ -84,7 +84,7 @@ class LaunchDashboardService:
         checklist = self._store.checklist_summary()
         cache_stats = self._cache.stats()
         return {
-            "title": "DealBrain Launch Dashboard",
+            "title": "PiqSavi Launch Dashboard",
             "environment": self._cfg.app_env,
             "uptime_seconds": round(uptime_seconds(), 3),
             "metrics": {
@@ -128,7 +128,7 @@ class LaunchDashboardService:
             "limitations": [
                 "Demo/in-memory metrics only — not a production warehouse.",
                 "No real cloud deployment, payments, email, SMS, or push.",
-                "Organic DealScore and recommendation ranking are unchanged.",
+                "Organic PiqScore and recommendation ranking are unchanged.",
                 "Affiliate generation remains post-rank only.",
                 "Merchant isolation is preserved; no cross-org leakage.",
             ],

@@ -304,7 +304,7 @@ class MerchantPromotionPayload(BaseModel):
 
 class MerchantPromotionListResponse(BaseModel):
     items: list[MerchantPromotionPayload]
-    disclaimer: str = "Promotions do not automatically increase DealScore."
+    disclaimer: str = "Promotions do not automatically increase PiqScore."
 
 
 class MerchantCampaignCreateRequest(BaseModel):

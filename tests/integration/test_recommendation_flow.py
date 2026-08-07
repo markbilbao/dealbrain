@@ -111,4 +111,4 @@ async def test_demo_page_includes_shopping_recommendation_section() -> None:
     html = response.text
     assert "Shopping Recommendation" in html
     assert "/api/v1/recommendations/search" in html
-    assert "DealScore Engine" in html
+    assert "PiqScore Engine" in html

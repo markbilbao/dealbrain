@@ -24,7 +24,7 @@ DEMO_PERSONAS: tuple[DemoPersonaProfile, ...] = (
     DemoPersonaProfile(
         persona="anonymous",
         label="Anonymous User",
-        description="Browse public search, DealScore, and recommendations without auth.",
+        description="Browse public search, PiqScore, and recommendations without auth.",
         auth_header=None,
         capabilities=("search", "dealscore", "recommendations", "price_history"),
         seeded_hints=("No Authorization header required for public endpoints.",),
@@ -64,7 +64,7 @@ DEMO_PERSONAS: tuple[DemoPersonaProfile, ...] = (
         ),
         seeded_hints=(
             "Organization: org-techhaven",
-            "Merchant tools never alter organic DealScore or ranking.",
+            "Merchant tools never alter organic PiqScore or ranking.",
         ),
     ),
     DemoPersonaProfile(

@@ -42,7 +42,7 @@ OPENAPI_TAGS = [
     {"name": "marketplace-data", "description": "Marketplace sources, sync, offers, history"},
     {
         "name": "dealscore",
-        "description": "DealScore ranking (organic — never merchant-biased; no caller sort)",
+        "description": "PiqScore ranking (organic — never merchant-biased; no caller sort)",
     },
     {
         "name": "recommendations",
@@ -235,7 +235,7 @@ def _custom_openapi(app: FastAPI) -> dict:
         title=settings.app_name,
         version=__version__,
         description=(
-            "DealBrain AI Commerce Intelligence Platform API.\n\n"
+            "PiqSavi — Your AI Personal Shopper API.\n\n"
             "## API Stability (Sprint 24)\n"
             "- **Versioning:** `/api/v1` only — **no `/api/v2`**\n"
             "- **Success bodies:** Direct resource objects (no global `{data, meta}` wrapper)\n"
@@ -245,7 +245,7 @@ def _custom_openapi(app: FastAPI) -> dict:
             "alias of `offset` on products and watchlists. If both are supplied they "
             "must be equal.\n"
             "- **Sorting:** Optional `sort=field,-other` on allowlisted presentation "
-            "endpoints only. **Forbidden** on DealScore, Recommendation, Marketplace "
+            "endpoints only. **Forbidden** on PiqScore, Recommendation, Marketplace "
             "search, and Shopping Assistant organic ranking.\n"
             "- **Errors:** Sprint 22 envelope (`error`, `message`, `status_code`, "
             "`detail`, optional `details` / `request_id`)\n"
@@ -258,7 +258,7 @@ def _custom_openapi(app: FastAPI) -> dict:
             "- Rate limiting protects auth, search, affiliate, and merchant routes\n"
             "- Security headers: CSP, HSTS (staging/production), frame options, "
             "referrer & permissions policies\n\n"
-            "**Hard rules:** Organic DealScore and recommendation ranking are never "
+            "**Hard rules:** Organic PiqScore and recommendation ranking are never "
             "manipulated by affiliate or merchant tools. Merchant isolation is enforced. "
             "Affiliate attachment is post-selection only."
         ),
@@ -266,7 +266,7 @@ def _custom_openapi(app: FastAPI) -> dict:
         tags=OPENAPI_TAGS,
     )
     schema["info"]["contact"] = {
-        "name": "DealBrain Platform",
+        "name": "PiqSavi Platform",
         "url": "https://github.com/markbilbao/dealbrain",
     }
     schema["info"]["x-dealbrain-api-version"] = "v1"
@@ -275,7 +275,7 @@ def _custom_openapi(app: FastAPI) -> dict:
         "No /api/v2 in Sprint 24",
         "No global success envelope",
         "Bare-list product/user collection responses remain arrays",
-        "Caller sort never influences DealScore / Recommendation / Shopping Assistant ranking",
+        "Caller sort never influences PiqScore / Recommendation / Shopping Assistant ranking",
         "Sprint 10 legacy /alerts paths deprecated but still available",
     ]
     components = schema.setdefault("components", {})
@@ -298,7 +298,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version=__version__,
-        description="DealBrain AI platform backend API",
+        description="PiqSavi API",
         debug=settings.app_debug,
         lifespan=lifespan,
         docs_url="/docs" if settings.docs_enabled else None,

@@ -237,7 +237,7 @@ class AlertService:
                             message=(
                                 f"New historical low detected: {currency} "
                                 f"{current_price:.2f} "
-                                "(lowest recorded in available DealBrain history)."
+                                "(lowest recorded in available PiqSavi history)."
                             ),
                             previous_value=item.last_historical_low,
                             current_value=current_price,
@@ -257,7 +257,7 @@ class AlertService:
                     item,
                     alert_type=AlertType.DEALSCORE_IMPROVED,
                     message=(
-                        f"DealScore improved from {item.last_known_dealscore:.1f} "
+                        f"PiqScore improved from {item.last_known_dealscore:.1f} "
                         f"to {current_dealscore:.1f}."
                     ),
                     previous_value=item.last_known_dealscore,

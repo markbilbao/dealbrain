@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.v1.mappers.dealscore import to_dealscore_search_response
 from app.core.dependencies import get_deal_recommendation_service, get_launch_performance_service
+from app.core.public_brand import present_consumer_text
 from app.domain.exceptions import DealScoreValidationError
 from app.schemas.dealscore import DealScoreSearchResponse
 from app.services.deal_recommendation_service import DealRecommendationService
@@ -19,9 +20,9 @@ router = APIRouter(prefix="/dealscore")
 @router.get(
     "/search",
     response_model=DealScoreSearchResponse,
-    summary="Search marketplaces and rank listings by DealScore",
+    summary="Search marketplaces and rank listings by PiqScore",
     description=(
-        "Kind S search aggregate. Organic DealScore ordering is service-owned. "
+        "Kind S search aggregate. Organic PiqScore ordering is service-owned. "
         "Caller-controlled ``sort`` is not supported and must not influence ranking. "
         "Not paginated."
     ),
@@ -31,7 +32,7 @@ def search_dealscore(
     service: DealRecommendationService = Depends(get_deal_recommendation_service),
     performance: LaunchPerformanceService = Depends(get_launch_performance_service),
 ) -> DealScoreSearchResponse:
-    """Evaluate mocked marketplace listings and return ranked DealScores."""
+    """Evaluate mocked marketplace listings and return ranked PiqScores."""
 
     def _compute() -> DealScoreSearchResponse:
         try:
@@ -39,7 +40,7 @@ def search_dealscore(
         except DealScoreValidationError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=exc.message,
+                detail=present_consumer_text(exc.message),
             ) from exc
         return to_dealscore_search_response(result)
 

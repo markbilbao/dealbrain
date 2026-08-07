@@ -2495,7 +2495,7 @@
                 "type": "null"
               }
             ],
-            "title": "Personal Deal Score"
+            "title": "Personalized PiqScore"
           },
           "product_id": {
             "title": "Product Id",
@@ -5393,7 +5393,7 @@
         "type": "object"
       },
       "DealScoreComponentsPayload": {
-        "description": "Named DealScore component scores.",
+        "description": "Named PiqScore component scores.",
         "properties": {
           "availability_score": {
             "title": "Availability Score",
@@ -5437,7 +5437,7 @@
         "type": "object"
       },
       "DealScoreListingPayload": {
-        "description": "Listing fields returned alongside a DealScore ranking row.",
+        "description": "Listing fields returned alongside a PiqScore ranking row.",
         "properties": {
           "availability": {
             "title": "Availability",
@@ -5552,7 +5552,7 @@
         "type": "object"
       },
       "DealScorePayload": {
-        "description": "Explainable DealScore for a single listing.",
+        "description": "Explainable PiqScore for a single listing.",
         "properties": {
           "applied_weights": {
             "additionalProperties": {
@@ -5588,7 +5588,7 @@
             "type": "string"
           },
           "score": {
-            "title": "Score",
+            "title": "PiqScore",
             "type": "number"
           },
           "total_cost": {
@@ -5616,10 +5616,11 @@
         "type": "object"
       },
       "DealScoreResultItem": {
-        "description": "One ranked listing with its DealScore.",
+        "description": "One ranked listing with its PiqScore.",
         "properties": {
           "deal_score": {
-            "$ref": "#/components/schemas/DealScorePayload"
+            "$ref": "#/components/schemas/DealScorePayload",
+            "title": "PiqScore"
           },
           "listing": {
             "$ref": "#/components/schemas/DealScoreListingPayload"
@@ -5638,7 +5639,7 @@
         "type": "object"
       },
       "DealScoreSearchResponse": {
-        "description": "Ranked DealScore search response.",
+        "description": "Ranked PiqScore search response.",
         "properties": {
           "currency": {
             "title": "Currency",
@@ -5853,7 +5854,7 @@
             }
           ],
           "environment": "development",
-          "service": "DealBrain",
+          "service": "PiqSavi",
           "status": "up",
           "uptime_seconds": 42.0,
           "version": "1.0.0"
@@ -7106,7 +7107,7 @@
       "LiveResponse": {
         "example": {
           "live": true,
-          "service": "DealBrain",
+          "service": "PiqSavi",
           "status": "up",
           "uptime_seconds": 12.5,
           "version": "1.0.0"
@@ -10114,7 +10115,7 @@
       "MerchantPromotionListResponse": {
         "properties": {
           "disclaimer": {
-            "default": "Promotions do not automatically increase DealScore.",
+            "default": "Promotions do not automatically increase PiqScore.",
             "title": "Disclaimer",
             "type": "string"
           },
@@ -10983,7 +10984,7 @@
             "type": "string"
           },
           "disclaimer": {
-            "default": "Personalized deals use fixture customer profiles and DealBrain mock/imported catalog evidence. No login, purchase history, or payment data is used.",
+            "default": "Personalized deals use fixture customer profiles and PiqSavi mock/imported catalog evidence. No login, purchase history, or payment data is used.",
             "title": "Disclaimer",
             "type": "string"
           },
@@ -11159,7 +11160,7 @@
                 "type": "null"
               }
             ],
-            "title": "Global Deal Score"
+            "title": "Global PiqScore"
           },
           "known_price": {
             "anyOf": [
@@ -11184,7 +11185,7 @@
             "title": "Marketplace"
           },
           "personal_deal_score": {
-            "title": "Personal Deal Score",
+            "title": "Personalized PiqScore",
             "type": "number"
           },
           "preference_dimensions": {
@@ -11649,7 +11650,7 @@
             "type": "string"
           },
           "disclaimer": {
-            "default": "Lowest recorded price in the available DealBrain history. Statistics use only stored observations.",
+            "default": "Lowest recorded price in the available PiqSavi history. Statistics use only stored observations.",
             "title": "Disclaimer",
             "type": "string"
           },
@@ -11725,7 +11726,7 @@
             "title": "Development Note"
           },
           "disclaimer": {
-            "default": "Lowest recorded price in the available DealBrain history. Statistics use only stored observations.",
+            "default": "Lowest recorded price in the available PiqSavi history. Statistics use only stored observations.",
             "title": "Disclaimer",
             "type": "string"
           },
@@ -11949,7 +11950,7 @@
         "type": "object"
       },
       "PriceStatisticsPayload": {
-        "description": "Aggregate statistics from available DealBrain history.",
+        "description": "Aggregate statistics from available PiqSavi history.",
         "properties": {
           "absolute_change": {
             "title": "Absolute Change",
@@ -12863,7 +12864,7 @@
           "database": "up",
           "persistence_level": "READY",
           "ready": true,
-          "service": "DealBrain",
+          "service": "PiqSavi",
           "status": "up",
           "uptime_seconds": 12.5,
           "version": "1.0.0"
@@ -14248,7 +14249,7 @@
             "type": "array"
           },
           "disclaimer": {
-            "default": "Shopping assistant answers are evidence-grounded over DealBrain mock/imported data by default. External AI providers are disabled unless enabled server-side. The assistant cannot guarantee prices, authenticity, or future price changes. Personalization uses fixture profiles only when a profile_id is provided.",
+            "default": "Shopping assistant answers are evidence-grounded over PiqSavi mock/imported data by default. External AI providers are disabled unless enabled server-side. The assistant cannot guarantee prices, authenticity, or future price changes. Personalization uses fixture profiles only when a profile_id is provided.",
             "title": "Disclaimer",
             "type": "string"
           },
@@ -15921,7 +15922,7 @@
                 "type": "null"
               }
             ],
-            "title": "Deal Score"
+            "title": "PiqScore"
           },
           "evidence_ids": {
             "items": {
@@ -16000,18 +16001,18 @@
   },
   "info": {
     "contact": {
-      "name": "DealBrain Platform",
+      "name": "PiqSavi Platform",
       "url": "https://github.com/markbilbao/dealbrain"
     },
-    "description": "DealBrain AI Commerce Intelligence Platform API.\n\n## API Stability (Sprint 24)\n- **Versioning:** `/api/v1` only — **no `/api/v2`**\n- **Success bodies:** Direct resource objects (no global `{data, meta}` wrapper)\n- **Collections:** Named keys remain primary; optional additive `items` + `pagination` where dual-run is safe. Bare lists stay bare lists.\n- **Pagination:** Prefer `limit` + `offset`. Deprecated `skip` remains an alias of `offset` on products and watchlists. If both are supplied they must be equal.\n- **Sorting:** Optional `sort=field,-other` on allowlisted presentation endpoints only. **Forbidden** on DealScore, Recommendation, Marketplace search, and Shopping Assistant organic ranking.\n- **Errors:** Sprint 22 envelope (`error`, `message`, `status_code`, `detail`, optional `details` / `request_id`)\n- **Compatibility:** No mandatory client / frontend changes\n- Contract: `docs/architecture/SPRINT_24_API_STABILITY.md` · `docs/API_STANDARDS.md`\n\n## Launch readiness (Sprint 22)\n- Probes: `GET /health`, `GET /ready`, `GET /live` (also under `/api/v1/`)\n- Rate limiting protects auth, search, affiliate, and merchant routes\n- Security headers: CSP, HSTS (staging/production), frame options, referrer & permissions policies\n\n**Hard rules:** Organic DealScore and recommendation ranking are never manipulated by affiliate or merchant tools. Merchant isolation is enforced. Affiliate attachment is post-selection only.",
-    "title": "DealBrain",
+    "description": "PiqSavi — Your AI Personal Shopper API.\n\n## API Stability (Sprint 24)\n- **Versioning:** `/api/v1` only — **no `/api/v2`**\n- **Success bodies:** Direct resource objects (no global `{data, meta}` wrapper)\n- **Collections:** Named keys remain primary; optional additive `items` + `pagination` where dual-run is safe. Bare lists stay bare lists.\n- **Pagination:** Prefer `limit` + `offset`. Deprecated `skip` remains an alias of `offset` on products and watchlists. If both are supplied they must be equal.\n- **Sorting:** Optional `sort=field,-other` on allowlisted presentation endpoints only. **Forbidden** on PiqScore, Recommendation, Marketplace search, and Shopping Assistant organic ranking.\n- **Errors:** Sprint 22 envelope (`error`, `message`, `status_code`, `detail`, optional `details` / `request_id`)\n- **Compatibility:** No mandatory client / frontend changes\n- Contract: `docs/architecture/SPRINT_24_API_STABILITY.md` · `docs/API_STANDARDS.md`\n\n## Launch readiness (Sprint 22)\n- Probes: `GET /health`, `GET /ready`, `GET /live` (also under `/api/v1/`)\n- Rate limiting protects auth, search, affiliate, and merchant routes\n- Security headers: CSP, HSTS (staging/production), frame options, referrer & permissions policies\n\n**Hard rules:** Organic PiqScore and recommendation ranking are never manipulated by affiliate or merchant tools. Merchant isolation is enforced. Affiliate attachment is post-selection only.",
+    "title": "PiqSavi",
     "version": "1.0.0",
     "x-dealbrain-api-version": "v1",
     "x-dealbrain-limitations": [
       "No /api/v2 in Sprint 24",
       "No global success envelope",
       "Bare-list product/user collection responses remain arrays",
-      "Caller sort never influences DealScore / Recommendation / Shopping Assistant ranking",
+      "Caller sort never influences PiqScore / Recommendation / Shopping Assistant ranking",
       "Sprint 10 legacy /alerts paths deprecated but still available"
     ],
     "x-dealbrain-no-api-v2": true
@@ -20097,7 +20098,7 @@
     },
     "/api/v1/dealscore/search": {
       "get": {
-        "description": "Kind S search aggregate. Organic DealScore ordering is service-owned. Caller-controlled ``sort`` is not supported and must not influence ranking. Not paginated.",
+        "description": "Kind S search aggregate. Organic PiqScore ordering is service-owned. Caller-controlled ``sort`` is not supported and must not influence ranking. Not paginated.",
         "operationId": "search_dealscore_api_v1_dealscore_search_get",
         "parameters": [
           {
@@ -20135,7 +20136,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Search marketplaces and rank listings by DealScore",
+        "summary": "Search marketplaces and rank listings by PiqScore",
         "tags": [
           "dealscore"
         ]
@@ -20755,7 +20756,7 @@
                   "cache": "up",
                   "database": "up",
                   "environment": "development",
-                  "service": "DealBrain",
+                  "service": "PiqSavi",
                   "status": "up",
                   "uptime_seconds": 12.5,
                   "version": "1.0.0"
@@ -29024,7 +29025,7 @@
       "name": "marketplace-data"
     },
     {
-      "description": "DealScore ranking (organic — never merchant-biased; no caller sort)",
+      "description": "PiqScore ranking (organic — never merchant-biased; no caller sort)",
       "name": "dealscore"
     },
     {

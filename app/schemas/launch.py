@@ -18,7 +18,7 @@ class LiveResponse(BaseModel):
         "json_schema_extra": {
             "example": {
                 "status": "up",
-                "service": "DealBrain",
+                "service": "PiqSavi",
                 "version": "1.0.0",
                 "uptime_seconds": 12.5,
                 "live": True,
@@ -43,7 +43,7 @@ class ReadyResponse(BaseModel):
             "example": {
                 "status": "up",
                 "ready": True,
-                "service": "DealBrain",
+                "service": "PiqSavi",
                 "version": "1.0.0",
                 "database": "up",
                 "cache": "up",
@@ -80,7 +80,7 @@ class EnhancedHealthResponse(BaseModel):
         "json_schema_extra": {
             "example": {
                 "status": "up",
-                "service": "DealBrain",
+                "service": "PiqSavi",
                 "environment": "development",
                 "database": "up",
                 "cache": "up",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.core.public_brand import present_consumer_text
 from app.domain.entities.affiliate import (
     AffiliateClick,
     AffiliateDisclosure,
@@ -143,7 +144,9 @@ def to_report_payload(report: AffiliateRevenueReport) -> AffiliateReportResponse
         top_converting_merchants=[to_bucket_payload(b) for b in report.top_converting_merchants],
         top_converting_products=[to_bucket_payload(b) for b in report.top_converting_products],
         currency=report.currency,
-        disclaimer=report.disclaimer,
+        disclaimer=present_consumer_text(report.disclaimer)
+        if report.disclaimer
+        else report.disclaimer,
         simulated=report.simulated,
     )
 
@@ -152,7 +155,7 @@ def to_disclosure_payload(disclosure: AffiliateDisclosure) -> AffiliateDisclosur
     return AffiliateDisclosurePayload(
         disclosure_id=disclosure.disclosure_id,
         disclosure_type=disclosure.disclosure_type,
-        text=disclosure.text,
+        text=present_consumer_text(disclosure.text),
         region=disclosure.region,
         merchant_id=disclosure.merchant_id,
         locale=disclosure.locale,
@@ -164,11 +167,13 @@ def to_disclosure_payload(disclosure: AffiliateDisclosure) -> AffiliateDisclosur
 
 
 def to_resolve_payload(resolved: dict[str, Any]) -> dict[str, Any]:
+    combined = resolved["combined_text"]
+    disclaimer = resolved.get("disclaimer")
     return {
         "disclosures": [to_disclosure_payload(d) for d in resolved["disclosures"]],
-        "combined_text": resolved["combined_text"],
+        "combined_text": present_consumer_text(combined) if combined else combined,
         "region": resolved.get("region"),
         "merchant_id": resolved.get("merchant_id"),
         "ftc_placeholder": resolved.get("ftc_placeholder", True),
-        "disclaimer": resolved.get("disclaimer"),
+        "disclaimer": present_consumer_text(disclaimer) if disclaimer else disclaimer,
     }

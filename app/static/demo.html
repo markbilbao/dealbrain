@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DealBrain — Product Intelligence Demo</title>
+  <title>PiqSavi — Your AI Personal Shopper</title>
   <style>
     :root {
       --navy: #0F172A;
@@ -45,7 +45,14 @@
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--emerald);
-      margin: 0 0 0.75rem;
+      margin: 0;
+    }
+
+    .tagline {
+      margin: 0.25rem 0 0.75rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
     }
 
     h1 {
@@ -439,11 +446,12 @@
 </head>
 <body>
   <main class="wrap">
-    <p class="brand">DealBrain</p>
+    <p class="brand">PiqSavi</p>
+    <p class="tagline">Your AI Personal Shopper</p>
     <h1>Product Intelligence Demo</h1>
     <p class="lede">
       Parse messy Apple listings into canonical products, compare exact variants,
-      search mocked marketplace listings, rank deals with DealScore, get
+      search mocked marketplace listings, rank deals with PiqScore, get
       explainable buying advice, and inspect recorded price history — no LLMs.
     </p>
 
@@ -519,8 +527,8 @@
       <section id="marketplace-results" class="results" aria-live="polite"></section>
     </section>
 
-    <section class="panel" aria-label="DealScore search">
-      <h2 class="panel-heading">DealScore Engine</h2>
+    <section class="panel" aria-label="PiqScore search">
+      <h2 class="panel-heading">PiqScore Engine</h2>
       <label for="dealscore_q">Search and rank deals</label>
       <div class="row">
         <input
@@ -533,7 +541,7 @@
         <button id="dealscore_search" type="button">Rank deals</button>
       </div>
       <p class="hint">
-        Deterministic DealScore · Try: AirPods · MacBook · Samsung Galaxy
+        Deterministic PiqScore · Try: AirPods · MacBook · Samsung Galaxy
       </p>
       <div id="dealscore-status" class="status" aria-live="polite"></div>
       <section id="dealscore-results" class="results" aria-live="polite"></section>
@@ -553,7 +561,7 @@
         <button id="recommendation_search" type="button">Get recommendation</button>
       </div>
       <p class="hint">
-        Rule-based advice from DealScore · Buy / Consider / Wait / Avoid · no LLM
+        Rule-based advice from PiqScore · Buy / Consider / Wait / Avoid · no LLM
       </p>
       <div id="recommendation-status" class="status" aria-live="polite"></div>
       <section id="recommendation-results" class="results" aria-live="polite"></section>
@@ -773,7 +781,7 @@
       <div class="row" style="margin-top: 0.5rem;">
         <button id="ar_scenario_stale_data" type="button" style="background:#0F172A;">Stale data</button>
         <button id="ar_scenario_freshness_restored" type="button" style="background:#0F172A;">Freshness restored</button>
-        <button id="ar_scenario_dealscore" type="button" style="background:#0F172A;">DealScore improvement</button>
+        <button id="ar_scenario_dealscore" type="button" style="background:#0F172A;">PiqScore improvement</button>
       </div>
       <div id="ar-scenario-status" class="status" aria-live="polite"></div>
       <div id="ar-scenario-result" class="results" aria-live="polite"></div>
@@ -1163,7 +1171,7 @@
     <section class="panel" aria-label="Personal shopping agent">
       <h2 class="panel-heading">Personal AI Shopping Agent</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
-        Fixture customer profiles · PersonalDealScore · Buying Advisor · no login / payment / cloud sync.
+        Fixture customer profiles · Personalized PiqScore · Buying Advisor · no login / payment / cloud sync.
       </p>
       <label for="pa_profile" style="display:block;margin-top:0.75rem;">
         Demo profile
@@ -1191,7 +1199,7 @@
       <h2 class="panel-heading">Affiliate Revenue Engine</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
         Sprint 20 · placeholder merchants only · affiliate links applied <strong>after</strong> recommendation
-        selection · DealScore never sees commission · no real APIs, commissions, conversions, billing, or payouts.
+        selection · PiqScore never sees commission · no real APIs, commissions, conversions, billing, or payouts.
       </p>
       <div class="row" style="margin-top: 0.75rem;">
         <button id="aff_refresh" type="button">Load affiliate dashboard</button>
@@ -1220,7 +1228,7 @@
       <h2 class="panel-heading">Merchant Platform</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
         Sprint 21 · demo merchants only · merchant-submitted data is <strong>not</strong> live verified ·
-        sponsored campaigns are drafts (no billing) · merchants cannot alter organic DealScore or ranking ·
+        sponsored campaigns are drafts (no billing) · merchants cannot alter organic PiqScore or ranking ·
         analytics are demo/simulated.
       </p>
       <div class="row" style="margin-top: 0.75rem;">
@@ -1265,7 +1273,7 @@
         <div id="mp-analytics"></div>
         <h3 class="section-title">Affiliate performance (read-only)</h3>
         <div id="mp-affiliate"></div>
-        <h3 class="section-title">DealScore / ranking explanation</h3>
+        <h3 class="section-title">PiqScore / ranking explanation</h3>
         <div id="mp-ranking"></div>
         <h3 class="section-title">Product matching confidence</h3>
         <div id="mp-matching"></div>
@@ -1370,7 +1378,7 @@
     <section class="panel" aria-label="Shopping assistant">
       <h2 class="panel-heading">AI Shopping Assistant</h2>
       <p class="hint" style="margin-top:0;color: var(--emerald-dark); font-weight: 650;">
-        Evidence-first shopping Q&amp;A · Community + Knowledge Graph + Personal Agent · mock/imported DealBrain data · external AI disabled by default.
+        Evidence-first shopping Q&amp;A · Community + Knowledge Graph + Personal Agent · mock/imported PiqSavi data · external AI disabled by default.
       </p>
       <label for="sa_query" style="display:block;margin-top:0.75rem;">
         Shopping question
@@ -1690,7 +1698,7 @@
         clearEl(statusEl);
         renderParseResults(payload);
       } catch (err) {
-        showEl(statusEl, '<div class="error">Network error. Is the DealBrain API running?</div>');
+        showEl(statusEl, '<div class="error">Network error. Is the PiqSavi API running?</div>');
       } finally {
         analyzeBtn.disabled = false;
       }
@@ -1723,7 +1731,7 @@
         clearEl(matchStatusEl);
         renderMatchResults(payload);
       } catch (err) {
-        showEl(matchStatusEl, '<div class="error">Network error. Is the DealBrain API running?</div>');
+        showEl(matchStatusEl, '<div class="error">Network error. Is the PiqSavi API running?</div>');
       } finally {
         compareBtn.disabled = false;
       }
@@ -1768,7 +1776,7 @@
       } catch (err) {
         showEl(
           marketplaceStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         marketplaceSearchBtn.disabled = false;
@@ -1826,7 +1834,7 @@
             </div>
             <div class="meta">
               <div class="stat">
-                <div class="label">DealScore</div>
+                <div class="label">PiqScore</div>
                 <div class="value emerald">${escapeHtml(String(deal.score ?? "—"))}</div>
               </div>
               <div class="stat">
@@ -1918,7 +1926,7 @@
       } catch (err) {
         showEl(
           dealscoreStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         dealscoreSearchBtn.disabled = false;
@@ -2064,13 +2072,13 @@
             ? `<ul class="alt-list">${alternatives}</ul>`
             : '<p class="empty-state">No alternatives in this result set.</p>'
         }
-        <h3 class="section-title">DealScore and total-cost comparison</h3>
+        <h3 class="section-title">PiqScore and total-cost comparison</h3>
         <table class="comparison-table">
           <thead>
             <tr>
               <th>Rank</th>
               <th>Listing</th>
-              <th>DealScore</th>
+              <th>PiqScore</th>
               <th>Total cost</th>
               <th>Marketplace</th>
             </tr>
@@ -2114,7 +2122,7 @@
       } catch (err) {
         showEl(
           recommendationStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         recommendationSearchBtn.disabled = false;
@@ -2189,7 +2197,7 @@
         <p class="hint" style="margin-top:0;color:var(--emerald-dark);font-weight:650;">
           Development history uses mocked observations.
         </p>
-        <p class="hint">${escapeHtml(data.disclaimer || "Lowest recorded price in the available DealBrain history.")}</p>
+        <p class="hint">${escapeHtml(data.disclaimer || "Lowest recorded price in the available PiqSavi history.")}</p>
         <div class="meta">
           <div class="stat">
             <div class="label">Current recorded price</div>
@@ -2298,7 +2306,7 @@
       } catch (err) {
         showEl(
           priceHistoryStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         priceHistorySearchBtn.disabled = false;
@@ -2501,7 +2509,7 @@
       } catch (err) {
         showEl(
           collectionStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         collectionRunBtn.disabled = false;
@@ -2537,7 +2545,7 @@
       } catch (err) {
         showEl(
           collectionStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         collectionRunDueBtn.disabled = false;
@@ -2568,7 +2576,7 @@
       } catch (err) {
         showEl(
           collectionStatusEl,
-          '<div class="error">Network error. Is the DealBrain API running?</div>'
+          '<div class="error">Network error. Is the PiqSavi API running?</div>'
         );
       } finally {
         collectionRefreshRunsBtn.disabled = false;
@@ -2883,7 +2891,7 @@
         <td>${item.observation_count || 0}</td>
       </tr>`).join("");
       return `<table>
-        <thead><tr><th>Product</th><th>Current</th><th>Hist. low</th><th>DealScore</th><th>Obs.</th></tr></thead>
+        <thead><tr><th>Product</th><th>Current</th><th>Hist. low</th><th>PiqScore</th><th>Obs.</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
     }
@@ -3567,8 +3575,8 @@
       // delta needed — item.last_known_dealscore is used as-is when no
       // search_query is set, so this is fully controllable and genuine.
       const productId = "00000000-0000-4000-8000-0000000000a6";
-      const { itemId } = await arEnsurePriceItem(productId, "DealScore improvement demo item", 50000, 88);
-      const ruleId = await arEnsureRule("Demo: DealScore improvement", itemId, {
+      const { itemId } = await arEnsurePriceItem(productId, "PiqScore improvement demo item", 50000, 88);
+      const ruleId = await arEnsureRule("Demo: PiqScore improvement", itemId, {
         condition_type: "dealscore_threshold",
         threshold_value: 75,
         comparison: "gte",
@@ -3576,7 +3584,7 @@
       const result = await arEvaluate({ rule_id: ruleId });
       if (!result) return;
       arRenderScenario(
-        "DealScore improvement",
+        "PiqScore improvement",
         "REAL: dealscore_threshold triggers on item.last_known_dealscore (88) vs. threshold (75, gte) — a genuine engine result.",
         result
       );
@@ -4421,7 +4429,7 @@
       paDealsListEl.innerHTML = `<ul style="margin:0;padding-left:1.2rem;">${recs.map((item) =>
         `<li style="margin-bottom:0.55rem;">
           <strong>${escapeHtml(item.product_name)}</strong>
-          · PersonalDealScore ${Number(item.personal_deal_score).toFixed(1)}
+          · Personalized PiqScore ${Number(item.personal_deal_score).toFixed(1)}
           · pref ${Number(item.preference_score).toFixed(2)}
           · ${item.known_price != null ? Number(item.known_price).toLocaleString() + " " + escapeHtml(item.currency || "") : "—"}
           <div class="hint" style="margin-top:0.25rem;">${escapeHtml(item.reason || "")}</div>
@@ -4433,7 +4441,7 @@
       } else {
         paAdviceEl.innerHTML = [
           rvStat("Verdict", escapeHtml(advice.label), true),
-          rvStat("PersonalDealScore", advice.personal_deal_score != null ? Number(advice.personal_deal_score).toFixed(1) : "—", true),
+          rvStat("Personalized PiqScore", advice.personal_deal_score != null ? Number(advice.personal_deal_score).toFixed(1) : "—", true),
           `<p style="margin:0.5rem 0 0;line-height:1.5;"><strong>${escapeHtml(advice.summary || "")}</strong></p>`,
           `<p style="margin:0.35rem 0 0;line-height:1.5;">${escapeHtml(advice.explanation || "")}</p>`,
         ].join("");
@@ -4764,7 +4772,7 @@
         saPersonalEl.innerHTML = [
           rvStat("Profile", escapeHtml(personal.profile_name || personal.profile_id || "—"), true),
           rvStat("Product", escapeHtml(rec.product_name || "—"), true),
-          rvStat("PersonalDealScore", rec.personal_deal_score != null ? Number(rec.personal_deal_score).toFixed(1) : "—", true),
+          rvStat("Personalized PiqScore", rec.personal_deal_score != null ? Number(rec.personal_deal_score).toFixed(1) : "—", true),
           rvStat("Advisor", escapeHtml((advice && advice.label) || "—")),
           `<p style="margin:0.75rem 0 0;line-height:1.5;">${escapeHtml(rec.explanation || rec.reason || "")}</p>`,
         ].join("");
@@ -4776,7 +4784,7 @@
           rvStat("Product", escapeHtml(top.product_name), true),
           rvStat("Price", top.known_price != null ? `${Number(top.known_price).toLocaleString()} ${escapeHtml(top.currency || "")}` : "—"),
           rvStat("Marketplace", escapeHtml(top.marketplace || "—")),
-          rvStat("DealScore", top.deal_score != null ? Number(top.deal_score).toFixed(1) : "—", true),
+          rvStat("PiqScore", top.deal_score != null ? Number(top.deal_score).toFixed(1) : "—", true),
           `<p style="margin:0.75rem 0 0;line-height:1.5;">${escapeHtml(top.reason || "")}</p>`,
         ].join("");
       } else {
@@ -4785,7 +4793,7 @@
       const alts = body.alternatives || [];
       saAltsEl.innerHTML = alts.length
         ? `<ul style="margin:0;padding-left:1.2rem;">${alts.map((item) =>
-          `<li><strong>${escapeHtml(item.product_name)}</strong> · DealScore ${item.deal_score != null ? Number(item.deal_score).toFixed(1) : "—"} · ${item.known_price != null ? Number(item.known_price).toLocaleString() + " " + escapeHtml(item.currency || "") : "—"}</li>`
+          `<li><strong>${escapeHtml(item.product_name)}</strong> · PiqScore ${item.deal_score != null ? Number(item.deal_score).toFixed(1) : "—"} · ${item.known_price != null ? Number(item.known_price).toLocaleString() + " " + escapeHtml(item.currency || "") : "—"}</li>`
         ).join("")}</ul>`
         : '<p class="empty-state">No alternatives.</p>';
       const comparison = body.comparison;
@@ -5625,7 +5633,7 @@
         }))));
         mpSet("mp-offers", mpJsonTable(offers.items || []));
         mpSet("mp-promotions", mpJsonTable((promotions.items || []).map(p => ({
-          ...p, note: p.note || "Promotions do not automatically increase DealScore."
+          ...p, note: p.note || "Promotions do not automatically increase PiqScore."
         }))));
         mpSet("mp-campaigns", mpJsonTable((campaigns.items || []).map(c => ({
           campaign_id: c.campaign_id, name: c.name, status: c.status,

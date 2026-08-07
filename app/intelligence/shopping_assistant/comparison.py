@@ -70,7 +70,7 @@ class ProductComparisonService:
                     "deal_score",
                     better,
                     other,
-                    f"Higher DealScore ({better.deal_score:.1f} vs {other.deal_score:.1f})",
+                    f"Higher PiqScore ({better.deal_score:.1f} vs {other.deal_score:.1f})",
                     "deal_score",
                 )
             )
@@ -172,7 +172,7 @@ class ProductComparisonService:
 
         uncertainty: list[str] = [
             (
-                "Comparison uses mock/imported DealBrain data only — "
+                "Comparison uses mock/imported PiqSavi data only — "
                 "not complete live marketplace coverage."
             ),
         ]
@@ -180,7 +180,7 @@ class ProductComparisonService:
             uncertainty.append("Currencies differ; price difference is not directly comparable.")
         if not priorities:
             uncertainty.append(
-                "No explicit priorities were provided; overall pick leans on DealScore and ratings."
+                "No explicit priorities were provided; overall pick leans on PiqScore and ratings."
             )
 
         return ProductComparison(
@@ -201,7 +201,7 @@ class ProductComparisonService:
             recommended_use_case=recommended_use,
             overall_recommendation=(
                 f"{overall.product_name} is the better supported pick based on available "
-                f"DealScore, ratings, and requested priorities."
+                f"PiqScore, ratings, and requested priorities."
             ),
             unresolved_uncertainty=tuple(uncertainty),
             evidence_ids=tuple(evidence_ids),

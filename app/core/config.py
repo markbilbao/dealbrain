@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     )
 
     # Application
-    app_name: str = Field(default="DealBrain", alias="APP_NAME")
+    app_name: str = Field(default="PiqSavi", alias="APP_NAME")
     app_env: Literal["development", "staging", "production"] = Field(
         default="development",
         alias="APP_ENV",

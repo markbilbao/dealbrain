@@ -23,7 +23,7 @@ class HealthResponse(BaseModel):
 
     model_config = {"json_schema_extra": {"example": {
         "status": "up",
-        "service": "DealBrain",
+        "service": "PiqSavi",
         "environment": "development",
         "database": "up",
     }}}

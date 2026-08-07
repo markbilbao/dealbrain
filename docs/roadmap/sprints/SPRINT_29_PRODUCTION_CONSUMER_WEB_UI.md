@@ -14,7 +14,7 @@ Deliver a production consumer web application covering the core shopping and acc
 ### Full shopping and account journey UI
 
 - Registration, login, recovery, and email-verification state presentation
-- Search → normalized results → DealScore → recommendation → AI explanation with deterministic fallback → merchant redirect
+- Search → normalized results → PiqScore → recommendation → AI explanation with deterministic fallback → merchant redirect
 - Affiliate disclosure rendering
 - Loading, empty, error, timeout, partial-result, stale-result, and unsupported-market states
 - Account settings:
@@ -95,7 +95,7 @@ Deliver a production consumer web application covering the core shopping and acc
 
 ## Acceptance criteria
 
-- Staging e2e journey green for registration/login/recovery/verification-state, search→DealScore→recommendation→explanation→redirect, account settings, deletion/export entry points, and feedback/support entry points
+- Staging e2e journey green for registration/login/recovery/verification-state, search→PiqScore→recommendation→explanation→redirect, account settings, deletion/export entry points, and feedback/support entry points
 - A11y baseline checklist signed; browser matrix recorded; CI validates production frontend build
 - Unsupported-market and stale-data states do not present fixtures as live
 - Market-selection UI shell present; domain/policy integration explicitly deferred to Sprint 37
@@ -115,7 +115,10 @@ Authority: [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.
 - Staging pages are non-indexable
 - Public brand boundary test passes
 - Internal DealBrain identifiers remain operational
-- DealScore remains DealScore
+- Consumer UI uses PiqScore for the score feature
+- Internal DealScore technical contracts remain unchanged (`deal_score` fields, `/dealscore` paths, protected DealScore engine)
+- No public leakage of DealScore as the consumer feature name except where deliberately exposed as an API/schema machine identifier
+- Personalized PiqScore is the preferred display for PersonalDealScore where user-visible
 - No blanket internal rename occurs
 
 Do not implement these items in documentation-only brand-lock tasks.

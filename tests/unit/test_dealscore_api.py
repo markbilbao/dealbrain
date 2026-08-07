@@ -194,7 +194,7 @@ async def test_demo_page_includes_dealscore_section(client: AsyncClient) -> None
     response = await client.get("/demo")
     assert response.status_code == 200
     body = response.text
-    assert "DealScore Engine" in body
+    assert "PiqScore Engine" in body
     assert "/api/v1/dealscore/search" in body
     assert "Product Parsing" in body
     assert "Product Matching" in body

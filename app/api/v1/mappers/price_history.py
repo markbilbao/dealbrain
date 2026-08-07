@@ -18,7 +18,7 @@ from app.schemas.price_history import (
 )
 
 _DISCLAIMER = (
-    "Lowest recorded price in the available DealBrain history. "
+    "Lowest recorded price in the available PiqSavi history. "
     "Statistics use only stored observations."
 )
 _MOCK_NOTE = "Development history uses mocked observations."

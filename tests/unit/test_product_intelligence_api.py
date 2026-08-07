@@ -125,7 +125,9 @@ async def test_demo_page_served(intelligence_client: AsyncClient) -> None:
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
     body = response.text
-    assert "DealBrain" in body
+    assert "PiqSavi" in body
+    assert "Your AI Personal Shopper" in body
+    assert "DealBrain" not in body
     assert "Product Intelligence Demo" in body
     assert "Product Matching" in body
     assert "Marketplace Intelligence" in body

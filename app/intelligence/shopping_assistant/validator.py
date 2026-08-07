@@ -111,7 +111,7 @@ class ShoppingResponseValidator:
             warnings.append(
                 AssistantWarning(
                     message=(
-                        "Results use mock or demo DealBrain data — not live marketplace access."
+                        "Results use mock or demo PiqSavi data — not live marketplace access."
                     ),
                     code="mock_data",
                 )

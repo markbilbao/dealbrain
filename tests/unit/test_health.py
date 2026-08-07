@@ -11,7 +11,7 @@ async def test_health_returns_up_when_database_is_available(client: AsyncClient)
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "up"
-    assert data["service"] == "DealBrain"
+    assert data["service"] == "PiqSavi"
     assert data["database"] == "up"
 
 

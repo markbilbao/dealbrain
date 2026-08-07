@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.core.public_brand import present_consumer_text
 from app.domain.entities.notifications import Notification, UserNotificationPreferences
 from app.schemas.notifications import NotificationPayload, NotificationPreferencesPayload
 
@@ -10,8 +11,8 @@ def to_notification_payload(notification: Notification) -> NotificationPayload:
     return NotificationPayload(
         notification_id=notification.notification_id,
         user_id=notification.user_id,
-        title=notification.title,
-        body=notification.body,
+        title=present_consumer_text(notification.title),
+        body=present_consumer_text(notification.body),
         type=notification.type.value,
         severity=notification.severity.value,
         watchlist_id=notification.watchlist_id,

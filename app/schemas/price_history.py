@@ -43,7 +43,7 @@ class PriceSnapshotPayload(BaseModel):
 
 
 class PriceStatisticsPayload(BaseModel):
-    """Aggregate statistics from available DealBrain history."""
+    """Aggregate statistics from available PiqSavi history."""
 
     current_total_cost: float
     lowest_recorded_total_cost: float
@@ -86,7 +86,7 @@ class PriceHistoryResponse(BaseModel):
     history: list[PriceSnapshotPayload] = Field(default_factory=list)
     marketplace_summaries: list[MarketplacePriceSummaryPayload] = Field(default_factory=list)
     disclaimer: str = (
-        "Lowest recorded price in the available DealBrain history. "
+        "Lowest recorded price in the available PiqSavi history. "
         "Statistics use only stored observations."
     )
 
@@ -101,7 +101,7 @@ class PriceHistorySearchResponse(BaseModel):
     marketplace_summaries: list[MarketplacePriceSummaryPayload] = Field(default_factory=list)
     canonical_product_id: str | None = None
     disclaimer: str = (
-        "Lowest recorded price in the available DealBrain history. "
+        "Lowest recorded price in the available PiqSavi history. "
         "Statistics use only stored observations."
     )
     development_note: str | None = None

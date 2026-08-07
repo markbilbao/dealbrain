@@ -142,7 +142,7 @@ async def test_get_product_history(
     assert response.status_code == 200
     data = response.json()
     assert data["statistics"]["trend"] == "falling"
-    assert "available DealBrain history" in data["disclaimer"]
+    assert "available PiqSavi history" in data["disclaimer"]
     assert data["marketplace_summaries"][0]["marketplace"] == "shopee"
 
 
@@ -214,7 +214,7 @@ async def test_live_price_history_search(client: AsyncClient) -> None:
     assert data["statistics"]["observation_count"] >= 3
     assert data["history"]
     assert data["marketplace_summaries"]
-    assert "Lowest recorded price in the available DealBrain history" in data["disclaimer"]
+    assert "Lowest recorded price in the available PiqSavi history" in data["disclaimer"]
 
 
 @pytest.mark.asyncio

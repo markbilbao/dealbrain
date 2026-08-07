@@ -36,7 +36,7 @@ async def _probe_database(db: AsyncSession) -> tuple[ServiceStatus, float | None
                 "application/json": {
                     "example": {
                         "status": "up",
-                        "service": "DealBrain",
+                        "service": "PiqSavi",
                         "environment": "development",
                         "database": "up",
                         "cache": "up",
