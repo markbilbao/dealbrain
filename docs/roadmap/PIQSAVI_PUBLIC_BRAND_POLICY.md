@@ -46,7 +46,7 @@ Use exactly this string where a public tagline is displayed. Do not substitute a
 | Primary public domain | **piqsavi.com** |
 | Canonical public URL | **https://piqsavi.com** |
 
-Owner report (not yet repository-evidenced): `piqsavi.com` has been purchased and is under owner control through Cloudflare. Registrar/account proof remains pending. See EXT-10 in [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md).
+Sanitized ownership/control evidence retained 2026-08-08: Cloudflare Registrations shows `piqsavi.com` **Active**. See EXT-10 in [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) and [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png). This does **not** prove DNS, TLS, proxy, routing, or public hostname usability.
 
 ---
 

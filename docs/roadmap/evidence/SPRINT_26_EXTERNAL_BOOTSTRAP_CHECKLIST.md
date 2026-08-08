@@ -6,7 +6,7 @@
 **Related evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone.
 
-**Register snapshot at packaging:** all listed bootstrap rows remain `not_started` (no status advanced by this checklist).
+**Register snapshot:** EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). All other listed bootstrap rows remain `not_started`.
 
 ---
 
@@ -23,9 +23,10 @@
 
 | Class | Dependencies |
 |-------|--------------|
-| Can be started immediately | EXT-08 (provider selection + apply), EXT-10 (domain purchase), EXT-17 (support inbox), EXT-18 (privacy contact), EXT-19 (legal engagement scheduling) |
+| Can be started immediately | EXT-08 (provider selection + apply), EXT-17 (support inbox), EXT-18 (privacy contact), EXT-19 (legal engagement scheduling) |
+| Ownership evidence retained (approved; not provisioned) | EXT-10 (`piqsavi.com` sanitized Cloudflare registration/control proof, 2026-08-08) |
 | Requires provider selection | EXT-01…EXT-05 (merchant/API partner per market), EXT-08 (email provider) |
-| Requires a purchased/configured domain | EXT-09 (SPF/DKIM/DMARC on sender domain); EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list but blocked on EXT-10) |
+| Requires a purchased/configured domain | EXT-09 (SPF/DKIM/DMARC on sender domain); EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
 | Requires legal engagement | EXT-01…EXT-05 (terms/affiliate review), EXT-19 (counsel), EXT-18 coordination |
 | Market-specific dependencies | EXT-01 PH, EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA |
 
@@ -142,22 +143,20 @@
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` (unchanged — not provisioned) |
+| Current documented status | `approved` (ownership/control evidenced; **not** `provisioned`) |
 | Responsible owner | Ops |
 | Public brand / domain | PiqSavi / `piqsavi.com` (see [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md)) |
-| Exact action the user must take | Purchase/register the public domain intended for Global Public Beta hostname |
-| Information/documents needed | Desired domain name(s); registrant identity; registrar account; billing |
-| Owner report | `piqsavi.com` purchased and controlled via Cloudflare |
-| Required evidence | Sanitized registrar/Cloudflare domain-ownership proof (domain name; ownership confirmation; date) |
-| Evidence that must be retained | Registrar confirmation; domain name; registration date; WHOIS/redacted ownership proof |
-| Do not retain in git | Account IDs; billing data; payment information; API tokens; zone secrets; account email where unnecessary |
-| Next status after acceptable proof | `approved` |
+| Evidence date | 2026-08-08 |
+| Evidence type | Sanitized Cloudflare registration/control proof |
+| Evidence path | [`external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) |
+| What was retained | Cloudflare Registrations shows `piqsavi.com`, status **Active**; account email redacted; no API tokens, account IDs, payment, or billing data |
+| Purchase / original registration date | Not evidenced by the screenshot — **not inferred**; register Application date = `evidence verified 2026-08-08` |
 | Not yet | `provisioned` — reserved until the public hostname is genuinely usable |
-| Explicit non-claims | Owner report alone does not prove DNS, TLS, Cloudflare proxy, production routing, email authentication, or application domain cutover |
+| Explicit non-claims | Does **not** prove DNS configured, Cloudflare proxy enabled, app/production/staging routing, TLS/ACM/HTTPS, email SPF/DKIM/DMARC, or public website/API availability |
 | Separation | EXT-11 (DNS) and EXT-12 (TLS) remain independent and `not_started` |
 | Fallback | Delay public hostname |
-| Launch impact | Blocks public web access path (Sprint 41 DNS/TLS chain) |
-| Register fields to update after action | `Application date` (purchase date), `Current status` → `approved` only after sanitized ownership proof is retained; `provisioned` only later when hostname is usable; evidence notes |
+| Launch impact | Ownership no longer blocks the chain; Sprint 41 public access still requires EXT-11/EXT-12 |
+| Register fields updated | `Application date` → `evidence verified 2026-08-08`; `Current status` → `approved`; evidence path retained |
 
 ---
 
@@ -208,7 +207,8 @@
 
 ## Explicit non-claims
 
-- No EXT row status was advanced by creating this checklist.
-- No application dates were invented.
+- Creating this checklist alone did not advance EXT statuses; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained.
+- No purchase/registration date was invented for EXT-10 (evidence verified 2026-08-08 only).
 - No provider accounts were created by this documentation task.
-- Completing this checklist’s actions is still required before Sprint 26 can close.
+- EXT-11 / EXT-12 remain `not_started`; no DNS/TLS/provisioning claim is made from EXT-10 approval.
+- Remaining checklist actions (other than EXT-10 ownership evidence) are still required before Sprint 26 can close. This checklist is **not** complete.
