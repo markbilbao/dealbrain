@@ -44,7 +44,7 @@
 | EXT-05 | CA merchant/API or affiliate access | Marketplace eng + legal | 36 | Canada market | Sprint 26 kickoff | 2–8 weeks | `not_started` | Same for CA | Delay CA market naming | Market CA |
 | EXT-06 | Merchant credentials (all markets) | Ops + marketplace | 32–36 | global launch *(per named market)* | After approval | 1–2 weeks | `not_started` | Secrets Manager entries; no plaintext in git | Market cannot certify | Market(s) |
 | EXT-07 | Affiliate tracking IDs | Growth + marketplace | 32–36 | optional beta capability | After partner approval | 1–4 weeks | `not_started` | Valid tracked redirect in staging/prod | Organic links without monetization claims; disclose | Monetized affiliate claims |
-| EXT-08 | Transactional email provider | Identity eng | 27 | identity | Sprint 26 | 3–10 days | `not_started` | Delivered reset + verify messages in staging | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
+| EXT-08 | Transactional email provider (Resend) | Identity eng | 27 | identity | evidence verified 2026-08-08 | 3–10 days | `applied` | Sanitized Resend dashboard/account-establishment proof retained at [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) (see EXT-08 notes); delivery/reset+verify remains Sprint 27 | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
 | EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | With EXT-08 | 3–14 days | `not_started` | DNS auth green; test inbox delivery | Same as EXT-08 | Public self-serve auth |
 | EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
 | EXT-11 | DNS for public hostname | Ops | 41 | production infrastructure | After EXT-10 | 1–3 days | `not_started` | Records resolving to ALB | Delay public access | Public web access |
@@ -74,7 +74,24 @@ Sprint 26 must open applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EX
 
 **Action checklist (statuses unchanged until real evidence):** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 
-Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes).
+Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes).
+
+### EXT-08 notes (transactional email provider — applied)
+
+| Field | Value |
+|-------|-------|
+| Current status | `applied` |
+| Provider | Resend |
+| Evidence / action date | 2026-08-08 |
+| Evidence type | Sanitized Resend dashboard/account-establishment proof |
+| Evidence path | [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) |
+| What the evidence shows | Resend dashboard onboarding (“Send your first email”); “Add an API key” step visible; recipient email redacted; placeholder `re_xxxxxxxxxx` only (not a real credential) |
+| Signup / provider approval date | Not evidenced by the screenshot — **not inferred**; Application date recorded as `evidence verified 2026-08-08` |
+| `approved` / `provisioned` reserved for | Later — only after credentials are truly granted for use and/or staging delivery proof exists. Do **not** use `approved` or `provisioned` for EXT-08 from account-establishment proof alone |
+| Explicit non-claims | Does **not** prove API key created, API integration complete, email sent, transactional delivery verified, `piqsavi.com` added to Resend, sender domain verified, SPF/DKIM/DMARC configured, DNS changed, production credentials provisioned, or production email enabled |
+| Separation | EXT-08 = provider selection / account establishment; EXT-09 = sender-domain authentication (SPF/DKIM/DMARC) — do not merge; Sprint 27 owns integration and delivery proof |
+
+**EXT-09 status remains `not_started` and is unchanged by this evidence.**
 
 ### EXT-10 notes (domain ownership — approved)
 

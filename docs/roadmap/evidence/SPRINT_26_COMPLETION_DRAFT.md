@@ -19,18 +19,20 @@
 
 ## Pending (required before Sprint 26 close)
 
-- External dependency bootstrap actions (EXT-01…EXT-05, EXT-08, EXT-09 prep, EXT-17, EXT-18, EXT-19 engagement)
+- External dependency bootstrap actions (EXT-01…EXT-05, EXT-09 prep, EXT-17, EXT-18, EXT-19 engagement)
+- EXT-08 provider-selection/account bootstrap: COMPLETE FOR SPRINT 26 / `applied` (Resend selected; sanitized dashboard/account-establishment proof retained 2026-08-08 — not API integration, not domain auth, not delivery proof)
 - EXT-10 ownership evidence: COMPLETE / `approved` (sanitized Cloudflare registration/control proof retained 2026-08-08; ownership/control only — not DNS/TLS/provisioned)
 - Actual action/application dates for remaining items (must be real; never invented)
-- External register updates based on evidence (EXT-10 now `approved`; remaining Sprint 26 bootstrap rows still `not_started`)
+- External register updates based on evidence (EXT-08 now `applied`; EXT-10 now `approved`; remaining Sprint 26 bootstrap rows still `not_started`)
 - Final acceptance review and Sprint 26 go/no-go close
 
 ---
 
 ## Explicit non-claims
 
-- Sprint 26 is **not** complete.
+- Sprint 26 is **not** complete. **SPRINT 26 OPEN. NOT YET CLOSED. DRAFT.**
 - External applications for remaining bootstrap rows are **not** claimed submitted.
+- EXT-08 `applied` does **not** close Sprint 26, does **not** start Sprint 27, and does **not** advance EXT-09.
 - EXT-10 approval does **not** close Sprint 26 and does **not** advance EXT-11/EXT-12.
 - P0/P1 items beyond the verified technical staging proof are **not** closed by this draft.
 - Roadmap endpoint remains **Sprint 46**.

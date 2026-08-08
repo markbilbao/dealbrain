@@ -6,7 +6,7 @@
 **Related evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone.
 
-**Register snapshot:** EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). All other listed bootstrap rows remain `not_started`.
+**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). All other listed bootstrap rows remain `not_started`.
 
 ---
 
@@ -23,9 +23,10 @@
 
 | Class | Dependencies |
 |-------|--------------|
-| Can be started immediately | EXT-08 (provider selection + apply), EXT-17 (support inbox), EXT-18 (privacy contact), EXT-19 (legal engagement scheduling) |
+| Can be started immediately | EXT-17 (support inbox), EXT-18 (privacy contact), EXT-19 (legal engagement scheduling) |
+| Provider account established (applied; not approved/provisioned) | EXT-08 (Resend selected; sanitized account-establishment proof, 2026-08-08) |
 | Ownership evidence retained (approved; not provisioned) | EXT-10 (`piqsavi.com` sanitized Cloudflare registration/control proof, 2026-08-08) |
-| Requires provider selection | EXT-01…EXT-05 (merchant/API partner per market), EXT-08 (email provider) |
+| Requires provider selection | EXT-01…EXT-05 (merchant/API partner per market) |
 | Requires a purchased/configured domain | EXT-09 (SPF/DKIM/DMARC on sender domain); EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
 | Requires legal engagement | EXT-01…EXT-05 (terms/affiliate review), EXT-19 (counsel), EXT-18 coordination |
 | Market-specific dependencies | EXT-01 PH, EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA |
@@ -111,14 +112,19 @@
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
+| Current documented status | `applied` (provider selected + account established; **not** `approved` / **not** `provisioned`) |
 | Responsible owner | Identity eng |
-| Exact action the user must take | Select a transactional email provider; create/apply for an account suitable for staging→production identity mail; record provider decision |
-| Information/documents needed | Business contact; sender domain plan (ties to EXT-10/EXT-09); expected volume; privacy/DPA awareness |
-| Evidence that must be retained | Provider name; account/application confirmation ID; application/signup date; decision note (no API keys in git) |
+| Selected provider | Resend |
+| Evidence / action date | 2026-08-08 |
+| Evidence type | Sanitized Resend dashboard/account-establishment proof |
+| Evidence path | [`external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) |
+| What was retained | Resend onboarding (“Send your first email”); “Add an API key” step/button visible; recipient email redacted; only placeholder `re_xxxxxxxxxx` (not a real API credential); no username/account ID, billing, password, or live token |
+| Signup / provider approval date | Not evidenced by the screenshot — **not inferred**; register Application date = `evidence verified 2026-08-08` |
+| Not yet | API key created/retained; API integration; email send; transactional delivery proof; `piqsavi.com` in Resend; sender-domain verification; SPF/DKIM/DMARC; DNS changes; production credentials; production email |
+| Separation | EXT-09 (sender-domain SPF/DKIM/DMARC) remains `not_started`; Sprint 27 owns integration and delivery proof |
 | Fallback | Invite-only with self-serve reset disabled (demotes public beta) |
-| Launch impact | Blocks public self-serve auth completion (Sprint 27) |
-| Register fields to update after action | `Application date`, `Current status` → `applied` (or `approved`/`provisioned` only when truly reached), evidence notes (non-secret) |
+| Launch impact | Provider bootstrap no longer blocks Sprint 26 status for EXT-08; Sprint 27 still requires integration + EXT-09 + delivery proof |
+| Register fields updated | `Application date` → `evidence verified 2026-08-08`; `Current status` → `applied`; provider Resend; evidence path retained |
 
 ---
 
@@ -207,8 +213,9 @@
 
 ## Explicit non-claims
 
-- Creating this checklist alone did not advance EXT statuses; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained.
+- Creating this checklist alone did not advance EXT statuses; EXT-08 later advanced to `applied` only after sanitized Resend account-establishment evidence was retained; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained.
+- No signup/provider-approval date was invented for EXT-08 (evidence verified 2026-08-08 only).
 - No purchase/registration date was invented for EXT-10 (evidence verified 2026-08-08 only).
-- No provider accounts were created by this documentation task.
-- EXT-11 / EXT-12 remain `not_started`; no DNS/TLS/provisioning claim is made from EXT-10 approval.
-- Remaining checklist actions (other than EXT-10 ownership evidence) are still required before Sprint 26 can close. This checklist is **not** complete.
+- This documentation/evidence task did **not** create a Resend API key, send email, add/verify a sending domain, or change DNS/SPF/DKIM/DMARC.
+- EXT-09 remains `not_started`; EXT-11 / EXT-12 remain `not_started`; no DNS/TLS/email-auth/provisioning claim is made from EXT-08 `applied` or EXT-10 `approved`.
+- Remaining checklist actions (other than EXT-08 account bootstrap and EXT-10 ownership evidence) are still required before Sprint 26 can close. This checklist is **not** complete.
