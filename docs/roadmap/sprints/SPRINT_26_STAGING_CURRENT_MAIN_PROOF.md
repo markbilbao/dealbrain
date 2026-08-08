@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows; EXT-08 Resend account evidence retained; EXT-10 ownership evidence retained) |
-| Action/application dates | Pending for remaining rows (none invented; EXT-08 and EXT-10 recorded as evidence verified 2026-08-08) |
-| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-10 `approved`; other Sprint 26 bootstrap rows remain `not_started` |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05, EXT-17, EXT-18, EXT-19; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained) |
+| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08) |
+| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; remaining Sprint 26 bootstrap rows (EXT-01…EXT-05, EXT-17, EXT-18, EXT-19) remain `not_started` |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -123,8 +123,19 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Evidence / action date: 2026-08-08
 - Evidence path: [`../evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](../evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png)
 - Evidence shows sanitized Resend dashboard/account-establishment proof only
-- EXT-09 sender-domain authentication remains `not_started`
-- No API key creation, email send, domain verification, DNS/SPF/DKIM/DMARC, or delivery proof is claimed
+- No API key creation, email send, or delivery proof is claimed from EXT-08
+
+## Sender-domain authentication preparation clarification
+
+Additive clarification only — does **not** close Sprint 26 and does **not** start Sprint 27:
+
+- Provider: **Resend**; domain: **`piqsavi.com`**
+- EXT-09 status: `applied` (sender-domain authentication **preparation** only — not DNS applied, not domain verified, not `approved`, not `provisioned`)
+- Preparation / evidence date: 2026-08-08
+- Evidence path: [`../evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](../evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png)
+- Evidence shows sanitized Resend DNS-record plan (DKIM; Return-Path MX/SPF for `send` / intended `send.piqsavi.com`; DMARC `p=none`) with configuration/Verify actions still available
+- DNS records have **not** been applied or verified; abbreviated provider Content values were **not** invented
+- EXT-11 DNS hosting and EXT-12 TLS remain `not_started` and are separate from EXT-09 sender authentication
 
 **Sprint 26 remains OPEN.**
 
