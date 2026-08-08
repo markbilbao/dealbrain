@@ -6,7 +6,7 @@
 **Related evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone.
 
-**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). All other listed bootstrap rows remain `not_started`.
+**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). All other listed bootstrap rows remain `not_started`.
 
 ---
 
@@ -27,7 +27,8 @@
 | Provider account established (applied; not approved/provisioned) | EXT-08 (Resend selected; sanitized account-establishment proof, 2026-08-08) |
 | Ownership evidence retained (approved; not provisioned) | EXT-10 (`piqsavi.com` sanitized Cloudflare registration/control proof, 2026-08-08) |
 | Requires provider selection | EXT-01…EXT-05 (merchant/API partner per market) |
-| Requires a purchased/configured domain | EXT-09 (SPF/DKIM/DMARC on sender domain); EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
+| Sender-domain auth plan prepared (applied; DNS not applied/verified) | EXT-09 (Resend DKIM / Return-Path MX+SPF / DMARC `p=none` plan for `piqsavi.com`, 2026-08-08) |
+| Requires a purchased/configured domain | EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
 | Requires legal engagement | EXT-01…EXT-05 (terms/affiliate review), EXT-19 (counsel), EXT-18 coordination |
 | Market-specific dependencies | EXT-01 PH, EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA |
 
@@ -121,9 +122,9 @@
 | What was retained | Resend onboarding (“Send your first email”); “Add an API key” step/button visible; recipient email redacted; only placeholder `re_xxxxxxxxxx` (not a real API credential); no username/account ID, billing, password, or live token |
 | Signup / provider approval date | Not evidenced by the screenshot — **not inferred**; register Application date = `evidence verified 2026-08-08` |
 | Not yet | API key created/retained; API integration; email send; transactional delivery proof; `piqsavi.com` in Resend; sender-domain verification; SPF/DKIM/DMARC; DNS changes; production credentials; production email |
-| Separation | EXT-09 (sender-domain SPF/DKIM/DMARC) remains `not_started`; Sprint 27 owns integration and delivery proof |
+| Separation | EXT-09 sender-domain authentication preparation is tracked separately (now `applied` for Sprint 26 prep only); Sprint 27 owns integration, DNS apply/verify, and delivery proof |
 | Fallback | Invite-only with self-serve reset disabled (demotes public beta) |
-| Launch impact | Provider bootstrap no longer blocks Sprint 26 status for EXT-08; Sprint 27 still requires integration + EXT-09 + delivery proof |
+| Launch impact | Provider bootstrap no longer blocks Sprint 26 status for EXT-08; Sprint 27 still requires integration + EXT-09 DNS verification + delivery proof |
 | Register fields updated | `Application date` → `evidence verified 2026-08-08`; `Current status` → `applied`; provider Resend; evidence path retained |
 
 ---
@@ -132,16 +133,21 @@
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
+| Current documented status | `applied` (sender-domain authentication **preparation** complete for Sprint 26; **not** DNS applied; **not** domain verified; **not** `approved` / **not** `provisioned`) |
 | Responsible owner | Ops + identity |
-| Exact action the user must take | After EXT-10 domain exists and EXT-08 provider is chosen, prepare DNS auth records (SPF/DKIM/DMARC) per provider instructions; do not claim DNS green until verified |
-| Information/documents needed | Registered domain (EXT-10); provider DKIM values; DMARC policy intent; DNS admin access |
-| Evidence that must be retained | Record names/types planned or applied; verification screenshots/logs with secrets redacted; date of verification attempt |
+| Provider | Resend |
+| Domain | `piqsavi.com` |
+| Preparation / evidence date | 2026-08-08 |
+| Evidence type | Sanitized Resend sender-domain DNS-authentication preparation |
+| Evidence path | [`external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png) |
+| What was retained | Resend “Fill in your DNS Records” plan: DKIM TXT `resend._domainkey` (TTL Auto); Return-Path / Enable Sending MX `send` priority 10 + TXT TXT `send` (TTL Auto) for intended `send.piqsavi.com` namespace; optional DMARC TXT `_dmarc` with displayed `v=DMARC1; p=none;` (TTL Auto); Cloudflare Auto configure / Verify actions still available |
+| Provider-generated values | DKIM / MX / SPF Content fields are visually abbreviated in the UI. Full values were **not** invented or transcribed. Provider-generated value retained in Resend dashboard; full value must be copied directly from Resend at Sprint 27 DNS execution time |
+| Prepared record categories | DKIM prepared; Return-Path MX prepared; SPF prepared; DMARC `p=none` plan displayed |
+| Not yet | Cloudflare DNS records added; DKIM/SPF/DMARC/MX published; DNS propagation; Resend domain verification; sender domain verified; authenticated delivery; email sent; production email enabled |
+| Separation | EXT-09 preparation ≠ EXT-11 DNS hosting ≠ EXT-12 TLS. Sprint 27 owns DNS application/verification and delivery proof |
 | Fallback | Same as EXT-08 (invite-only demotion) |
-| Launch impact | Blocks reliable public self-serve auth mail (Sprint 27) |
-| Register fields to update after action | `Application date` (or prep start date), `Current status` only when evidence matches legend (`applied`/`provisioned` as appropriate), evidence notes |
-
-**Class note:** Cannot complete without purchased/configured domain (EXT-10) and provider selection (EXT-08). Preparation planning can start immediately.
+| Launch impact | Sprint 26 EXT-09 preparation no longer pending; Sprint 27 still blocked until DNS apply/verify + delivery proof |
+| Register fields updated | `Application date` → `evidence verified 2026-08-08`; `Current status` → `applied`; provider Resend; domain `piqsavi.com`; evidence path retained |
 
 ---
 
@@ -213,9 +219,10 @@
 
 ## Explicit non-claims
 
-- Creating this checklist alone did not advance EXT statuses; EXT-08 later advanced to `applied` only after sanitized Resend account-establishment evidence was retained; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained.
+- Creating this checklist alone did not advance EXT statuses; EXT-08 later advanced to `applied` only after sanitized Resend account-establishment evidence was retained; EXT-09 later advanced to `applied` only after sanitized Resend DNS-authentication **plan** evidence was retained; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained.
 - No signup/provider-approval date was invented for EXT-08 (evidence verified 2026-08-08 only).
 - No purchase/registration date was invented for EXT-10 (evidence verified 2026-08-08 only).
-- This documentation/evidence task did **not** create a Resend API key, send email, add/verify a sending domain, or change DNS/SPF/DKIM/DMARC.
-- EXT-09 remains `not_started`; EXT-11 / EXT-12 remain `not_started`; no DNS/TLS/email-auth/provisioning claim is made from EXT-08 `applied` or EXT-10 `approved`.
-- Remaining checklist actions (other than EXT-08 account bootstrap and EXT-10 ownership evidence) are still required before Sprint 26 can close. This checklist is **not** complete.
+- This documentation/evidence task did **not** create a Resend API key, send email, click Auto Configure, apply Cloudflare DNS, verify a sending domain, or publish SPF/DKIM/DMARC/MX.
+- EXT-09 `applied` means preparation only — DNS records have **not** been applied or verified; domain is **not** verified; delivery is **not** proven.
+- EXT-11 / EXT-12 remain `not_started`; no DNS hosting / TLS claim is made from EXT-08 `applied`, EXT-09 `applied` (prep), or EXT-10 `approved`.
+- Remaining checklist actions (other than EXT-08 account bootstrap, EXT-09 DNS-auth preparation, and EXT-10 ownership evidence) are still required before Sprint 26 can close. This checklist is **not** complete.
