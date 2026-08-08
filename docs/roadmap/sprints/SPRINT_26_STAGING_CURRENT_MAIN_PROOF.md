@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending |
-| Action/application dates | Pending (none invented) |
-| External-dependency register status updates | Pending — statuses remain `not_started` |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows; EXT-10 ownership evidence retained) |
+| Action/application dates | Pending for remaining rows (none invented; EXT-10 recorded as evidence verified 2026-08-08) |
+| External-dependency register status updates | Partial — EXT-10 `approved`; other Sprint 26 bootstrap rows remain `not_started` |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -108,10 +108,10 @@ That conclusion does **not** close Sprint 26.
 Additive clarification only — does **not** close Sprint 26:
 
 - Public brand **PiqSavi** is locked ([`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md))
-- `piqsavi.com` is owner-reported acquired
-- Registrar proof remains pending
-- EXT-10 cannot advance until evidence is retained
-- EXT-11 DNS and EXT-12 TLS remain separate and incomplete
+- `piqsavi.com` ownership/control evidenced via sanitized Cloudflare registration proof (2026-08-08)
+- EXT-10 status: `approved` (not `provisioned`)
+- Evidence path: [`../evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](../evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png)
+- EXT-11 DNS and EXT-12 TLS remain separate and `not_started`
 - No application branding or domain cutover is required to close the technical staging-proof portion already completed
 
 **Sprint 26 remains OPEN.**

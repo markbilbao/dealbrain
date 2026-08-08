@@ -46,7 +46,7 @@
 | EXT-07 | Affiliate tracking IDs | Growth + marketplace | 32–36 | optional beta capability | After partner approval | 1–4 weeks | `not_started` | Valid tracked redirect in staging/prod | Organic links without monetization claims; disclose | Monetized affiliate claims |
 | EXT-08 | Transactional email provider | Identity eng | 27 | identity | Sprint 26 | 3–10 days | `not_started` | Delivered reset + verify messages in staging | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
 | EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | With EXT-08 | 3–14 days | `not_started` | DNS auth green; test inbox delivery | Same as EXT-08 | Public self-serve auth |
-| EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | Sprint 26 | 1–3 days | `not_started` | Sanitized registrar/Cloudflare domain-ownership proof (see EXT-10 notes) | Delay public hostname | Public web access |
+| EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
 | EXT-11 | DNS for public hostname | Ops | 41 | production infrastructure | After EXT-10 | 1–3 days | `not_started` | Records resolving to ALB | Delay public access | Public web access |
 | EXT-12 | TLS certificate (ACM or equivalent) | Ops | 41 | production infrastructure | After DNS | 1–7 days | `not_started` | HTTPS synthetics green | Delay public access | Public web access |
 | EXT-13 | AWS production account/resources | Ops | 41 | production infrastructure | Ongoing | Continuous | Partial TF only; not applied | Applied TF + live `/ready` | Cannot launch production | Entire production launch |
@@ -74,24 +74,24 @@ Sprint 26 must open applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EX
 
 **Action checklist (statuses unchanged until real evidence):** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 
-Technical current-main staging proof does **not** advance any EXT row. All bootstrap rows above remain `not_started` until an actual application/purchase/engagement is evidenced.
+Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes).
 
-### EXT-10 notes (domain ownership — status unchanged)
+### EXT-10 notes (domain ownership — approved)
 
 | Field | Value |
 |-------|-------|
-| Current status | `not_started` (unchanged) |
-| Owner report | Owner reports `piqsavi.com` purchased and controlled via Cloudflare |
-| Repository evidence | Registrar/account ownership proof **pending** — not yet filed |
-| Why not advanced | Register requires retained non-secret evidence before status advancement |
-| Evidence required to advance to `approved` | Sanitized registrar/Cloudflare domain-ownership proof (domain name; ownership confirmation; date; secrets redacted — no account IDs, billing data, payment info, API tokens, zone secrets, or unnecessary account email) |
-| Expected next truthful status after acceptable proof | `approved` |
-| `provisioned` reserved for | Later — only after the public hostname is genuinely usable (DNS/TLS/routing evidenced separately) |
-| Explicit non-claims | Acquisition report alone does **not** prove DNS configured, TLS configured, Cloudflare proxy configured, production routing configured, email authentication configured, or application domain cutover complete |
+| Current status | `approved` |
+| Evidence date | 2026-08-08 |
+| Evidence type | Sanitized Cloudflare registration/control proof |
+| Evidence path | [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) |
+| What the evidence shows | Cloudflare Registrations lists `piqsavi.com` with status **Active**; displayed expiration Aug 7, 2027; account email redacted |
+| Purchase / original registration date | Not evidenced by the screenshot — **not inferred**; Application date recorded as `evidence verified 2026-08-08` |
+| `provisioned` reserved for | Later — only after the public hostname is genuinely usable (DNS/TLS/routing evidenced separately). Do **not** use `provisioned` for EXT-10 from ownership proof alone |
+| Explicit non-claims | Ownership/control evidence does **not** prove DNS configured, Cloudflare proxy enabled, PiqSavi app routing, production/staging routing, TLS/ACM/HTTPS listener configured, email sender-domain authentication (SPF/DKIM/DMARC), or public website/API hostname availability |
 | Separation | EXT-10 = domain ownership; EXT-11 = DNS; EXT-12 = TLS/certificate — do not merge |
 | Brand policy | [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) |
 
-**EXT-11 and EXT-12 status remain `not_started` and are unchanged by this note.**
+**EXT-11 and EXT-12 status remain `not_started` and are unchanged by this evidence.**
 
 ## Market naming rule
 
