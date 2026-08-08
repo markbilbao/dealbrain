@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows; EXT-10 ownership evidence retained) |
-| Action/application dates | Pending for remaining rows (none invented; EXT-10 recorded as evidence verified 2026-08-08) |
-| External-dependency register status updates | Partial — EXT-10 `approved`; other Sprint 26 bootstrap rows remain `not_started` |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows; EXT-08 Resend account evidence retained; EXT-10 ownership evidence retained) |
+| Action/application dates | Pending for remaining rows (none invented; EXT-08 and EXT-10 recorded as evidence verified 2026-08-08) |
+| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-10 `approved`; other Sprint 26 bootstrap rows remain `not_started` |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -113,6 +113,18 @@ Additive clarification only — does **not** close Sprint 26:
 - Evidence path: [`../evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](../evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png)
 - EXT-11 DNS and EXT-12 TLS remain separate and `not_started`
 - No application branding or domain cutover is required to close the technical staging-proof portion already completed
+
+## Transactional email provider bootstrap clarification
+
+Additive clarification only — does **not** close Sprint 26 and does **not** start Sprint 27:
+
+- Selected provider: **Resend**
+- EXT-08 status: `applied` (not `approved`, not `provisioned`)
+- Evidence / action date: 2026-08-08
+- Evidence path: [`../evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](../evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png)
+- Evidence shows sanitized Resend dashboard/account-establishment proof only
+- EXT-09 sender-domain authentication remains `not_started`
+- No API key creation, email send, domain verification, DNS/SPF/DKIM/DMARC, or delivery proof is claimed
 
 **Sprint 26 remains OPEN.**
 
