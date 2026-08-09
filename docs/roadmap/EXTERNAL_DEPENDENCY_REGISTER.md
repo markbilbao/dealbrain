@@ -54,7 +54,7 @@
 | EXT-15 | Analytics provider | Product eng | 39 | optional beta capability | Sprint 28 | 3–14 days | `not_started` | Consent-gated events in staging | Privacy-safe first-party minimal events only; disclose limited learning | Beta learning (not whole launch) |
 | EXT-16 | Error-tracking provider | Ops | 42 | optional beta capability | Sprint 39 | 3–10 days | `not_started` | Sample error event + PII-safe config | CloudWatch logs-only (weaker) | Ops quality (launch if CW paging OK) |
 | EXT-17 | Support email inbox | Ops + support | 28 / 39 | global launch | 2026-08-09 | 1–3 days | `provisioned` | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png) (see EXT-17 notes); public address `support@piqsavi.com` monitored | Delay public launch | Support obligation |
-| EXT-18 | Privacy contact | Legal / DPO-equivalent | 28 | global launch | Sprint 26 | 1–3 days | `not_started` | Published contact | Delay public launch | Legal |
+| EXT-18 | Privacy contact | Legal / DPO-equivalent | 28 | global launch | 2026-08-09 | 1–3 days | `provisioned` | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) (see EXT-18 notes); public address `privacy@piqsavi.com` designated and reachable | Delay public launch | Legal |
 | EXT-19 | Legal review (ToS/Privacy/disclosures) | Legal counsel | 28 / 44 | global launch | Sprint 27 draft | 2–6 weeks | `not_started` | Written approval | Delay public launch | Entire launch |
 | EXT-20 | Privacy Policy publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | Live URL | Delay public launch | Entire launch |
 | EXT-21 | Terms of Service publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | Live URL | Delay public launch | Entire launch |
@@ -74,7 +74,7 @@ Sprint 26 must open applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EX
 
 **Action checklist (statuses unchanged until real evidence):** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 
-Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-09 is now `applied` on sanitized Resend sender-domain DNS-authentication **preparation** evidence (see EXT-09 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes). EXT-17 is now `provisioned` on sanitized support-inbox receipt evidence (see EXT-17 notes).
+Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-09 is now `applied` on sanitized Resend sender-domain DNS-authentication **preparation** evidence (see EXT-09 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes). EXT-17 is now `provisioned` on sanitized support-inbox receipt evidence (see EXT-17 notes). EXT-18 is now `provisioned` on sanitized privacy-contact designation and receipt evidence (see EXT-18 notes).
 
 ### EXT-08 notes (transactional email provider — applied)
 
@@ -143,6 +143,26 @@ Technical current-main staging proof does **not** advance any EXT row. Remaining
 | What the evidence shows | Gmail Inbox receipt; To `support@piqsavi.com`; subject `EXT-17 Support Inbox Verification — 2026-08-09`; date Aug 9, 2026, 8:39 PM; mailed-by/signed-by `gmail.com`; Standard encryption (TLS); personal external sender address redacted |
 | Explicit non-claims | Does **not** prove Resend sender-domain authentication, EXT-09 DNS application/verification, Google Workspace DKIM/DMARC completion, production transactional email delivery, public support UI publication, larger support-team staffing, Sprint 26 closure, or Sprint 27 start/completion |
 | Separation | EXT-17 = monitored support receiving inbox; EXT-08/EXT-09 = transactional sending / sender-domain auth (Sprint 27); EXT-18 = privacy contact — do not merge |
+
+### EXT-18 notes (privacy contact — provisioned)
+
+| Field | Value |
+|-------|-------|
+| Current status | `provisioned` |
+| Public privacy address | `privacy@piqsavi.com` |
+| Role | PiqSavi Privacy |
+| Designation / monitoring owner | Mark / PiqSavi Privacy |
+| Designation date | 2026-08-09 |
+| Owner acknowledgment | Mark / PiqSavi Privacy designates `privacy@piqsavi.com` as the PiqSavi public privacy contact for Sprint 26 EXT-18 bootstrap purposes (2026-08-09) |
+| Receiving architecture | Google Workspace / Gmail for `piqsavi.com`; `privacy@piqsavi.com` configured as an alternate email alias routed to the monitored PiqSavi Workspace Gmail inbox (`mark@piqsavi.com`) — **not** an independent dedicated mailbox |
+| Escalation path | Privacy/legal matters requiring professional legal advice, legal interpretation, regulatory review, or counsel approval escalate to the future counsel relationship represented by EXT-19 |
+| Reachable | Yes — external message addressed to `privacy@piqsavi.com` received in the monitored PiqSavi Workspace Gmail inbox |
+| Evidence / action date | 2026-08-09 |
+| Evidence type | Sanitized Gmail inbound receipt of an external message addressed to `privacy@piqsavi.com` |
+| Evidence path | [`evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) |
+| What the evidence shows | Gmail Inbox receipt; To `privacy@piqsavi.com`; subject `EXT-18 Privacy Contact Verification — 2026-08-09`; date Aug 9, 2026, 9:19 PM; mailed-by/signed-by `gmail.com`; Standard encryption (TLS); personal external sender address redacted |
+| Explicit non-claims | Does **not** prove formal statutory DPO appointment, Privacy Policy legal sufficiency, lawyer/counsel engagement, EXT-19 completion, GDPR / Philippine Data Privacy Act / CCPA/CPRA / global privacy compliance, public Privacy Policy publication, Sprint 26 closure, or Sprint 27 start/completion |
+| Separation | EXT-18 = privacy contact designation and reachability; EXT-17 = support inbox (`support@piqsavi.com`) — do not merge; EXT-19 = legal counsel engagement; EXT-20 = Privacy Policy publication |
 
 ## Market naming rule
 

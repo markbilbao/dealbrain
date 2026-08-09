@@ -6,7 +6,7 @@
 **Related evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone.
 
-**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). EXT-17 is `provisioned` on retained sanitized support-inbox receipt evidence (2026-08-09). Remaining listed bootstrap rows (EXT-01…EXT-05, EXT-18, EXT-19) remain `not_started`.
+**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). EXT-17 is `provisioned` on retained sanitized support-inbox receipt evidence (2026-08-09). EXT-18 is `provisioned` on retained sanitized privacy-contact designation and receipt evidence (2026-08-09). Remaining listed bootstrap rows (EXT-01…EXT-05, EXT-19) remain `not_started`.
 
 ---
 
@@ -23,14 +23,15 @@
 
 | Class | Dependencies |
 |-------|--------------|
-| Can be started immediately | EXT-18 (privacy contact), EXT-19 (legal engagement scheduling) |
+| Can be started immediately | EXT-19 (legal engagement scheduling) |
+| Privacy contact provisioned | EXT-18 (`privacy@piqsavi.com` / PiqSavi Privacy; alias → monitored Workspace Gmail; sanitized inbound receipt, 2026-08-09) |
 | Support inbox provisioned | EXT-17 (`support@piqsavi.com` alias → monitored Workspace Gmail; sanitized inbound receipt, 2026-08-09) |
 | Provider account established (applied; not approved/provisioned) | EXT-08 (Resend selected; sanitized account-establishment proof, 2026-08-08) |
 | Ownership evidence retained (approved; not provisioned) | EXT-10 (`piqsavi.com` sanitized Cloudflare registration/control proof, 2026-08-08) |
 | Requires provider selection | EXT-01…EXT-05 (merchant/API partner per market) |
 | Sender-domain auth plan prepared (applied; DNS not applied/verified) | EXT-09 (Resend DKIM / Return-Path MX+SPF / DMARC `p=none` plan for `piqsavi.com`, 2026-08-08) |
 | Requires a purchased/configured domain | EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
-| Requires legal engagement | EXT-01…EXT-05 (terms/affiliate review), EXT-19 (counsel), EXT-18 coordination |
+| Requires legal engagement | EXT-01…EXT-05 (terms/affiliate review), EXT-19 (counsel); EXT-18 privacy-contact bootstrap coordinated with future EXT-19 counsel for legal advice |
 | Market-specific dependencies | EXT-01 PH, EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA |
 
 ---
@@ -199,14 +200,24 @@
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
+| Current documented status | `provisioned` (privacy contact designated and reachable) |
 | Responsible owner | Legal / DPO-equivalent |
-| Exact action the user must take | Designate a privacy contact address/role suitable for Privacy Policy publication |
-| Information/documents needed | Contact identity/role; mailbox; escalation path; alignment with EXT-19 counsel |
-| Evidence that must be retained | Contact address/role; designation date; owner acknowledgment |
+| Public privacy address | `privacy@piqsavi.com` |
+| Role | PiqSavi Privacy |
+| Designation / monitoring owner | Mark / PiqSavi Privacy |
+| Designation date | 2026-08-09 |
+| Owner acknowledgment | Mark / PiqSavi Privacy designates `privacy@piqsavi.com` as the PiqSavi public privacy contact for Sprint 26 EXT-18 bootstrap purposes (2026-08-09) |
+| Mailbox / receiving setup | Google Workspace / Gmail for `piqsavi.com`; `privacy@piqsavi.com` is an alternate email alias routed to the monitored PiqSavi Workspace Gmail inbox (`mark@piqsavi.com`) — **not** an independent dedicated mailbox |
+| Escalation path | Privacy/legal matters requiring professional legal advice, legal interpretation, regulatory review, or counsel approval escalate to the future counsel relationship represented by EXT-19 |
+| Evidence type | Sanitized Gmail inbound receipt of an external message to `privacy@piqsavi.com` |
+| Evidence path | [`external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) |
+| What was retained | To `privacy@piqsavi.com`; subject `EXT-18 Privacy Contact Verification — 2026-08-09`; date Aug 9, 2026, 9:19 PM; Gmail Inbox context; mailed-by/signed-by `gmail.com`; Standard encryption (TLS); personal external sender address redacted; no passwords, tokens, billing, or unrelated inbox contents |
+| External receipt test | Succeeded — external Gmail message addressed to `privacy@piqsavi.com` received in the monitored PiqSavi Workspace Gmail inbox |
+| Not yet | Formal statutory DPO appointment; Privacy Policy legal sufficiency / counsel approval; EXT-19 engagement; public Privacy Policy publication (EXT-20 / Sprint 28); GDPR / Philippine DPA / CCPA/CPRA / global privacy-compliance claims |
 | Fallback | Delay public launch |
-| Launch impact | Blocks legal/privacy minimum (Sprint 28) |
-| Register fields to update after action | `Application date`, `Current status` → `provisioned` when contact is designated and reachable, evidence notes |
+| Launch impact | Privacy-contact bootstrap no longer blocks Sprint 26 for EXT-18; Sprint 28 / 45 still require publishing/using the contact path in Privacy Policy and related surfaces |
+| Register fields updated | `Application date` → `2026-08-09`; `Current status` → `provisioned`; evidence path + operational notes retained |
+| Separation | EXT-18 privacy contact (`privacy@piqsavi.com`) ≠ EXT-17 support contact (`support@piqsavi.com`) — do not merge |
 
 ---
 
@@ -227,11 +238,12 @@
 
 ## Explicit non-claims
 
-- Creating this checklist alone did not advance EXT statuses; EXT-08 later advanced to `applied` only after sanitized Resend account-establishment evidence was retained; EXT-09 later advanced to `applied` only after sanitized Resend DNS-authentication **plan** evidence was retained; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained; EXT-17 later advanced to `provisioned` only after sanitized inbound receipt evidence was retained.
+- Creating this checklist alone did not advance EXT statuses; EXT-08 later advanced to `applied` only after sanitized Resend account-establishment evidence was retained; EXT-09 later advanced to `applied` only after sanitized Resend DNS-authentication **plan** evidence was retained; EXT-10 later advanced to `approved` only after sanitized ownership evidence was retained; EXT-17 later advanced to `provisioned` only after sanitized inbound receipt evidence was retained; EXT-18 later advanced to `provisioned` only after privacy-contact designation, owner acknowledgment, and sanitized inbound receipt evidence were retained.
 - No signup/provider-approval date was invented for EXT-08 (evidence verified 2026-08-08 only).
 - No purchase/registration date was invented for EXT-10 (evidence verified 2026-08-08 only).
 - This documentation/evidence task did **not** create a Resend API key, send transactional email, click Auto Configure, apply Cloudflare DNS, verify a sending domain, or publish SPF/DKIM/DMARC/MX for Resend.
 - EXT-09 `applied` means preparation only — DNS records have **not** been applied or verified; domain is **not** verified; delivery is **not** proven.
 - EXT-17 `provisioned` proves monitored support receiving for `support@piqsavi.com` only; it does **not** prove Resend/EXT-09 DNS apply/verify, Google Workspace DKIM/DMARC completion, or transactional identity email readiness.
-- EXT-11 / EXT-12 remain `not_started`; no DNS hosting / TLS claim is made from EXT-08 `applied`, EXT-09 `applied` (prep), EXT-10 `approved`, or EXT-17 `provisioned`.
-- Remaining checklist actions (other than EXT-08 account bootstrap, EXT-09 DNS-auth preparation, EXT-10 ownership evidence, and EXT-17 support-inbox provisioning) are still required before Sprint 26 can close. This checklist is **not** complete.
+- EXT-18 `provisioned` proves privacy-contact designation and reachability for `privacy@piqsavi.com` only; it does **not** prove formal DPO appointment, Privacy Policy legal sufficiency, EXT-19 counsel engagement/approval, or privacy-compliance completion.
+- EXT-11 / EXT-12 remain `not_started`; no DNS hosting / TLS claim is made from EXT-08 `applied`, EXT-09 `applied` (prep), EXT-10 `approved`, EXT-17 `provisioned`, or EXT-18 `provisioned`.
+- Remaining checklist actions (other than EXT-08 account bootstrap, EXT-09 DNS-auth preparation, EXT-10 ownership evidence, EXT-17 support-inbox provisioning, and EXT-18 privacy-contact provisioning) are still required before Sprint 26 can close. This checklist is **not** complete.
