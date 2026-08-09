@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05, EXT-18, EXT-19; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained) |
-| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 recorded as 2026-08-09) |
-| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; remaining Sprint 26 bootstrap rows (EXT-01…EXT-05, EXT-18, EXT-19) remain `not_started` |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05, EXT-19; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained; EXT-18 privacy-contact designation/receipt evidence retained) |
+| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 and EXT-18 recorded as 2026-08-09) |
+| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; remaining Sprint 26 bootstrap rows (EXT-01…EXT-05, EXT-19) remain `not_started` |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -150,6 +150,24 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Evidence path: [`../evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](../evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png)
 - Evidence shows sanitized Gmail inbound receipt (To `support@piqsavi.com`; subject `EXT-17 Support Inbox Verification — 2026-08-09`; Aug 9, 2026, 8:39 PM; TLS); personal external sender address redacted
 - Does **not** prove Resend/EXT-09 DNS apply/verify, Google Workspace DKIM/DMARC completion, transactional delivery, or public support-contact publication
+
+## Privacy contact bootstrap clarification
+
+Additive clarification only — does **not** close Sprint 26 and does **not** start Sprint 27:
+
+- Public privacy address: **`privacy@piqsavi.com`**
+- Role: **PiqSavi Privacy**
+- Designation / monitoring owner: Mark / PiqSavi Privacy
+- Designation date: 2026-08-09
+- Owner acknowledgment: Mark / PiqSavi Privacy designates `privacy@piqsavi.com` as the PiqSavi public privacy contact for Sprint 26 EXT-18 bootstrap purposes
+- Receiving architecture: Google Workspace / Gmail for `piqsavi.com`; `privacy@piqsavi.com` is an alternate email alias routed to the monitored Workspace Gmail inbox (`mark@piqsavi.com`) — **not** an independent dedicated mailbox
+- Escalation path: privacy/legal matters requiring professional legal advice escalate to the future counsel relationship represented by EXT-19
+- EXT-18 status: `provisioned`
+- Evidence / action date: 2026-08-09
+- Evidence path: [`../evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](../evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png)
+- Evidence shows sanitized Gmail inbound receipt (To `privacy@piqsavi.com`; subject `EXT-18 Privacy Contact Verification — 2026-08-09`; Aug 9, 2026, 9:19 PM; TLS); personal external sender address redacted
+- Does **not** prove formal statutory DPO appointment, Privacy Policy legal sufficiency, EXT-19 counsel engagement/approval, or public Privacy Policy publication
+- Separated from EXT-17 support contact (`support@piqsavi.com`)
 
 **Sprint 26 remains OPEN.**
 
