@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05, EXT-17, EXT-18, EXT-19; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained) |
-| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08) |
-| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; remaining Sprint 26 bootstrap rows (EXT-01…EXT-05, EXT-17, EXT-18, EXT-19) remain `not_started` |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05, EXT-18, EXT-19; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained) |
+| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 recorded as 2026-08-09) |
+| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; remaining Sprint 26 bootstrap rows (EXT-01…EXT-05, EXT-18, EXT-19) remain `not_started` |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -136,6 +136,20 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Evidence shows sanitized Resend DNS-record plan (DKIM; Return-Path MX/SPF for `send` / intended `send.piqsavi.com`; DMARC `p=none`) with configuration/Verify actions still available
 - DNS records have **not** been applied or verified; abbreviated provider Content values were **not** invented
 - EXT-11 DNS hosting and EXT-12 TLS remain `not_started` and are separate from EXT-09 sender authentication
+
+## Support inbox bootstrap clarification
+
+Additive clarification only — does **not** close Sprint 26 and does **not** start Sprint 27:
+
+- Public support address: **`support@piqsavi.com`**
+- Receiving architecture: Google Workspace / Gmail for `piqsavi.com`; `support@piqsavi.com` is an alternate email alias routed to the monitored Workspace Gmail inbox (`mark@piqsavi.com`) — **not** an independent dedicated mailbox
+- Monitoring owner: PiqSavi Operations / Mark
+- Response expectation: within 1 business day
+- EXT-17 status: `provisioned`
+- Evidence / action date: 2026-08-09
+- Evidence path: [`../evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](../evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png)
+- Evidence shows sanitized Gmail inbound receipt (To `support@piqsavi.com`; subject `EXT-17 Support Inbox Verification — 2026-08-09`; Aug 9, 2026, 8:39 PM; TLS); personal external sender address redacted
+- Does **not** prove Resend/EXT-09 DNS apply/verify, Google Workspace DKIM/DMARC completion, transactional delivery, or public support-contact publication
 
 **Sprint 26 remains OPEN.**
 
