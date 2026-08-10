@@ -124,7 +124,8 @@ This inventory records every material Global Public Beta requirement and its cov
 | One canonical MerchantConnector contract | `planned_underspecified` | Sprint 4 vs Sprint 18 parallel | 31 |
 | One MerchantRegistry | `planned_underspecified` | Separate registries | 31 |
 | One MarketRouter | `missing_from_roadmap` | — | 31 |
-| MerchantCapability / supported-market metadata | `planned_underspecified` | Partial stubs | 31 |
+| MerchantCapability / supported-market metadata | `planned_sufficient_ac` | Roadmap AC in Sprint 31; unsupported-market product policy still finalizes in 37; **implementation future until Sprint 31 executes** | 31 |
+| Merchant contractual capability/policy (fail-closed; distinct from technical ConnectorCapability) | `planned_sufficient_ac` | Roadmap-locked in Sprint 31 + 32–36 certification + EC-09; affiliate ≠ data permission; provider approval ≠ blanket enablement; **implementation future until Sprint 31 executes** | 31 / 32–36 / 45 |
 | Merchant-country mapping | `missing_from_roadmap` | — | 31 |
 | Query-time + background sync routing | `planned_underspecified` | Split ownership 4/18 | 31 |
 | Normalized listing/offer contracts | `implemented_verified` | Present; unify producers | 18 / 31 |
@@ -132,9 +133,9 @@ This inventory records every material Global Public Beta requirement and its cov
 | Merchant/credential configuration authority | `planned_underspecified` | — | 31 |
 | Feature flags / duplicate registration prevention | `planned_underspecified` | Launch flags exist; merchant kill switch incomplete | 31 / 38 |
 | Sprint 4 and 18 path unification | `planned_underspecified` | Lock forbids silent merge; needs explicit sprint | 31 |
-| Connector certification suite | `missing_from_roadmap` | — | 31 / 32–36 |
-| Merchant legal/terms documentation | `missing_from_roadmap` | — | 31 / 28 |
-| Merchant onboarding runbook | `missing_from_roadmap` | — | 31 |
+| Connector certification suite | `planned_sufficient_ac` | Suite + capability-policy harness expectations owned by 31; real-path evidence in 32–36; **implementation future** | 31 / 32–36 |
+| Merchant legal/terms documentation | `planned_sufficient_ac` | Non-secret terms/evidence checklist hooks in 31; provider evidence in 32–36; consumer ToS/Privacy remain 28 — not conflated; **implementation future** | 31 / 32–36 / 28 |
+| Merchant onboarding runbook | `planned_sufficient_ac` | Sprint 31 deliverable; **implementation future** | 31 |
 | Merchant deactivation / kill switch | `missing_from_roadmap` | Health disable partial | 38 |
 | DealScore / Recommendation / affiliate neutrality boundaries | `implemented_verified` | Preserve; certify | 5 / 6 / 20 / 44 |
 | Shipping-cost / unknown-shipping honesty (P1-2) | `planned_underspecified` | Enrichment free-shipping default risk | 37 |
@@ -153,7 +154,7 @@ This inventory records every material Global Public Beta requirement and its cov
 | Public coverage disclosure | `planned_underspecified` | Demo honesty present | 44 / 45 |
 | Fixture-as-live prevention | `implemented_verified` | Freshness gates; must remain | 18 / 38 / 45 |
 
-Per-market sub-requirements (provider selection, legal review, credentials, sandbox, real endpoint, mapping, matching, rate limits, quotas, timeouts, retries, credential/quota/outage handling, circuit breaker, provenance, freshness, shipping/availability, affiliate validation, monitoring, staging/limited/production validation, disclosure) are **all** owned by the market certification sprint for that market, with platform primitives from Sprints 31 and 38.
+Per-market sub-requirements (provider selection, legal review, credentials, sandbox, real endpoint, mapping, matching, rate limits, quotas, timeouts, retries, credential/quota/outage handling, circuit breaker, provenance, freshness, shipping/availability, affiliate validation, merchant contractual capability/policy evidence, monitoring, staging/limited/production validation, disclosure) are **all** owned by the market certification sprint for that market, with platform primitives from Sprints 31 and 38. Application/approval/credentials/technical connectivity/contractual usability/production certification remain distinct stages; provider approval does not imply blanket capability approval.
 
 ---
 

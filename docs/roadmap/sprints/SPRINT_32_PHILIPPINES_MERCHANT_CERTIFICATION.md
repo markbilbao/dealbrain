@@ -13,12 +13,48 @@ Certify at least one real, legally usable, operationally validated merchant-data
 
 - Full market path: provider selection, access application, legal/terms, credentials, sandbox (where available), real endpoint, mapping, matching, rate/quota/timeout/retry, failure modes, circuit-breaker hooks, provenance/freshness, shipping/availability, affiliate validation, monitoring, staging, limited rollout, production validation prep, public disclosure row
 - Implement and validate Sprint 31 minimum reliability contracts on the PH real path (timeout, bounded retry, backoff, quota/credential/partial-failure types, health, kill switch, breaker baseline)
+- Populate and certify Sprint 31 merchant contractual capability/policy metadata for the PH real path (provider/market-scoped; fail-closed when unknown)
+
+### Merchant capability / authorization evidence (shared bar for 32–36)
+
+Each real merchant/provider path used for certification must record non-secret operational facts for:
+
+- provider identity
+- market
+- relevant program / agreement / API policy identifier
+- review / evidence date
+- capability policy (conceptual states: allowed / restricted / prohibited / unknown — final names per Sprint 31 design)
+- restrictions and applicable TTL / freshness requirements
+- attribution / disclosure requirements where relevant
+- evidence source / reference
+- enforcement validation against the Sprint 31 harness
+
+Certification stages must remain distinct (do not collapse):
+
+1. application submitted
+2. provider approved
+3. credentials issued
+4. technical connection works
+5. capabilities legally/contractually usable (evidence-backed; not inferred from approval alone)
+6. production certified
+
+**Rules:**
+
+- Provider approval does **not** automatically authorize every capability.
+- Affiliate permission and product-data permission are independent.
+- Unknown / unverified permissions fail closed and do not enable production features.
+- Sensitive/high-risk uses (reviews; AI reuse; ambiguous comparison rights; caching beyond explicit documentation; material transformation) remain unknown/restricted unless suitable evidence exists.
+- Engineering interpretation ≠ professional legal approval; contested items need stronger evidence/counsel confirmation.
+- Do not store privileged legal advice in Git.
+- Reduced capability modes are allowed when explicitly certified (e.g. data/compare without affiliate; affiliate destination without current-data comparison). Affiliate-only paths cannot independently satisfy EC-09 market naming.
+- **Fixtures, mocks, imported samples, or simulations cannot satisfy production merchant capability certification.**
 
 ## Explicit non-goals
 
 - US/SG/UK/CA certification
 - Claiming complete PH retail coverage
 - Cross-connector production hardening suite (38)
+- Owning the shared capability/policy contract design (Sprint 31)
 
 ## External dependencies
 
@@ -34,13 +70,14 @@ Certify at least one real, legally usable, operationally validated merchant-data
 
 - PH coverage row
 - Provider status notes
-- Certification report
+- Certification report including capability-policy evidence map (non-secret)
 
 ## Required tests
 
 - Certification suite against real/sandbox
 - Failure injection using Sprint 31 contracts
 - Freshness label tests
+- Capability-policy enforcement validation (unknown/prohibited fail closed; reduced modes behave as declared)
 
 ## Required staging evidence
 
@@ -54,6 +91,8 @@ Certify at least one real, legally usable, operationally validated merchant-data
 
 - At least one real, legally usable merchant path with current-data validation
 - Market-specific normalization and product/variant matching evidenced
+- Sprint 31 contractual capability/policy metadata populated, evidence-backed, and enforcement-validated for that path (fail-closed for unknown)
+- Certification report distinguishes application / approval / credentials / technical connectivity / contractual usability / production certification
 - Staging certification complete; limited production validation prepared/executed as required by gate
 - Monitoring and public coverage disclosure published
 - Kill switch tested
@@ -62,7 +101,7 @@ Certify at least one real, legally usable, operationally validated merchant-data
 
 ## Predecessor sprints
 
-31 (unification + minimum reliability contracts) — **strict**
+31 (unification + minimum reliability contracts + capability/policy model) — **strict**
 
 ## Parallelizable work
 

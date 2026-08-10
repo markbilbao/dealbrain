@@ -22,6 +22,7 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 - Launch checklist prepared for sign-off
 - Integrity certification (DealScore/neutrality monitoring on)
 - Verify (do not implement) Sprint 37 shipping-honesty and unsupported-market public wording (P1-2 / P1-1B claims check)
+- Verify (do not implement) that every market/merchant named in the coverage matrix has Sprint 32–36 capability-policy evidence: declared, evidence-backed, fail-closed enforced; omit/disable markets or providers lacking it rather than weakening the gate
 
 ## Explicit non-goals
 
@@ -62,6 +63,7 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 
 - Legal/security/ops approvals recorded
 - Claim matrix approved
+- Named markets/merchants have capability-policy certification evidence (declared + evidence-backed + fail-closed enforcement); ungated providers omitted
 - Rehearsal succeeds
 - Rollback authority named
 

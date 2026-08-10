@@ -63,9 +63,17 @@ Public consumer brand is PiqSavi; DealBrain remains the internal technical coden
 `26 → 27 → 28 → 29 → 31 → (32∥33∥34∥35∥36) → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45 → 46`
 
 **Reliability sequencing (non-negotiable):**
-- Sprint **31** delivers shared minimum connector reliability contracts (strict predecessor of 32–36).
-- Market certifications **32–36** may run in parallel after Sprint 31 and must validate those minima on real paths.
-- Sprint **38** hardens and consolidates cross-connector production reliability; it is **not** the first appearance of basic timeout/retry/failure handling.
+- Sprint **31** delivers shared minimum connector reliability contracts **and** the shared merchant contractual capability/policy model with fail-closed enforcement hooks (strict predecessor of 32–36).
+- Market certifications **32–36** may run in parallel after Sprint 31 and must validate those minima on real paths, including evidence-backed capability-policy certification per provider/market.
+- Sprint **38** hardens and consolidates cross-connector production reliability; it is **not** the first appearance of basic timeout/retry/failure handling, and it must respect certified merchant TTL/freshness policy constraints without owning legal-policy interpretation.
+
+**Merchant connector capability-policy principles (roadmap-locked; implementation in Sprint 31 / certification in 32–36):**
+- Affiliate permission ≠ product-data permission; reduced certified modes remain possible.
+- Technical `ConnectorCapability` (adapter operations) ≠ contractual/policy authorization.
+- Provider approval ≠ blanket capability approval; unknown permissions fail closed.
+- Affiliate monetization remains outside DealScore / PiqScore / objective ranking.
+- Upstream payload presence is not permission to expose or use data.
+- No merchant connector may be production-certified or used to support a named shopping-market claim unless relevant permissions are explicitly declared, evidence-backed, and fail-closed enforced.
 
 (Sprint 30 is a closed audit identity; do not re-open it as an implementation sprint.)
 
@@ -152,14 +160,14 @@ Obsolete statements such as “hard launch target: Sprint 30 public launch” an
 | 28 | Privacy, Legal, Consent & Deletion | ToS/Privacy/consent/deletion/export | P0-4; MEDIUM GDPR | EXT-17…22 | Legal draft published internally; deletion E2E staging; counsel review started |
 | 29 | Production Consumer Web UI | Public web app + a11y + e2e baseline | P1-6 | None critical | Staging UI journey green; build validation |
 | 30 | Public Beta Readiness Audit *(historical)* | Audit record only | — | — | Closed — NOT READY |
-| 31 | Merchant Platform Unification | One connector/registry/router + min reliability contracts | P1-1A | None | Certification suite exists; 4/18 dual-path retired or dual-run documented; reliability contracts exported |
-| 32 | Philippines Merchant Certification | ≥1 real PH path | P0-1 (PH) | EXT-01,06,07 | Real legally usable current-data response; staging+limited proof |
+| 31 | Merchant Platform Unification | One connector/registry/router + min reliability contracts + contractual capability/policy model | P1-1A | None | Certification suite exists; 4/18 dual-path retired or dual-run documented; reliability + capability/policy contracts exported (fail-closed) |
+| 32 | Philippines Merchant Certification | ≥1 real PH path | P0-1 (PH) | EXT-01,06,07 | Real legally usable current-data response + capability-policy evidence; staging+limited proof |
 | 33 | United States Merchant Certification | ≥1 real US path | P0-1 (US) | EXT-02,06,07 | Same for US |
 | 34 | Singapore Merchant Certification | ≥1 real SG path | P0-1 (SG) | EXT-03,06,07 | Same for SG |
 | 35 | United Kingdom Merchant Certification | ≥1 real UK path | P0-1 (UK) | EXT-04,06,07 | Same for UK |
 | 36 | Canada Merchant Certification | ≥1 real CA path | P0-1 (CA) | EXT-05,06,07 | Same for CA |
 | 37 | MarketContext, Currency & Localization | Coherent market/FX/locale + shipping honesty | P1-1B; P1-2 | EXT-23 | Fail-closed FX; unsupported-market behavior; shipping honesty; FR-CA decision recorded |
-| 38 | Connector Reliability & Honest Degradation | Cross-connector production hardening | Live-HTTP risk | EXT-25 | Multi-connector chaos + probes + aggregated health evidenced |
+| 38 | Connector Reliability & Honest Degradation | Cross-connector production hardening | Live-HTTP risk | EXT-25 | Multi-connector chaos + probes + aggregated health evidenced; cache/degradation respects certified TTL/policy |
 | 39 | Analytics, Feedback & Support | Consent-gated product analytics + support path | P1-4 | EXT-15,16,17,22 | Events + dashboards + feedback path in staging |
 | 40 | Security & Abuse Hardening | HIGH/launch-blocking MEDIUM closed | P1-3, P1-5; sec findings | — | Security go/no-go package ready |
 | 41 | Production Environment & Deploy Path | Prod AWS + deploy/rollback workflows | P0-2; HIGH prod path | EXT-10…14 | Prod dry-run `/ready`; rollback path exists |
@@ -183,7 +191,7 @@ Detailed definitions: [`sprints/`](sprints/).
 | ToS / Privacy / consent | Missing | 28 | Published URLs + consent records | Yes |
 | Account deletion / export | Missing | 28 | Delete+export E2E; propagation checklist | Yes |
 | Consumer production UI | demo.html only | 29 | Staging UI e2e | Yes (public UX) |
-| Sprint 4/18 unification (P1-1A) | Parallel stacks | 31 | Single registry/router + tests | Yes (P1) |
+| Sprint 4/18 unification (P1-1A) | Parallel stacks | 31 | Single registry/router + tests + contractual capability/policy model (fail-closed; distinct from technical capabilities) | Yes (P1) |
 | Unsupported-market behavior (P1-1B) | Missing | 37 | Selector + disclosure + no unsupported invoke | Yes (P1) |
 | Shipping-cost honesty (P1-2) | Enrichment default risk | 37 | Shipping-known/unknown modeled + tests; 44 verifies wording | Yes (P1) |
 | PH real merchant path | Fixtures only | 32 | Live provider response certified | Yes to **name PH** |
@@ -257,7 +265,7 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | EC-06 | Production deploy and rollback workflows are validated | 41 | Prod deploy dry-run + rollback workflow evidence | Confirm rehearsed path exists; no-go if unrehearsed |
 | EC-07 | Backup restore has been rehearsed | 42 | Restore drill report with measured RTO | Confirm report current; no-go if absent |
 | EC-08 | Monitoring, dashboards, alerts, and paging are active | 42 | Dashboard links + alert config + page/ack ≤15m evidence | Confirm active paging destination; no-go if inactive |
-| EC-09 | ≥1 real validated merchant path in every **named** supported market | Per named market: 32\|33\|34\|35\|36 | Per-market certification report with real current-data response | Name only certified markets; remove failed markets |
+| EC-09 | ≥1 real validated merchant path in every **named** supported market, with declared / evidence-backed / fail-closed-enforced merchant capability policy | Per named market: 32\|33\|34\|35\|36 *(platform contract: 31)* | Per-market certification report with real current-data response **and** capability-policy evidence map (unknown permissions do not enable production features) | Name only certified markets/modes; remove failed markets or providers |
 | EC-10 | PH, US, SG, UK, and Canada named only when market gates pass | 44 | Approved coverage matrix listing only gated markets | Reject any ungated market name |
 | EC-11 | Currency comparison fails closed when unsafe | 37 | Fail-closed FX/mixed-currency test + staging proof | Verify still enforced; no-go if unsafe compare possible |
 | EC-12 | Unsupported markets receive honest disclosure | 37 | Unsupported-market UX/API disclosure evidence | Verify disclosure; no-go if fixtures appear as live |
@@ -272,7 +280,9 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | EC-21 | No fixture/simulated merchant data can appear as a live offer | 38 *(with Sprint 18 freshness invariants)* | Release verification script + freshness gate evidence | No-go on any fixture-as-live path |
 | EC-22 | Final launch checklist signed off | 45 | Signed Sprint 45 checklist artifact | Launch-control ownership; required for close |
 
-**Market note for EC-09:** When multiple markets are named, each named market’s certification sprint (32/33/34/35/36) is the primary owner for that market’s path. Sprint 45 only verifies and may remove markets.
+**Market note for EC-09:** When multiple markets are named, each named market’s certification sprint (32/33/34/35/36) is the primary owner for that market’s path. Sprint 31 owns the shared capability/policy contract and fail-closed harness; 32–36 populate provider-specific evidence. Sprint 44/45 verify and may remove markets or providers.
+
+**EC-09 capability-policy invariant:** No merchant connector may be certified for production, or used to support a named shopping-market claim, unless its permitted affiliate, data-use, caching, transformation, comparison, attribution, and related capabilities are explicitly declared, evidence-backed, and fail-closed enforced. Unknown permissions do not enable production features. Provider approval alone does not imply blanket capability approval. Affiliate-only destinations cannot independently satisfy EC-09 current-data market naming.
 
 ---
 
@@ -336,7 +346,7 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | Public launch | 44 approvals | 45 | Any Sev1 | Rollback |
 | Stabilization | 45 | 46 | Incident load | Extend window |
 
-**Dependency classes:** Sprint 31 reliability contracts = **strict predecessor** of 32–36. Market certifications after 31 = **parallelizable**. Sprint 38 = **soft dependency** on having at least one live path to harden, and a **final launch gate** for multi-connector production evidence. External approvals = **external gates**.
+**Dependency classes:** Sprint 31 reliability contracts **and** contractual capability/policy model = **strict predecessor** of 32–36. Market certifications after 31 = **parallelizable**. Sprint 38 = **soft dependency** on having at least one live path to harden, and a **final launch gate** for multi-connector production evidence (must respect certified TTL/policy; does not own legal-policy interpretation). External approvals = **external gates** (approval ≠ blanket capability enablement).
 
 ---
 
