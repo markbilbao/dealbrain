@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05, EXT-19; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained; EXT-18 privacy-contact designation/receipt evidence retained) |
-| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 and EXT-18 recorded as 2026-08-09) |
-| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; remaining Sprint 26 bootstrap rows (EXT-01…EXT-05, EXT-19) remain `not_started` |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05 — legal review + real application submission evidence; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained; EXT-18 privacy-contact designation/receipt evidence retained; EXT-19 counsel engagement/schedule evidence retained) |
+| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 and EXT-18 recorded as 2026-08-09; EXT-19 engagement recorded as 2026-08-10 with consultation 2026-08-19 10:00 Philippines local time) |
+| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (engagement/schedule only — not written approval); remaining Sprint 26 bootstrap rows (EXT-01…EXT-05) remain `not_started` |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -166,8 +166,21 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Evidence / action date: 2026-08-09
 - Evidence path: [`../evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](../evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png)
 - Evidence shows sanitized Gmail inbound receipt (To `privacy@piqsavi.com`; subject `EXT-18 Privacy Contact Verification — 2026-08-09`; Aug 9, 2026, 9:19 PM; TLS); personal external sender address redacted
-- Does **not** prove formal statutory DPO appointment, Privacy Policy legal sufficiency, EXT-19 counsel engagement/approval, or public Privacy Policy publication
+- Does **not** prove formal statutory DPO appointment, Privacy Policy legal sufficiency, EXT-19 written approval, or public Privacy Policy publication
 - Separated from EXT-17 support contact (`support@piqsavi.com`)
+
+## Legal counsel engagement bootstrap clarification
+
+Additive clarification only — does **not** close Sprint 26 and does **not** start Sprint 27:
+
+- Counsel identity: **Pauline Anne Sambuang** (firm affiliation not shown in retained evidence — not invented)
+- EXT-19 status: `applied` (not `approved`)
+- Evidence / engagement date: 2026-08-10
+- Confirmed consultation: 2026-08-19, 10:00 AM, Philippines local time
+- Evidence paths: [`../evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](../evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png); [`../evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](../evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png)
+- Evidence shows counsel acceptance of PiqSavi legal consultation/review; scope covering ToS, Privacy/data-handling, affiliate/advertising disclosures, AI/recommendation disclosures/disclaimers, consumer-protection considerations, deletion/export/retention, cookie/tracking, and country-specific considerations for intended markets; counsel confirmation of date/time with calendar-invite request; supporting-document request before consultation
+- Merchant/affiliate terms-review discussion for research shortlist (Shopee, Lazada, TikTok Shop, Amazon, Temu) is in consultation scope only — does **not** select providers in the register and does **not** advance EXT-01…EXT-05
+- Does **not** prove substantive legal review complete, written legal approval, Terms/Privacy approval, merchant-term approval, EXT-01…EXT-05 application, launch legal approval, or privacy-regime compliance
 
 **Sprint 26 remains OPEN.**
 

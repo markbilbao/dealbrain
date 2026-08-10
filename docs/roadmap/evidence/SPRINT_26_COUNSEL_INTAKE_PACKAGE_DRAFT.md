@@ -17,8 +17,10 @@
 [`../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) ·  
 [`../sprints/SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md`](../sprints/SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md)
 
-**Register snapshot at draft time (unchanged by this document):**  
-EXT-01…EXT-05 `not_started` · EXT-19 `not_started` · EXT-08 `applied` · EXT-09 `applied` (DNS prep only) · EXT-10 `approved` · EXT-17 `provisioned` · EXT-18 `provisioned`
+**Register snapshot:**
+EXT-01…EXT-05 `not_started` · EXT-19 `applied` (counsel engagement/schedule evidenced 2026-08-10; written approval still required) · EXT-08 `applied` · EXT-09 `applied` (DNS prep only) · EXT-10 `approved` · EXT-17 `provisioned` · EXT-18 `provisioned`
+
+**Note:** Creating this intake package did **not** itself advance EXT-19; later sanitized engagement evidence advanced EXT-19 to `applied`.
 
 **Purpose:** Assemble repository-supported product facts and counsel questions so a future external briefing can be prepared quickly. This file is **not** an engagement, application, legal opinion, compliance certificate, or Sprint 26 close.
 
@@ -305,11 +307,10 @@ Ask counsel to review the following categories (inventory questions — **not** 
 
 | Status | What repository requires |
 |--------|---------------------------|
-| Current | EXT-19 = `not_started` |
-| Next (`applied`) | Real counsel engagement / scheduling evidence: counsel identity or firm; engagement or confirmed consultation; date; scope summary |
-| Later (`approved`) | **Written approval** evidence — engagement alone is insufficient |
+| Current | EXT-19 = `applied` (engagement accepted 2026-08-10; consultation confirmed 2026-08-19 10:00 Philippines local time; written approval still pending) |
+| Next (`approved`) | **Written approval** evidence — engagement / schedule confirmation alone is insufficient |
 
-Creating or retaining this intake package **does not** advance EXT-19.
+Creating this intake package did **not** itself advance EXT-19; later engagement evidence did.
 
 ---
 

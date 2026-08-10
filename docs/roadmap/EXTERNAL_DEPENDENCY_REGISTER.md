@@ -55,7 +55,7 @@
 | EXT-16 | Error-tracking provider | Ops | 42 | optional beta capability | Sprint 39 | 3–10 days | `not_started` | Sample error event + PII-safe config | CloudWatch logs-only (weaker) | Ops quality (launch if CW paging OK) |
 | EXT-17 | Support email inbox | Ops + support | 28 / 39 | global launch | 2026-08-09 | 1–3 days | `provisioned` | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png) (see EXT-17 notes); public address `support@piqsavi.com` monitored | Delay public launch | Support obligation |
 | EXT-18 | Privacy contact | Legal / DPO-equivalent | 28 | global launch | 2026-08-09 | 1–3 days | `provisioned` | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) (see EXT-18 notes); public address `privacy@piqsavi.com` designated and reachable | Delay public launch | Legal |
-| EXT-19 | Legal review (ToS/Privacy/disclosures) | Legal counsel | 28 / 44 | global launch | Sprint 27 draft | 2–6 weeks | `not_started` | Written approval | Delay public launch | Entire launch |
+| EXT-19 | Legal review (ToS/Privacy/disclosures) | Legal counsel | 28 / 44 | global launch | 2026-08-10 | 2–6 weeks | `applied` | Sanitized counsel engagement + schedule confirmation retained at [`evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png) and [`evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png) (see EXT-19 notes); written approval still required before `approved` | Delay public launch | Entire launch |
 | EXT-20 | Privacy Policy publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | Live URL | Delay public launch | Entire launch |
 | EXT-21 | Terms of Service publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | Live URL | Delay public launch | Entire launch |
 | EXT-22 | Cookie-consent solution | Product + legal | 28 / 39 | optional beta capability | Sprint 28 | 1–3 weeks | `not_started` | Consent gate before non-essential analytics | First-party essential-only cookies; no third-party analytics | Analytics / tracking claims |
@@ -74,7 +74,7 @@ Sprint 26 must open applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EX
 
 **Action checklist (statuses unchanged until real evidence):** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 
-Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-09 is now `applied` on sanitized Resend sender-domain DNS-authentication **preparation** evidence (see EXT-09 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes). EXT-17 is now `provisioned` on sanitized support-inbox receipt evidence (see EXT-17 notes). EXT-18 is now `provisioned` on sanitized privacy-contact designation and receipt evidence (see EXT-18 notes).
+Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-09 is now `applied` on sanitized Resend sender-domain DNS-authentication **preparation** evidence (see EXT-09 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes). EXT-17 is now `provisioned` on sanitized support-inbox receipt evidence (see EXT-17 notes). EXT-18 is now `provisioned` on sanitized privacy-contact designation and receipt evidence (see EXT-18 notes). EXT-19 is now `applied` on sanitized counsel engagement and schedule-confirmation evidence (see EXT-19 notes).
 
 ### EXT-08 notes (transactional email provider — applied)
 
@@ -163,6 +163,25 @@ Technical current-main staging proof does **not** advance any EXT row. Remaining
 | What the evidence shows | Gmail Inbox receipt; To `privacy@piqsavi.com`; subject `EXT-18 Privacy Contact Verification — 2026-08-09`; date Aug 9, 2026, 9:19 PM; mailed-by/signed-by `gmail.com`; Standard encryption (TLS); personal external sender address redacted |
 | Explicit non-claims | Does **not** prove formal statutory DPO appointment, Privacy Policy legal sufficiency, lawyer/counsel engagement, EXT-19 completion, GDPR / Philippine Data Privacy Act / CCPA/CPRA / global privacy compliance, public Privacy Policy publication, Sprint 26 closure, or Sprint 27 start/completion |
 | Separation | EXT-18 = privacy contact designation and reachability; EXT-17 = support inbox (`support@piqsavi.com`) — do not merge; EXT-19 = legal counsel engagement; EXT-20 = Privacy Policy publication |
+
+### EXT-19 notes (legal counsel engagement — applied)
+
+| Field | Value |
+|-------|-------|
+| Current status | `applied` |
+| Counsel identity | Pauline Anne Sambuang |
+| Firm affiliation | Not shown in retained evidence — **not invented** |
+| Evidence / engagement date | 2026-08-10 |
+| Confirmed consultation | 2026-08-19, 10:00 AM, Philippines local time |
+| Evidence type | Sanitized Gmail engagement acceptance + schedule confirmation |
+| Evidence paths | [`evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png); [`evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png) |
+| What the engagement evidence shows | Counsel email accepting “the legal consultation and review for PiqSavi”; engagement scope covering Terms of Service; Privacy Policy and data-handling disclosures; affiliate and advertising disclosures; AI/recommendation-related disclosures and disclaimers; consumer-protection considerations; account deletion / data export / retention; cookie and tracking disclosures; applicable country-specific considerations for intended markets; weekday availability noted; request for additional materials beforehand |
+| What the schedule evidence shows | Counsel reply: “Confirming the date and time. Please send a calendar invite.”; request to send supporting documents beforehand for comparison/mapping of restrictions |
+| Consultation scope (engagement + owner-stated merchant review expansion) | Consumer legal topics above; focused merchant/affiliate terms-review discussion for research shortlist Shopee, Lazada, TikTok Shop, Amazon, Temu (comparison, PiqScore/derived scoring, affiliate neutrality, affiliate vs product-data permission, transformation/AI use, caching/ratings/reviews/retention, redirect/attribution, provider-specific restrictions) — **substantive review pending** |
+| Supporting materials | Counsel requested supporting contracts/documents before the consultation |
+| `approved` reserved for | Later — only after **written approval** evidence exists. Do **not** use `approved` from engagement or schedule confirmation alone |
+| Explicit non-claims | Does **not** prove substantive legal review complete; Terms/Privacy approved; merchant/affiliate terms approved; EXT-01…EXT-05 advanced or applied; launch legally approved; GDPR / Philippine Data Privacy Act / CCPA/CPRA / global privacy compliance; Sprint 26 closure; or Sprint 27 start/completion |
+| Separation | EXT-19 = counsel engagement / later written approval; EXT-18 = privacy contact; EXT-20/EXT-21 = policy publication; EXT-01…EXT-05 = merchant/API applications — do not merge |
 
 ## Market naming rule
 
