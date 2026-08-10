@@ -15,6 +15,7 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - Aggregated connector and market health
 - Cross-merchant partial-result orchestration
 - Stale-cache policy
+- Stale-cache, degraded-mode, fallback, and refresh timing must **respect** merchant-specific certified TTL / freshness policy constraints from Sprint 31 model + 32–36 certification (must not override or weaken them)
 - Connector synthetic probes
 - Production alerting integration hooks
 - Provider-status tracking
@@ -30,6 +31,7 @@ Harden and consolidate certified connector behavior into production-grade cross-
 ## Explicit non-goals
 
 - Owning the first appearance of timeout/retry/failure result types (31)
+- Owning merchant contractual capability/policy interpretation or legal-terms mapping (31 model; 32–36 provider certification)
 - Per-market legal certification (32–36)
 - Multi-region active-active
 - Guaranteeing provider SLOs
@@ -58,6 +60,7 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - Partial aggregation tests
 - No-merchants-available path
 - Fixture-as-live guard
+- Cache/degradation/refresh paths do not exceed certified merchant TTL / freshness constraints
 
 ## Required staging evidence
 
@@ -74,6 +77,7 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - `/ready` remains correct when merchants are down
 - Consistency review across certified connectors signed
 - Basic timeout/retry/failure handling is confirmed present from 31/32–36 — Sprint 38 evidence is hardening, not first introduction
+- Stale-cache / degradation / fallback / refresh behavior respects certified merchant TTL/freshness policy constraints (does not invent or reinterpret merchant legal permissions)
 
 ## Predecessor sprints
 

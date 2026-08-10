@@ -169,7 +169,20 @@ Technical current-main staging proof does **not** advance any EXT row. Remaining
 A market may be named as **supported** in public materials only when:
 
 1. Its EXT merchant/affiliate dependency is `approved` or `provisioned`
-2. Its certification sprint exit gate passes with a real, legally usable, current-data response
+2. Its certification sprint exit gate passes with a real, legally usable, current-data response **and** Sprint 31 capability-policy evidence (declared, evidence-backed, fail-closed enforced)
 3. Coverage disclosure is published
 
 Failure of a market dependency removes that market from the supported list without necessarily blocking global site access.
+
+## Merchant / affiliate EXT boundary (capability policy — statuses unchanged)
+
+These clarifications do **not** change any EXT row’s `Current status`. They separate relationship progress from contractual capability certification (see Sprint 31 / 32–36 / EC-09).
+
+| Dependency | Proves | Does **not** prove |
+|------------|--------|--------------------|
+| EXT-01…EXT-05 (`applied`) | Relationship / access **application submitted** (when evidence exists) | That all connector capabilities are authorized |
+| EXT-01…EXT-05 (`approved` / `provisioned`) | Partner/API access granted or usable credentials path | Blanket permission for every data-use, display, cache, AI, comparison, or affiliate capability |
+| EXT-06 | Technical credentials available in the target environment | Contractual/policy authorization for every capability |
+| EXT-07 | Affiliate tracking / monetized redirect where applicable | Product-data comparison rights, or that affiliate economics may influence ranking |
+
+**Rules:** Provider approval alone must not automatically enable every policy capability. Capability population and production certification occur later when actual terms, policies, credentials, and provider-specific evidence are available (market certification sprints). Affiliate permission and product-data permission remain independent. Unknown permissions fail closed.

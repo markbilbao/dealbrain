@@ -11,13 +11,15 @@ Certify at least one real US merchant-data path under the same bar as Sprint 32.
 
 ## Included requirements
 
-- Same certification checklist as Sprint 32 applied to US (provider selection through disclosure)
+- Same certification checklist as Sprint 32 applied to US (provider selection through disclosure), including Sprint 32’s merchant capability / authorization evidence bar
 - Implement and validate Sprint 31 minimum reliability contracts on the US real path
+- Populate and certify Sprint 31 merchant contractual capability/policy metadata for the US real path (provider/market-scoped; fail-closed when unknown)
 
 ## Explicit non-goals
 
 - Completing all US retailers
 - Cross-connector hardening suite (38)
+- Owning the shared capability/policy contract design (Sprint 31)
 
 ## External dependencies
 
@@ -32,13 +34,14 @@ Certify at least one real US merchant-data path under the same bar as Sprint 32.
 ## Documentation deliverables
 
 - US coverage row
-- Certification report
+- Certification report including capability-policy evidence map (non-secret)
 
 ## Required tests
 
 - Certification suite
 - Failure modes via Sprint 31 contracts
 - Freshness label tests
+- Capability-policy enforcement validation (as Sprint 32)
 
 ## Required staging evidence
 
@@ -52,6 +55,7 @@ Certify at least one real US merchant-data path under the same bar as Sprint 32.
 
 - At least one real, legally usable US merchant path with current-data validation
 - Market-specific normalization evidenced
+- Sprint 31 contractual capability/policy metadata populated, evidence-backed, and enforcement-validated for that path (fail-closed for unknown; stages not collapsed — see Sprint 32)
 - Staging certification complete; limited production validation prepared/executed as required
 - Monitoring and public coverage disclosure published
 - Kill switch tested
@@ -59,7 +63,7 @@ Certify at least one real US merchant-data path under the same bar as Sprint 32.
 
 ## Predecessor sprints
 
-31 (strict); may parallelize with 32/34/35/36 after 31
+31 (unification + reliability + capability/policy model) — **strict**; may parallelize with 32/34/35/36 after 31
 
 ## Parallelizable work
 

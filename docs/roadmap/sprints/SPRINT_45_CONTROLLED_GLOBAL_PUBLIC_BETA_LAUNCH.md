@@ -63,6 +63,7 @@ Execute controlled public launch by performing **final go/no-go verification** a
 
 - All applicable EC-01…EC-22 true (or market removed where EC-09/EC-10 require)
 - Only certified markets named
+- EC-09 capability-policy invariant verified for every named shopping market (declared, evidence-backed, fail-closed enforced; unknown permissions do not enable production features); remove/disable markets or providers that fail rather than weakening the gate
 - Rollback authority on-call
 - Checklist signed
 - Monitoring handoff to Sprint 46 recorded
