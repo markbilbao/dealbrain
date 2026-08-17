@@ -91,7 +91,7 @@ def test_approved_master_logo_is_used() -> None:
 
 
 def test_approximating_logo_svg_is_gone() -> None:
-    assert "<svg class=\"brand-mark\"" not in HTML
+    assert '<svg class="brand-mark"' not in HTML
     assert "circular mark is a placeholder" not in HTML
     assert HTML.count("js-open-signup") == 2
 
