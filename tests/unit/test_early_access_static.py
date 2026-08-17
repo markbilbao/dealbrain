@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 
 from app.core.public_brand import PUBLIC_BRAND, PUBLIC_TAGLINE
@@ -76,10 +77,15 @@ def test_responsive_breakpoint_present() -> None:
     assert "SOURCE-ASSET-GATE" in css
 
 
+APPROVED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
+
+
 def test_approved_master_logo_is_used() -> None:
     logo = ROOT / "app/static/early_access/assets/piqsavi-logo.png"
     assert logo.is_file()
-    assert logo.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+    raw = logo.read_bytes()
+    assert raw[:8] == b"\x89PNG\r\n\x1a\n"
+    assert hashlib.sha256(raw).hexdigest() == APPROVED_LOGO_SHA256
     assert "/static/early_access/assets/piqsavi-logo.png" in HTML
     assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 3
     assert 'alt="PiqSavi"' in HTML
@@ -103,3 +109,60 @@ def test_source_asset_gate_is_not_publicly_served() -> None:
     with TestClient(create_app()) as client:
         response = client.get("/static/early_access/assets/SOURCE_ASSET_GATE.md")
     assert response.status_code == 404
+
+
+def test_field_error_describedby_and_live_regions() -> None:
+    assert 'id="ea-full-name"' in HTML
+    assert 'aria-describedby="err-full-name"' in HTML
+    assert 'id="ea-email"' in HTML
+    assert 'aria-describedby="err-email"' in HTML
+    assert 'id="ea-country"' in HTML
+    assert 'aria-describedby="err-country"' in HTML
+    assert 'id="ea-interest"' in HTML
+    interest_block = HTML.split('id="ea-interest"', 1)[1].split("</div>", 1)[0]
+    assert "aria-describedby" not in interest_block
+    for err_id in ("err-full-name", "err-email", "err-country"):
+        marker = f'id="{err_id}"'
+        assert marker in HTML
+        snippet = HTML[HTML.index(marker) : HTML.index(marker) + 80]
+        assert 'aria-live="polite"' in snippet
+
+
+def test_result_panels_are_polite_status_live_regions() -> None:
+    for panel in ("success", "duplicate", "technical_error"):
+        marker = f'data-panel="{panel}"'
+        start = HTML.index(marker)
+        snippet = HTML[start : start + 120]
+        assert 'role="status"' in snippet
+        assert 'aria-live="polite"' in snippet
+
+
+def test_js_manages_aria_busy_on_form() -> None:
+    assert "function setLoading(loading)" in JS
+    assert 'form.setAttribute("aria-busy", loading ? "true" : "false")' in JS
+    assert "submitBtn.disabled = loading" in JS
+    assert 'submitBtn.classList.toggle("is-loading", loading)' in JS
+
+
+def test_desktop_modal_and_mobile_aria_modal_breakpoint() -> None:
+    assert 'id="signup-sheet"' in HTML
+    assert 'role="dialog"' in HTML
+    assert 'aria-modal="true"' in HTML
+    assert 'aria-labelledby="signup-title"' in HTML
+    assert "max-width: ${BREAKPOINT}px" in JS
+    assert "const BREAKPOINT = 767" in JS
+    assert "matchMedia" in JS
+    assert 'mobileQuery.addEventListener("change"' in JS
+    assert 'sheet.setAttribute("aria-modal", isMobile() ? "false" : "true")' in JS
+    assert "syncSignupAriaModal" in JS
+
+
+def test_existing_focus_behavior_remains() -> None:
+    assert "function focusables()" in JS
+    assert 'if (event.key === "Escape")' in JS
+    assert "closeSignup()" in JS
+    assert "if (restore) restore.focus()" in JS
+    assert 'if (event.key !== "Tab" || isMobile()) return' in JS
+    assert "last.focus()" in JS
+    assert "first.focus()" in JS
+    assert 'document.getElementById("ea-full-name").focus()' in JS

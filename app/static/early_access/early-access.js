@@ -24,9 +24,29 @@
     technical_error: sheet.querySelector('[data-panel="technical_error"]'),
   };
 
+  const mobileQuery = window.matchMedia(`(max-width: ${BREAKPOINT}px)`);
+
   function isMobile() {
-    return window.matchMedia(`(max-width: ${BREAKPOINT}px)`).matches;
+    return mobileQuery.matches;
   }
+
+  function syncSignupAriaModal() {
+    sheet.setAttribute("aria-modal", isMobile() ? "false" : "true");
+  }
+
+  function onMobileBreakpointChange() {
+    if (!layer.hidden) {
+      document.body.classList.toggle("is-signup-open", isMobile());
+    }
+    syncSignupAriaModal();
+  }
+
+  if (typeof mobileQuery.addEventListener === "function") {
+    mobileQuery.addEventListener("change", onMobileBreakpointChange);
+  } else if (typeof mobileQuery.addListener === "function") {
+    mobileQuery.addListener(onMobileBreakpointChange);
+  }
+  syncSignupAriaModal();
 
   function focusables() {
     return [...sheet.querySelectorAll("a, button, input, select, textarea")]
@@ -138,6 +158,7 @@
 
   function setLoading(loading) {
     state.form = loading ? "loading" : "default";
+    form.setAttribute("aria-busy", loading ? "true" : "false");
     submitBtn.disabled = loading;
     submitBtn.classList.toggle("is-loading", loading);
     submitBtn.querySelector(".btn-label").textContent = loading

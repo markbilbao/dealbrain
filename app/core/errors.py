@@ -192,6 +192,51 @@ def _json_safe(value: Any) -> Any:
         return str(value)
 
 
+# Constraint metadata that cannot contain submitted field values.
+_SAFE_CONSTRAINT_CTX_KEYS = frozenset(
+    {
+        "min_length",
+        "max_length",
+        "expected",
+        "gt",
+        "ge",
+        "lt",
+        "le",
+        "multiple_of",
+    }
+)
+
+
+def _validation_error_log_projection(errors: list[Any]) -> list[dict[str, Any]]:
+    """Project RequestValidationError details for logs without submitted values.
+
+    Never includes ``input``, ``body``, request payloads, or unconstrained ``ctx`` /
+    ``msg`` text that could echo rejected user data.
+    """
+    projected: list[dict[str, Any]] = []
+    for error in errors:
+        if not isinstance(error, dict):
+            continue
+        item: dict[str, Any] = {}
+        error_type = error.get("type")
+        if isinstance(error_type, str):
+            item["type"] = error_type
+        loc = error.get("loc")
+        if loc is not None:
+            item["loc"] = _json_safe(loc)
+        ctx = error.get("ctx")
+        if isinstance(ctx, dict):
+            safe_ctx = {
+                key: _json_safe(value)
+                for key, value in ctx.items()
+                if key in _SAFE_CONSTRAINT_CTX_KEYS
+            }
+            if safe_ctx:
+                item["ctx"] = safe_ctx
+        projected.append(item)
+    return projected
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Attach global exception handlers with consistent JSON errors."""
 
@@ -201,10 +246,12 @@ def register_exception_handlers(app: FastAPI) -> None:
         exc: RequestValidationError,
     ) -> JSONResponse:
         safe_errors = _json_safe(exc.errors())
+        log_errors = _validation_error_log_projection(exc.errors())
         logger.warning(
-            "validation_error path=%s errors=%s request_id=%s",
+            "validation_error method=%s path=%s errors=%s request_id=%s",
+            request.method,
             request.url.path,
-            safe_log_message(str(safe_errors)),
+            safe_log_message(str(log_errors)),
             _request_id(request),
         )
         return error_response(
