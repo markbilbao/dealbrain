@@ -55,8 +55,13 @@ def test_success(client: TestClient) -> None:
 
 def test_validation_errors(client: TestClient) -> None:
     response = client.post("/api/v1/early-access", json=_payload(full_name=""))
-    assert response.status_code in {400, 422}
-    assert response.json()["error"] == "validation_error"
+    assert response.status_code == 422
+    body = response.json()
+    assert body["error"] == "validation_error"
+    assert body.get("details")
+    assert "detail" in body
+    # Response contract still exposes original validation `input`; logs do not.
+    assert any(isinstance(item, dict) and "input" in item for item in body["details"])
 
 
 def test_duplicate_response(client: TestClient) -> None:

@@ -227,9 +227,10 @@
                 autocomplete="name"
                 maxlength="120"
                 placeholder="Your full name"
+                aria-describedby="err-full-name"
                 required
               />
-              <p class="field-error" id="err-full-name" hidden>Please enter your full name.</p>
+              <p class="field-error" id="err-full-name" hidden aria-live="polite">Please enter your full name.</p>
             </div>
             <div class="field" data-field="email">
               <label for="ea-email">Email</label>
@@ -240,16 +241,17 @@
                 autocomplete="email"
                 maxlength="254"
                 placeholder="you@email.com"
+                aria-describedby="err-email"
                 required
               />
-              <p class="field-error" id="err-email" hidden>Please enter a valid email address.</p>
+              <p class="field-error" id="err-email" hidden aria-live="polite">Please enter a valid email address.</p>
             </div>
             <div class="field" data-field="country">
               <label for="ea-country">Country</label>
-              <select id="ea-country" name="country" required>
+              <select id="ea-country" name="country" aria-describedby="err-country" required>
                 <!--COUNTRY_OPTIONS-->
               </select>
-              <p class="field-error" id="err-country" hidden>Please select your country.</p>
+              <p class="field-error" id="err-country" hidden aria-live="polite">Please select your country.</p>
             </div>
             <div class="field" data-field="shopping_interest">
               <label for="ea-interest">What would you most like PiqSavi to help you buy? (optional)</label>
@@ -269,7 +271,7 @@
           </form>
         </div>
 
-        <div class="signup-body result-body" data-panel="success" hidden>
+        <div class="signup-body result-body" data-panel="success" hidden role="status" aria-live="polite">
           <div class="result-icon result-success" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36">
               <path fill="none" stroke="currentColor" stroke-width="2" d="M7 12.5l3.2 3.2L17 8.5" />
@@ -283,7 +285,7 @@
           <button type="button" class="btn btn-submit" data-close-signup>Back to PiqSavi</button>
         </div>
 
-        <div class="signup-body result-body" data-panel="duplicate" hidden>
+        <div class="signup-body result-body" data-panel="duplicate" hidden role="status" aria-live="polite">
           <div class="result-icon result-duplicate" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36">
               <circle cx="9" cy="10" r="1.2" fill="currentColor" />
@@ -296,7 +298,7 @@
           <button type="button" class="btn btn-submit" data-close-signup>Back to PiqSavi</button>
         </div>
 
-        <div class="signup-body result-body" data-panel="technical_error" hidden>
+        <div class="signup-body result-body" data-panel="technical_error" hidden role="status" aria-live="polite">
           <div class="result-icon result-error" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="36" height="36">
               <path
