@@ -21,6 +21,7 @@ RateLimitBucket = Literal[
     "merchant",
     "search",
     "recommendations",
+    "early_access_events",
 ]
 
 
@@ -121,6 +122,12 @@ def classify_path(method: str, path: str) -> RateLimitBucket:
     if normalized.endswith("/auth/login") and upper == "POST":
         return "login"
     if normalized.endswith("/auth/register") and upper == "POST":
+        return "registration"
+    # Tiny first-party landing-page event stream. 20/min/IP by default — not the
+    # generic 120/min default bucket, and not the 5/min registration bucket.
+    if normalized.endswith("/early-access/events") and upper == "POST":
+        return "early_access_events"
+    if normalized.endswith("/early-access") and upper == "POST":
         return "registration"
     if "/affiliate" in normalized:
         return "affiliate"

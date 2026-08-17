@@ -259,6 +259,7 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
             "default_per_minute": cfg.rate_limit_default_per_minute,
             "login_per_minute": cfg.rate_limit_login_per_minute,
             "registration_per_minute": cfg.rate_limit_registration_per_minute,
+            "early_access_events_per_minute": cfg.rate_limit_early_access_events_per_minute,
             "affiliate_per_minute": cfg.rate_limit_affiliate_per_minute,
             "merchant_per_minute": cfg.rate_limit_merchant_per_minute,
             "search_per_minute": cfg.rate_limit_search_per_minute,

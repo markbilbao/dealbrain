@@ -11,6 +11,7 @@ from app.api.v1.endpoints import (
     community,
     dashboard,
     dealscore,
+    early_access,
     graph,
     health,
     intelligence,
@@ -71,6 +72,7 @@ api_v1_router.include_router(shopping_assistant.router, tags=["shopping-assistan
 api_v1_router.include_router(community.router, tags=["community"])
 api_v1_router.include_router(graph.router, tags=["knowledge-graph"])
 api_v1_router.include_router(personal.router, tags=["personal-agent"])
+api_v1_router.include_router(early_access.router)
 api_v1_router.include_router(auth.router, tags=["user-platform-auth"])
 api_v1_router.include_router(profile.router, tags=["user-platform-profile"])
 api_v1_router.include_router(user.router, tags=["user-platform-saved-items"])
