@@ -74,6 +74,9 @@ MERCH_VERIFICATIONS = "merchant.verifications"
 MERCH_MARKETPLACE_ACCOUNTS = "merchant.marketplace_accounts"
 MERCH_PREFERENCES = "merchant.notification_preferences"
 
+# Early Access interest list (not a user account)
+EARLY_ACCESS_REGISTRATIONS = "early_access.registrations"
+
 USER_PLATFORM_STORES = (
     USERS,
     SESSIONS,

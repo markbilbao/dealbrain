@@ -237,6 +237,7 @@ _PERSONAL_AGENT_SERVICE: PersonalAgentService | None = None
 _PERSONAL_PROFILE_REPOSITORY = None
 _USER_PLATFORM_STORE = None
 _USER_PLATFORM_SERVICE: UserPlatformService | None = None
+_EARLY_ACCESS_SERVICE = None
 _MARKETPLACE_DATA_REPOSITORY = InMemoryMarketplaceDataRepository()
 _MARKETPLACE_DATA_SERVICE: MarketplaceDataService | None = None
 _MARKETPLACE_CONNECTOR_REGISTRY: MarketplaceConnectorRegistry | None = None
@@ -254,6 +255,11 @@ _RATE_LIMITER = ConfigurableRateLimiter(
         "login": RateLimitRule("login", settings.rate_limit_login_per_minute, 60),
         "registration": RateLimitRule(
             "registration", settings.rate_limit_registration_per_minute, 60
+        ),
+        "early_access_events": RateLimitRule(
+            "early_access_events",
+            settings.rate_limit_early_access_events_per_minute,
+            60,
         ),
         "affiliate": RateLimitRule("affiliate", settings.rate_limit_affiliate_per_minute, 60),
         "merchant": RateLimitRule("merchant", settings.rate_limit_merchant_per_minute, 60),
@@ -1208,6 +1214,35 @@ def get_user_platform_service() -> UserPlatformService:
             enabled=settings.user_platform_enabled,
         )
     return _USER_PLATFORM_SERVICE
+
+
+_EARLY_ACCESS_MEMORY_REPO = None
+
+
+def get_early_access_repository():
+    """Provide the Early Access repository (SQLAlchemy operational store or memory)."""
+    global _EARLY_ACCESS_MEMORY_REPO
+    from app.early_access.memory import InMemoryEarlyAccessRepository
+    from app.infrastructure.database.repositories.early_access_repository import (
+        SqlAlchemyEarlyAccessRepository,
+    )
+    from app.infrastructure.persistence.binding import resolve_persistence_default
+
+    if resolve_persistence_default() == "sqlalchemy":
+        return SqlAlchemyEarlyAccessRepository()
+    if _EARLY_ACCESS_MEMORY_REPO is None:
+        _EARLY_ACCESS_MEMORY_REPO = InMemoryEarlyAccessRepository()
+    return _EARLY_ACCESS_MEMORY_REPO
+
+
+def get_early_access_service():
+    """Provide the Early Access registration service."""
+    global _EARLY_ACCESS_SERVICE
+    if _EARLY_ACCESS_SERVICE is None:
+        from app.services.early_access_service import EarlyAccessService
+
+        _EARLY_ACCESS_SERVICE = EarlyAccessService(get_early_access_repository())
+    return _EARLY_ACCESS_SERVICE
 
 
 def get_user_dashboard_service(

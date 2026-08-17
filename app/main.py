@@ -9,6 +9,8 @@ from fastapi.openapi.utils import get_openapi
 
 from app import __version__
 from app.api.demo import router as demo_router
+from app.api.early_access_page import mount_early_access_static
+from app.api.early_access_page import router as early_access_page_router
 from app.api.probes import router as probes_router
 from app.api.router import api_router
 from app.core.config import settings
@@ -80,6 +82,7 @@ OPENAPI_TAGS = [
     {"name": "user-platform-auth", "description": "User registration and login"},
     {"name": "user-platform-profile", "description": "User profile and preferences"},
     {"name": "user-platform-saved-items", "description": "Saved products, history, searches"},
+    {"name": "early-access", "description": "PiqSavi Early Access interest registration"},
 ]
 
 
@@ -320,9 +323,11 @@ def create_app() -> FastAPI:
 
     register_exception_handlers(app)
 
+    app.include_router(early_access_page_router)
     app.include_router(probes_router)
     app.include_router(api_router)
     app.include_router(demo_router)
+    mount_early_access_static(app)
 
     app.openapi = lambda: _custom_openapi(app)  # type: ignore[method-assign]
 

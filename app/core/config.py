@@ -351,6 +351,13 @@ class Settings(BaseSettings):
         alias="RATE_LIMIT_REGISTRATION_PER_MINUTE",
         ge=1,
     )
+    # Unauthenticated Early Access UI events (CTA/form/section). Keep well below
+    # RATE_LIMIT_DEFAULT_PER_MINUTE (120) so this cannot be used as a log sink.
+    rate_limit_early_access_events_per_minute: int = Field(
+        default=20,
+        alias="RATE_LIMIT_EARLY_ACCESS_EVENTS_PER_MINUTE",
+        ge=1,
+    )
     rate_limit_affiliate_per_minute: int = Field(
         default=60,
         alias="RATE_LIMIT_AFFILIATE_PER_MINUTE",

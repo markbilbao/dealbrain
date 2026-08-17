@@ -5797,6 +5797,198 @@
         "title": "DisagreementPayload",
         "type": "object"
       },
+      "EarlyAccessEventRequest": {
+        "properties": {
+          "event": {
+            "enum": [
+              "early_access_cta_clicked",
+              "early_access_form_started",
+              "early_access_form_submitted",
+              "how_it_works_viewed"
+            ],
+            "title": "Event",
+            "type": "string"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "header",
+                  "hero"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "title": "EarlyAccessEventRequest",
+        "type": "object"
+      },
+      "EarlyAccessRegisterRequest": {
+        "properties": {
+          "country": {
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Country",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "full_name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Full Name",
+            "type": "string"
+          },
+          "referrer": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referrer"
+          },
+          "shopping_interest": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shopping Interest"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "utm_campaign": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Campaign"
+          },
+          "utm_content": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Content"
+          },
+          "utm_medium": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Medium"
+          },
+          "utm_source": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Source"
+          },
+          "utm_term": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utm Term"
+          }
+        },
+        "required": [
+          "full_name",
+          "email",
+          "country"
+        ],
+        "title": "EarlyAccessRegisterRequest",
+        "type": "object"
+      },
+      "EarlyAccessRegisterResponse": {
+        "properties": {
+          "email_confirmation_status": {
+            "enum": [
+              "not_sent",
+              "pending",
+              "sent",
+              "failed"
+            ],
+            "title": "Email Confirmation Status",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "success",
+              "already_registered"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome",
+          "email_confirmation_status",
+          "message"
+        ],
+        "title": "EarlyAccessRegisterResponse",
+        "type": "object"
+      },
       "EngagementPayload": {
         "properties": {
           "comments": {
@@ -20142,6 +20334,81 @@
         ]
       }
     },
+    "/api/v1/early-access": {
+      "post": {
+        "operationId": "register_early_access_api_v1_early_access_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarlyAccessRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarlyAccessRegisterResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register interest in PiqSavi Early Access",
+        "tags": [
+          "early-access"
+        ]
+      }
+    },
+    "/api/v1/early-access/events": {
+      "post": {
+        "operationId": "record_early_access_event_api_v1_early_access_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarlyAccessEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record a first-party Early Access UI event",
+        "tags": [
+          "early-access"
+        ]
+      }
+    },
     "/api/v1/graph/demo": {
       "get": {
         "operationId": "graph_demo_api_v1_graph_demo_get",
@@ -29111,6 +29378,10 @@
     {
       "description": "Saved products, history, searches",
       "name": "user-platform-saved-items"
+    },
+    {
+      "description": "PiqSavi Early Access interest registration",
+      "name": "early-access"
     }
   ]
 }

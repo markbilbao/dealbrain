@@ -230,3 +230,7 @@ __marimo__/
 
 # Local toolchains (e.g. workspace-scoped CPython for host-compat probes)
 .tools/
+
+# Operator Early Access exports (may contain PII — never commit)
+/exports/
+early_access_export*.csv

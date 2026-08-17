@@ -604,6 +604,14 @@ class LaunchRateLimitError(Exception):
         super().__init__(message)
 
 
+class EarlyAccessValidationError(Exception):
+    """Raised when Early Access registration input cannot be accepted."""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
 class ConfigurationValidationError(Exception):
     """Raised when environment / startup configuration is invalid."""
 

@@ -18,6 +18,7 @@ from app.domain.exceptions import (
     AlertRuleNotFoundError,
     AlertRuleValidationError,
     DashboardValidationError,
+    EarlyAccessValidationError,
     LaunchAuthorizationError,
     LaunchNotFoundError,
     LaunchRateLimitError,
@@ -109,6 +110,7 @@ def map_domain_exception(exc: Exception) -> tuple[int, str, str] | None:
         exc,
         (
             UserPlatformValidationError,
+            EarlyAccessValidationError,
             MerchantValidationError,
             AffiliateValidationError,
             MarketplaceDataValidationError,
