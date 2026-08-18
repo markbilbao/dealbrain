@@ -35,6 +35,13 @@ def test_approved_headline_and_copy() -> None:
         page = client.get("/").text
     assert "Know what’s worth buying." in page or "Know what's worth buying." in page
     assert "Be one of the first to try PiqSavi." in page
+    assert (
+        "We’re getting PiqSavi ready for its first users. Join the Early Access list and we’ll "
+        "let you know when it’s ready to try."
+    ) in page or (
+        "We're getting PiqSavi ready for its first users. Join the Early Access list and we'll "
+        "let you know when it's ready to try."
+    ) in page
     assert "You’re on the list." in page or "You're on the list." in page
     assert "Something went wrong." in page
     assert "Check your inbox" not in page
