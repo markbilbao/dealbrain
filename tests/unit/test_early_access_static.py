@@ -92,6 +92,23 @@ def test_responsive_breakpoint_present() -> None:
     assert "object-position: 60% 42%" in css
 
 
+def test_signup_states_keep_locked_master_proportions() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    assert "width: min(470px, 100%)" in css
+    assert "padding: 2.6rem 3.4rem 1.25rem" in css
+    assert "max-width: 18.5rem" in css
+    assert "margin: 0.75rem auto 3.25rem" in css
+    assert "min-height: 42px" in css
+    assert "min-height: 25.9rem" in css
+    assert "max-width: 260px" in css
+    assert "padding: 1rem 1.5rem 2rem" in css
+    assert "min-height: 39.5rem" in css
+    assert "max-width: 300px" in css
+    assert "margin-bottom: 4rem" in css
+    assert ".signup-sheet:has(.result-body:not([hidden]))" in css
+    assert ".signup-sheet:has(.field-error:not([hidden]))" in css
+
+
 APPROVED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
 
 
