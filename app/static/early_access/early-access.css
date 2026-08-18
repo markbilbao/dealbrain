@@ -108,6 +108,7 @@ select {
 .nav-link:focus-visible,
 .nav-toggle:focus-visible,
 .mobile-menu-link:focus-visible,
+.signup-brand:focus-visible,
 .icon-close:focus-visible,
 input:focus-visible,
 select:focus-visible {
@@ -975,11 +976,11 @@ select:focus-visible {
 
   .site-header {
     padding: 0 1.15rem;
-    min-height: 56px;
+    min-height: 64px;
   }
 
   .site-header .brand-logo {
-    height: 56px;
+    height: 72px;
     width: auto;
     object-fit: contain;
   }
@@ -1161,9 +1162,15 @@ select:focus-visible {
     gap: 0;
   }
 
-  .footer-lockup .brand-logo,
-  .signup-brand .brand-logo {
+  .footer-lockup .brand-logo {
     height: 56px;
+    width: auto;
+    object-fit: contain;
+    overflow: visible;
+  }
+
+  .signup-brand .brand-logo {
+    height: 72px;
     width: auto;
     object-fit: contain;
     overflow: visible;
