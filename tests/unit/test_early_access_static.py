@@ -169,6 +169,23 @@ def test_result_panels_are_polite_status_live_regions() -> None:
         assert 'aria-live="polite"' in snippet
 
 
+def test_duplicate_response_uses_the_distinct_duplicate_panel() -> None:
+    assert 'if (body.outcome === "already_registered")' in JS
+    assert 'showResult("duplicate")' in JS
+    assert "You’re already on the Early Access list." in HTML
+
+
+def test_mobile_signup_logo_links_home_and_is_larger() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    mobile_css = css.split("@media (max-width: 767px)", 1)[1]
+    assert '<a class="signup-brand" href="/" aria-label="Back to PiqSavi home">' in HTML
+    assert '<img\n              class="brand-logo"' in HTML
+    assert "PiqSavi home" in HTML
+    assert ".site-header .brand-logo {\n    height: 72px;" in mobile_css
+    assert ".signup-brand .brand-logo {\n    height: 72px;" in mobile_css
+    assert ".signup-brand:focus-visible" in css
+
+
 def test_js_manages_aria_busy_on_form() -> None:
     assert "function setLoading(loading)" in JS
     assert 'form.setAttribute("aria-busy", loading ? "true" : "false")' in JS
