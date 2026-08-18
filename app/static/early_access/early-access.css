@@ -137,7 +137,8 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  min-height: 52px;
+  min-height: 47px;
+  font-size: 0.82rem;
 }
 
 .btn[disabled] {
@@ -628,7 +629,7 @@ select:focus-visible {
   z-index: 40;
   display: grid;
   place-items: center;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .signup-backdrop {
@@ -639,13 +640,13 @@ select:focus-visible {
 
 .signup-sheet {
   position: relative;
-  width: min(520px, 100%);
-  max-height: min(90dvh, 840px);
+  width: min(470px, 100%);
+  max-height: calc(100dvh - 2rem);
   overflow: auto;
   background: var(--sheet);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 80px rgba(11, 27, 51, 0.28);
-  padding: 1.35rem 1.5rem 1.6rem;
+  padding: 2.6rem 3.4rem 1.25rem;
 }
 
 .signup-header {
@@ -665,23 +666,34 @@ select:focus-visible {
 
 #signup-title {
   line-height: 1.18;
-  margin: 0;
+  margin: 0 auto;
+  max-width: 18.5rem;
+  text-align: center;
+}
+
+.signup-body > .eyebrow {
+  margin-bottom: 1.4rem;
+  text-align: center;
 }
 
 .signup-lede {
   color: var(--muted);
-  line-height: 1.55;
-  margin: 1.25rem 0 1.55rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  margin: 0.75rem auto 3.25rem;
+  max-width: 21rem;
+  text-align: center;
 }
 
 .field {
-  margin-bottom: 0.95rem;
+  margin-bottom: 1.7rem;
 }
 
 .field label {
   display: block;
+  font-size: 0.65rem;
   font-weight: 650;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.45rem;
   color: var(--navy);
 }
 
@@ -690,9 +702,11 @@ select:focus-visible {
   width: 100%;
   border: 1px solid #cfd7e6;
   border-radius: 8px;
-  padding: 0.72rem 0.8rem;
+  min-height: 42px;
+  padding: 0.65rem 0.75rem;
   background: #fff;
   color: var(--navy);
+  font-size: 0.8rem;
 }
 
 .field.is-invalid label,
@@ -707,8 +721,9 @@ select:focus-visible {
 }
 
 .field-error {
-  margin: 0.3rem 0 0;
-  font-size: 0.86rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.6rem;
+  line-height: 1.1;
 }
 
 .signup-note {
@@ -716,28 +731,42 @@ select:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin: 0.85rem 0 0;
+  margin: 0.8rem 0 0;
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: 0.68rem;
   text-align: center;
 }
 
 .result-body {
   text-align: center;
-  padding: 1.5rem 0.5rem 0.5rem;
+  min-height: 25.9rem;
+  padding: 0.9rem 0.25rem 1.55rem;
+}
+
+.result-body:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .result-body p {
   color: var(--muted);
+  font-size: 0.78rem;
   line-height: 1.5;
-  margin: 0 0 1.5rem;
+  margin: 1rem auto 0;
+  max-width: 21rem;
+}
+
+.result-body .btn-submit {
+  max-width: 260px;
+  margin-top: auto;
 }
 
 .result-icon {
-  width: 72px;
-  height: 72px;
+  width: 86px;
+  height: 86px;
   border-radius: 50%;
-  margin: 0.4rem auto 1rem;
+  margin: 0 auto 2.3rem;
   display: grid;
   place-items: center;
 }
@@ -1152,6 +1181,14 @@ select:focus-visible {
     width: 100%;
   }
 
+  .field.is-invalid {
+    margin-bottom: 1.45rem;
+  }
+
+  .field[data-field="shopping_interest"] {
+    margin-bottom: 1.3rem;
+  }
+
   body.is-signup-open {
     overflow: auto;
   }
@@ -1177,7 +1214,7 @@ select:focus-visible {
     min-height: 100dvh;
     border-radius: 0;
     box-shadow: none;
-    padding: 1rem 1.15rem 2rem;
+    padding: 1rem 1.5rem 2rem;
     padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + var(--kb-inset, 0px));
   }
 
@@ -1207,7 +1244,7 @@ select:focus-visible {
   }
 
   .signup-body > .eyebrow {
-    margin-bottom: 0.4rem;
+    margin-bottom: 1.4rem;
   }
 
   #signup-title {
@@ -1215,13 +1252,45 @@ select:focus-visible {
   }
 
   .signup-lede {
-    margin-top: 1rem;
-    margin-bottom: 1.35rem;
-    line-height: 1.5;
+    margin-top: 0.75rem;
+    margin-bottom: 3.25rem;
+    line-height: 1.45;
+  }
+
+  .result-body {
+    min-height: 39.5rem;
+    padding: 3.3rem 0 0;
+  }
+
+  .result-icon {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 3.05rem;
+  }
+
+  .result-body .btn-submit {
+    width: 100%;
+    max-width: 300px;
   }
 }
 
 @media (min-width: 768px) {
+  .signup-sheet {
+    transform: translateY(0.5rem);
+  }
+
+  .signup-sheet:has(.result-body:not([hidden])) {
+    transform: translateY(-1.05rem);
+  }
+
+  .signup-sheet:has(.field-error:not([hidden])) {
+    transform: translateY(2.2rem);
+  }
+
+  .signup-lede {
+    margin-bottom: 4rem;
+  }
+
   .signup-sheet .signup-header .signup-brand {
     display: none;
   }
