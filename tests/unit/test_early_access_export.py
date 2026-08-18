@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import stat
 from datetime import UTC, datetime
+from pathlib import Path
 
-from scripts.export_early_access import csv_cell
+import pytest
+import scripts.export_early_access as export_module
+from scripts.export_early_access import ROOT, csv_cell, write_private_export
 
 
 def test_normal_text_unchanged() -> None:
@@ -41,3 +45,53 @@ def test_unicode_text_remains_intact() -> None:
 def test_timestamps_are_not_prefixed() -> None:
     stamp = datetime(2026, 8, 17, 10, 0, tzinfo=UTC)
     assert csv_cell(stamp) == stamp.isoformat()
+
+
+def test_private_export_is_owner_only_and_refuses_overwrite(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "early-access.csv"
+
+    def _write(out) -> int:  # noqa: ANN001
+        out.write("email\nqa@example.com\n")
+        return 0
+
+    monkeypatch.setattr(export_module, "export_rows", _write)
+    assert write_private_export(destination) == 0
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o600
+    assert destination.read_text(encoding="utf-8") == "email\nqa@example.com\n"
+    with pytest.raises(FileExistsError):
+        write_private_export(destination)
+
+
+def test_private_export_refuses_repository_destination() -> None:
+    with pytest.raises(ValueError, match="outside the repository"):
+        write_private_export(ROOT / "early-access-private.csv")
+
+
+def test_private_export_refuses_symlink_destination(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "symlink-target.csv"
+    destination = tmp_path / "early-access.csv"
+    destination.symlink_to(target)
+
+    monkeypatch.setattr(export_module, "export_rows", lambda _out: 0)
+    with pytest.raises(ValueError, match="symlink"):
+        write_private_export(destination)
+    assert not target.exists()
+
+
+def test_private_export_removes_partial_file_on_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "partial.csv"
+
+    def _fail(out) -> int:  # noqa: ANN001
+        out.write("partial PII")
+        raise RuntimeError("database unavailable")
+
+    monkeypatch.setattr(export_module, "export_rows", _fail)
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        write_private_export(destination)
+    assert not destination.exists()

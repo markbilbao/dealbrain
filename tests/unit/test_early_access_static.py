@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 
 from app.core.public_brand import PUBLIC_BRAND, PUBLIC_TAGLINE
@@ -12,6 +13,20 @@ from fastapi.testclient import TestClient
 ROOT = Path(__file__).resolve().parents[2]
 HTML = (ROOT / "app/static/early_access/index.html").read_text(encoding="utf-8")
 JS = (ROOT / "app/static/early_access/early-access.js").read_text(encoding="utf-8")
+
+
+def _relative_luminance(hex_color: str) -> float:
+    channels = [int(hex_color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
+    linear = [
+        channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+        for channel in channels
+    ]
+    return (0.2126 * linear[0]) + (0.7152 * linear[1]) + (0.0722 * linear[2])
+
+
+def _contrast_ratio(first: str, second: str) -> float:
+    bright, dark = sorted((_relative_luminance(first), _relative_luminance(second)), reverse=True)
+    return (bright + 0.05) / (dark + 0.05)
 
 
 def test_correct_public_brand() -> None:
@@ -191,6 +206,13 @@ def test_js_manages_aria_busy_on_form() -> None:
     assert 'form.setAttribute("aria-busy", loading ? "true" : "false")' in JS
     assert "submitBtn.disabled = loading" in JS
     assert 'submitBtn.classList.toggle("is-loading", loading)' in JS
+
+
+def test_loading_button_text_meets_normal_text_contrast() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    match = re.search(r"--blue-soft:\s*(#[0-9a-fA-F]{6})", css)
+    assert match is not None
+    assert _contrast_ratio("#ffffff", match.group(1)) >= 4.5
 
 
 def test_desktop_modal_and_mobile_aria_modal_breakpoint() -> None:

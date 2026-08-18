@@ -1,13 +1,15 @@
-"""Operator CLI: export Early Access registrations as CSV.
+"""Operator CLI: export Early Access registrations as a private CSV.
 
-Writes to a caller-supplied path (or stdout). Does not write PII into git.
-This is not a public HTTP endpoint.
+The export must be written to a new caller-supplied path outside this
+repository. The file is created with mode 0600 and is never written to
+stdout. This is not a public HTTP endpoint.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -104,6 +106,46 @@ def export_rows(out) -> int:  # noqa: ANN001
     return 0
 
 
+def _validated_output_path(path: Path) -> Path:
+    expanded = path.expanduser()
+    resolved = expanded.parent.resolve(strict=False) / expanded.name
+    try:
+        resolved.relative_to(ROOT.resolve())
+    except ValueError:
+        pass
+    else:
+        raise ValueError("output must be outside the repository")
+    if not resolved.parent.is_dir():
+        raise ValueError("output parent directory must already exist")
+    if resolved.is_symlink():
+        raise ValueError("output path must not be a symlink")
+    return resolved
+
+
+def write_private_export(path: Path) -> int:
+    """Write one new owner-only export without stdout or overwrite fallback."""
+    destination = _validated_output_path(path)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    fd = os.open(destination, flags, 0o600)
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            fd = -1
+            result = export_rows(handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        if result != 0:
+            destination.unlink(missing_ok=True)
+        return result
+    except Exception:
+        if fd >= 0:
+            os.close(fd)
+        destination.unlink(missing_ok=True)
+        raise
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Export PiqSavi Early Access registrations to CSV."
@@ -111,15 +153,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--out",
         type=Path,
-        default=None,
-        help="Destination CSV path. Defaults to stdout. Do not place this file in git.",
+        required=True,
+        help="New private CSV path outside the repository (created mode 0600).",
     )
     args = parser.parse_args(argv)
-    if args.out is None:
-        return export_rows(sys.stdout)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    with args.out.open("w", encoding="utf-8", newline="") as handle:
-        return export_rows(handle)
+    try:
+        return write_private_export(args.out)
+    except (FileExistsError, OSError, ValueError) as exc:
+        print(f"Export refused: {exc}", file=sys.stderr)
+        return 2
+    except Exception:
+        print("Export failed; no output was retained.", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
