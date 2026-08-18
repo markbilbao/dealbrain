@@ -16,6 +16,16 @@
 
     <div class="landing-root" id="landing-root">
       <header class="site-header">
+        <button
+          type="button"
+          class="nav-toggle"
+          id="nav-toggle"
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+          aria-label="Open menu"
+        >
+          <span class="nav-toggle-icon" aria-hidden="true"></span>
+        </button>
         <a class="brand" href="/">
           <img
             class="brand-logo"
@@ -32,6 +42,25 @@
           </button>
         </nav>
       </header>
+      <div class="mobile-menu" id="mobile-menu" hidden>
+        <a class="mobile-menu-link" id="mobile-how-link" href="#how-it-works">
+          <span class="mobile-menu-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                d="M9 18h6M10 21h4M12 3a6 6 0 00-3.5 10.9V16h7v-2.1A6 6 0 0012 3z"
+              />
+            </svg>
+          </span>
+          <span class="mobile-menu-copy">
+            <span class="mobile-menu-title">How it works</span>
+            <span class="mobile-menu-hint">Scroll to the How It Works section</span>
+          </span>
+          <span class="mobile-menu-chevron" aria-hidden="true"></span>
+        </a>
+      </div>
 
       <main id="main">
         <section class="hero" aria-labelledby="hero-title">
@@ -57,16 +86,31 @@
               Be among the first to try PiqSavi before public launch.
             </p>
           </div>
-          <div
-            class="hero-art"
-            role="img"
-            aria-label="Sunrise over misty mountains. Placeholder artwork pending production source file."
-          ></div>
+          <div class="hero-art">
+            <picture>
+              <source
+                media="(max-width: 767px)"
+                srcset="/static/early_access/assets/piqsavi-hero-mobile-crop-752x941.png"
+              />
+              <source
+                type="image/webp"
+                srcset="/static/early_access/assets/piqsavi-hero-photographic-master.webp"
+              />
+              <img
+                src="/static/early_access/assets/piqsavi-hero-photographic-master.png"
+                alt="Sunrise over misty mountains"
+                width="1672"
+                height="941"
+              />
+            </picture>
+          </div>
         </section>
 
         <section class="how" id="how-it-works" aria-labelledby="how-title">
-          <p class="eyebrow">HOW IT WORKS</p>
-          <h2 id="how-title">A clearer way to decide what to buy.</h2>
+          <div class="section-intro">
+            <p class="eyebrow">HOW IT WORKS</p>
+            <h2 id="how-title">A clearer way to decide what to buy.</h2>
+          </div>
           <ol class="how-steps">
             <li class="how-step">
               <span class="how-icon" aria-hidden="true">
@@ -118,8 +162,11 @@
         </section>
 
         <section class="trust" aria-labelledby="trust-title">
-          <p class="eyebrow">PIQSCORE / TRUST</p>
-          <h2 id="trust-title">Not every deal is a good deal.</h2>
+          <div class="trust-panel">
+            <div class="section-intro">
+              <p class="eyebrow">PIQSCORE / TRUST</p>
+              <h2 id="trust-title">Not every deal is a good deal.</h2>
+            </div>
           <ul class="trust-grid">
             <li>
               <span class="trust-icon" aria-hidden="true">
@@ -162,6 +209,7 @@
               <p>Recommendations are designed to stay independent of affiliate relationships.</p>
             </li>
           </ul>
+          </div>
         </section>
       </main>
 
@@ -267,7 +315,17 @@
               <span class="btn-spinner" aria-hidden="true"></span>
               <span class="btn-label">Join Early Access — Free</span>
             </button>
-            <p class="signup-note">No spam. Just important PiqSavi early-access updates.</p>
+            <p class="signup-note">
+              <svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6l7-3z"
+                />
+              </svg>
+              No spam. Just important PiqSavi early-access updates.
+            </p>
           </form>
         </div>
 
