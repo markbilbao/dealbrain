@@ -1,5 +1,6 @@
 (() => {
   const BREAKPOINT = 767;
+  const NAV_BREAKPOINT = 1023;
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const layer = document.getElementById("signup-layer");
   const sheet = document.getElementById("signup-sheet");
@@ -8,6 +9,9 @@
   const tryAgain = document.getElementById("ea-try-again");
   const landing = document.getElementById("landing-root");
   const how = document.getElementById("how-it-works");
+  const navToggle = document.getElementById("nav-toggle");
+  const mobileMenu = document.getElementById("mobile-menu");
+  const mobileHowLink = document.getElementById("mobile-how-link");
 
   const state = {
     view: "landing",
@@ -25,9 +29,25 @@
   };
 
   const mobileQuery = window.matchMedia(`(max-width: ${BREAKPOINT}px)`);
+  const navQuery = window.matchMedia(`(max-width: ${NAV_BREAKPOINT}px)`);
 
   function isMobile() {
     return mobileQuery.matches;
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function setMenuOpen(open) {
+    if (!navToggle || !mobileMenu) return;
+    mobileMenu.hidden = !open;
+    navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    navToggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+  }
+
+  function closeMenu() {
+    setMenuOpen(false);
   }
 
   function syncSignupAriaModal() {
@@ -45,6 +65,16 @@
     mobileQuery.addEventListener("change", onMobileBreakpointChange);
   } else if (typeof mobileQuery.addListener === "function") {
     mobileQuery.addListener(onMobileBreakpointChange);
+  }
+
+  function onNavBreakpointChange() {
+    if (!navQuery.matches) closeMenu();
+  }
+
+  if (typeof navQuery.addEventListener === "function") {
+    navQuery.addEventListener("change", onNavBreakpointChange);
+  } else if (typeof navQuery.addListener === "function") {
+    navQuery.addListener(onNavBreakpointChange);
   }
   syncSignupAriaModal();
 
@@ -130,6 +160,8 @@
     submitBtn.classList.remove("is-loading");
     submitBtn.querySelector(".btn-label").textContent = "Join Early Access — Free";
     showPanel("form");
+    form.setAttribute("aria-busy", "false");
+    closeMenu();
     layer.hidden = false;
     document.body.classList.toggle("is-signup-open", isMobile());
     track("early_access_cta_clicked", cta?.dataset.ctaSource);
@@ -233,6 +265,22 @@
     }
   });
 
+  if (navToggle) {
+    navToggle.addEventListener("click", () => {
+      const open = navToggle.getAttribute("aria-expanded") !== "true";
+      setMenuOpen(open);
+    });
+  }
+
+  if (mobileHowLink) {
+    mobileHowLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      closeMenu();
+      if (!how) return;
+      how.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    });
+  }
+
   document.querySelectorAll(".js-open-signup").forEach((btn) => {
     btn.addEventListener("click", () => openSignup(btn));
   });
@@ -261,6 +309,12 @@
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && navToggle && navToggle.getAttribute("aria-expanded") === "true") {
+      event.preventDefault();
+      closeMenu();
+      navToggle.focus();
+      return;
+    }
     if (layer.hidden) return;
     if (event.key === "Escape") {
       event.preventDefault();
