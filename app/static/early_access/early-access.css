@@ -663,10 +663,15 @@ select:focus-visible {
   height: 44px;
 }
 
+#signup-title {
+  line-height: 1.18;
+  margin: 0;
+}
+
 .signup-lede {
   color: var(--muted);
-  line-height: 1.5;
-  margin: -0.7rem 0 1.2rem;
+  line-height: 1.55;
+  margin: 1.25rem 0 1.55rem;
 }
 
 .field {
@@ -1199,6 +1204,20 @@ select:focus-visible {
   .signup-lede,
   .eyebrow {
     text-align: center;
+  }
+
+  .signup-body > .eyebrow {
+    margin-bottom: 0.4rem;
+  }
+
+  #signup-title {
+    line-height: 1.2;
+  }
+
+  .signup-lede {
+    margin-top: 1rem;
+    margin-bottom: 1.35rem;
+    line-height: 1.5;
   }
 }
 
