@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.piqsavi.com/sprint29/research-execution-v1.schema.json",
+  "title": "PiqSavi Sprint 29 research execution boundary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "data_classification",
+    "mode",
+    "status",
+    "disclosure",
+    "production_eligible",
+    "live_claims",
+    "evidence_ids"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "data_classification": { "const": "non_live_contract_fixture" },
+    "mode": { "enum": ["unavailable", "mock", "live"] },
+    "status": {
+      "enum": ["unavailable", "proposed", "confirmed", "running", "completed", "failed", "cancelled"]
+    },
+    "disclosure": { "type": "string", "minLength": 1 },
+    "production_eligible": { "type": "boolean" },
+    "live_claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchants", "prices", "availability", "coverage", "refreshed_research"],
+      "properties": {
+        "merchants": { "type": "boolean" },
+        "prices": { "type": "boolean" },
+        "availability": { "type": "boolean" },
+        "coverage": { "type": "boolean" },
+        "refreshed_research": { "type": "boolean" }
+      }
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "sprint38_certification_id": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "mode": { "const": "unavailable" } } },
+      "then": {
+        "properties": {
+          "status": { "const": "unavailable" },
+          "disclosure": { "const": "Research is currently unavailable." },
+          "production_eligible": { "const": false },
+          "live_claims": { "$ref": "#/$defs/noLiveClaims" },
+          "evidence_ids": { "maxItems": 0 }
+        },
+        "not": { "required": ["sprint38_certification_id"] }
+      }
+    },
+    {
+      "if": { "properties": { "mode": { "const": "mock" } } },
+      "then": {
+        "properties": {
+          "disclosure": { "const": "Demo research — not live marketplace data." },
+          "production_eligible": { "const": false },
+          "live_claims": { "$ref": "#/$defs/noLiveClaims" }
+        },
+        "not": { "required": ["sprint38_certification_id"] }
+      }
+    },
+    {
+      "if": { "properties": { "mode": { "const": "live" } } },
+      "then": {
+        "required": ["sprint38_certification_id"],
+        "properties": {
+          "production_eligible": { "const": true },
+          "evidence_ids": { "minItems": 1 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "noLiveClaims": {
+      "type": "object",
+      "properties": {
+        "merchants": { "const": false },
+        "prices": { "const": false },
+        "availability": { "const": false },
+        "coverage": { "const": false },
+        "refreshed_research": { "const": false }
+      }
+    }
+  }
+}

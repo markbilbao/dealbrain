@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0",
+  "phase": "29.0",
+  "launch_gate": "CC-01",
+  "entries": [
+    {
+      "acceptance_id": "CC-01-01",
+      "planned_phase": "29.1",
+      "behavioral_test_id": "test_existing_conversation_architecture_is_extended",
+      "contract_artifacts": ["docs/architecture/SPRINT_29_CC01_ARCHITECTURE.md"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-02",
+      "planned_phase": "29.3",
+      "behavioral_test_id": "test_canonical_result_authorities_remain_single",
+      "contract_artifacts": ["schemas/sprint29-decision-context.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-03",
+      "planned_phase": "29.3",
+      "behavioral_test_id": "test_search_creates_server_owned_decision_snapshot",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-decision-context.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-04",
+      "planned_phase": "integrated",
+      "behavioral_test_id": "test_guest_completes_full_conversational_journey",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-contract-traceability.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-05",
+      "planned_phase": "29.7",
+      "behavioral_test_id": "test_all_consumer_surfaces_share_context",
+      "contract_artifacts": ["docs/architecture/SPRINT_29_CC01_ARCHITECTURE.md"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-06",
+      "planned_phase": "29.4",
+      "behavioral_test_id": "test_evidence_answer_does_not_start_research",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-action-answer-from-evidence.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-07",
+      "planned_phase": "29.4",
+      "behavioral_test_id": "test_session_refinement_preserves_piqscore_bytes",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-action-refine-session-recommendation.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-08",
+      "planned_phase": "29.4",
+      "behavioral_test_id": "test_session_priorities_do_not_write_account_preferences",
+      "contract_artifacts": ["schemas/sprint29-conversation-action.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-09",
+      "planned_phase": "29.5",
+      "behavioral_test_id": "test_research_requires_insufficient_evidence",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-action-propose-research.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-10",
+      "planned_phase": "29.5",
+      "behavioral_test_id": "test_research_confirmation_is_idempotent",
+      "contract_artifacts": ["schemas/sprint29-conversation-action.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-11",
+      "planned_phase": "38",
+      "behavioral_test_id": "test_research_status_claims_have_execution_evidence",
+      "contract_artifacts": ["schemas/sprint29-research-execution.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-12",
+      "planned_phase": "29.5",
+      "behavioral_test_id": "test_completed_research_atomically_updates_results",
+      "contract_artifacts": ["schemas/sprint29-research-execution.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-13",
+      "planned_phase": "29.5",
+      "behavioral_test_id": "test_failed_research_preserves_last_valid_decision",
+      "contract_artifacts": ["schemas/sprint29-research-execution.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-14",
+      "planned_phase": "29.4",
+      "behavioral_test_id": "test_follow_up_preserves_evaluated_product_set",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-context-drift.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-15",
+      "planned_phase": "29.4",
+      "behavioral_test_id": "test_battery_follow_up_does_not_replace_samsung_with_pixel",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-context-drift.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-16",
+      "planned_phase": "29.1",
+      "behavioral_test_id": "test_active_session_retains_bounded_turn_history",
+      "contract_artifacts": ["docs/architecture/SPRINT_29_CC01_ARCHITECTURE.md"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-17",
+      "planned_phase": "29.2",
+      "behavioral_test_id": "test_guest_continuity_is_durable_and_isolated",
+      "contract_artifacts": ["schemas/sprint29-decision-context.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-18",
+      "planned_phase": "integrated",
+      "behavioral_test_id": "test_guest_to_account_transfer_rotates_ownership",
+      "contract_artifacts": ["schemas/sprint29-decision-context.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-19",
+      "planned_phase": "29.4",
+      "behavioral_test_id": "test_affiliate_economics_never_influence_actions",
+      "contract_artifacts": ["schemas/sprint29-conversation-action.schema.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-20",
+      "planned_phase": "44",
+      "behavioral_test_id": "test_consumer_states_match_approved_visual_manifest",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-authority-lock.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-21",
+      "planned_phase": "29.7",
+      "behavioral_test_id": "test_ask_insertion_heights_match_manifest",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-authority-lock.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-22",
+      "planned_phase": "29.7",
+      "behavioral_test_id": "test_conversation_surfaces_meet_accessibility_contract",
+      "contract_artifacts": ["docs/architecture/SPRINT_29_CC01_ARCHITECTURE.md"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-23",
+      "planned_phase": "29.7",
+      "behavioral_test_id": "test_cc01_behavioral_matrix_is_complete",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-contract-traceability.json"],
+      "status": "planned_not_implemented"
+    },
+    {
+      "acceptance_id": "CC-01-24",
+      "planned_phase": "45",
+      "behavioral_test_id": "test_immutable_candidate_passes_complete_cc01_journey",
+      "contract_artifacts": ["tests/contracts/fixtures/sprint29-authority-lock.json"],
+      "status": "planned_not_implemented"
+    }
+  ]
+}

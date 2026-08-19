@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "phase": "29.0",
+  "implementation_baseline_sha": "f80f0ef81874e51f42c27aed014d368091c75741",
+  "manifest_path": "docs/roadmap/evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md",
+  "manifest_sha256": "c3f8665c5ad885244d3ee8d977e5e43ec5d39344dddc9f47975eaa540538bc3e",
+  "approved_artifact_set_sha256": "98a0faa4aede278a39e28e3462fc76bfb7a0813faaad760fc09e71067b11e5ed",
+  "approved_artifact_count": 25,
+  "legacy_readme_sha256": "d03fe81f74d45009d291d39d0d2e422ae26195af06b1bf2eeac2e17ed9e1f4de",
+  "source_package": "PiqSavi_Conversational_Continuity_Strict_Pixel_Consistency_REVIEW",
+  "manifest_status": "OWNER APPROVED FOR DEVELOPMENT",
+  "aggregation_order": "lexicographic_by_filename",
+  "approved_artifact_names": [
+    "A_Results_Desktop_Exact_Master_Plus_Ask_PiqSavi.png",
+    "B_Compare_Desktop_Exact_Master_Plus_Ask_PiqSavi.png",
+    "C_Why_Best_Piq_Desktop_Exact_Master_Plus_Ask_PiqSavi.png",
+    "D1_Desktop_Conversation_Empty.png",
+    "D2_Desktop_Conversation_Answer.png",
+    "D3_Desktop_Conversation_MultiTurn.png",
+    "D4_Desktop_Research_Again_Confirmation.png",
+    "D5_Desktop_Insufficient_Evidence.png",
+    "D6_Desktop_Conversation_Technical_Error.png",
+    "E1_Mobile_Conversation_Sheet_Empty.png",
+    "E2_Mobile_Conversation_Sheet_MultiTurn.png",
+    "E3_Mobile_Conversation_Sheet_Keyboard_Open.png",
+    "E4_Mobile_Research_Again_Confirmation.png",
+    "E5_Mobile_Conversation_Technical_Error.png",
+    "F1_Desktop_Research_Again_State.png",
+    "F2_Mobile_Research_Again_State.png",
+    "G1_Desktop_Updated_Results_Return_Exact_Shell.png",
+    "G2_Mobile_Updated_Results_Return_Exact_Shell.png",
+    "M_Results_Mobile_Exact_Master_Plus_Ask_PiqSavi.png",
+    "N_Compare_Mobile_Exact_Master_Plus_Ask_PiqSavi.png",
+    "O_Why_Best_Piq_Mobile_Exact_Master_Plus_Ask_PiqSavi.png",
+    "PIXEL_CONSISTENCY_QA.json",
+    "QA_Compare_Master_vs_Insertion.png",
+    "QA_Results_Master_vs_Insertion.png",
+    "QA_Why_Best_Piq_Master_vs_Insertion.png"
+  ],
+  "protected_authorities": [
+    "canonical PiqScore/DealScore engine",
+    "canonical Recommendation engine",
+    "affiliate-neutrality boundary",
+    "existing Early Access behavior",
+    "existing demo behavior",
+    "approved Product Foundation artwork"
+  ],
+  "consumer_architecture": {
+    "server": "FastAPI",
+    "documents": "server-rendered semantic HTML",
+    "styles": "shared CSS",
+    "scripts": "native vanilla-JavaScript ES modules",
+    "prohibited": [
+      "React",
+      "Vite",
+      "TypeScript",
+      "SPA routing",
+      "Node production build pipeline",
+      "client-side scoring authority"
+    ]
+  }
+}

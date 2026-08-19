@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "data_classification": "non_live_contract_fixture",
+  "action_id": "00000000-0000-4000-8000-000000000103",
+  "action": "propose_research",
+  "decision_id": "00000000-0000-4000-8000-000000000029",
+  "context_version": 1,
+  "input_turn_id": "00000000-0000-4000-8000-000000000203",
+  "evaluated_product_ids": [
+    "apple-iphone-17-pro-max",
+    "samsung-galaxy-s25-ultra-512gb"
+  ],
+  "canonical_piqscore_snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "response_source": "research_proposal",
+  "requires_research_confirmation": true,
+  "affiliate_influence": false,
+  "research_proposal": {
+    "proposal_id": "00000000-0000-4000-8000-000000000301",
+    "question": "Would you like PiqSavi to research additional battery evidence?",
+    "requested_product_ids": [
+      "apple-iphone-17-pro-max",
+      "samsung-galaxy-s25-ultra-512gb"
+    ],
+    "status": "awaiting_explicit_confirmation"
+  }
+}
