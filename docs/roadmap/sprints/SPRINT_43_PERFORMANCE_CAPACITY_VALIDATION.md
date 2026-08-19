@@ -21,6 +21,10 @@ Produce capacity evidence for announced rollout sizes; forbid unproven capacity 
 - Rate-limit capacity; AI/merchant quotas; graceful overload
 - Celebrity/creator spike simulation
 - Evidence gates for 1k registered, 1k DAU, 10k registered, 10k DAU, short spike
+- Validate shared ConversationRepository capacity across restarts and multiple application workers.
+- Load-test decision-context reads/writes, bounded conversation history, session cleanup, AI-answer concurrency, and confirmed-research job concurrency.
+- Measure database payload size, cleanup/index behavior, connection-pool pressure, idempotency storage, queue requirements, provider quotas, and graceful overload.
+- Decide from evidence whether the operational JSON store is sufficient for beta or whether a dedicated indexed table or Redis adapter is required behind the same repository port.
 
 ## Explicit non-goals
 
@@ -59,6 +63,9 @@ Produce capacity evidence for announced rollout sizes; forbid unproven capacity 
 - Written capacity evidence for the size Sprint 45 will announce
 - If 10k gates fail, announcement reduced accordingly
 - Spike test report filed
+- Capacity evidence covers the announced concurrent conversational sessions, AI-answer rate, and research-execution rate.
+- Restart and multi-worker tests preserve authorized active sessions without cross-session leakage.
+- Overload fails honestly without duplicate research, corrupted context, fabricated progress, or canonical Results mutation.
 
 ## Predecessor sprints
 

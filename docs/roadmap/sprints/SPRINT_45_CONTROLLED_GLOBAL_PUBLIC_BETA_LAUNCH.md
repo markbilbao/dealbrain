@@ -21,6 +21,9 @@ Execute controlled public launch by performing **final go/no-go verification** a
 - Incident war-room staffing; rollback authority assignment (EC-20)
 - Signed final launch checklist (EC-22)
 - Confirm Sprint 26 promotion discipline still holds for the frozen launch candidate (final verification of P1-7 — not duplicate primary ownership)
+- Re-run and verify CC-01 as a required child gate of EC-02.
+- Attach signed CC-01 evidence and its immutable candidate digest to the EC-22 final launch checklist.
+- Reject CC-01 evidence produced from a different digest, stale environment, mock-only live-research path, or incomplete surface/device matrix.
 
 ## Explicit non-goals
 
@@ -68,6 +71,9 @@ Execute controlled public launch by performing **final go/no-go verification** a
 - Checklist signed
 - Monitoring handoff to Sprint 46 recorded
 - No documentation-only evidence accepted for runtime criteria
+- EC-02 cannot pass unless CC-01 passes on the frozen launch candidate.
+- EC-22 cannot be signed unless the exact CC-01 evidence package is attached.
+- Public launch is no-go if Ask PiqSavi loses context, changes the evaluated set without approved research, mutates canonical PiqScores, fabricates execution, violates affiliate neutrality, or fails Results/Compare/Why/mobile continuity.
 
 ### Additive PiqSavi launch gate (not marked complete)
 

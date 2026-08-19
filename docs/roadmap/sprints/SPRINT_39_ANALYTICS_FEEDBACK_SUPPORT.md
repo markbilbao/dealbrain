@@ -17,6 +17,9 @@ Instrument consent-gated product analytics and a real feedback/bug/support path 
 - Retention policy for analytics
 - Dashboards; beta-learning review cadence
 - In-product feedback + bug report + support contact
+- Add consent-gated Conversational Continuity events for Ask open/close, question submission, evidence answer, insufficient evidence, Recommendation refinement, research proposal/confirmation/decline/start/partial/completion/failure, updated Results, reopen, expiry, and authentication transition.
+- Do not send raw questions, answers, emails, product free text, full conversations, or session tokens to analytics.
+- Separate essential operational/security telemetry from non-essential product analytics.
 
 ## Explicit non-goals
 
@@ -62,6 +65,9 @@ Instrument consent-gated product analytics and a real feedback/bug/support path 
 - Core funnel events visible
 - Support/feedback path reaches monitored inbox
 - Logging-only paths are not labeled analytics-complete
+- Consent-off behavior emits no non-essential Conversational Continuity analytics.
+- Conversational events are schema-validated and deduplicated.
+- Event properties use anonymous decision/session hashes, action type, surface, turn number, evidence count, latency/freshness bands, error code, and context version only.
 
 ## Predecessor sprints
 
