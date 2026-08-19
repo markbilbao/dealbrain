@@ -27,6 +27,11 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - AI-provider and affiliate-provider failure behavior
 - Application readiness must not imply full merchant availability
 - Fixture/simulated paths cannot be labeled live (release verification support for EC-21)
+- Provide the production reliability and truthfulness contract for user-confirmed Conversational Continuity research.
+- A research execution must have a real execution ID and evidence-backed queued, running, partial, completed, failed, or cancelled state.
+- Connector, merchant, offer, price, review, freshness, and coverage statements must be derived from actual execution and certified provider capabilities.
+- Repeated confirmations must not create duplicate research executions.
+- Partial, stale, timeout, quota, connector-failure, and no-merchants-available outcomes must preserve the prior decision and degrade honestly.
 
 ## Explicit non-goals
 
@@ -78,6 +83,10 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - Consistency review across certified connectors signed
 - Basic timeout/retry/failure handling is confirmed present from 31/32–36 — Sprint 38 evidence is hardening, not first introduction
 - Stale-cache / degradation / fallback / refresh behavior respects certified merchant TTL/freshness policy constraints (does not invent or reinterpret merchant legal permissions)
+- Confirmed Ask PiqSavi research uses the certified connector path and produces truthful, provenance-backed execution states.
+- No research occurs before explicit confirmation.
+- No timer, animation, fixture, or simulated count is accepted as evidence of live execution.
+- Completed research returns a canonical updated-Results snapshot; failed or partial research does not silently replace the prior valid decision.
 
 ## Predecessor sprints
 

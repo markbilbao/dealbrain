@@ -23,6 +23,11 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 - Integrity certification (DealScore/neutrality monitoring on)
 - Verify (do not implement) Sprint 37 shipping-honesty and unsupported-market public wording (P1-2 / P1-1B claims check)
 - Verify (do not implement) that every market/merchant named in the coverage matrix has Sprint 32–36 capability-policy evidence: declared, evidence-backed, fail-closed enforced; omit/disable markets or providers lacking it rather than weakening the gate
+- Verify, but do not implement, CC-01 Conversational Continuity on the frozen staging candidate.
+- Verify that every conversational answer and research/loading claim maps to captured evidence or an actual execution record.
+- Verify that session Recommendation refinement leaves canonical PiqScores unchanged.
+- Verify affiliate neutrality across answers, refinement, alternatives, research, and updated Results.
+- Verify the Product Foundation manifest and artwork checksums against the implemented Results, Compare, Why, overlay, mobile-sheet, research, and updated-Results states.
 
 ## Explicit non-goals
 
@@ -66,6 +71,9 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 - Named markets/merchants have capability-policy certification evidence (declared + evidence-backed + fail-closed enforcement); ungated providers omitted
 - Rehearsal succeeds
 - Rollback authority named
+- CC-01 rehearsal succeeds on the frozen candidate with claims, integrity, neutrality, provenance, and visual-manifest evidence attached.
+- No mock-only evidence is accepted for a state presented as live research.
+- Any canonical PiqScore mutation, evaluated-set drift, affiliate influence, fabricated execution claim, or artwork checksum mismatch is a launch no-go.
 
 ### Additive PiqSavi public-brand / claims criteria (not marked complete)
 

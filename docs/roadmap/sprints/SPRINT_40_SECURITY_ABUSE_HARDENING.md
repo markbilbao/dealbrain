@@ -23,6 +23,13 @@ Close launch-blocking security findings and establish abuse protections appropri
 - AI prompt-injection + merchant-content sanitation review
 - Pen-test readiness package; security IR runbook; vulnerability-response process
 - Close all HIGH and launch-blocking MEDIUM findings
+- Bind every conversation and decision context to a verified guest session or authenticated principal.
+- Do not authorize access using request-body `conversation_id`, `profile_id`, or `user_id`.
+- Review guest-token entropy, rotation, fixation, replay, expiry, deletion, logout, shared-device isolation, and guest→authenticated rebinding.
+- Apply CSRF/origin policy for cookie transport and per-session, per-IP, and authenticated-principal rate limits.
+- Add idempotency and replay protection for message submission and research confirmation.
+- Redact conversation bodies and session identifiers from routine logs and analytics.
+- Review output encoding, XSS, user/merchant/review prompt injection, external-model data minimization, and research cost amplification.
 
 ## Explicit non-goals
 
@@ -66,6 +73,10 @@ Close launch-blocking security findings and establish abuse protections appropri
 - Launch-blocking MEDIUM closed or time-boxed risk-accepted in writing
 - CI scanning required on main
 - Security package ready for 44 approval
+- Foreign or expired decision contexts cannot be read, advanced, refined, researched, or rebound.
+- Guest→authenticated transition preserves the active decision while rotating ownership credentials.
+- Logout and shared-device reuse cannot expose a previous user’s context.
+- No open HIGH or launch-blocking MEDIUM Conversational Continuity finding remains.
 
 ## Predecessor sprints
 

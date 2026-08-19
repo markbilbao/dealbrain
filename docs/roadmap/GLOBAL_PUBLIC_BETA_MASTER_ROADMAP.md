@@ -136,7 +136,7 @@ Obsolete statements such as “hard launch target: Sprint 30 public launch” an
 |-------|---------|-------|
 | 1 Roadmap reconciliation & staging-current proof | 26 | Close P0-6; bootstrap external apps |
 | 2 Consumer identity, email, privacy, legal | 27–28 | Close P0-4, P0-5 |
-| 3 Production consumer UI & accessibility | 29 | Close P1-6 |
+| 3 Production consumer UI, accessibility & Conversational Continuity | 29 | Close P1-6 and implement CC-01 |
 | 4 Merchant platform unification + min reliability contracts | 31 | Close P1-1A; reliability contract for 32–36 |
 | 5 Real merchant integrations & market certification | 32–36 | Close P0-1 per market (may parallelize after 31) |
 | 6 MarketContext, currency, shipping, localization | 37 | Close P1-1B + P1-2; multinational honesty |
@@ -158,7 +158,7 @@ Obsolete statements such as “hard launch target: Sprint 30 public launch” an
 | 26 | Staging Current-Main Proof & Roadmap Bootstrap | Launch candidate staging-proven (`79bd03f`); EXT apps bootstrap pending | P0-6 | EXT-01…05,08,10,17,18 bootstrap | Technical: Staging `/ready` + smoke on current digest ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); close still requires register updates |
 | 27 | Transactional Identity & Email | Real email; reset/verify complete | P0-5; HIGH demo-auth | EXT-08, EXT-09 | Staging E2E reset+verify via real provider |
 | 28 | Privacy, Legal, Consent & Deletion | ToS/Privacy/consent/deletion/export | P0-4; MEDIUM GDPR | EXT-17…22 | Legal draft published internally; deletion E2E staging; counsel review started |
-| 29 | Production Consumer Web UI | Public web app + a11y + e2e baseline | P1-6 | None critical | Staging UI journey green; build validation |
+| 29 | Production Consumer Web UI & Conversational Continuity | Public web app + a11y + canonical Results-bound Ask PiqSavi journey | P1-6; CC-01 | None critical | Staging UI journey and CC-01 green; build and accessibility validation |
 | 30 | Public Beta Readiness Audit *(historical)* | Audit record only | — | — | Closed — NOT READY |
 | 31 | Merchant Platform Unification | One connector/registry/router + min reliability contracts + contractual capability/policy model | P1-1A | None | Certification suite exists; 4/18 dual-path retired or dual-run documented; reliability + capability/policy contracts exported (fail-closed) |
 | 32 | Philippines Merchant Certification | ≥1 real PH path | P0-1 (PH) | EXT-01,06,07 | Real legally usable current-data response + capability-policy evidence; staging+limited proof |
@@ -191,6 +191,7 @@ Detailed definitions: [`sprints/`](sprints/).
 | ToS / Privacy / consent | Missing | 28 | Published URLs + consent records | Yes |
 | Account deletion / export | Missing | 28 | Delete+export E2E; propagation checklist | Yes |
 | Consumer production UI | demo.html only | 29 | Staging UI e2e | Yes (public UX) |
+| Conversational Continuity | Partial fixture-backed Shopping Assistant; no canonical Results-bound decision context or production consumer surfaces | 29, supported by 38/39/40/43/44/45 | CC-01 staging E2E on the immutable candidate | Yes |
 | Sprint 4/18 unification (P1-1A) | Parallel stacks | 31 | Single registry/router + tests + contractual capability/policy model (fail-closed; distinct from technical capabilities) | Yes (P1) |
 | Unsupported-market behavior (P1-1B) | Missing | 37 | Selector + disclosure + no unsupported invoke | Yes (P1) |
 | Shipping-cost honesty (P1-2) | Enrichment default risk | 37 | Shipping-known/unknown modeled + tests; 44 verifies wording | Yes (P1) |
@@ -258,7 +259,7 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | ID | Exit criterion | Primary owning sprint | Final evidence | Sprint 45 decision |
 |----|----------------|----------------------|----------------|--------------------|
 | EC-01 | Current launch candidate successfully deployed to staging | 26 | Staging deploy evidence JSON + `/ready` READY for launch-candidate digest | Verify candidate still staging_ok; no-go if stale/unproven |
-| EC-02 | Full user journey passes in staging | 29 | Staging E2E report (register→search→DealScore→recommend→redirect + account/privacy paths) | Re-run smoke on frozen candidate; no-go on failure |
+| EC-02 | Full user journey, including CC-01 Conversational Continuity, passes in staging | 29 | Staging E2E report covering register→search→canonical PiqScore/Recommendation→Ask PiqSavi→contextual follow-up/refinement→optional confirmed research→updated Results→redirect, plus account/privacy paths | Re-run CC-01 smoke on the frozen candidate; no-go on any failure, stale evidence, context drift, or mock-only live-research proof |
 | EC-03 | Password recovery and email verification work through a real provider | 27 | Real-inbox delivery + confirm-route E2E artifacts | Verify still green on candidate; no-go if demo tokens usable |
 | EC-04 | Terms, Privacy Policy, consent, deletion, and support are live | 28 | Live policy URLs + consent/deletion/export staging→prod proof; support contact published | Verify published + operable; no-go if any missing |
 | EC-05 | Production environment is provisioned and isolated | 41 | Applied prod AWS evidence + isolation proof (staging cannot read prod secrets) | Confirm isolation still holds; no-go if missing |
@@ -278,11 +279,46 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | EC-19 | Public claims match validated coverage matrix | 44 | Approved claim sheet ↔ coverage matrix | Strip or rewrite mismatched claims |
 | EC-20 | Rollback authority and incident ownership assigned | 45 | Named on-call + rollback decision authority for launch window | Launch-control ownership; no-go if unassigned |
 | EC-21 | No fixture/simulated merchant data can appear as a live offer | 38 *(with Sprint 18 freshness invariants)* | Release verification script + freshness gate evidence | No-go on any fixture-as-live path |
-| EC-22 | Final launch checklist signed off | 45 | Signed Sprint 45 checklist artifact | Launch-control ownership; required for close |
+| EC-22 | Final launch checklist, including signed CC-01 evidence, is approved | 45 | Signed Sprint 45 checklist artifact referencing the exact CC-01 evidence and immutable candidate digest | Launch-control ownership; no-go if CC-01 is absent, stale, incomplete, or from another candidate |
 
 **Market note for EC-09:** When multiple markets are named, each named market’s certification sprint (32/33/34/35/36) is the primary owner for that market’s path. Sprint 31 owns the shared capability/policy contract and fail-closed harness; 32–36 populate provider-specific evidence. Sprint 44/45 verify and may remove markets or providers.
 
 **EC-09 capability-policy invariant:** No merchant connector may be certified for production, or used to support a named shopping-market claim, unless its permitted affiliate, data-use, caching, transformation, comparison, attribution, and related capabilities are explicitly declared, evidence-backed, and fail-closed enforced. Unknown permissions do not enable production features. Provider approval alone does not imply blanket capability approval. Affiliate-only destinations cannot independently satisfy EC-09 current-data market naming.
+
+### CC-01 — Conversational Continuity
+
+**Parent criteria:** EC-02 and EC-22
+
+**Primary implementation/evidence owner:** Sprint 29
+
+**Supporting owners:** Sprint 38, Sprint 39, Sprint 40, Sprint 43
+
+**Rehearsal/integrity verifier:** Sprint 44
+
+**Final go/no-go verifier:** Sprint 45
+
+CC-01 passes only when one immutable staging candidate proves all of the following:
+
+1. A guest search produces Results from the canonical PiqScore and Recommendation authority.
+2. Ask PiqSavi opens from Results and binds to that exact server-owned decision context.
+3. A contextual question answerable from captured evidence is answered from that evidence without unnecessary search or unproven execution claims.
+4. A second follow-up retains the exact evaluated product set unless the user explicitly requests or approves new research.
+5. Equivalent context binding and continuation work from Compare and Why This Is the Best Piq.
+6. The mobile conversation sheet preserves the same context and passes keyboard, safe-area, focus, close/reopen, and accessibility verification.
+7. Optional session Recommendation refinement operates over the same evaluated set while every canonical PiqScore remains byte-for-byte unchanged.
+8. Session priorities remain separate from persistent account preferences unless explicitly saved by the user.
+9. A question requiring evidence outside the current decision produces a research proposal and does not begin research before explicit confirmation.
+10. Affirmative confirmation starts exactly one real, idempotent research execution.
+11. Queued, running, partial, stale, completed, failed, and cancelled wording matches the actual execution record and contains no fabricated merchants, offers, prices, reviews, counts, freshness, or progress.
+12. Completed research creates updated canonical Results, retains the conversation, and leaves Ask PiqSavi available for another question.
+13. Guest ownership, expiry, deletion, logout, shared-device isolation, restart/multi-worker continuity, and guest→authenticated transition pass access-control and privacy regressions.
+14. Affiliate-neutrality, canonical-authority, claims, provenance, integrity, visual-manifest, and context-drift regressions pass.
+
+**EC-02 rule:** EC-02 cannot pass unless CC-01 passes on the same frozen candidate used for the full staging journey.
+
+**EC-22 rule:** The signed final launch checklist must attach the CC-01 evidence package, candidate commit, immutable image digest, execution references, test report, visual-manifest verification, and Sprint 44 rehearsal approval.
+
+**No-go conditions:** Public launch is blocked if CC-01 is missing, incomplete, stale, produced from another candidate, satisfied only with mocks where live research is claimed, or shows context drift, unauthorized context access, canonical PiqScore mutation, fabricated execution, affiliate influence, or failure on Results, Compare, Why This Is the Best Piq, or mobile.
 
 ---
 
@@ -294,6 +330,7 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | Password reset / email verify | Partial | Partial | Pending (27) | Pending (41) | Pending (44) |
 | Privacy/deletion/legal | No | No | Pending (28) | Pending (45) | Pending (44) |
 | Consumer web UI | No | No | Pending (29) | Pending (45) | Pending (44) |
+| Conversational Continuity / Ask PiqSavi | Partial foundation | Partial | Pending (29; support 38/39/40/43) | Pending (44/45) | Pending (45 via CC-01) |
 | DealScore / Recommendation | Yes | Yes | Yes (26 tech evidence; mocked-data disclosure observed) | Pending (45) | Certify (44) |
 | Merchant platform unified | No | Partial | Pending (31) | Pending (45) | Pending (44) |
 | PH/US/SG/UK/CA real paths | No | No | Pending (32–36) | Pending (45) | Per-market (44/45) |
@@ -333,7 +370,7 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | Staging current-main | 25b.* workflows | 26 | Host/bootstrap drift | Fix host; re-run deploy |
 | Real email | EXT-08/09 | 27 | Provider/DNS delay | Invite-only demotion |
 | Legal package | Counsel | 28 → 44 | Review latency | Delay launch |
-| Consumer UI | API stable (24) | 29 | Scope creep | Narrow MVP screens |
+| Consumer UI + Conversational Continuity | API stable (24); approved Product Foundation manifest | 29 | Scope creep or parallel Results authority | Preserve canonical Results authority; hold launch if CC-01 is incomplete |
 | Platform unify + min reliability contracts | Lock review | 31 | Dual-run complexity | Documented dual-run with hard deadline |
 | First real market (PH) | EXT-01 + **31 contracts** | 32 | Provider denial | Remove PH; try next market |
 | Remaining markets | EXT-02…05 + 31 | 33–36 (parallel OK) | Staggered denials | Launch with subset |
@@ -453,6 +490,7 @@ Sprint 46 **cannot** postpone unresolved Sprint 45 launch blockers. It owns stab
 | [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) | Persisted Sprint 30 audit summary |
 | [`evidence/`](evidence/) | Packaged sprint evidence (Sprint 26 current-main staging proof + bootstrap checklist + completion draft) |
 | [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | Sprint 26 technical staging proof (Sprint 26 still open) |
+| [`evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md`](evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md) | Owner-approved Product Foundation artwork authority and immutable checksum manifest |
 | [`sprints/`](sprints/) | Per-sprint definitions 26–46 |
 | [`../architecture/ARCHITECTURE_LOCK.md`](../architecture/ARCHITECTURE_LOCK.md) | Domain ownership lock (updated cross-link) |
 | [`../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md`](../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md) | Infra contract; M30 matrix still evidential |
