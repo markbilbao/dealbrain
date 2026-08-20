@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from typing import Any, TypeVar
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import Select, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -60,6 +60,94 @@ class OperationalStore:
             return None
         return decode_entity(cls, row.payload)
 
+    def get_versioned(
+        self,
+        store: str,
+        entity_id: str,
+        cls: type[T],
+    ) -> tuple[T, int, str | None] | None:
+        """Return an entity with its atomic row version and indexed owner key."""
+
+        row = self._get_row(store, entity_id)
+        if row is None:
+            return None
+        return decode_entity(cls, row.payload), row.seq, row.owner_id
+
+    def insert_versioned(
+        self,
+        store: str,
+        entity_id: str,
+        entity: Any,
+        *,
+        version: int,
+        owner_id: str | None = None,
+    ) -> Any:
+        """Insert a versioned entity without adding a table or schema column."""
+
+        row = OperationalEntityModel(
+            store=store,
+            entity_id=entity_id,
+            owner_id=owner_id,
+            payload=encode_entity(entity),
+            seq=version,
+        )
+        self._session.add(row)
+        try:
+            self._session.flush()
+        except IntegrityError as exc:
+            raise translate_db_error(exc) from exc
+        return entity
+
+    def compare_and_swap(
+        self,
+        store: str,
+        entity_id: str,
+        entity: Any,
+        *,
+        expected_version: int,
+        new_version: int,
+        owner_id: str | None = None,
+    ) -> bool:
+        """Atomically replace one entity only when its row version matches."""
+
+        try:
+            result = self._session.execute(
+                update(OperationalEntityModel)
+                .where(
+                    OperationalEntityModel.store == store,
+                    OperationalEntityModel.entity_id == entity_id,
+                    OperationalEntityModel.seq == expected_version,
+                )
+                .values(
+                    payload=encode_entity(entity),
+                    owner_id=owner_id,
+                    seq=new_version,
+                )
+            )
+            self._session.flush()
+        except IntegrityError as exc:
+            raise translate_db_error(exc) from exc
+        return bool(result.rowcount)
+
+    def delete_versioned(
+        self,
+        store: str,
+        entity_id: str,
+        *,
+        expected_version: int,
+    ) -> bool:
+        """Delete one entity only when its row version still matches."""
+
+        result = self._session.execute(
+            delete(OperationalEntityModel).where(
+                OperationalEntityModel.store == store,
+                OperationalEntityModel.entity_id == entity_id,
+                OperationalEntityModel.seq == expected_version,
+            )
+        )
+        self._session.flush()
+        return bool(result.rowcount)
+
     def get_by_secondary(self, store: str, secondary_key: str, cls: type[T]) -> T | None:
         row = self._session.scalar(
             select(OperationalEntityModel).where(
@@ -86,7 +174,9 @@ class OperationalStore:
         )
         if owner_id is not None:
             stmt = stmt.where(OperationalEntityModel.owner_id == owner_id)
-        ordering = OperationalEntityModel.seq.desc() if reverse else OperationalEntityModel.seq.asc()
+        ordering = (
+            OperationalEntityModel.seq.desc() if reverse else OperationalEntityModel.seq.asc()
+        )
         stmt = stmt.order_by(ordering, OperationalEntityModel.id.asc())
         if limit is not None and predicate is None:
             stmt = stmt.limit(max(0, limit))
@@ -119,8 +209,10 @@ class OperationalStore:
             self.clear_store(store)
 
     def count(self, store: str, *, owner_id: str | None = None) -> int:
-        stmt = select(func.count()).select_from(OperationalEntityModel).where(
-            OperationalEntityModel.store == store
+        stmt = (
+            select(func.count())
+            .select_from(OperationalEntityModel)
+            .where(OperationalEntityModel.store == store)
         )
         if owner_id is not None:
             stmt = stmt.where(OperationalEntityModel.owner_id == owner_id)

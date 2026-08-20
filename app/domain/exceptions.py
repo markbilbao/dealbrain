@@ -238,6 +238,24 @@ class ShoppingAssistantNotFoundError(Exception):
         super().__init__(f"Shopping assistant resource not found: {resource_id}")
 
 
+class ConversationVersionConflictError(Exception):
+    """Raised when a conversation write loses an optimistic-concurrency race."""
+
+    def __init__(self, conversation_id: str, expected_version: int) -> None:
+        self.conversation_id = conversation_id
+        self.expected_version = expected_version
+        super().__init__(f"Conversation {conversation_id} version conflict at {expected_version}")
+
+
+class ConversationOwnershipError(Exception):
+    """Raised when conversation ownership is missing, expired, or mismatched."""
+
+    def __init__(self, conversation_id: str, reason: str) -> None:
+        self.conversation_id = conversation_id
+        self.reason = reason
+        super().__init__(f"Conversation {conversation_id} ownership rejected: {reason}")
+
+
 class CommunityIntelligenceValidationError(Exception):
     """Raised when community intelligence inputs cannot be processed safely."""
 

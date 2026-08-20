@@ -31,8 +31,21 @@ class ConversationRepository(ABC):
         """Return a non-expired conversation, or None."""
 
     @abstractmethod
-    def save(self, context: ConversationContext) -> ConversationContext:
-        """Upsert conversation context."""
+    def get_for_owner(
+        self,
+        conversation_id: str,
+        owner: ConversationOwner,
+    ) -> ConversationContext | None:
+        """Return an active conversation only when its owner identity matches."""
+
+    @abstractmethod
+    def save(
+        self,
+        context: ConversationContext,
+        *,
+        expected_version: int | None = None,
+    ) -> ConversationContext:
+        """Create or compare-and-swap a conversation context."""
 
     @abstractmethod
     def bind_decision_context(
@@ -41,8 +54,20 @@ class ConversationRepository(ABC):
         *,
         owner: ConversationOwner,
         decision_context: DecisionContextReference,
+        expected_version: int | None = None,
     ) -> ConversationContext:
         """Bind an existing conversation to one owned canonical decision snapshot."""
+
+    @abstractmethod
+    def rebind_owner(
+        self,
+        conversation_id: str,
+        *,
+        current_owner: ConversationOwner,
+        new_owner: ConversationOwner,
+        expected_version: int | None = None,
+    ) -> ConversationContext:
+        """Explicitly transfer an active conversation between owner identities."""
 
     @abstractmethod
     def append_turn(
@@ -54,12 +79,13 @@ class ConversationRepository(ABC):
         last_product_ids: tuple[str, ...] = (),
         last_product_names: tuple[str, ...] = (),
         last_category: str | None = None,
+        expected_version: int | None = None,
     ) -> ConversationContext:
         """Append a turn and refresh expiration."""
 
     @abstractmethod
-    def cleanup_expired(self) -> int:
-        """Remove expired conversations; return count removed."""
+    def cleanup_expired(self, *, limit: int = 100) -> int:
+        """Remove at most ``limit`` expired conversations; return count removed."""
 
 
 class ShoppingExplanationProvider(ABC):
