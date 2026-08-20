@@ -45,6 +45,12 @@ EvidenceType = Literal[
 DataStatus = Literal["mock", "imported", "live"]
 ConfidenceBand = Literal["High", "Medium", "Low"]
 AnalysisMode = Literal["economy", "balanced", "maximum"]
+ConversationPrincipalType = Literal["guest", "account"]
+ConversationActionType = Literal[
+    "answer_from_evidence",
+    "refine_session_recommendation",
+    "propose_research",
+]
 
 MODE_RANK: dict[str, int] = {"economy": 0, "balanced": 1, "maximum": 2}
 
@@ -339,6 +345,85 @@ class AssistantDisagreement:
 
 
 @dataclass(frozen=True, slots=True)
+class ConversationOwner:
+    """Server-validated principal binding for a conversation session."""
+
+    principal_type: ConversationPrincipalType
+    principal_id: str
+    session_id: str
+    expires_at: datetime
+
+    def __post_init__(self) -> None:
+        if self.principal_type not in {"guest", "account"}:
+            raise ValueError("principal_type must be guest or account")
+        if not self.principal_id or len(self.principal_id) > 128:
+            raise ValueError("principal_id must contain 1 to 128 characters")
+        if not self.session_id or len(self.session_id) > 128:
+            raise ValueError("session_id must contain 1 to 128 characters")
+        if self.expires_at.utcoffset() is None:
+            raise ValueError("expires_at must be timezone-aware")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "principal_type": self.principal_type,
+            "principal_id": self.principal_id,
+            "session_id": self.session_id,
+            "expires_at": self.expires_at.isoformat(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class DecisionContextReference:
+    """Immutable reference to one server-owned canonical decision snapshot.
+
+    The digests are opaque integrity values. This value object never calculates
+    PiqScore or Recommendation output and cannot replace either authority.
+    """
+
+    decision_id: str
+    context_version: int
+    evaluated_product_ids: tuple[str, ...]
+    canonical_piqscore_snapshot_sha256: str
+    recommendation_snapshot_sha256: str
+    evidence_ids: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.decision_id:
+            raise ValueError("decision_id is required")
+        if self.context_version < 1:
+            raise ValueError("context_version must be at least 1")
+        if not self.evaluated_product_ids:
+            raise ValueError("evaluated_product_ids must not be empty")
+        if len(self.evaluated_product_ids) != len(set(self.evaluated_product_ids)):
+            raise ValueError("evaluated_product_ids must be unique")
+        if any(not product_id for product_id in self.evaluated_product_ids):
+            raise ValueError("evaluated_product_ids must not contain empty values")
+        if len(self.evidence_ids) != len(set(self.evidence_ids)):
+            raise ValueError("evidence_ids must be unique")
+        for field_name, digest in (
+            (
+                "canonical_piqscore_snapshot_sha256",
+                self.canonical_piqscore_snapshot_sha256,
+            ),
+            ("recommendation_snapshot_sha256", self.recommendation_snapshot_sha256),
+        ):
+            if len(digest) != 64 or any(
+                character not in "0123456789abcdef" for character in digest
+            ):
+                raise ValueError(f"{field_name} must be a lowercase SHA-256 digest")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "decision_id": self.decision_id,
+            "context_version": self.context_version,
+            "evaluated_product_ids": list(self.evaluated_product_ids),
+            "canonical_piqscore_snapshot_sha256": self.canonical_piqscore_snapshot_sha256,
+            "recommendation_snapshot_sha256": self.recommendation_snapshot_sha256,
+            "evidence_ids": list(self.evidence_ids),
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ConversationTurn:
     """Minimum safe structured context for a follow-up turn."""
 
@@ -348,6 +433,10 @@ class ConversationTurn:
     product_names: tuple[str, ...]
     query: str
     created_at: datetime
+    turn_id: str | None = None
+    decision_id: str | None = None
+    context_version: int | None = None
+    action: ConversationActionType | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -357,6 +446,10 @@ class ConversationTurn:
             "product_names": list(self.product_names),
             "query": self.query,
             "created_at": self.created_at.isoformat(),
+            "turn_id": self.turn_id,
+            "decision_id": self.decision_id,
+            "context_version": self.context_version,
+            "action": self.action,
         }
 
 
@@ -371,6 +464,12 @@ class ConversationContext:
     last_product_ids: tuple[str, ...] = ()
     last_product_names: tuple[str, ...] = ()
     last_category: str | None = None
+    owner: ConversationOwner | None = None
+    decision_context: DecisionContextReference | None = None
+
+    def __post_init__(self) -> None:
+        if self.decision_context is not None and self.owner is None:
+            raise ValueError("a decision-bound conversation requires an owner")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -381,6 +480,10 @@ class ConversationContext:
             "last_product_ids": list(self.last_product_ids),
             "last_product_names": list(self.last_product_names),
             "last_category": self.last_category,
+            "owner": self.owner.to_dict() if self.owner else None,
+            "decision_context": (
+                self.decision_context.to_dict() if self.decision_context else None
+            ),
         }
 
 
