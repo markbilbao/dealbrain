@@ -79,6 +79,7 @@ EARLY_ACCESS_REGISTRATIONS = "early_access.registrations"
 
 # Sprint 29 — durable conversational continuity (zero-DDL operational store)
 SHOPPING_CONVERSATIONS = "shopping_assistant.conversations"
+SHOPPING_DECISION_SNAPSHOTS = "shopping_assistant.decision_snapshots"
 
 USER_PLATFORM_STORES = (
     USERS,
