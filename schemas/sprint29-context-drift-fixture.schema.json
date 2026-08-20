@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.piqsavi.com/sprint29/context-drift-fixture-v1.schema.json",
+  "title": "PiqSavi Sprint 29 frozen context-drift case v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "data_classification",
+    "decision_context_fixture",
+    "initial_evaluated_products",
+    "follow_up",
+    "expected_action",
+    "expected_evaluated_product_ids",
+    "forbidden_unapproved_replacements",
+    "research_explicitly_requested",
+    "research_explicitly_approved"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "fixture_id": { "const": "CC01-CONTEXT-DRIFT-IPHONE-SAMSUNG-BATTERY" },
+    "data_classification": { "const": "non_live_contract_fixture" },
+    "decision_context_fixture": {
+      "const": "tests/contracts/fixtures/sprint29-decision-context.json"
+    },
+    "initial_evaluated_products": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/product" }
+    },
+    "follow_up": { "const": "Which one has better battery?" },
+    "expected_action": { "const": "answer_from_evidence" },
+    "expected_evaluated_product_ids": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "forbidden_unapproved_replacements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/product" }
+    },
+    "research_explicitly_requested": { "const": false },
+    "research_explicitly_approved": { "const": false }
+  },
+  "$defs": {
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product_id", "display_name"],
+      "properties": {
+        "product_id": { "type": "string", "minLength": 1 },
+        "display_name": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

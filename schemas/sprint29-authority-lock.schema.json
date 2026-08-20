@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.piqsavi.com/sprint29/authority-lock-v1.schema.json",
+  "title": "PiqSavi Sprint 29 CC-01 authority lock v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "phase",
+    "implementation_baseline_sha",
+    "manifest_path",
+    "manifest_sha256",
+    "approved_artifact_set_sha256",
+    "approved_artifact_count",
+    "legacy_readme_sha256",
+    "source_package",
+    "manifest_status",
+    "aggregation_order",
+    "approved_artifact_names",
+    "protected_authorities",
+    "consumer_architecture"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "phase": { "const": "29.0" },
+    "implementation_baseline_sha": { "$ref": "#/$defs/gitSha" },
+    "manifest_path": {
+      "const": "docs/roadmap/evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md"
+    },
+    "manifest_sha256": { "$ref": "#/$defs/sha256" },
+    "approved_artifact_set_sha256": { "$ref": "#/$defs/sha256" },
+    "approved_artifact_count": { "const": 25 },
+    "legacy_readme_sha256": { "$ref": "#/$defs/sha256" },
+    "source_package": {
+      "const": "PiqSavi_Conversational_Continuity_Strict_Pixel_Consistency_REVIEW"
+    },
+    "manifest_status": { "const": "OWNER APPROVED FOR DEVELOPMENT" },
+    "aggregation_order": { "const": "lexicographic_by_filename" },
+    "approved_artifact_names": {
+      "type": "array",
+      "minItems": 25,
+      "maxItems": 25,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "protected_authorities": {
+      "type": "array",
+      "minItems": 6,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "consumer_architecture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["server", "documents", "styles", "scripts", "prohibited"],
+      "properties": {
+        "server": { "const": "FastAPI" },
+        "documents": { "const": "server-rendered semantic HTML" },
+        "styles": { "const": "shared CSS" },
+        "scripts": { "const": "native vanilla-JavaScript ES modules" },
+        "prohibited": {
+          "type": "array",
+          "minItems": 5,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "gitSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "fixture_id": "CC01-CONTEXT-DRIFT-IPHONE-SAMSUNG-BATTERY",
+  "data_classification": "non_live_contract_fixture",
+  "decision_context_fixture": "tests/contracts/fixtures/sprint29-decision-context.json",
+  "initial_evaluated_products": [
+    {
+      "product_id": "apple-iphone-17-pro-max",
+      "display_name": "iPhone 17 Pro Max"
+    },
+    {
+      "product_id": "samsung-galaxy-s25-ultra-512gb",
+      "display_name": "Samsung Galaxy S25 Ultra 512GB"
+    }
+  ],
+  "follow_up": "Which one has better battery?",
+  "expected_action": "answer_from_evidence",
+  "expected_evaluated_product_ids": [
+    "apple-iphone-17-pro-max",
+    "samsung-galaxy-s25-ultra-512gb"
+  ],
+  "forbidden_unapproved_replacements": [
+    {
+      "product_id": "google-pixel-9-128gb",
+      "display_name": "Google Pixel 9 128GB"
+    }
+  ],
+  "research_explicitly_requested": false,
+  "research_explicitly_approved": false
+}

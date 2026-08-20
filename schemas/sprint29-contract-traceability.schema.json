@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.piqsavi.com/sprint29/contract-traceability-v1.schema.json",
+  "title": "PiqSavi Sprint 29 CC-01 contract traceability v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "phase", "launch_gate", "entries"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "phase": { "const": "29.0" },
+    "launch_gate": { "const": "CC-01" },
+    "entries": {
+      "type": "array",
+      "minItems": 24,
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "acceptance_id",
+          "planned_phase",
+          "behavioral_test_id",
+          "contract_artifacts",
+          "status"
+        ],
+        "properties": {
+          "acceptance_id": { "type": "string", "pattern": "^CC-01-(0[1-9]|1[0-9]|2[0-4])$" },
+          "planned_phase": { "type": "string", "pattern": "^(29\\.[1-7]|38|44|45|integrated)$" },
+          "behavioral_test_id": { "type": "string", "pattern": "^test_[a-z0-9_]+$" },
+          "contract_artifacts": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "status": { "const": "planned_not_implemented" }
+        }
+      }
+    }
+  }
+}

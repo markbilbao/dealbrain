@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.piqsavi.com/sprint29/conversation-action-v1.schema.json",
+  "title": "PiqSavi Sprint 29 conversation action v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "data_classification",
+    "action_id",
+    "action",
+    "decision_id",
+    "context_version",
+    "input_turn_id",
+    "evaluated_product_ids",
+    "canonical_piqscore_snapshot_sha256",
+    "response_source",
+    "requires_research_confirmation",
+    "affiliate_influence"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "data_classification": { "const": "non_live_contract_fixture" },
+    "action_id": { "type": "string", "format": "uuid" },
+    "action": {
+      "enum": [
+        "answer_from_evidence",
+        "refine_session_recommendation",
+        "propose_research"
+      ]
+    },
+    "decision_id": { "type": "string", "format": "uuid" },
+    "context_version": { "type": "integer", "minimum": 1 },
+    "input_turn_id": { "type": "string", "format": "uuid" },
+    "evaluated_product_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "canonical_piqscore_snapshot_sha256": { "$ref": "#/$defs/sha256" },
+    "response_source": {
+      "enum": ["existing_evidence", "session_refinement", "research_proposal"]
+    },
+    "requires_research_confirmation": { "type": "boolean" },
+    "affiliate_influence": { "const": false },
+    "answer": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "evidence_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "session_priorities": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": ["string", "number", "integer", "boolean"]
+      }
+    },
+    "recommendation_snapshot_sha256": { "$ref": "#/$defs/sha256" },
+    "research_proposal": { "$ref": "#/$defs/researchProposal" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "action": { "const": "answer_from_evidence" } } },
+      "then": {
+        "required": ["answer", "evidence_ids"],
+        "properties": {
+          "response_source": { "const": "existing_evidence" },
+          "requires_research_confirmation": { "const": false },
+          "evidence_ids": { "minItems": 1 }
+        },
+        "not": {
+          "anyOf": [
+            { "required": ["session_priorities"] },
+            { "required": ["recommendation_snapshot_sha256"] },
+            { "required": ["research_proposal"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "action": { "const": "refine_session_recommendation" } }
+      },
+      "then": {
+        "required": ["session_priorities", "recommendation_snapshot_sha256"],
+        "properties": {
+          "response_source": { "const": "session_refinement" },
+          "requires_research_confirmation": { "const": false }
+        },
+        "not": {
+          "anyOf": [
+            { "required": ["answer"] },
+            { "required": ["evidence_ids"] },
+            { "required": ["research_proposal"] }
+          ]
+        }
+      }
+    },
+    {
+      "if": { "properties": { "action": { "const": "propose_research" } } },
+      "then": {
+        "required": ["research_proposal"],
+        "properties": {
+          "response_source": { "const": "research_proposal" },
+          "requires_research_confirmation": { "const": true }
+        },
+        "not": {
+          "anyOf": [
+            { "required": ["answer"] },
+            { "required": ["evidence_ids"] },
+            { "required": ["session_priorities"] },
+            { "required": ["recommendation_snapshot_sha256"] }
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "researchProposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["proposal_id", "question", "requested_product_ids", "status"],
+      "properties": {
+        "proposal_id": { "type": "string", "format": "uuid" },
+        "question": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "requested_product_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "status": { "const": "awaiting_explicit_confirmation" }
+      }
+    }
+  }
+}

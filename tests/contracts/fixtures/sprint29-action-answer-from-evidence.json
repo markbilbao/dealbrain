@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "data_classification": "non_live_contract_fixture",
+  "action_id": "00000000-0000-4000-8000-000000000101",
+  "action": "answer_from_evidence",
+  "decision_id": "00000000-0000-4000-8000-000000000029",
+  "context_version": 1,
+  "input_turn_id": "00000000-0000-4000-8000-000000000201",
+  "evaluated_product_ids": [
+    "apple-iphone-17-pro-max",
+    "samsung-galaxy-s25-ultra-512gb"
+  ],
+  "canonical_piqscore_snapshot_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "response_source": "existing_evidence",
+  "requires_research_confirmation": false,
+  "affiliate_influence": false,
+  "answer": "Contract-fixture answer derived only from the captured battery evidence.",
+  "evidence_ids": ["fixture-battery-iphone", "fixture-battery-samsung"]
+}
