@@ -7,7 +7,9 @@ from typing import Any
 
 from app.domain.entities.shopping_assistant import (
     ConversationContext,
+    ConversationOwner,
     ConversationTurn,
+    DecisionContextReference,
     ShoppingAssistantResponse,
 )
 
@@ -16,12 +18,31 @@ class ConversationRepository(ABC):
     """Persist minimum safe structured conversation context for a session."""
 
     @abstractmethod
+    def create(
+        self,
+        *,
+        owner: ConversationOwner | None = None,
+        decision_context: DecisionContextReference | None = None,
+    ) -> ConversationContext:
+        """Create a conversation, optionally bound to an owned decision snapshot."""
+
+    @abstractmethod
     def get(self, conversation_id: str) -> ConversationContext | None:
         """Return a non-expired conversation, or None."""
 
     @abstractmethod
     def save(self, context: ConversationContext) -> ConversationContext:
         """Upsert conversation context."""
+
+    @abstractmethod
+    def bind_decision_context(
+        self,
+        conversation_id: str,
+        *,
+        owner: ConversationOwner,
+        decision_context: DecisionContextReference,
+    ) -> ConversationContext:
+        """Bind an existing conversation to one owned canonical decision snapshot."""
 
     @abstractmethod
     def append_turn(
