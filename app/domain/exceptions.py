@@ -256,6 +256,42 @@ class ConversationOwnershipError(Exception):
         super().__init__(f"Conversation {conversation_id} ownership rejected: {reason}")
 
 
+class ConversationContextDriftError(Exception):
+    """Raised when a write attempts to replace or escape a bound decision set."""
+
+    def __init__(self, conversation_id: str, reason: str) -> None:
+        self.conversation_id = conversation_id
+        self.reason = reason
+        super().__init__(f"Conversation {conversation_id} context drift rejected: {reason}")
+
+
+class DecisionSnapshotConflictError(Exception):
+    """Raised when an immutable decision snapshot identity already exists."""
+
+    def __init__(self, decision_id: str, context_version: int) -> None:
+        self.decision_id = decision_id
+        self.context_version = context_version
+        super().__init__(f"Decision snapshot {decision_id} v{context_version} already exists")
+
+
+class DecisionSnapshotIntegrityError(Exception):
+    """Raised when persisted decision bytes fail their server-owned integrity check."""
+
+    def __init__(self, decision_id: str, context_version: int) -> None:
+        self.decision_id = decision_id
+        self.context_version = context_version
+        super().__init__(f"Decision snapshot {decision_id} v{context_version} failed integrity")
+
+
+class DecisionSnapshotOwnershipError(Exception):
+    """Raised when a canonical snapshot cannot be written for an expired owner."""
+
+    def __init__(self, decision_id: str, reason: str) -> None:
+        self.decision_id = decision_id
+        self.reason = reason
+        super().__init__(f"Decision snapshot {decision_id} ownership rejected: {reason}")
+
+
 class CommunityIntelligenceValidationError(Exception):
     """Raised when community intelligence inputs cannot be processed safely."""
 

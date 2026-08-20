@@ -10,6 +10,10 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.domain.conversation_continuity import (
+    require_context_membership,
+    require_stable_decision_context,
+)
 from app.domain.entities.shopping_assistant import (
     ConversationContext,
     ConversationOwner,
@@ -18,6 +22,7 @@ from app.domain.entities.shopping_assistant import (
     ShoppingIntentType,
 )
 from app.domain.exceptions import (
+    ConversationContextDriftError,
     ConversationOwnershipError,
     ConversationVersionConflictError,
 )
@@ -118,6 +123,7 @@ class SqlAlchemyConversationRepository(ConversationRepository, SessionBound):
     ) -> ConversationContext:
         self._require_active_owner(context.conversation_id, context.owner)
         bounded = replace(context, turns=context.turns[-self._max_turns :])
+        require_context_membership(bounded)
         expected = context.persistence_version if expected_version is None else expected_version
         with self._ops() as ops:
             loaded = ops.get_versioned(
@@ -146,6 +152,7 @@ class SqlAlchemyConversationRepository(ConversationRepository, SessionBound):
             existing, row_version, _ = loaded
             self._require_version_integrity(existing, row_version)
             self._require_unchanged_owner(existing, bounded)
+            require_stable_decision_context(existing, bounded)
             return self._compare_and_swap(
                 ops,
                 bounded,
@@ -166,12 +173,19 @@ class SqlAlchemyConversationRepository(ConversationRepository, SessionBound):
             raise KeyError(f"conversation not found: {conversation_id}")
         if existing.owner is not None and not existing.owner.has_same_identity(owner):
             raise ConversationOwnershipError(conversation_id, "owner identity mismatch")
+        if existing.decision_context is not None and existing.decision_context != decision_context:
+            raise ConversationContextDriftError(
+                conversation_id,
+                "bound decision context cannot be replaced without explicit research",
+            )
         updated = replace(
             existing,
             owner=owner,
             decision_context=decision_context,
+            last_product_ids=decision_context.evaluated_product_ids,
             expires_at=self._clock() + timedelta(seconds=self._ttl_seconds),
         )
+        require_context_membership(updated)
         return self._save_known_owner_transition(
             updated,
             expected_version=(
@@ -252,6 +266,7 @@ class SqlAlchemyConversationRepository(ConversationRepository, SessionBound):
             last_product_names=last_product_names or existing.last_product_names,
             last_category=last_category or existing.last_category,
         )
+        require_context_membership(updated)
         return self.save(
             updated,
             expected_version=(
