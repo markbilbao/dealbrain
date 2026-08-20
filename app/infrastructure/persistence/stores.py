@@ -77,6 +77,9 @@ MERCH_PREFERENCES = "merchant.notification_preferences"
 # Early Access interest list (not a user account)
 EARLY_ACCESS_REGISTRATIONS = "early_access.registrations"
 
+# Sprint 29 — durable conversational continuity (zero-DDL operational store)
+SHOPPING_CONVERSATIONS = "shopping_assistant.conversations"
+
 USER_PLATFORM_STORES = (
     USERS,
     SESSIONS,

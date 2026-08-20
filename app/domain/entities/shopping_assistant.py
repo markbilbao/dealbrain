@@ -371,6 +371,19 @@ class ConversationOwner:
             "expires_at": self.expires_at.isoformat(),
         }
 
+    def has_same_identity(self, other: ConversationOwner) -> bool:
+        """Compare principal/session identity without treating expiry as identity."""
+
+        return (
+            self.principal_type,
+            self.principal_id,
+            self.session_id,
+        ) == (
+            other.principal_type,
+            other.principal_id,
+            other.session_id,
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class DecisionContextReference:
@@ -466,10 +479,13 @@ class ConversationContext:
     last_category: str | None = None
     owner: ConversationOwner | None = None
     decision_context: DecisionContextReference | None = None
+    persistence_version: int = 0
 
     def __post_init__(self) -> None:
         if self.decision_context is not None and self.owner is None:
             raise ValueError("a decision-bound conversation requires an owner")
+        if self.persistence_version < 0:
+            raise ValueError("persistence_version must not be negative")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -484,6 +500,7 @@ class ConversationContext:
             "decision_context": (
                 self.decision_context.to_dict() if self.decision_context else None
             ),
+            "persistence_version": self.persistence_version,
         }
 
 
