@@ -10,6 +10,7 @@ from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.consumer import mode as consumer_mode
 from app.consumer.fixtures import DEFAULT_CATALOG_ID, get_decision
 from app.consumer.location import (
     DELIVERY_COOKIE,
@@ -72,6 +73,12 @@ async def consumer_search(
     q: str | None = Query(default=None),
     catalog: str = Query(default=DEFAULT_CATALOG_ID),
 ) -> RedirectResponse:
+    if not consumer_mode.fixture_catalogs_permitted():
+        logger.info(
+            "consumer_search",
+            extra={"structured": log_extra(event="consumer_search", query=q or "")},
+        )
+        return RedirectResponse(url="/results/unavailable", status_code=303)
     try:
         get_decision(catalog)
         decision_id = catalog
@@ -131,6 +138,8 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
     payload = await _location_payload(request)
     action = str(payload.get("action") or "save")
     decision_id = str(payload.get("decision_id") or DEFAULT_CATALOG_ID)
+    if not consumer_mode.fixture_catalogs_permitted() and decision_id == DEFAULT_CATALOG_ID:
+        decision_id = "unavailable"
     destination = _safe_next(str(payload.get("next") or ""), decision_id, "results")
     previous = _location_from_request(request)
     if action == "skip":

@@ -6,6 +6,7 @@ explicit fixture snapshot or invalidate location-sensitive economics.
 
 from __future__ import annotations
 
+from app.consumer import mode as consumer_mode
 from app.consumer.fixtures import (
     AFFILIATE_DISCLOSURE,
     DATA_CLASSIFICATION,
@@ -70,7 +71,22 @@ def build_page_view(
     recalculating: bool = False,
     location_error: str | None = None,
     geolocation_needs_city: bool = False,
+    allow_fixtures: bool | None = None,
 ) -> DecisionPageView:
+    permitted = (
+        consumer_mode.fixture_catalogs_permitted() if allow_fixtures is None else allow_fixtures
+    )
+    prompt_when_absent = location.is_absent if location_prompt is None else bool(location_prompt)
+    if not permitted:
+        return _unavailable_page_view(
+            decision_id=decision_id or "unavailable",
+            page=page,
+            location=location,
+            location_prompt=prompt_when_absent,
+            recalculating=recalculating,
+            location_error=location_error,
+            geolocation_needs_city=geolocation_needs_city,
+        )
     catalog_id = _resolve_catalog(decision_id, location)
     decision = get_decision(catalog_id)
     prompt = decision.why_variant != "qualified" if location_prompt is None else location_prompt
@@ -79,6 +95,8 @@ def build_page_view(
 
     highest = max(decision.offers, key=lambda item: item.piqscore)
     overlay_unknown_shipping = _should_unknown_shipping(decision, location)
+    destination_snapshot_known = location.is_known and not overlay_unknown_shipping
+    qualify_recommendation = location.is_known and overlay_unknown_shipping
     cards = tuple(
         _product_card(
             offer,
@@ -86,6 +104,7 @@ def build_page_view(
             location=location,
             highest_id=highest.product_id,
             unknown_shipping=overlay_unknown_shipping,
+            qualify_recommendation=qualify_recommendation,
         )
         for offer in decision.offers
     )
@@ -105,6 +124,12 @@ def build_page_view(
     if changed:
         template = str(decision.extra.get("changed_message") or "")
         changed_message = template.format(delivery=location.display_place)
+    qualified_message = None
+    if qualify_recommendation:
+        qualified_message = (
+            f"Shipping to {location.display_place} is not yet verified and may change "
+            "this recommendation. This is a qualified Best Piq for You."
+        )
     return DecisionPageView(
         decision_id=decision.catalog_id,
         context_version=1,
@@ -128,7 +153,7 @@ def build_page_view(
         affiliate_disclosure=AFFILIATE_DISCLOSURE,
         freshness_disclaimer=FRESHNESS_DISCLAIMER,
         data_classification=DATA_CLASSIFICATION,
-        unknowns=decision.unknowns,
+        unknowns=_unknowns_for_location(decision, location, qualify_recommendation),
         evidence_categories=tuple(
             EvidenceCategoryView(
                 label=label,
@@ -138,7 +163,12 @@ def build_page_view(
             for label, status in decision.evidence_categories
         ),
         sources=tuple(SourceView(name=name, proven=True) for name in decision.sources),
-        why_sections=_why_sections(decision, location),
+        why_sections=_why_sections(
+            decision,
+            location,
+            qualify_recommendation=qualify_recommendation,
+            qualified_message=qualified_message,
+        ),
         ask_placeholder=_ask_placeholder(page),
         ask_suggestions=_ask_suggestions(page, decision, cards),
         compare_pay_rows=_pay_rows(cards, location),
@@ -148,7 +178,9 @@ def build_page_view(
         geocode_available=False,
         location_error=location_error,
         geolocation_needs_city=geolocation_needs_city,
-        delivery_costs_verified=location.is_known and not overlay_unknown_shipping,
+        delivery_costs_verified=destination_snapshot_known,
+        destination_snapshot_known=destination_snapshot_known,
+        recommendation_qualified_message=qualified_message,
     )
 
 
@@ -156,6 +188,131 @@ def list_catalog_ids() -> tuple[str, ...]:
     from app.consumer.fixtures import CATALOG
 
     return tuple(CATALOG)
+
+
+def _unavailable_page_view(
+    *,
+    decision_id: str,
+    page: PageName,
+    location: DeliveryContext,
+    location_prompt: bool,
+    recalculating: bool,
+    location_error: str | None,
+    geolocation_needs_city: bool,
+) -> DecisionPageView:
+    """Honest production state when canonical offer economics are missing."""
+    empty = _unavailable_product()
+    return DecisionPageView(
+        decision_id=decision_id,
+        context_version=1,
+        catalog_id="",
+        query_label="Decision",
+        evaluated_count=0,
+        page=page,
+        why_variant="standard",
+        location=location,
+        location_prompt=location_prompt and location.is_absent,
+        recalculating=recalculating,
+        recommendation_changed=False,
+        recommendation_changed_message=None,
+        best_piq=empty,
+        alternatives=(),
+        compared=(),
+        highest_piqscore_product_id="",
+        highest_piqscore_name="",
+        recommendation_decision="",
+        shopper=ShopperContextView(
+            budget_label="",
+            top_priority="",
+            use_case="",
+            delivery_label=location.display_place if location.is_known else "Not set",
+            urgency="",
+            why_this_fits="",
+        ),
+        affiliate_disclosure="",
+        freshness_disclaimer="",
+        data_classification=consumer_mode.UNAVAILABLE_CLASSIFICATION,
+        unknowns=("Verified offer economics are not available for this request.",),
+        evidence_categories=(),
+        sources=(),
+        why_sections=(),
+        ask_placeholder="Ask PiqSavi...",
+        ask_suggestions=(),
+        compare_pay_rows=(),
+        compare_fit_rows=(),
+        canonical_piqscore_set_sha256="",
+        recommendation_snapshot_sha256="",
+        geocode_available=False,
+        location_error=location_error,
+        geolocation_needs_city=geolocation_needs_city,
+        delivery_costs_verified=False,
+        data_unavailable=True,
+        unavailable_message=(
+            "PiqSavi does not have a complete canonical decision with verified "
+            "offer economics for this request. Prices, merchants, shipping, "
+            "discounts, PiqScore, and Recommendation evidence are unavailable. "
+            "Demo catalogs are not used as production shopping evidence."
+        ),
+        destination_snapshot_known=False,
+        recommendation_qualified_message=None,
+    )
+
+
+def _unavailable_product() -> ProductCardView:
+    listing = MoneyComponent(kind="listing", label="Listing price", amount=None, status="unknown")
+    shipping = MoneyComponent(kind="shipping", label="Shipping", amount=None, status="unknown")
+    taxes = MoneyComponent(kind="tax", label="Taxes / duties", amount=None, status="unknown")
+    economics = OfferEconomicsView(
+        listing=listing,
+        voucher=None,
+        shipping=shipping,
+        taxes=taxes,
+        import_charges=None,
+        other_costs=(),
+        dominant_state="price_before_shipping",
+        dominant_label="Unavailable",
+        dominant_amount=None,
+        international=False,
+        shipping_material=True,
+        breakdown_lines=(),
+    )
+    return ProductCardView(
+        product_id="",
+        brand="",
+        model="",
+        category="",
+        merchant="",
+        offer_url="/",
+        image_key="",
+        tags=(),
+        piqscore=PiqScoreView(value=0.0, descriptor="", percentile_label=None, snapshot_sha256=""),
+        economics=economics,
+        is_best_piq=True,
+        is_highest_piqscore=False,
+        is_qualified=False,
+        alternative_badge=None,
+        alternative_reason="",
+        compact_breakdown="",
+        why_it_won=(),
+        freshness_label=None,
+        origin_label=None,
+    )
+
+
+def _unknowns_for_location(
+    decision: FixtureDecision,
+    location: DeliveryContext,
+    qualify_recommendation: bool,
+) -> tuple[str, ...]:
+    items = list(decision.unknowns)
+    if qualify_recommendation:
+        note = (
+            f"Shipping, availability, and total cost for {location.display_place} "
+            "are not in a destination-specific snapshot and may change this recommendation."
+        )
+        if note not in items:
+            items.insert(0, note)
+    return tuple(items)
 
 
 def _resolve_catalog(decision_id: str, location: DeliveryContext) -> str:
@@ -189,6 +346,7 @@ def _product_card(
     location: DeliveryContext,
     highest_id: str,
     unknown_shipping: bool,
+    qualify_recommendation: bool = False,
 ) -> ProductCardView:
     shipping = offer.shipping
     taxes = offer.taxes
@@ -276,7 +434,7 @@ def _product_card(
         economics=economics,
         is_best_piq=offer.product_id == decision.best_piq_product_id,
         is_highest_piqscore=offer.product_id == highest_id,
-        is_qualified=decision.why_variant == "qualified"
+        is_qualified=(decision.why_variant == "qualified" or qualify_recommendation)
         and offer.product_id == decision.best_piq_product_id,
         alternative_badge=offer.alternative_badge,
         alternative_reason=offer.alternative_reason,
@@ -373,6 +531,9 @@ def _why_fits(decision: FixtureDecision, location: DeliveryContext, best: Produc
 def _why_sections(
     decision: FixtureDecision,
     location: DeliveryContext,
+    *,
+    qualify_recommendation: bool = False,
+    qualified_message: str | None = None,
 ) -> tuple[WhySectionView, ...]:
     delivery = location.display_place if location.is_known else "your area"
     narrative = decision.why_recommend.format(
@@ -392,6 +553,10 @@ def _why_sections(
     if decision.qualified_callout:
         callout = decision.qualified_callout
         callout_tone = "warn"
+    if qualify_recommendation and qualified_message:
+        callout = qualified_message
+        callout_tone = "warn"
+    unknowns = _unknowns_for_location(decision, location, qualify_recommendation)
     return (
         WhySectionView(
             number=1,
@@ -433,7 +598,7 @@ def _why_sections(
             number=6,
             title="What we don’t know",
             narrative="",
-            bullets=tuple(("warn", item) for item in decision.unknowns),
+            bullets=tuple(("warn", item) for item in unknowns),
         ),
     )
 

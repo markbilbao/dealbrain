@@ -22,7 +22,6 @@ function initLocation() {
   const closers = document.querySelectorAll(".js-close-location");
   const useMine = document.querySelector(".js-use-location");
   const city = dialog.querySelector('input[name="city"]');
-  const geoAvailable = document.body.dataset.geocodeAvailable === "true";
 
   openers.forEach((el) =>
     el.addEventListener("click", () => {
@@ -57,12 +56,8 @@ function initLocation() {
     }
     navigator.geolocation.getCurrentPosition(
       () => {
-        if (geoAvailable) {
-          hint.textContent = "Location received. Confirm your city or municipality.";
-        } else {
-          hint.textContent =
-            "We cannot convert map coordinates into a city yet. Enter a city or municipality. Precise coordinates are not stored.";
-        }
+        hint.textContent =
+          "We cannot convert map coordinates into a city yet. Enter a city or municipality. Precise coordinates are not stored.";
         city?.before(hint);
         city?.focus();
       },

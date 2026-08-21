@@ -37,7 +37,14 @@ def render_page(view: DecisionPageView) -> str:
 
 
 def _document(view: DecisionPageView, main: str) -> str:
-    title = f"PiqSavi — {view.query_label}"
+    title = (
+        "PiqSavi — Offer details unavailable"
+        if view.data_unavailable
+        else f"PiqSavi — {view.query_label}"
+    )
+    qualified = "true" if view.best_piq.is_qualified else "false"
+    unavailable = "true" if view.data_unavailable else "false"
+    snapshot = "true" if view.destination_snapshot_known else "false"
     return f"""<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -53,12 +60,16 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-decision-id="{h(view.decision_id)}"
         data-location-state="{h(_location_state(view))}"
         data-best-piq="{h(view.best_piq.product_id)}"
-        data-piqscore="{h(view.best_piq.piqscore.value)}"
+        data-piqscore="{'' if view.data_unavailable else h(view.best_piq.piqscore.value)}"
         data-highest-piqscore-id="{h(view.highest_piqscore_product_id)}"
-        data-price-state="{h(view.best_piq.economics.dominant_state)}"
+        data-price-state="{'' if view.data_unavailable else h(view.best_piq.economics.dominant_state)}"
         data-canonical-piqscore-set="{h(view.canonical_piqscore_set_sha256)}"
         data-recommendation-sha="{h(view.recommendation_snapshot_sha256)}"
-        data-geocode-available="false">
+        data-geocode-available="false"
+        data-unavailable="{unavailable}"
+        data-classification="{h(view.data_classification)}"
+        data-recommendation-qualified="{qualified}"
+        data-destination-snapshot="{snapshot}">
     <a class="skip-link" href="#main">Skip to content</a>
     {_site_header(view)}
     <main id="main">
@@ -144,7 +155,7 @@ def _location_status(view: DecisionPageView) -> str:
         hint = (
             "Costs calculated for this delivery area"
             if view.delivery_costs_verified
-            else "Shipping to this area is not yet verified"
+            else "Shipping to this area is not yet verified and may change this recommendation"
         )
         return f"""
         <div class="location-status location-known">
@@ -170,6 +181,8 @@ def _location_status(view: DecisionPageView) -> str:
 
 
 def _results_main(view: DecisionPageView) -> str:
+    if view.data_unavailable:
+        return _unavailable_main(view)
     changed = ""
     if view.recommendation_changed and view.recommendation_changed_message:
         changed = f"""
@@ -177,9 +190,17 @@ def _results_main(view: DecisionPageView) -> str:
           {h(view.recommendation_changed_message)}
         </p>
         """
+    qualified = ""
+    if view.recommendation_qualified_message:
+        qualified = f"""
+        <p class="reco-qualified" role="status">{ICON_WARN}
+          {h(view.recommendation_qualified_message)}
+        </p>
+        """
     alts = "".join(_alt_card(card, view) for card in view.alternatives[:3])
     return f"""
     {changed}
+    {qualified}
     <p class="eval-summary">Compared <span class="count-badge">{h(view.evaluated_count)}</span>
       options across multiple signals {ICON_INFO}</p>
     {_hero_card(view)}
@@ -210,7 +231,10 @@ def _hero_card(view: DecisionPageView) -> str:
     )
     shipping_note = ""
     if best.economics.dominant_state == "price_before_shipping":
-        shipping_note = '<p class="shipping-unknown">Shipping to your area not yet verified.</p>'
+        dest = view.location.display_place if view.location.is_known else "your area"
+        shipping_note = (
+            f'<p class="shipping-unknown">Shipping to {h(dest)} not yet verified.</p>'
+        )
     return f"""
     <article class="hero-card" aria-labelledby="hero-title">
       <p class="badge {badge_class}">{h(badge)}</p>
@@ -311,7 +335,31 @@ def _alt_card(card: ProductCardView, view: DecisionPageView) -> str:
     """
 
 
+def _unavailable_main(view: DecisionPageView) -> str:
+    message = view.unavailable_message or (
+        "Offer economics are not available for this request."
+    )
+    return f"""
+    <section class="data-unavailable" data-unavailable="true" aria-labelledby="unavailable-title">
+      <p class="badge badge-unavailable">Unavailable</p>
+      <h1 id="unavailable-title">Offer details are not available</h1>
+      <p>{h(message)}</p>
+      <p class="form-hint">PiqSavi will not invent prices, merchants, shipping, discounts,
+         PiqScore, or Recommendation evidence when a canonical snapshot does not include them.</p>
+    </section>
+    """
+
+
 def _compare_main(view: DecisionPageView) -> str:
+    if view.data_unavailable:
+        return _unavailable_main(view)
+    qualified = ""
+    if view.recommendation_qualified_message:
+        qualified = f"""
+        <p class="reco-qualified" role="status">{ICON_WARN}
+          {h(view.recommendation_qualified_message)}
+        </p>
+        """
     cards = "".join(_compare_product(card, view) for card in view.compared)
     pay = _compare_table("WHAT YOU'LL PAY", view.compare_pay_rows, view)
     fit = _compare_table("PRODUCT FIT", view.compare_fit_rows, view)
@@ -320,6 +368,7 @@ def _compare_main(view: DecisionPageView) -> str:
         for item in view.ask_suggestions
     )
     return f"""
+    {qualified}
     <div class="compare-toolbar">
       <p class="muted">Compare up to 4 options</p>
     </div>
@@ -399,6 +448,8 @@ def _stars(value: str) -> str:
 
 
 def _why_main(view: DecisionPageView) -> str:
+    if view.data_unavailable:
+        return _unavailable_main(view)
     best = view.best_piq
     badge = "Best Piq for You — Qualified" if best.is_qualified else "Best Piq for You"
     sections = "".join(_why_section(view, section) for section in view.why_sections)
@@ -410,6 +461,7 @@ def _why_main(view: DecisionPageView) -> str:
     <div class="why-toolbar">
       <a class="text-link" href="/results/{h(view.decision_id)}">← Back to results</a>
     </div>
+    {f'<p class="reco-qualified" role="status">{ICON_WARN} {h(view.recommendation_qualified_message)}</p>' if view.recommendation_qualified_message else ""}
     <header class="why-hero-head">
       <h1>Why This Is the Best Piq for You</h1>
       <p>PiqSavi evaluated {h(len(view.compared))} offers using available sources and signals,
@@ -554,7 +606,8 @@ def _location_modal(view: DecisionPageView) -> str:
     geo_note = ""
     if view.geolocation_needs_city:
         geo_note = (
-            '<p class="form-hint" role="status">We cannot convert map coordinates into a city yet. '
+            '<p class="form-hint" role="status" data-geo-hint="true">'
+            "We cannot convert map coordinates into a city yet. "
             "Enter a city or municipality instead. Precise coordinates are not stored.</p>"
         )
     city_value = h(view.location.city or "")
@@ -578,9 +631,15 @@ def _location_modal(view: DecisionPageView) -> str:
         <p>PiqSavi uses your delivery area to compare shipping, availability, and total cost more accurately.</p>
         {error}
         {geo_note}
-        <button type="button" class="btn btn-gradient btn-block js-use-location" name="action" value="use_my_location">
+        <button type="button" class="btn btn-gradient btn-block js-use-location"
+                name="action" value="use_my_location"
+                aria-label="Use my location, then enter a city">
           {ICON_PIN} Use my location
         </button>
+        <p class="form-hint" data-geo-capability="unavailable">
+          PiqSavi cannot determine your city from a map pin. After you share browser
+          location permission, enter a city or municipality. Precise coordinates are not stored.
+        </p>
         <p class="or-sep">OR</p>
         <label class="field">
           <span class="field-icon">{ICON_BUILDING}</span>

@@ -144,3 +144,7 @@ class DecisionPageView:
     location_error: str | None = None
     geolocation_needs_city: bool = False
     delivery_costs_verified: bool = False
+    data_unavailable: bool = False
+    unavailable_message: str | None = None
+    destination_snapshot_known: bool = False
+    recommendation_qualified_message: str | None = None

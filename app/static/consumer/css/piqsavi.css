@@ -290,6 +290,28 @@ main {
   align-items: flex-start;
 }
 
+.reco-qualified {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.data-unavailable {
+  background: var(--sheet);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.badge-unavailable {
+  background: var(--muted);
+  color: #fff;
+}
+
 .hero-card,
 .alt-card,
 .compare-card,
