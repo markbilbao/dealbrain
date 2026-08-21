@@ -13,6 +13,12 @@ from app.consumer.mode import UNAVAILABLE_CLASSIFICATION, fixture_catalogs_permi
 from app.consumer.pricing import format_php, shipping_display, tax_display
 from app.consumer.view_models import DecisionPageView, ProductCardView
 from app.domain.entities.decision_snapshot import CanonicalDecisionSnapshot
+from app.domain.entities.offer_economics import PRICE_STATE_LABELS as CANONICAL_PRICE_LABELS
+from app.domain.entities.offer_economics import (
+    CanonicalMoneyLine,
+    CanonicalOfferEconomics,
+    minor_to_major,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,13 +98,96 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
         snapshot.evaluated_products,
         key=lambda item: item.canonical_piqscore.value,
     ).product_id
+    economics_by_product = {item.product_id: item for item in snapshot.offer_economics}
     offers = [
-        EvaluatedOfferFact(
+        _offer_from_snapshot_product(
             product_id=product.product_id,
             display_name=product.display_name,
             piqscore=product.canonical_piqscore.value,
             is_best_piq=product.product_id == best_id,
             is_highest_piqscore=product.product_id == highest_id,
+            economics=economics_by_product.get(product.product_id),
+        )
+        for product in snapshot.evaluated_products
+    ]
+    facts = list(
+        EvidenceFact(
+            evidence_id=item.evidence_id,
+            topic=item.topic,
+            fact=item.fact,
+            product_id=item.product_id,
+            source=item.source,
+            freshness=item.freshness,
+        )
+        for item in snapshot.evidence
+    )
+    facts.extend(_facts_from_canonical_economics(snapshot))
+    sources = tuple(
+        dict.fromkeys(
+            [
+                *(item.source for item in snapshot.evidence if item.source),
+                *(
+                    item.provenance_source
+                    for item in snapshot.offer_economics
+                    if item.provenance_source
+                ),
+            ]
+        )
+    )
+    best = next(item for item in offers if item.is_best_piq)
+    highest = next(item for item in offers if item.is_highest_piqscore)
+    delivery = snapshot.delivery_context or next(
+        (item.delivery for item in snapshot.offer_economics if item.delivery),
+        None,
+    )
+    delivery_label = delivery.display_place if delivery else None
+    shipping_known = any(item.shipping.status == "verified" for item in snapshot.offer_economics)
+    extra_unknowns = tuple(
+        unknown
+        for item in snapshot.offer_economics
+        for unknown in item.unknowns
+        if unknown not in snapshot.unknowns
+    )
+    return DecisionEvidencePacket(
+        decision_id=snapshot.decision_id,
+        context_version=snapshot.context_version,
+        data_classification=snapshot.data_classification,
+        available=True,
+        best_piq_product_id=best.product_id,
+        best_piq_name=best.display_name,
+        highest_piqscore_product_id=highest.product_id,
+        highest_piqscore_name=highest.display_name,
+        recommendation_decision=snapshot.recommendation.decision,
+        is_qualified=False,
+        qualified_reason=None,
+        delivery_label=delivery_label or None,
+        delivery_verified=bool(delivery_label) and shipping_known,
+        sources=sources,
+        unknowns=tuple(dict.fromkeys((*snapshot.unknowns, *extra_unknowns))),
+        facts=tuple(facts),
+        offers=tuple(offers),
+        canonical_piqscore_set_sha256=snapshot.canonical_piqscore_set_sha256,
+        recommendation_snapshot_sha256=snapshot.recommendation.snapshot_sha256,
+        evaluated_product_ids=snapshot.evaluated_product_ids,
+    )
+
+
+def _offer_from_snapshot_product(
+    *,
+    product_id: str,
+    display_name: str,
+    piqscore: float,
+    is_best_piq: bool,
+    is_highest_piqscore: bool,
+    economics: CanonicalOfferEconomics | None,
+) -> EvaluatedOfferFact:
+    if economics is None:
+        return EvaluatedOfferFact(
+            product_id=product_id,
+            display_name=display_name,
+            piqscore=piqscore,
+            is_best_piq=is_best_piq,
+            is_highest_piqscore=is_highest_piqscore,
             is_qualified=False,
             merchant=None,
             price_state=None,
@@ -112,44 +201,185 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
             why_it_won=(),
             alternative_reason=None,
         )
-        for product in snapshot.evaluated_products
-    ]
-    facts = tuple(
-        EvidenceFact(
-            evidence_id=item.evidence_id,
-            topic=item.topic,
-            fact=item.fact,
-            product_id=item.product_id,
-            source=item.source,
-            freshness=item.freshness,
-        )
-        for item in snapshot.evidence
-    )
-    sources = tuple(dict.fromkeys(item.source for item in snapshot.evidence if item.source))
-    best = next(item for item in offers if item.is_best_piq)
-    highest = next(item for item in offers if item.is_highest_piqscore)
-    return DecisionEvidencePacket(
-        decision_id=snapshot.decision_id,
-        context_version=snapshot.context_version,
-        data_classification="non_live_contract_fixture",
-        available=True,
-        best_piq_product_id=best.product_id,
-        best_piq_name=best.display_name,
-        highest_piqscore_product_id=highest.product_id,
-        highest_piqscore_name=highest.display_name,
-        recommendation_decision=snapshot.recommendation.decision,
+    return EvaluatedOfferFact(
+        product_id=product_id,
+        display_name=display_name,
+        piqscore=piqscore,
+        is_best_piq=is_best_piq,
+        is_highest_piqscore=is_highest_piqscore,
         is_qualified=False,
-        qualified_reason=None,
-        delivery_label=None,
-        delivery_verified=False,
-        sources=sources,
-        unknowns=snapshot.unknowns,
-        facts=facts,
-        offers=tuple(offers),
-        canonical_piqscore_set_sha256=snapshot.canonical_piqscore_set_sha256,
-        recommendation_snapshot_sha256=snapshot.recommendation.snapshot_sha256,
-        evaluated_product_ids=snapshot.evaluated_product_ids,
+        merchant=economics.merchant,
+        price_state=economics.price_state,
+        price_label=CANONICAL_PRICE_LABELS[economics.price_state],
+        price_amount=minor_to_major(economics.dominant_amount_minor),
+        shipping_status=economics.shipping.status,
+        shipping_display=_line_shipping_display(economics.shipping),
+        voucher_status=economics.voucher.status if economics.voucher else None,
+        import_status=economics.import_charges.status if economics.import_charges else None,
+        freshness_label=economics.freshness,
+        why_it_won=(),
+        alternative_reason=None,
     )
+
+
+def _line_shipping_display(line: CanonicalMoneyLine) -> str:
+    if line.status == "not_applicable":
+        return "Not applicable"
+    if line.status in {"unverified", "unknown"} or line.amount_minor is None:
+        return "Not verified"
+    if line.amount_minor == 0:
+        return "FREE"
+    prefix = "+" if line.kind in {"shipping", "tax", "import"} else ""
+    estimate = " est." if line.is_estimate else ""
+    return f"{prefix}{format_php(minor_to_major(line.amount_minor))}{estimate}"
+
+
+def _facts_from_canonical_economics(
+    snapshot: CanonicalDecisionSnapshot,
+) -> list[EvidenceFact]:
+    facts: list[EvidenceFact] = []
+    for item in snapshot.offer_economics:
+        prefix = f"econ:{snapshot.decision_id}:{item.product_id}"
+        name = next(
+            (
+                product.display_name
+                for product in snapshot.evaluated_products
+                if product.product_id == item.product_id
+            ),
+            item.product_id,
+        )
+        if item.merchant:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:merchant",
+                    topic="merchant",
+                    fact=f"{name} merchant {item.merchant}",
+                    product_id=item.product_id,
+                    source=item.provenance_source or item.merchant,
+                )
+            )
+        facts.append(
+            EvidenceFact(
+                evidence_id=f"{prefix}:listing",
+                topic="price",
+                fact=(
+                    f"{name} listing {format_php(minor_to_major(item.listing.amount_minor))} "
+                    f"({item.listing.status})"
+                ),
+                product_id=item.product_id,
+                source=item.provenance_source,
+                status=item.listing.status,
+            )
+        )
+        if item.voucher is not None:
+            amount = format_php(minor_to_major(item.voucher.amount_minor))
+            applied = "applied" if item.voucher.applied else "not applied"
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:voucher",
+                    topic="voucher",
+                    fact=f"{name} voucher {amount} status {item.voucher.status}; {applied}",
+                    product_id=item.product_id,
+                    source=item.provenance_source,
+                    status=item.voucher.status,
+                )
+            )
+        facts.append(
+            EvidenceFact(
+                evidence_id=f"{prefix}:shipping",
+                topic="shipping",
+                fact=(
+                    f"{name} shipping {_line_shipping_display(item.shipping)} "
+                    f"(status {item.shipping.status})"
+                ),
+                product_id=item.product_id,
+                source=item.provenance_source,
+                status=item.shipping.status,
+            )
+        )
+        facts.append(
+            EvidenceFact(
+                evidence_id=f"{prefix}:tax",
+                topic="tax",
+                fact=(
+                    f"{name} taxes {format_php(minor_to_major(item.taxes.amount_minor))} "
+                    f"(status {item.taxes.status})"
+                ),
+                product_id=item.product_id,
+                source=item.provenance_source,
+                status=item.taxes.status,
+            )
+        )
+        if item.import_charges is not None:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:import",
+                    topic="import",
+                    fact=(
+                        f"{name} import charges "
+                        f"{format_php(minor_to_major(item.import_charges.amount_minor))} "
+                        f"(status {item.import_charges.status})"
+                    ),
+                    product_id=item.product_id,
+                    source=item.provenance_source,
+                    status=item.import_charges.status,
+                )
+            )
+        facts.append(
+            EvidenceFact(
+                evidence_id=f"{prefix}:price-state",
+                topic="price_state",
+                fact=(
+                    f"{name} {CANONICAL_PRICE_LABELS[item.price_state]} "
+                    f"{format_php(minor_to_major(item.dominant_amount_minor))}"
+                ),
+                product_id=item.product_id,
+                source=item.provenance_source,
+                status=item.price_state,
+            )
+        )
+        if item.delivery and item.delivery.display_place:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:location",
+                    topic="location",
+                    fact=f"Current delivery area {item.delivery.display_place}",
+                    product_id=item.product_id,
+                    source="decision-delivery",
+                )
+            )
+        if item.checked_at is not None:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:freshness",
+                    topic="freshness",
+                    fact=f"{name} checked at {item.checked_at.isoformat()}",
+                    product_id=item.product_id,
+                    source=item.provenance_source,
+                    freshness=item.freshness,
+                )
+            )
+        for index, unknown in enumerate(item.unknowns):
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:unknown:{index}",
+                    topic="unknown",
+                    fact=unknown,
+                    product_id=item.product_id,
+                    source=None,
+                )
+            )
+        if item.provenance_source:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:source",
+                    topic="source",
+                    fact=f"Source used: {item.provenance_source}",
+                    product_id=item.product_id,
+                    source=item.provenance_source,
+                )
+            )
+    return facts
 
 
 def packet_from_page_view(view: DecisionPageView) -> DecisionEvidencePacket:

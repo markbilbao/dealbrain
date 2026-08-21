@@ -13,6 +13,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
+from app.domain.entities.offer_economics import (
+    CanonicalDeliveryContext,
+    CanonicalOfferEconomics,
+)
 from app.domain.entities.shopping_assistant import (
     ConversationOwner,
     DecisionContextReference,
@@ -20,6 +24,9 @@ from app.domain.entities.shopping_assistant import (
 
 RecommendationDecision = Literal["buy", "wait", "consider", "avoid"]
 EvidenceFreshness = Literal["fresh", "stale", "unknown"]
+SCHEMA_VERSION_V1 = "1.0"
+SCHEMA_VERSION_V1_1 = "1.1"
+DATA_CLASSIFICATION_V1 = "non_live_contract_fixture"
 
 PIQSCORE_AUTHORITY = "canonical-piqscore-dealscore-engine"
 RECOMMENDATION_AUTHORITY = "canonical-recommendation-engine"
@@ -211,6 +218,9 @@ class CanonicalDecisionSnapshot:
     affiliate_neutrality: AffiliateNeutralitySnapshot
     created_at: datetime
     updated_at: datetime
+    offer_economics: tuple[CanonicalOfferEconomics, ...] = ()
+    delivery_context: CanonicalDeliveryContext | None = None
+    data_classification: str = DATA_CLASSIFICATION_V1
 
     def __post_init__(self) -> None:
         if not self.decision_id:
@@ -244,6 +254,16 @@ class CanonicalDecisionSnapshot:
             raise ValueError("decision timestamps must be timezone-aware")
         if self.updated_at < self.created_at:
             raise ValueError("updated_at must not precede created_at")
+        if self.data_classification not in {
+            DATA_CLASSIFICATION_V1,
+            "canonical_decision",
+        }:
+            raise ValueError("data_classification is invalid")
+        economics_ids = tuple(item.product_id for item in self.offer_economics)
+        if len(economics_ids) != len(set(economics_ids)):
+            raise ValueError("offer economics product IDs must be unique")
+        if any(product_id not in product_ids for product_id in economics_ids):
+            raise ValueError("offer economics must refer only to evaluated products")
 
     @property
     def evaluated_product_ids(self) -> tuple[str, ...]:
@@ -252,6 +272,10 @@ class CanonicalDecisionSnapshot:
     @property
     def evidence_ids(self) -> tuple[str, ...]:
         return tuple(item.evidence_id for item in self.evidence)
+
+    @property
+    def schema_version(self) -> str:
+        return SCHEMA_VERSION_V1_1 if self.offer_economics else SCHEMA_VERSION_V1
 
     @property
     def canonical_piqscore_set_sha256(self) -> str:
@@ -284,9 +308,9 @@ class CanonicalDecisionSnapshot:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "schema_version": "1.0",
-            "data_classification": "non_live_contract_fixture",
+        payload = {
+            "schema_version": SCHEMA_VERSION_V1,
+            "data_classification": DATA_CLASSIFICATION_V1,
             "decision_id": self.decision_id,
             "context_version": self.context_version,
             "owner": self.owner.to_dict(),
@@ -298,3 +322,11 @@ class CanonicalDecisionSnapshot:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
+        if not self.offer_economics:
+            return payload
+        payload["schema_version"] = SCHEMA_VERSION_V1_1
+        payload["data_classification"] = self.data_classification
+        payload["offer_economics"] = [item.to_dict() for item in self.offer_economics]
+        if self.delivery_context is not None:
+            payload["delivery_context"] = self.delivery_context.to_dict()
+        return payload
