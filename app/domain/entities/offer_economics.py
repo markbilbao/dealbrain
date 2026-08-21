@@ -47,9 +47,7 @@ PRICE_STATE_LABELS: dict[CanonicalPriceState, str] = {
 }
 
 _VALID_STATES = frozenset(PRICE_STATE_LABELS)
-_VALID_KINDS = frozenset(
-    {"listing", "discount", "voucher", "shipping", "tax", "import"}
-)
+_VALID_KINDS = frozenset({"listing", "discount", "voucher", "shipping", "tax", "import"})
 _VALID_STATUSES = frozenset(
     {
         "verified",

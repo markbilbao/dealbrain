@@ -125,9 +125,7 @@ def capture_offer_economics(
         marketplace=marketplace,
         seller_id=seller_id,
         voucher=capture_money_line(voucher) if voucher is not None else None,
-        import_charges=(
-            capture_money_line(import_charges) if import_charges is not None else None
-        ),
+        import_charges=(capture_money_line(import_charges) if import_charges is not None else None),
         delivery=delivery,
         international=international,
         unknowns=unique_unknowns,

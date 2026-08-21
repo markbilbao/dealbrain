@@ -141,9 +141,7 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
         None,
     )
     delivery_label = delivery.display_place if delivery else None
-    shipping_known = any(
-        item.shipping.status == "verified" for item in snapshot.offer_economics
-    )
+    shipping_known = any(item.shipping.status == "verified" for item in snapshot.offer_economics)
     extra_unknowns = tuple(
         unknown
         for item in snapshot.offer_economics
