@@ -198,9 +198,7 @@ def _bose_local(**overrides: Any) -> FixtureOffer:
         international=False,
         shipping_material=True,
         alternative_badge="Best value",
-        alternative_reason=(
-            "Saves ₱3,000 vs your Best Piq while still offering strong comfort."
-        ),
+        alternative_reason=("Saves ₱3,000 vs your Best Piq while still offering strong comfort."),
         why_it_won=("All-day comfort", "Strong value", "Reliable ANC"),
         freshness_label="Checked 2 hours ago",
         origin_label=None,

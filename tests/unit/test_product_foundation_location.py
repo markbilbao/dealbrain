@@ -208,6 +208,6 @@ def test_location_prompt_copy_matches_approved_design() -> None:
     assert "Where should we calculate delivery to?" in html
     assert "Postal code helps improve shipping accuracy." in html
     assert "We don’t need your exact home address." in html
-    assert "name=\"street\"" not in html
-    assert "name=\"house\"" not in html
-    assert "name=\"unit\"" not in html
+    assert 'name="street"' not in html
+    assert 'name="house"' not in html
+    assert 'name="unit"' not in html

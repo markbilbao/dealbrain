@@ -44,7 +44,7 @@ def logo_markup() -> str:
 def product_visual(image_key: str, alt: str) -> str:
     return (
         f'<div class="product-visual product-visual--{h(image_key)}" role="img" '
-        f'{attr("aria-label", alt)}></div>'
+        f"{attr('aria-label', alt)}></div>"
     )
 
 

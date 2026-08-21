@@ -60,9 +60,9 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-decision-id="{h(view.decision_id)}"
         data-location-state="{h(_location_state(view))}"
         data-best-piq="{h(view.best_piq.product_id)}"
-        data-piqscore="{'' if view.data_unavailable else h(view.best_piq.piqscore.value)}"
+        data-piqscore="{"" if view.data_unavailable else h(view.best_piq.piqscore.value)}"
         data-highest-piqscore-id="{h(view.highest_piqscore_product_id)}"
-        data-price-state="{'' if view.data_unavailable else h(view.best_piq.economics.dominant_state)}"
+        data-price-state="{"" if view.data_unavailable else h(view.best_piq.economics.dominant_state)}"
         data-canonical-piqscore-set="{h(view.canonical_piqscore_set_sha256)}"
         data-recommendation-sha="{h(view.recommendation_snapshot_sha256)}"
         data-geocode-available="false"
@@ -134,7 +134,11 @@ def _site_header(view: DecisionPageView) -> str:
 
 
 def _ask_top(view: DecisionPageView) -> str:
-    action = f"/results/{h(view.decision_id)}" if view.page == "results" else f"/{h(view.page)}/{h(view.decision_id)}"
+    action = (
+        f"/results/{h(view.decision_id)}"
+        if view.page == "results"
+        else f"/{h(view.page)}/{h(view.decision_id)}"
+    )
     if view.page == "compare":
         action = f"/compare/{h(view.decision_id)}"
     return f"""
@@ -216,7 +220,7 @@ def _hero_card(view: DecisionPageView) -> str:
     best = view.best_piq
     badge = "Best Piq for You — Qualified" if best.is_qualified else "Best Piq for You"
     badge_class = "badge-qualified" if best.is_qualified else "badge-best"
-    tags = "".join(f'<li>{h(tag)}</li>' for tag in best.tags)
+    tags = "".join(f"<li>{h(tag)}</li>" for tag in best.tags)
     reasons = "".join(f"<li>{ICON_CHECK}{h(item)}</li>" for item in best.why_it_won)
     percentile = (
         f'<p class="percentile">{h(best.piqscore.percentile_label)}</p>'
@@ -232,9 +236,7 @@ def _hero_card(view: DecisionPageView) -> str:
     shipping_note = ""
     if best.economics.dominant_state == "price_before_shipping":
         dest = view.location.display_place if view.location.is_known else "your area"
-        shipping_note = (
-            f'<p class="shipping-unknown">Shipping to {h(dest)} not yet verified.</p>'
-        )
+        shipping_note = f'<p class="shipping-unknown">Shipping to {h(dest)} not yet verified.</p>'
     return f"""
     <article class="hero-card" aria-labelledby="hero-title">
       <p class="badge {badge_class}">{h(badge)}</p>
@@ -308,7 +310,9 @@ def _breakdown(card: ProductCardView) -> str:
 
 
 def _alt_card(card: ProductCardView, view: DecisionPageView) -> str:
-    badge = f'<p class="mini-badge">{h(card.alternative_badge)}</p>' if card.alternative_badge else ""
+    badge = (
+        f'<p class="mini-badge">{h(card.alternative_badge)}</p>' if card.alternative_badge else ""
+    )
     return f"""
     <article class="alt-card">
       {badge}
@@ -336,9 +340,7 @@ def _alt_card(card: ProductCardView, view: DecisionPageView) -> str:
 
 
 def _unavailable_main(view: DecisionPageView) -> str:
-    message = view.unavailable_message or (
-        "Offer economics are not available for this request."
-    )
+    message = view.unavailable_message or ("Offer economics are not available for this request.")
     return f"""
     <section class="data-unavailable" data-unavailable="true" aria-labelledby="unavailable-title">
       <p class="badge badge-unavailable">Unavailable</p>
@@ -430,7 +432,7 @@ def _compare_table(title: str, rows, view: DecisionPageView) -> str:
       <div class="table-scroll">
         <table class="compare-table">
           <thead><tr><th scope="col">{h(title)}</th>{head}</tr></thead>
-          <tbody>{''.join(body)}</tbody>
+          <tbody>{"".join(body)}</tbody>
         </table>
       </div>
     </section>
@@ -468,7 +470,7 @@ def _why_main(view: DecisionPageView) -> str:
          then selected the option that best matches your priorities, budget, and delivery needs.</p>
     </header>
     <article class="hero-card why-hero">
-      <p class="badge {'badge-qualified' if best.is_qualified else 'badge-best'}">{h(badge)}</p>
+      <p class="badge {"badge-qualified" if best.is_qualified else "badge-best"}">{h(badge)}</p>
       <div class="hero-grid">
         {product_visual(best.image_key, f"{best.brand} {best.model}")}
         <div class="hero-copy">
@@ -506,7 +508,7 @@ def _why_section(view: DecisionPageView, section) -> str:
     extra = ""
     if section.number == 5:
         cats = "".join(
-            f'<li><span>{h(item.label)}</span> '
+            f"<li><span>{h(item.label)}</span> "
             f'<strong class="status-{h(item.status)}">{h(item.status_label)}</strong></li>'
             for item in view.evidence_categories
         )
@@ -602,7 +604,11 @@ def _ask_dock(view: DecisionPageView) -> str:
 def _location_modal(view: DecisionPageView) -> str:
     opened = "open" if view.location_prompt else ""
     hidden = "" if view.location_prompt else "hidden"
-    error = f'<p class="form-error" role="alert">{h(view.location_error)}</p>' if view.location_error else ""
+    error = (
+        f'<p class="form-error" role="alert">{h(view.location_error)}</p>'
+        if view.location_error
+        else ""
+    )
     geo_note = ""
     if view.geolocation_needs_city:
         geo_note = (

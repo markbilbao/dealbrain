@@ -687,11 +687,7 @@ def _fit_rows(cards: tuple[ProductCardView, ...]) -> tuple[CompareFitRow, ...]:
     from app.consumer.fixtures import CATALOG
 
     # Fit values live on fixture offers; look up by product_id.
-    offers = {
-        offer.product_id: offer
-        for decision in CATALOG.values()
-        for offer in decision.offers
-    }
+    offers = {offer.product_id: offer for decision in CATALOG.values() for offer in decision.offers}
     keys = (
         ("Comfort", "stars"),
         ("Sound quality", "stars"),

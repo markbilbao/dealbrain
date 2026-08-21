@@ -157,8 +157,7 @@ def select_price_state(
 ) -> PriceState:
     """Choose the dominant consumer price label from captured completeness."""
     unverified_savings = any(
-        item.kind in {"discount", "voucher"} and item.status == "unverified"
-        for item in savings
+        item.kind in {"discount", "voucher"} and item.status == "unverified" for item in savings
     )
     if unverified_savings:
         return "potential_checkout_price"
