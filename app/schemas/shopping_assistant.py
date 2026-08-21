@@ -19,6 +19,9 @@ class ShoppingAssistantQueryRequest(BaseModel):
     products: list[str] = Field(default_factory=list)
     profile_id: str | None = Field(default=None, max_length=128)
     user_id: str | None = Field(default=None, max_length=128)
+    decision_id: str | None = Field(default=None, max_length=128)
+    context_version: int | None = Field(default=None, ge=1)
+    surface: Literal["results", "compare", "why"] | None = None
 
 
 class EvidencePayload(BaseModel):
@@ -114,6 +117,9 @@ class ShoppingAssistantResponse(BaseModel):
         "The assistant cannot guarantee prices, authenticity, or future price changes. "
         "Personalization uses fixture profiles only when a profile_id is provided."
     )
+    action: str | None = None
+    answer_status: str | None = None
+    decision_id: str | None = None
 
 
 class ShoppingAssistantDemoMeta(BaseModel):

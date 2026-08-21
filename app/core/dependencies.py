@@ -16,6 +16,7 @@ from app.domain.interfaces.canonical_registry import (
 from app.domain.interfaces.collection_job_repository import CollectionJobRepository
 from app.domain.interfaces.collection_scheduler import CollectionScheduler
 from app.domain.interfaces.deal_score_engine import DealScoreEngine
+from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 from app.domain.interfaces.marketplace_collector import MarketplaceCollector
 from app.domain.interfaces.marketplace_connector import MarketplaceConnector
 from app.domain.interfaces.marketplace_rate_limiter import MarketplaceRateLimiter
@@ -71,6 +72,9 @@ from app.infrastructure.database.repositories.price_history_repository import (
 )
 from app.infrastructure.database.repositories.product_repository import ProductRepository
 from app.infrastructure.database.session import get_db_session
+from app.infrastructure.persistence.memory_decision_snapshot_repository import (
+    InMemoryDecisionSnapshotRepository,
+)
 from app.intelligence.canonical_registry import (
     CanonicalProductRegistryService,
     InMemoryCanonicalProductStore,
@@ -201,6 +205,7 @@ _MEMORY_REVIEW_SUMMARY_REPOSITORY = InMemoryReviewSummaryRepository()
 _MEMORY_SHOPPING_CONVERSATION_REPOSITORY = InMemoryConversationRepository(
     ttl_seconds=settings.ai_shopping_conversation_ttl_seconds,
 )
+_MEMORY_SHOPPING_DECISION_SNAPSHOT_REPOSITORY = InMemoryDecisionSnapshotRepository()
 _MOCK_NOTIFICATION_SERVICE = MockNotificationService()
 _COLLECTION_SCHEDULER: InMemoryCollectionScheduler | None = None
 _COLLECTION_SERVICE: MarketplaceCollectionService | None = None
@@ -900,6 +905,11 @@ def get_shopping_conversation_repository() -> ConversationRepository:
     return _MEMORY_SHOPPING_CONVERSATION_REPOSITORY
 
 
+def get_shopping_decision_snapshot_repository() -> DecisionSnapshotRepository:
+    """Provide the process-scoped in-memory canonical decision snapshot store."""
+    return _MEMORY_SHOPPING_DECISION_SNAPSHOT_REPOSITORY
+
+
 def get_shopping_explanation_registry() -> ShoppingExplanationRegistry:
     """Build shopping explanation providers from settings (no live HTTP by default)."""
     live = settings.ai_shopping_external_calls_enabled
@@ -1488,6 +1498,7 @@ def get_merchant_admin_service(
 
 def get_shopping_assistant_service(
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
     orchestrator: ShoppingAssistantOrchestrator = Depends(get_shopping_assistant_orchestrator),
     community_service: CommunityIntelligenceService = Depends(get_community_intelligence_service),
     knowledge_graph_service: KnowledgeGraphService = Depends(get_knowledge_graph_service),
@@ -1520,6 +1531,7 @@ def get_shopping_assistant_service(
         _SHOPPING_ASSISTANT_SERVICE = ShoppingAssistantService(
             orchestrator=orchestrator,
             conversation_repository=conversations,
+            snapshot_repository=snapshots,
             max_query_length=settings.ai_shopping_max_query_length,
             community_service=community,
             knowledge_graph_service=graph,
@@ -1535,6 +1547,8 @@ def get_shopping_assistant_service(
         return _SHOPPING_ASSISTANT_SERVICE
     _SHOPPING_ASSISTANT_SERVICE._orchestrator = orchestrator  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._conversations = conversations  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._evidence_answers._snapshots = snapshots  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._evidence_answers._conversations = conversations  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._community = community  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._knowledge_graph = graph  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._personal_agent = personal  # noqa: SLF001
@@ -1626,9 +1640,10 @@ def get_launch_dashboard_service() -> LaunchDashboardService:
                 return len(repo._notifications)  # noqa: SLF001
             # SQLAlchemy adapter: approximate via empty-user listing is wrong; use ops count if present
             try:
-                from app.infrastructure.persistence.stores import NC_NOTIFICATIONS
-                from app.infrastructure.persistence.session import sync_session
                 from app.infrastructure.persistence.operational_store import OperationalStore
+                from app.infrastructure.persistence.session import sync_session
+                from app.infrastructure.persistence.stores import NC_NOTIFICATIONS
+
                 with sync_session() as session:
                     return OperationalStore(session).count(NC_NOTIFICATIONS)
             except Exception:
