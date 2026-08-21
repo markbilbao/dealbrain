@@ -14283,6 +14283,18 @@
             ],
             "title": "Category"
           },
+          "context_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Version"
+          },
           "conversation_id": {
             "anyOf": [
               {
@@ -14305,6 +14317,18 @@
               }
             ],
             "title": "Currency"
+          },
+          "decision_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Id"
           },
           "mode": {
             "anyOf": [
@@ -14347,6 +14371,22 @@
             "title": "Query",
             "type": "string"
           },
+          "surface": {
+            "anyOf": [
+              {
+                "enum": [
+                  "results",
+                  "compare",
+                  "why"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          },
           "use_cases": {
             "items": {
               "type": "string"
@@ -14375,6 +14415,17 @@
       },
       "ShoppingAssistantResponse": {
         "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          },
           "allowed_modes": {
             "items": {
               "type": "string"
@@ -14392,6 +14443,17 @@
           "answer": {
             "title": "Answer",
             "type": "string"
+          },
+          "answer_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Status"
           },
           "buy_now_or_wait": {
             "anyOf": [
@@ -14432,6 +14494,17 @@
             "default": "mock",
             "title": "Data Status",
             "type": "string"
+          },
+          "decision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Id"
           },
           "disagreements": {
             "items": {

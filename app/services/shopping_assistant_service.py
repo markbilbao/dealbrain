@@ -20,6 +20,7 @@ from app.domain.entities.shopping_assistant import (
     ShoppingQuery,
 )
 from app.domain.exceptions import ShoppingAssistantValidationError
+from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 from app.domain.interfaces.shopping_assistant_repository import ConversationRepository
 from app.intelligence.shopping_assistant.buy_now_wait import build_buy_now_or_wait
 from app.intelligence.shopping_assistant.candidates import ProductCandidateService
@@ -34,6 +35,7 @@ from app.intelligence.shopping_assistant.intent import (
 from app.intelligence.shopping_assistant.orchestrator import ShoppingAssistantOrchestrator
 from app.intelligence.shopping_assistant.recommendation import ShoppingRecommendationRanker
 from app.intelligence.shopping_assistant.validator import ShoppingResponseValidator
+from app.services.answer_from_evidence import AnswerFromEvidenceService
 
 DEFAULT_MAX_QUERY_LENGTH = 500
 
@@ -52,6 +54,7 @@ class ShoppingAssistantService:
         validator: ShoppingResponseValidator | None = None,
         orchestrator: ShoppingAssistantOrchestrator | None = None,
         conversation_repository: ConversationRepository | None = None,
+        snapshot_repository: DecisionSnapshotRepository | None = None,
         confidence_calculator: ConfidenceCalculator | None = None,
         community_service: Any | None = None,
         knowledge_graph_service: Any | None = None,
@@ -85,6 +88,14 @@ class ShoppingAssistantService:
         self._validator = validator or ShoppingResponseValidator()
         self._orchestrator = orchestrator
         self._conversations = conversation_repository
+        self._clock = clock or (lambda: datetime.now(UTC))
+        self._id_factory = id_factory or (lambda: str(uuid4()))
+        self._evidence_answers = AnswerFromEvidenceService(
+            snapshots=snapshot_repository,
+            conversations=conversation_repository,
+            clock=self._clock,
+            id_factory=self._id_factory,
+        )
         self._confidence = confidence_calculator or ConfidenceCalculator()
         self._community = community_service
         self._knowledge_graph = knowledge_graph_service
@@ -96,15 +107,25 @@ class ShoppingAssistantService:
         self._notification_center = notification_center_service
         self._alert_evaluation_service = alert_evaluation_service
         self._affiliate_link_service = affiliate_link_service
-        self._clock = clock or (lambda: datetime.now(UTC))
-        self._id_factory = id_factory or (lambda: str(uuid4()))
         self._max_query_length = max_query_length
         self._allowed_modes = allowed_modes
 
     def query(
         self,
         request: ShoppingQuery | dict[str, Any],
+        *,
+        location: Any | None = None,
     ) -> ShoppingAssistantResponse:
+        if isinstance(request, dict) and request.get("decision_id"):
+            cleaned = self._require_query(str(request.get("query") or ""))
+            payload = dict(request)
+            payload["query"] = cleaned
+            return self._evidence_answers.answer(payload, location=location)
+        if isinstance(request, ShoppingQuery) and request.decision_id:
+            cleaned = self._require_query(request.query)
+            payload = request.to_dict()
+            payload["query"] = cleaned
+            return self._evidence_answers.answer(payload, location=location)
         shopping_query = self._normalize_request(request)
         cleaned = self._require_query(shopping_query.query)
 
@@ -875,9 +896,7 @@ class ShoppingAssistantService:
             "available": True,
         }
 
-    def explain_alert_trigger(
-        self, *, user_id: str | None, notification_id: str
-    ) -> dict[str, Any]:
+    def explain_alert_trigger(self, *, user_id: str | None, notification_id: str) -> dict[str, Any]:
         """Explain why a specific notification/alert fired, from its stored metadata."""
         if not user_id or self._notification_center is None:
             return {"explained": False, "reason": "notification_center_unavailable"}
@@ -984,6 +1003,9 @@ class ShoppingAssistantService:
             products=tuple(products),
             profile_id=request.get("profile_id"),
             user_id=request.get("user_id"),
+            decision_id=request.get("decision_id"),
+            context_version=request.get("context_version"),
+            surface=request.get("surface"),
         )
 
     def _require_query(self, query: str) -> str:

@@ -127,20 +127,38 @@ function initAsk() {
       const question = (input?.value || "").trim();
       if (!question) return;
       showAsk("<p>Looking at the current decision…</p>");
+      const payload = { query: question };
+      const decisionId = document.body?.dataset?.decisionId;
+      const surface = document.body?.dataset?.page;
+      if (decisionId) payload.decision_id = decisionId;
+      if (surface) payload.surface = surface;
+      try {
+        const conversationId = window.sessionStorage.getItem("piqsavi_ask_conversation");
+        if (conversationId) payload.conversation_id = conversationId;
+      } catch {
+        /* sessionStorage may be unavailable */
+      }
       try {
         const response = await fetch(ASK_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ query: question }),
+          body: JSON.stringify(payload),
         });
-        const payload = await response.json();
+        const payloadJson = await response.json();
+        if (payloadJson.conversation_id) {
+          try {
+            window.sessionStorage.setItem("piqsavi_ask_conversation", payloadJson.conversation_id);
+          } catch {
+            /* ignore */
+          }
+        }
         const answer =
-          payload.answer ||
-          payload.summary ||
-          payload.message ||
+          payloadJson.answer ||
+          payloadJson.summary ||
+          payloadJson.message ||
           "PiqSavi can discuss this decision, but a detailed evidence answer is not available yet.";
-        const warnings = Array.isArray(payload.warnings)
-          ? payload.warnings.map((item) => item.message || item).join(" ")
+        const warnings = Array.isArray(payloadJson.warnings)
+          ? payloadJson.warnings.map((item) => item.message || item).join(" ")
           : "";
         showAsk(`<p>${escapeHtml(String(answer))}</p>${warnings ? `<p class="form-hint">${escapeHtml(warnings)}</p>` : ""}`);
       } catch {

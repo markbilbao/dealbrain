@@ -86,8 +86,7 @@ def to_assistant_response(
                 response.comparison.overall_recommendation
             ),
             unresolved_uncertainty=[
-                present_consumer_text(item)
-                for item in response.comparison.unresolved_uncertainty
+                present_consumer_text(item) for item in response.comparison.unresolved_uncertainty
             ],
             evidence_ids=list(response.comparison.evidence_ids),
         )
@@ -139,18 +138,17 @@ def to_assistant_response(
             for item in response.disagreements
         ],
         fallback_reason=(
-            present_consumer_text(response.fallback_reason)
-            if response.fallback_reason
-            else None
+            present_consumer_text(response.fallback_reason) if response.fallback_reason else None
         ),
         buy_now_or_wait=(
-            present_consumer_text(response.buy_now_or_wait)
-            if response.buy_now_or_wait
-            else None
+            present_consumer_text(response.buy_now_or_wait) if response.buy_now_or_wait else None
         ),
         processing=_sanitize_processing(dict(response.processing)),
         generated_at=response.generated_at.isoformat() if response.generated_at else None,
         allowed_modes=list(allowed_modes or response.processing.get("allowed_modes") or []),
         personal_recommendation=response.personal_recommendation,
         profile_id=response.profile_id,
+        action=response.processing.get("action"),
+        answer_status=response.processing.get("answer_status"),
+        decision_id=response.processing.get("decision_id"),
     )

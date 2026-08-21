@@ -124,6 +124,9 @@ class ShoppingQuery:
     products: tuple[str, ...] = ()
     profile_id: str | None = None
     user_id: str | None = None
+    decision_id: str | None = None
+    context_version: int | None = None
+    surface: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -138,6 +141,9 @@ class ShoppingQuery:
             "products": list(self.products),
             "profile_id": self.profile_id,
             "user_id": self.user_id,
+            "decision_id": self.decision_id,
+            "context_version": self.context_version,
+            "surface": self.surface,
         }
 
 

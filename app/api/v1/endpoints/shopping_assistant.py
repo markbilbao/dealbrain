@@ -6,12 +6,15 @@ are disabled by default and never receive client-supplied API keys.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.api.v1.mappers.shopping_assistant import to_assistant_response
+from app.consumer.location import DELIVERY_COOKIE, parse_delivery_cookie
 from app.core.config import settings
 from app.core.dependencies import get_shopping_assistant_service
 from app.domain.exceptions import (
+    DecisionSnapshotIntegrityError,
+    DecisionSnapshotOwnershipError,
     ShoppingAssistantNotFoundError,
     ShoppingAssistantValidationError,
 )
@@ -29,8 +32,12 @@ router = APIRouter(prefix="/shopping-assistant")
 def _map_error(exc: Exception) -> HTTPException:
     if isinstance(exc, ShoppingAssistantValidationError):
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.message)
-    if isinstance(exc, ShoppingAssistantNotFoundError):
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, DecisionSnapshotIntegrityError):
+        return HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Decision evidence is not usable."
+        )
+    if isinstance(exc, (ShoppingAssistantNotFoundError, DecisionSnapshotOwnershipError)):
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Decision not found.")
     # Never return provider stack traces or private errors.
     return HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -85,11 +92,18 @@ async def shopping_assistant_meta(
 )
 async def query_shopping_assistant(
     body: ShoppingAssistantQueryRequest,
+    request: Request,
     service: ShoppingAssistantService = Depends(get_shopping_assistant_service),
 ) -> ShoppingAssistantResponse:
+    location = parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
     try:
-        result = service.query(body.model_dump())
-    except (ShoppingAssistantValidationError, ShoppingAssistantNotFoundError) as exc:
+        result = service.query(body.model_dump(), location=location)
+    except (
+        ShoppingAssistantValidationError,
+        ShoppingAssistantNotFoundError,
+        DecisionSnapshotOwnershipError,
+        DecisionSnapshotIntegrityError,
+    ) as exc:
         raise _map_error(exc) from exc
     except Exception as exc:  # noqa: BLE001
         raise _map_error(exc) from exc
