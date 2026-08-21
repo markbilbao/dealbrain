@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app import __version__
+from app.api.consumer import mount_consumer_static
+from app.api.consumer import router as consumer_router
 from app.api.demo import router as demo_router
 from app.api.early_access_page import mount_early_access_static
 from app.api.early_access_page import router as early_access_page_router
@@ -324,10 +326,12 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(early_access_page_router)
+    app.include_router(consumer_router)
     app.include_router(probes_router)
     app.include_router(api_router)
     app.include_router(demo_router)
     mount_early_access_static(app)
+    mount_consumer_static(app)
 
     app.openapi = lambda: _custom_openapi(app)  # type: ignore[method-assign]
 
