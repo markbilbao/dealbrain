@@ -31,6 +31,11 @@ from app.services.answer_from_evidence import (
     AnswerFromEvidenceService,
     compose_evidence_answer,
 )
+from app.services.canonical_offer_economics import (
+    attach_offer_economics,
+    capture_offer_economics,
+    delivery_from_location,
+)
 from app.services.decision_evidence_packet import packet_from_page_view, packet_from_snapshot
 from httpx import AsyncClient
 
@@ -380,6 +385,75 @@ def test_phase_29_4b_and_29_4c_remain_unimplemented() -> None:
     assert "refine_session_recommendation" not in js
     assert "propose_research" not in js
     assert "answer_from_evidence" not in js
+
+
+def _economics_snapshot() -> CanonicalDecisionSnapshot:
+    from app.consumer.pricing import MoneyComponent
+
+    listing = MoneyComponent(kind="listing", label="Listing price", amount=19990, status="verified")
+    voucher = MoneyComponent(kind="voucher", label="Voucher", amount=-1000, status="verified")
+    shipping = MoneyComponent(kind="shipping", label="Shipping", amount=0, status="verified")
+    taxes = MoneyComponent(
+        kind="tax",
+        label="Taxes",
+        amount=None,
+        status="not_applicable",
+        applies=False,
+    )
+    alt_listing = MoneyComponent(
+        kind="listing",
+        label="Listing price",
+        amount=18990,
+        status="verified",
+    )
+    sony = capture_offer_economics(
+        offer_id="offer-iphone",
+        product_id=IPHONE_ID,
+        listing=listing,
+        shipping=shipping,
+        taxes=taxes,
+        price_state="final_effective_cost",
+        dominant_amount=18990,
+        merchant="Lazada",
+        voucher=voucher,
+        delivery=delivery_from_location(city="Taguig City", postal_code="1630"),
+        provenance_source="captured-offer://lazada/iphone",
+    )
+    samsung = capture_offer_economics(
+        offer_id="offer-samsung",
+        product_id=SAMSUNG_ID,
+        listing=alt_listing,
+        shipping=shipping,
+        taxes=taxes,
+        price_state="final_effective_cost",
+        dominant_amount=18990,
+        merchant="Shopee",
+        delivery=delivery_from_location(city="Taguig City", postal_code="1630"),
+        provenance_source="captured-offer://shopee/samsung",
+    )
+    return attach_offer_economics(
+        _snapshot(),
+        (sony, samsung),
+        delivery=delivery_from_location(city="Taguig City", postal_code="1630"),
+        data_classification="canonical_decision",
+    )
+
+
+def test_snapshot_economics_answer_price_and_merchant() -> None:
+    packet = packet_from_snapshot(_economics_snapshot())
+    price = compose_evidence_answer("What price did you evaluate?", packet)
+    shipping = compose_evidence_answer("Does this include shipping?", packet)
+    merchant = compose_evidence_answer("Which merchant is this?", packet)
+    assert "18,990" in price.answer
+    assert "FREE" in shipping.answer
+    assert "Lazada" in merchant.answer
+
+
+def test_snapshot_without_economics_still_insufficient() -> None:
+    packet = packet_from_snapshot(_snapshot())
+    assert compose_evidence_answer("What price did you evaluate?", packet).status == (
+        "insufficient_evidence"
+    )
 
 
 @pytest.mark.asyncio

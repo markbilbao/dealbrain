@@ -20,6 +20,11 @@ The fixtures are non-live contract examples. Product facts, scores, timestamps,
 and identifiers in them are deterministic test data, not marketplace claims or
 outputs from the protected PiqScore/Recommendation engines.
 
+Canonical offer economics for later decision snapshots are documented in
+[`CANONICAL_OFFER_ECONOMICS.md`](CANONICAL_OFFER_ECONOMICS.md). Schema `1.0`
+snapshots remain valid without economics. Schema `1.1` adds captured
+decision-time offer economics without rewriting historical `1.0` digests.
+
 ## Decision context v1
 
 A decision context is a versioned, server-owned snapshot. It captures the exact
