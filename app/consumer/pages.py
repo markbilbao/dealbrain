@@ -27,6 +27,12 @@ from app.consumer.pricing import format_php
 from app.consumer.view_models import DecisionPageView, ProductCardView
 
 
+def _offer_link(url: str, css: str) -> str:
+    if not url:
+        return ""
+    return f'<a class="{css}" href="{h(url)}" rel="nofollow noopener">View offer</a>'
+
+
 def render_page(view: DecisionPageView) -> str:
     body = {
         "results": _results_main,
@@ -58,6 +64,8 @@ def _document(view: DecisionPageView, main: str) -> str:
   <body class="page-{h(view.page)} why-{h(view.why_variant)}"
         data-page="{h(view.page)}"
         data-decision-id="{h(view.decision_id)}"
+        data-context-version="{h(view.context_version)}"
+        data-presentation-mode="{h(view.presentation_mode)}"
         data-location-state="{h(_location_state(view))}"
         data-best-piq="{h(view.best_piq.product_id)}"
         data-piqscore="{"" if view.data_unavailable else h(view.best_piq.piqscore.value)}"
@@ -154,13 +162,32 @@ def _ask_top(view: DecisionPageView) -> str:
     """
 
 
+def _session_location_note(view: DecisionPageView) -> str:
+    if not view.session_location_differs:
+        return ""
+    current = view.session_location_label or "a different area"
+    return (
+        f'<p class="location-hint" data-session-location-differs="true">'
+        f"This decision was evaluated for {h(view.location.display_place)}. "
+        f"Your current session location is {h(current)} and has not changed this decision."
+        "</p>"
+    )
+
+
 def _location_status(view: DecisionPageView) -> str:
     if view.location.is_known:
-        hint = (
-            "Costs calculated for this delivery area"
-            if view.delivery_costs_verified
-            else "Shipping to this area is not yet verified and may change this recommendation"
-        )
+        if view.presentation_mode == "canonical":
+            hint = (
+                "Costs shown are those evaluated for this decision"
+                if view.delivery_costs_verified
+                else "Some costs were unknown when this decision was evaluated"
+            )
+        else:
+            hint = (
+                "Costs calculated for this delivery area"
+                if view.delivery_costs_verified
+                else "Shipping to this area is not yet verified and may change this recommendation"
+            )
         return f"""
         <div class="location-status location-known">
           <p class="location-label">{ICON_PIN}
@@ -168,6 +195,7 @@ def _location_status(view: DecisionPageView) -> str:
             <button type="button" class="text-link js-open-location">Change</button>
           </p>
           <p class="location-hint">{h(hint)}</p>
+          {_session_location_note(view)}
         </div>
         """
     if view.location.is_skipped:
@@ -262,7 +290,7 @@ def _hero_card(view: DecisionPageView) -> str:
           </div>
           {_breakdown(best)}
           <div class="hero-actions">
-            <a class="btn btn-gradient" href="{h(best.offer_url)}" rel="nofollow noopener">View offer</a>
+            {_offer_link(best.offer_url, "btn btn-gradient")}
             <button type="button" class="icon-btn" aria-label="Save this Piq">{ICON_BOOKMARK}</button>
           </div>
         </div>
@@ -331,7 +359,7 @@ def _alt_card(card: ProductCardView, view: DecisionPageView) -> str:
         <p class="merchant">from {h(card.merchant)}</p>
         <p class="alt-reason">{h(card.alternative_reason)}</p>
         <div class="hero-actions">
-          <a class="btn btn-primary btn-compact" href="{h(card.offer_url)}" rel="nofollow noopener">View offer</a>
+          {_offer_link(card.offer_url, "btn btn-primary btn-compact")}
           <button type="button" class="icon-btn" aria-label="Save this Piq">{ICON_BOOKMARK}</button>
         </div>
       </div>
@@ -379,7 +407,7 @@ def _compare_main(view: DecisionPageView) -> str:
     {fit}
     <aside class="compare-cta">
       <p><strong>Best Piq for You</strong> {h(view.best_piq.brand)} {h(view.best_piq.model)}</p>
-      <a class="btn btn-gradient" href="{h(view.best_piq.offer_url)}" rel="nofollow noopener">View offer</a>
+      {_offer_link(view.best_piq.offer_url, "btn btn-gradient")}
       <a class="btn btn-secondary" href="/why-best-piq/{h(view.decision_id)}">See full reasoning →</a>
     </aside>
     <section class="ask-suggestions" aria-label="Suggested questions">
@@ -481,7 +509,7 @@ def _why_main(view: DecisionPageView) -> str:
           <p class="price-label tone-{h(_tone(best))}">{h(best.economics.dominant_label)}</p>
           <p class="price-value">{h(format_php(best.economics.dominant_amount))}</p>
           <div class="hero-actions">
-            <a class="btn btn-gradient" href="{h(best.offer_url)}" rel="nofollow noopener">View offer</a>
+            {_offer_link(best.offer_url, "btn btn-gradient")}
             <button type="button" class="icon-btn" aria-label="Save this Piq">{ICON_BOOKMARK}</button>
           </div>
         </div>

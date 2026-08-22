@@ -132,6 +132,8 @@ function initAsk() {
       const surface = document.body?.dataset?.page;
       if (decisionId) payload.decision_id = decisionId;
       if (surface) payload.surface = surface;
+      const contextVersion = document.body?.dataset?.contextVersion;
+      if (contextVersion) payload.context_version = Number(contextVersion);
       try {
         const conversationId = window.sessionStorage.getItem("piqsavi_ask_conversation");
         if (conversationId) payload.conversation_id = conversationId;

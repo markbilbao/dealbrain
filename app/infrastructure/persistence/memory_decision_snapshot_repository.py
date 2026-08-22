@@ -64,3 +64,19 @@ class InMemoryDecisionSnapshotRepository(DecisionSnapshotRepository):
         if snapshot.owner.expires_at <= now or owner.expires_at <= now:
             return None
         return snapshot
+
+    def get_latest_for_owner(
+        self,
+        decision_id: str,
+        owner: ConversationOwner,
+    ) -> CanonicalDecisionSnapshot | None:
+        with self._lock:
+            versions = sorted(
+                (version for key_id, version in self._records if key_id == decision_id),
+                reverse=True,
+            )
+        for version in versions:
+            loaded = self.get_for_owner(decision_id, version, owner)
+            if loaded is not None:
+                return loaded
+        return None

@@ -105,6 +105,10 @@ PiqScore and Recommendation snapshot hashes are opaque SHA-256 integrity values.
 They do not define or reproduce either protected algorithm. Clients compare or
 return these digests but do not generate canonical replacements.
 
+Canonical UUID Results / Compare / Why adapt one owner-verified snapshot into
+the Product Foundation view model. See
+`docs/architecture/CANONICAL_UUID_CONSUMER_PRESENTATION.md`.
+
 The Product Foundation authority is frozen separately by
 `tests/contracts/fixtures/sprint29-authority-lock.json`. The validator checks:
 

@@ -110,10 +110,11 @@ does not fall back to Product Foundation fixtures.
 
 ## Product Foundation
 
-Results / Compare / Why remain presentation adapters. They do not yet load
-canonical UUID snapshots on document routes. Live production pages without a
-canonical snapshot continue to show unavailable offer economics rather than
-fixture catalogs.
+Canonical UUID Results / Compare / Why now consume captured economics through
+the read-only presentation adapter documented in
+[`CANONICAL_UUID_CONSUMER_PRESENTATION.md`](CANONICAL_UUID_CONSUMER_PRESENTATION.md).
+Fixture catalogs remain a separate development/staging path and are never used
+to fill missing production economics.
 
 ## Immutability
 

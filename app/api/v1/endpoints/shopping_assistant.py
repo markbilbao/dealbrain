@@ -9,6 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.api.v1.mappers.shopping_assistant import to_assistant_response
+from app.consumer.decision_owner import OWNER_COOKIE, parse_owner_cookie
 from app.consumer.location import DELIVERY_COOKIE, parse_delivery_cookie
 from app.core.config import settings
 from app.core.dependencies import get_shopping_assistant_service
@@ -96,8 +97,9 @@ async def query_shopping_assistant(
     service: ShoppingAssistantService = Depends(get_shopping_assistant_service),
 ) -> ShoppingAssistantResponse:
     location = parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
+    owner = parse_owner_cookie(request.cookies.get(OWNER_COOKIE))
     try:
-        result = service.query(body.model_dump(), location=location)
+        result = service.query(body.model_dump(), location=location, owner=owner)
     except (
         ShoppingAssistantValidationError,
         ShoppingAssistantNotFoundError,
