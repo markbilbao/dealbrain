@@ -28,6 +28,7 @@ from app.consumer.pricing import (
     signed_php,
     tax_display,
 )
+from app.consumer.uuid import is_canonical_uuid
 from app.consumer.view_models import (
     CompareFitRow,
     DecisionPageView,
@@ -77,6 +78,16 @@ def build_page_view(
         consumer_mode.fixture_catalogs_permitted() if allow_fixtures is None else allow_fixtures
     )
     prompt_when_absent = location.is_absent if location_prompt is None else bool(location_prompt)
+    if is_canonical_uuid(decision_id):
+        return _unavailable_page_view(
+            decision_id=decision_id,
+            page=page,
+            location=location,
+            location_prompt=prompt_when_absent,
+            recalculating=recalculating,
+            location_error=location_error,
+            geolocation_needs_city=geolocation_needs_city,
+        )
     if not permitted:
         return _unavailable_page_view(
             decision_id=decision_id or "unavailable",
@@ -255,6 +266,7 @@ def _unavailable_page_view(
         ),
         destination_snapshot_known=False,
         recommendation_qualified_message=None,
+        presentation_mode="unavailable",
     )
 
 

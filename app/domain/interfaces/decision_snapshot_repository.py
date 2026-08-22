@@ -31,3 +31,11 @@ class DecisionSnapshotRepository(ABC):
         owner: ConversationOwner,
     ) -> CanonicalDecisionSnapshot | None:
         """Return one active version only when its owner identity matches."""
+
+    @abstractmethod
+    def get_latest_for_owner(
+        self,
+        decision_id: str,
+        owner: ConversationOwner,
+    ) -> CanonicalDecisionSnapshot | None:
+        """Return the highest owner-bound version, or None if none match."""

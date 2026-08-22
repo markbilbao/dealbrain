@@ -148,3 +148,6 @@ class DecisionPageView:
     unavailable_message: str | None = None
     destination_snapshot_known: bool = False
     recommendation_qualified_message: str | None = None
+    session_location_differs: bool = False
+    session_location_label: str | None = None
+    presentation_mode: Literal["canonical", "fixture", "unavailable"] = "fixture"

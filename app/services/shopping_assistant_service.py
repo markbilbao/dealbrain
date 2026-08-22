@@ -115,17 +115,18 @@ class ShoppingAssistantService:
         request: ShoppingQuery | dict[str, Any],
         *,
         location: Any | None = None,
+        owner: Any | None = None,
     ) -> ShoppingAssistantResponse:
         if isinstance(request, dict) and request.get("decision_id"):
             cleaned = self._require_query(str(request.get("query") or ""))
             payload = dict(request)
             payload["query"] = cleaned
-            return self._evidence_answers.answer(payload, location=location)
+            return self._evidence_answers.answer(payload, location=location, owner=owner)
         if isinstance(request, ShoppingQuery) and request.decision_id:
             cleaned = self._require_query(request.query)
             payload = request.to_dict()
             payload["query"] = cleaned
-            return self._evidence_answers.answer(payload, location=location)
+            return self._evidence_answers.answer(payload, location=location, owner=owner)
         shopping_query = self._normalize_request(request)
         cleaned = self._require_query(shopping_query.query)
 

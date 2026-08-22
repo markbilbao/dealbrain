@@ -6,11 +6,14 @@ from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.consumer import mode as consumer_mode
+from app.consumer.canonical_presentation import page_view_from_snapshot
+from app.consumer.canonical_resolve import resolve_canonical_snapshot
+from app.consumer.decision_owner import OWNER_COOKIE, parse_owner_cookie
 from app.consumer.fixtures import DEFAULT_CATALOG_ID, get_decision
 from app.consumer.location import (
     DELIVERY_COOKIE,
@@ -22,8 +25,11 @@ from app.consumer.location import (
 )
 from app.consumer.pages import render_page
 from app.consumer.presentation import build_page_view
-from app.consumer.view_models import PageName
+from app.consumer.uuid import is_canonical_uuid
+from app.consumer.view_models import DecisionPageView, PageName
+from app.core.dependencies import get_shopping_decision_snapshot_repository
 from app.core.logging import get_logger, log_extra
+from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 
 router = APIRouter(include_in_schema=False)
 logger = get_logger(__name__)
@@ -42,6 +48,51 @@ def mount_consumer_static(app) -> None:  # noqa: ANN001 — FastAPI app
 
 def _location_from_request(request: Request):
     return parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
+
+
+def _owner_from_request(request: Request):
+    return parse_owner_cookie(request.cookies.get(OWNER_COOKIE))
+
+
+def _page_view(
+    request: Request,
+    *,
+    decision_id: str,
+    page: PageName,
+    location_prompt: bool | None = None,
+    recalculating: bool = False,
+    location_error: str | None = None,
+    snapshots: DecisionSnapshotRepository | None = None,
+) -> DecisionPageView:
+    location = _location_from_request(request)
+    prompt = location.is_absent if location_prompt is None else location_prompt
+    if is_canonical_uuid(decision_id):
+        snapshot = resolve_canonical_snapshot(decision_id, _owner_from_request(request), snapshots)
+        if snapshot is None:
+            return build_page_view(
+                decision_id=decision_id,
+                page=page,
+                location=location,
+                location_prompt=prompt,
+                recalculating=False,
+                location_error=location_error,
+            )
+        return page_view_from_snapshot(
+            snapshot,
+            page=page,
+            session_location=location,
+            location_prompt=prompt,
+            recalculating=False,
+            location_error=location_error,
+        )
+    return build_page_view(
+        decision_id=decision_id,
+        page=page,
+        location=location,
+        location_prompt=prompt,
+        recalculating=recalculating,
+        location_error=location_error,
+    )
 
 
 def _html(view) -> HTMLResponse:
@@ -97,38 +148,46 @@ async def results_page(
     decision_id: str,
     prompt: int = Query(default=0),
     recalculating: int = Query(default=0),
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
 ) -> HTMLResponse:
     location = _location_from_request(request)
-    view = build_page_view(
+    view = _page_view(
+        request,
         decision_id=decision_id,
         page="results",
-        location=location,
         location_prompt=bool(prompt) or location.is_absent,
         recalculating=bool(recalculating),
+        snapshots=snapshots,
     )
     return _html(view)
 
 
 @router.get("/compare/{decision_id}", response_class=HTMLResponse)
-async def compare_page(request: Request, decision_id: str) -> HTMLResponse:
-    location = _location_from_request(request)
-    view = build_page_view(
+async def compare_page(
+    request: Request,
+    decision_id: str,
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+) -> HTMLResponse:
+    view = _page_view(
+        request,
         decision_id=decision_id,
         page="compare",
-        location=location,
-        location_prompt=location.is_absent,
+        snapshots=snapshots,
     )
     return _html(view)
 
 
 @router.get("/why-best-piq/{decision_id}", response_class=HTMLResponse)
-async def why_page(request: Request, decision_id: str) -> HTMLResponse:
-    location = _location_from_request(request)
-    view = build_page_view(
+async def why_page(
+    request: Request,
+    decision_id: str,
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+) -> HTMLResponse:
+    view = _page_view(
+        request,
         decision_id=decision_id,
         page="why",
-        location=location,
-        location_prompt=location.is_absent,
+        snapshots=snapshots,
     )
     return _html(view)
 
@@ -152,12 +211,14 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
             str(payload.get("postal_code") or "") or None,
         )
     except LocationValidationError as exc:
-        view = build_page_view(
+        snapshots = get_shopping_decision_snapshot_repository()
+        view = _page_view(
+            request,
             decision_id=decision_id,
             page=_page_from_next(destination),
-            location=previous,
             location_prompt=True,
             location_error=str(exc),
+            snapshots=snapshots,
         )
         return _html(view)
     changed = previous.is_known and previous.destination_key != context.destination_key

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.domain.entities.decision_snapshot import CanonicalDecisionSnapshot
@@ -17,6 +18,7 @@ from app.domain.exceptions import (
     DecisionSnapshotOwnershipError,
 )
 from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
+from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.persistence.errors import PersistenceConflictError
 from app.infrastructure.persistence.session_bound import SessionBound
 from app.infrastructure.persistence.stores import SHOPPING_DECISION_SNAPSHOTS
@@ -105,6 +107,29 @@ class SqlAlchemyDecisionSnapshotRepository(DecisionSnapshotRepository, SessionBo
         if not snapshot.owner.has_same_identity(owner):
             return None
         return snapshot
+
+    def get_latest_for_owner(
+        self,
+        decision_id: str,
+        owner: ConversationOwner,
+    ) -> CanonicalDecisionSnapshot | None:
+        prefix = f"{decision_id}:"
+        with self._ops() as ops:
+            rows = ops._session.execute(  # noqa: SLF001 — list versions in the same store
+                select(OperationalEntityModel.entity_id, OperationalEntityModel.seq)
+                .where(OperationalEntityModel.store == SHOPPING_DECISION_SNAPSHOTS)
+                .where(OperationalEntityModel.entity_id.startswith(prefix))
+                .order_by(OperationalEntityModel.seq.desc())
+            ).all()
+        for entity_id, _seq in rows:
+            try:
+                version = int(str(entity_id).rsplit(":", 1)[1])
+            except (IndexError, ValueError):
+                continue
+            loaded = self.get_for_owner(decision_id, version, owner)
+            if loaded is not None:
+                return loaded
+        return None
 
     @staticmethod
     def _entity_id(decision_id: str, context_version: int) -> str:

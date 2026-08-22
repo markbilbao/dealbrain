@@ -1,0 +1,539 @@
+"""Read-only adapter from CanonicalDecisionSnapshot to DecisionPageView.
+
+Translates captured facts for the existing Product Foundation UI. Does not
+recalculate PiqScore, Recommendation, discounts, shipping, taxes, or price state.
+"""
+
+from __future__ import annotations
+
+from app.consumer.fixtures import AFFILIATE_DISCLOSURE, FRESHNESS_DISCLAIMER
+from app.consumer.location import DeliveryContext
+from app.consumer.presentation import (
+    STATUS_LABELS,
+    _ask_placeholder,
+    _tone_for_shipping,
+    _tone_for_state,
+    _tone_for_tax,
+    piqscore_descriptor,
+)
+from app.consumer.pricing import (
+    MoneyComponent,
+    format_php,
+    price_state_label,
+    shipping_display,
+    signed_php,
+    tax_display,
+)
+from app.consumer.view_models import (
+    CompareFitRow,
+    DecisionPageView,
+    EvidenceCategoryView,
+    OfferEconomicsView,
+    PageName,
+    PiqScoreView,
+    ProductCardView,
+    ShopperContextView,
+    SourceView,
+    WhySectionView,
+    WhyVariant,
+)
+from app.domain.entities.decision_snapshot import (
+    CanonicalDecisionSnapshot,
+    EvaluatedProductSnapshot,
+)
+from app.domain.entities.offer_economics import (
+    PRICE_STATE_LABELS as CANONICAL_PRICE_LABELS,
+)
+from app.domain.entities.offer_economics import (
+    CanonicalOfferEconomics,
+    minor_to_major,
+)
+from app.services.canonical_offer_economics import money_component_from_canonical
+
+
+def page_view_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+    *,
+    page: PageName,
+    session_location: DeliveryContext,
+    location_prompt: bool = False,
+    recalculating: bool = False,
+    location_error: str | None = None,
+    geolocation_needs_city: bool = False,
+) -> DecisionPageView:
+    """Build the existing consumer view model from one verified snapshot."""
+
+    historical = _delivery_from_snapshot(snapshot)
+    session_differs = _session_differs(historical, session_location)
+    economics_by_id = {item.product_id: item for item in snapshot.offer_economics}
+    highest = max(snapshot.evaluated_products, key=lambda item: item.canonical_piqscore.value)
+    cards = tuple(
+        _card_from_product(
+            product,
+            snapshot=snapshot,
+            economics=economics_by_id.get(product.product_id),
+            highest_id=highest.product_id,
+            historical=historical,
+        )
+        for product in snapshot.evaluated_products
+    )
+    best = next(
+        card for card in cards if card.product_id == snapshot.recommendation.best_piq_product_id
+    )
+    alternatives = tuple(card for card in cards if not card.is_best_piq)
+    why_variant: WhyVariant = (
+        "score_diff"
+        if highest.product_id != snapshot.recommendation.best_piq_product_id
+        else "standard"
+    )
+    sources = _sources_from_snapshot(snapshot)
+    unknowns = _unknowns_from_snapshot(snapshot, session_differs, session_location)
+    categories = _categories_from_snapshot(snapshot)
+    return DecisionPageView(
+        decision_id=snapshot.decision_id,
+        context_version=snapshot.context_version,
+        catalog_id="",
+        query_label="Your decision",
+        evaluated_count=len(snapshot.evaluated_products),
+        page=page,
+        why_variant=why_variant,
+        location=historical,
+        location_prompt=False,
+        recalculating=False,
+        recommendation_changed=False,
+        recommendation_changed_message=None,
+        best_piq=best,
+        alternatives=alternatives,
+        compared=cards,
+        highest_piqscore_product_id=highest.product_id,
+        highest_piqscore_name=highest.display_name,
+        recommendation_decision=snapshot.recommendation.decision,
+        shopper=ShopperContextView(
+            budget_label="Not captured",
+            top_priority="Not captured",
+            use_case="Not captured",
+            delivery_label=historical.display_place or "Not set",
+            urgency="Not captured",
+            why_this_fits=(
+                f"{best.brand} {best.model}".strip()
+                + " is the canonical Best Piq for You in this decision."
+            ),
+        ),
+        affiliate_disclosure=AFFILIATE_DISCLOSURE,
+        freshness_disclaimer=FRESHNESS_DISCLAIMER,
+        data_classification=snapshot.data_classification,
+        unknowns=unknowns,
+        evidence_categories=categories,
+        sources=sources,
+        why_sections=_why_sections_from_snapshot(snapshot, cards, historical, unknowns, sources),
+        ask_placeholder=_ask_placeholder(page),
+        ask_suggestions=_canonical_ask_suggestions(cards),
+        compare_pay_rows=_pay_rows_from_cards(cards, historical),
+        compare_fit_rows=_unknown_fit_rows(cards),
+        canonical_piqscore_set_sha256=snapshot.canonical_piqscore_set_sha256,
+        recommendation_snapshot_sha256=snapshot.recommendation.snapshot_sha256,
+        geocode_available=False,
+        location_error=location_error,
+        geolocation_needs_city=geolocation_needs_city,
+        delivery_costs_verified=_delivery_verified(snapshot),
+        data_unavailable=False,
+        unavailable_message=None,
+        destination_snapshot_known=historical.is_known,
+        recommendation_qualified_message=None,
+        session_location_differs=session_differs,
+        session_location_label=session_location.display_place or None,
+        presentation_mode="canonical",
+    )
+
+
+def _delivery_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DeliveryContext:
+    context = snapshot.delivery_context or next(
+        (item.delivery for item in snapshot.offer_economics if item.delivery),
+        None,
+    )
+    if context is None or not context.city:
+        return DeliveryContext()
+    return DeliveryContext(
+        city=context.city,
+        postal_code=context.postal_code,
+        source="manual",
+    )
+
+
+def _session_differs(historical: DeliveryContext, session: DeliveryContext) -> bool:
+    if not historical.is_known or not session.is_known:
+        return False
+    return historical.destination_key != session.destination_key
+
+
+def _split_display_name(display_name: str) -> tuple[str, str]:
+    parts = display_name.strip().split(None, 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    return "", display_name
+
+
+def _card_from_product(
+    product: EvaluatedProductSnapshot,
+    *,
+    snapshot: CanonicalDecisionSnapshot,
+    economics: CanonicalOfferEconomics | None,
+    highest_id: str,
+    historical: DeliveryContext,
+) -> ProductCardView:
+    brand, model = _split_display_name(product.display_name)
+    listing = MoneyComponent(kind="listing", label="Listing price", amount=None, status="unknown")
+    shipping = MoneyComponent(kind="shipping", label="Shipping", amount=None, status="unknown")
+    taxes = MoneyComponent(kind="tax", label="Taxes / duties", amount=None, status="unknown")
+    voucher = None
+    imports = None
+    dominant_state = "price_before_shipping"
+    dominant_amount = None
+    international = False
+    merchant = "Unknown"
+    freshness = None
+    if economics is not None:
+        listing = money_component_from_canonical(economics.listing)
+        shipping = money_component_from_canonical(economics.shipping)
+        taxes = money_component_from_canonical(economics.taxes)
+        voucher = money_component_from_canonical(economics.voucher) if economics.voucher else None
+        imports = (
+            money_component_from_canonical(economics.import_charges)
+            if economics.import_charges
+            else None
+        )
+        dominant_state = economics.price_state
+        dominant_amount = minor_to_major(economics.dominant_amount_minor)
+        international = economics.international
+        merchant = economics.merchant or "Unknown"
+        freshness = economics.freshness
+        if historical.is_known:
+            shipping = MoneyComponent(
+                kind=shipping.kind,
+                label=f"Shipping to {historical.display_place}",
+                amount=shipping.amount,
+                currency=shipping.currency,
+                status=shipping.status,
+                applies=shipping.applies,
+            )
+    dest = historical.display_place if historical.is_known else "the decision destination"
+    why_won = _why_won_from_evidence(snapshot, product.product_id)
+    alt_reason = ""
+    if product.product_id != snapshot.recommendation.best_piq_product_id:
+        alt_reason = "This offer is in the evaluated set and was not selected as Best Piq."
+    return ProductCardView(
+        product_id=product.product_id,
+        brand=brand,
+        model=model,
+        category="",
+        merchant=merchant,
+        offer_url="",
+        image_key="",
+        tags=(),
+        piqscore=PiqScoreView(
+            value=product.canonical_piqscore.value,
+            descriptor=piqscore_descriptor(product.canonical_piqscore.value),
+            percentile_label=None,
+            snapshot_sha256=product.canonical_piqscore.snapshot_sha256,
+        ),
+        economics=OfferEconomicsView(
+            listing=listing,
+            voucher=voucher,
+            shipping=shipping,
+            taxes=taxes,
+            import_charges=imports,
+            other_costs=(),
+            dominant_state=dominant_state,  # type: ignore[arg-type]
+            dominant_label=(
+                CANONICAL_PRICE_LABELS.get(dominant_state, price_state_label(dominant_state))
+                if economics is not None
+                else "Unavailable"
+            ),
+            dominant_amount=dominant_amount,
+            international=international,
+            shipping_material=True,
+            breakdown_lines=_breakdown_from_components(
+                listing, voucher, shipping, taxes, imports, dominant_state, dominant_amount
+            ),
+        ),
+        is_best_piq=product.product_id == snapshot.recommendation.best_piq_product_id,
+        is_highest_piqscore=product.product_id == highest_id,
+        is_qualified=False,
+        alternative_badge=None,
+        alternative_reason=alt_reason,
+        compact_breakdown=_compact_from_components(listing, voucher, shipping),
+        why_it_won=why_won,
+        freshness_label=freshness,
+        origin_label=dest if historical.is_known else None,
+    )
+
+
+def _breakdown_from_components(
+    listing: MoneyComponent,
+    voucher: MoneyComponent | None,
+    shipping: MoneyComponent,
+    taxes: MoneyComponent,
+    imports: MoneyComponent | None,
+    state: str,
+    dominant_amount: float | None,
+) -> tuple[tuple[str, str, str], ...]:
+    lines: list[tuple[str, str, str]] = [
+        (listing.label, format_php(listing.amount), "neutral"),
+    ]
+    if voucher is not None:
+        if voucher.status == "verified" and voucher.applies:
+            lines.append((voucher.label, signed_php(voucher.amount), "positive"))
+        else:
+            lines.append((voucher.label, "Not applied", "warn"))
+    lines.append((shipping.label, shipping_display(shipping), _tone_for_shipping(shipping)))
+    if imports is not None:
+        lines.append((imports.label, tax_display(imports), _tone_for_shipping(imports)))
+    else:
+        lines.append((taxes.label, tax_display(taxes), _tone_for_tax(taxes)))
+    label = CANONICAL_PRICE_LABELS.get(state, price_state_label(state))  # type: ignore[arg-type]
+    lines.append((label, format_php(dominant_amount), _tone_for_state(state)))
+    return tuple(lines)
+
+
+def _compact_from_components(
+    listing: MoneyComponent,
+    voucher: MoneyComponent | None,
+    shipping: MoneyComponent,
+) -> str:
+    parts = [format_php(listing.amount)]
+    if voucher is not None and voucher.status == "verified" and voucher.amount:
+        parts.append(f"{signed_php(voucher.amount)} voucher")
+    if shipping.is_unknown:
+        parts.append("shipping not verified")
+    elif shipping.amount == 0:
+        parts.append("FREE shipping")
+    elif shipping.amount is not None:
+        parts.append(f"{format_php(shipping.amount)} shipping")
+    return " · ".join(parts)
+
+
+def _why_won_from_evidence(
+    snapshot: CanonicalDecisionSnapshot,
+    product_id: str,
+) -> tuple[str, ...]:
+    return tuple(item.fact for item in snapshot.evidence if item.product_id == product_id)[:3]
+
+
+def _sources_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> tuple[SourceView, ...]:
+    names: list[str] = []
+    for item in snapshot.evidence:
+        if item.source:
+            names.append(item.source)
+    for item in snapshot.offer_economics:
+        if item.provenance_source:
+            names.append(item.provenance_source)
+    return tuple(SourceView(name=name, proven=True) for name in dict.fromkeys(names))
+
+
+def _categories_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+) -> tuple[EvidenceCategoryView, ...]:
+    topics = tuple(dict.fromkeys(item.topic for item in snapshot.evidence if item.topic))
+    return tuple(
+        EvidenceCategoryView(
+            label=topic,
+            status="verified",
+            status_label=STATUS_LABELS["verified"],
+        )
+        for topic in topics
+    )
+
+
+def _unknowns_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+    session_differs: bool,
+    session_location: DeliveryContext,
+) -> tuple[str, ...]:
+    items = list(snapshot.unknowns)
+    for offer in snapshot.offer_economics:
+        for unknown in offer.unknowns:
+            if unknown not in items:
+                items.append(unknown)
+    if not snapshot.offer_economics:
+        items.append("Offer economics were not captured in this decision snapshot.")
+    if session_differs and session_location.display_place:
+        items.append(
+            f"Your current session location is {session_location.display_place}. "
+            "This historical decision was not re-evaluated for that destination."
+        )
+    return tuple(items)
+
+
+def _delivery_verified(snapshot: CanonicalDecisionSnapshot) -> bool:
+    return any(item.shipping.status == "verified" for item in snapshot.offer_economics)
+
+
+def _why_sections_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+    cards: tuple[ProductCardView, ...],
+    historical: DeliveryContext,
+    unknowns: tuple[str, ...],
+    sources: tuple[SourceView, ...],
+) -> tuple[WhySectionView, ...]:
+    best = next(card for card in cards if card.is_best_piq)
+    delivery = historical.display_place or "the captured destination"
+    rec = snapshot.recommendation.decision
+    narrative = (
+        f"{best.brand} {best.model}".strip() + f" is Best Piq for You from the evaluated offers. "
+        f"The canonical Recommendation is {rec}."
+    )
+    if best.product_id != snapshot.evaluated_products[0].product_id or any(
+        card.is_highest_piqscore and not card.is_best_piq for card in cards
+    ):
+        highest = next(card for card in cards if card.is_highest_piqscore)
+        narrative += (
+            f" {highest.brand} {highest.model}".strip()
+            + " has the higher objective PiqScore. PiqScore evaluates the offer; "
+            "Best Piq for You reflects what best fits the shopper."
+        )
+    know_bullets: list[tuple[str, str]] = []
+    if best.economics.dominant_amount is not None:
+        know_bullets.append(
+            (
+                "check",
+                f"Price PiqSavi evaluated: {best.economics.dominant_label} "
+                f"{format_php(best.economics.dominant_amount)}",
+            )
+        )
+    else:
+        know_bullets.append(("warn", "Price PiqSavi evaluated is unavailable for this snapshot."))
+    know_bullets.append(("check", f"Shipping: {shipping_display(best.economics.shipping)}"))
+    if best.economics.voucher is not None:
+        applied = "applied" if best.economics.voucher.applies else "not applied"
+        know_bullets.append(("check", f"Voucher {best.economics.voucher.status}; {applied}"))
+    if best.economics.import_charges is not None:
+        know_bullets.append(
+            (
+                "check",
+                f"Import charges: {tax_display(best.economics.import_charges)} "
+                f"({best.economics.import_charges.status})",
+            )
+        )
+    for item in snapshot.evidence[:4]:
+        know_bullets.append(("check", item.fact))
+    alts = [
+        f"{card.brand} {card.model}".strip() + " remains an evaluated alternative."
+        for card in cards
+        if not card.is_best_piq
+    ]
+    if not alts:
+        alts = ["No alternative products were captured in this decision."]
+    return (
+        WhySectionView(
+            number=1,
+            title="Why PiqSavi recommends this",
+            narrative=narrative,
+            bullets=(
+                ("priority", f"Recommendation: {rec}"),
+                ("delivery", f"Delivery to: {delivery}"),
+                ("check", f"Best Piq: {best.brand} {best.model}".strip()),
+            ),
+        ),
+        WhySectionView(
+            number=2,
+            title="What to know before you buy",
+            narrative="",
+            bullets=tuple(know_bullets),
+        ),
+        WhySectionView(
+            number=3,
+            title="Best for",
+            narrative="",
+            bullets=(
+                (
+                    "check",
+                    "Shopper priorities were not captured as structured fields on this snapshot.",
+                ),
+            ),
+        ),
+        WhySectionView(
+            number=4,
+            title="When an alternative may be better",
+            narrative="",
+            bullets=tuple(("alt", item) for item in alts),
+        ),
+        WhySectionView(
+            number=5,
+            title="What PiqSavi considered",
+            narrative="",
+            bullets=(),
+            extra={
+                "categories": tuple(
+                    (item.label, item.status) for item in _categories_from_snapshot(snapshot)
+                ),
+                "sources": tuple(item.name for item in sources),
+            },
+        ),
+        WhySectionView(
+            number=6,
+            title="What we don’t know",
+            narrative="",
+            bullets=tuple(("warn", item) for item in unknowns),
+        ),
+    )
+
+
+def _canonical_ask_suggestions(cards: tuple[ProductCardView, ...]) -> tuple[str, ...]:
+    return (
+        "What price did you evaluate?",
+        "Does this include shipping?",
+        "Which merchant is this?",
+        "What don’t you know?",
+    )
+
+
+def _pay_rows_from_cards(
+    cards: tuple[ProductCardView, ...],
+    historical: DeliveryContext,
+) -> tuple[CompareFitRow, ...]:
+    dest = historical.display_place if historical.is_known else "your area"
+    return (
+        CompareFitRow(
+            "Final cost",
+            tuple(format_php(card.economics.dominant_amount) for card in cards),
+        ),
+        CompareFitRow(
+            "Price status",
+            tuple(card.economics.dominant_label for card in cards),
+        ),
+        CompareFitRow(
+            "Listing price",
+            tuple(
+                format_php(card.economics.listing.amount)
+                if card.economics.listing.amount is not None
+                else "Unknown"
+                for card in cards
+            ),
+        ),
+        CompareFitRow(
+            f"Shipping to {dest}" if historical.is_known else "Shipping",
+            tuple(shipping_display(card.economics.shipping) for card in cards),
+        ),
+        CompareFitRow(
+            "Taxes / import charges",
+            tuple(
+                tax_display(card.economics.import_charges)
+                if card.economics.import_charges is not None
+                else tax_display(card.economics.taxes)
+                for card in cards
+            ),
+        ),
+    )
+
+
+def _unknown_fit_rows(cards: tuple[ProductCardView, ...]) -> tuple[CompareFitRow, ...]:
+    keys = (
+        ("Comfort", "stars"),
+        ("Sound quality", "stars"),
+        ("Noise cancellation", "stars"),
+        ("Battery life", "text"),
+        ("Warranty", "text"),
+        ("Seller reliability", "text"),
+    )
+    unknown = tuple("—" for _ in cards)
+    return tuple(CompareFitRow(label, unknown, kind=kind) for label, kind in keys)  # type: ignore[misc]
