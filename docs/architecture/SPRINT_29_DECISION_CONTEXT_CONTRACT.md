@@ -109,6 +109,9 @@ Canonical UUID Results / Compare / Why adapt one owner-verified snapshot into
 the Product Foundation view model. See
 `docs/architecture/CANONICAL_UUID_CONSUMER_PRESENTATION.md`.
 
+Schema 1.2 adds the decision-time presentation contract documented in
+`docs/architecture/CANONICAL_DECISION_PRESENTATION_CONTRACT.md`.
+
 The Product Foundation authority is frozen separately by
 `tests/contracts/fixtures/sprint29-authority-lock.json`. The validator checks:
 

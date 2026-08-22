@@ -51,6 +51,10 @@ class EvaluatedOfferFact:
     freshness_label: str | None
     why_it_won: tuple[str, ...]
     alternative_reason: str | None
+    offer_url: str | None = None
+    brand: str | None = None
+    model: str | None = None
+    category: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,6 +103,7 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
         key=lambda item: item.canonical_piqscore.value,
     ).product_id
     economics_by_product = {item.product_id: item for item in snapshot.offer_economics}
+    presentation_by_id = {item.product_id: item for item in snapshot.product_presentation}
     offers = [
         _offer_from_snapshot_product(
             product_id=product.product_id,
@@ -106,7 +111,26 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
             piqscore=product.canonical_piqscore.value,
             is_best_piq=product.product_id == best_id,
             is_highest_piqscore=product.product_id == highest_id,
+            is_qualified=bool(
+                snapshot.qualification
+                and snapshot.qualification.is_qualified
+                and product.product_id == best_id
+            ),
             economics=economics_by_product.get(product.product_id),
+            presentation=presentation_by_id.get(product.product_id),
+            why_it_won=tuple(
+                item.reason
+                for item in snapshot.recommendation_reasons
+                if item.product_id in {None, product.product_id}
+            ),
+            alternative_reason=next(
+                (
+                    item.reason
+                    for item in snapshot.alternative_tradeoffs
+                    if item.product_id == product.product_id
+                ),
+                None,
+            ),
         )
         for product in snapshot.evaluated_products
     ]
@@ -122,6 +146,7 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
         for item in snapshot.evidence
     )
     facts.extend(_facts_from_canonical_economics(snapshot))
+    facts.extend(_facts_from_presentation_contract(snapshot))
     sources = tuple(
         dict.fromkeys(
             [
@@ -158,8 +183,8 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
         highest_piqscore_product_id=highest.product_id,
         highest_piqscore_name=highest.display_name,
         recommendation_decision=snapshot.recommendation.decision,
-        is_qualified=False,
-        qualified_reason=None,
+        is_qualified=bool(snapshot.qualification and snapshot.qualification.is_qualified),
+        qualified_reason=_qualified_reason(snapshot),
         delivery_label=delivery_label or None,
         delivery_verified=bool(delivery_label) and shipping_known,
         sources=sources,
@@ -180,7 +205,15 @@ def _offer_from_snapshot_product(
     is_best_piq: bool,
     is_highest_piqscore: bool,
     economics: CanonicalOfferEconomics | None,
+    is_qualified: bool = False,
+    presentation=None,  # CanonicalProductPresentation | None
+    why_it_won: tuple[str, ...] = (),
+    alternative_reason: str | None = None,
 ) -> EvaluatedOfferFact:
+    offer_url = presentation.offer_url if presentation else None
+    brand = presentation.brand if presentation else None
+    model = presentation.model if presentation else None
+    category = presentation.category if presentation else None
     if economics is None:
         return EvaluatedOfferFact(
             product_id=product_id,
@@ -188,7 +221,7 @@ def _offer_from_snapshot_product(
             piqscore=piqscore,
             is_best_piq=is_best_piq,
             is_highest_piqscore=is_highest_piqscore,
-            is_qualified=False,
+            is_qualified=is_qualified,
             merchant=None,
             price_state=None,
             price_label=None,
@@ -198,8 +231,12 @@ def _offer_from_snapshot_product(
             voucher_status=None,
             import_status=None,
             freshness_label=None,
-            why_it_won=(),
-            alternative_reason=None,
+            why_it_won=why_it_won,
+            alternative_reason=alternative_reason,
+            offer_url=offer_url,
+            brand=brand,
+            model=model,
+            category=category,
         )
     return EvaluatedOfferFact(
         product_id=product_id,
@@ -207,7 +244,7 @@ def _offer_from_snapshot_product(
         piqscore=piqscore,
         is_best_piq=is_best_piq,
         is_highest_piqscore=is_highest_piqscore,
-        is_qualified=False,
+        is_qualified=is_qualified,
         merchant=economics.merchant,
         price_state=economics.price_state,
         price_label=CANONICAL_PRICE_LABELS[economics.price_state],
@@ -217,8 +254,12 @@ def _offer_from_snapshot_product(
         voucher_status=economics.voucher.status if economics.voucher else None,
         import_status=economics.import_charges.status if economics.import_charges else None,
         freshness_label=economics.freshness,
-        why_it_won=(),
-        alternative_reason=None,
+        why_it_won=why_it_won,
+        alternative_reason=alternative_reason,
+        offer_url=offer_url,
+        brand=brand,
+        model=model,
+        category=category,
     )
 
 
@@ -382,6 +423,185 @@ def _facts_from_canonical_economics(
     return facts
 
 
+def _qualified_reason(snapshot: CanonicalDecisionSnapshot) -> str | None:
+    qualification = snapshot.qualification
+    if qualification is None:
+        return None
+    parts = list(qualification.reasons)
+    if qualification.material_unknowns:
+        parts.append("Material unknown: " + "; ".join(qualification.material_unknowns))
+    return " ".join(parts) if parts else None
+
+
+def _facts_from_presentation_contract(
+    snapshot: CanonicalDecisionSnapshot,
+) -> list[EvidenceFact]:
+    facts: list[EvidenceFact] = []
+    prefix = f"presentation:{snapshot.decision_id}"
+    if snapshot.qualification is not None:
+        facts.append(
+            EvidenceFact(
+                evidence_id=f"{prefix}:qualification",
+                topic="qualified",
+                fact=_qualified_reason(snapshot)
+                or f"Recommendation qualification is {snapshot.qualification.state}.",
+                product_id=snapshot.recommendation.best_piq_product_id,
+                source=None,
+                status=snapshot.qualification.state,
+            )
+        )
+    context = snapshot.shopper_context
+    if context is not None:
+        if context.budget_label:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:budget",
+                    topic="budget",
+                    fact=f"Shopper budget: {context.budget_label}",
+                    product_id=None,
+                    source=None,
+                )
+            )
+        if context.top_priority:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:priority",
+                    topic="priority",
+                    fact=f"Top priority: {context.top_priority}",
+                    product_id=None,
+                    source=None,
+                )
+            )
+        if context.use_case:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:use-case",
+                    topic="use_case",
+                    fact=f"Use case: {context.use_case}",
+                    product_id=None,
+                    source=None,
+                )
+            )
+        if context.urgency:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:urgency",
+                    topic="urgency",
+                    fact=f"Urgency: {context.urgency}",
+                    product_id=None,
+                    source=None,
+                )
+            )
+        for index, feature in enumerate(context.required_features):
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:feature:{index}",
+                    topic="required_feature",
+                    fact=f"Required feature: {feature}",
+                    product_id=None,
+                    source=None,
+                )
+            )
+        facts.append(
+            EvidenceFact(
+                evidence_id=f"{prefix}:shopper",
+                topic="shopper",
+                fact="Shopper decision context was captured with this historical Recommendation.",
+                product_id=None,
+                source=None,
+            )
+        )
+    for product in snapshot.product_presentation:
+        if product.brand:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:{product.product_id}:brand",
+                    topic="brand",
+                    fact=f"Brand: {product.brand}",
+                    product_id=product.product_id,
+                    source=None,
+                )
+            )
+        if product.model:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:{product.product_id}:model",
+                    topic="model",
+                    fact=f"Model: {product.model}",
+                    product_id=product.product_id,
+                    source=None,
+                )
+            )
+        if product.category:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:{product.product_id}:category",
+                    topic="category",
+                    fact=f"Category: {product.category}",
+                    product_id=product.product_id,
+                    source=None,
+                )
+            )
+        if product.offer_url:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:{product.product_id}:offer-url",
+                    topic="offer_url",
+                    fact=f"Canonical offer destination: {product.offer_url}",
+                    product_id=product.product_id,
+                    source=None,
+                )
+            )
+        for attr in product.fit_attributes:
+            facts.append(
+                EvidenceFact(
+                    evidence_id=f"{prefix}:{product.product_id}:fit:{attr.key}",
+                    topic="fit",
+                    fact=f"{attr.label}: {attr.display_value()}",
+                    product_id=product.product_id,
+                    source=None,
+                    status=attr.status,
+                )
+            )
+    for index, reason in enumerate(snapshot.recommendation_reasons):
+        facts.append(
+            EvidenceFact(
+                evidence_id=reason.evidence_ids[0]
+                if reason.evidence_ids
+                else f"{prefix}:reason:{index}",
+                topic="recommendation",
+                fact=reason.reason,
+                product_id=reason.product_id,
+                source=None,
+            )
+        )
+    for index, item in enumerate(snapshot.best_for):
+        facts.append(
+            EvidenceFact(
+                evidence_id=item.evidence_ids[0]
+                if item.evidence_ids
+                else f"{prefix}:best-for:{index}",
+                topic="best_for",
+                fact=item.label,
+                product_id=None,
+                source=None,
+            )
+        )
+    for index, item in enumerate(snapshot.alternative_tradeoffs):
+        facts.append(
+            EvidenceFact(
+                evidence_id=item.evidence_ids[0]
+                if item.evidence_ids
+                else f"{prefix}:tradeoff:{index}",
+                topic="tradeoff",
+                fact=item.reason,
+                product_id=item.product_id,
+                source=None,
+            )
+        )
+    return facts
+
+
 def packet_from_page_view(view: DecisionPageView) -> DecisionEvidencePacket:
     if view.data_unavailable:
         return unavailable_packet(view.decision_id, view.context_version)
@@ -463,6 +683,10 @@ def _offer_from_card(card: ProductCardView) -> EvaluatedOfferFact:
         freshness_label=card.freshness_label,
         why_it_won=card.why_it_won,
         alternative_reason=card.alternative_reason or None,
+        offer_url=card.offer_url or None,
+        brand=card.brand or None,
+        model=card.model or None,
+        category=card.category or None,
     )
 
 

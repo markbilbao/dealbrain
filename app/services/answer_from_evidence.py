@@ -68,6 +68,12 @@ QuestionKind = Literal[
     "outside_set",
     "preference_change",
     "future_price",
+    "shopper",
+    "product",
+    "offer_url",
+    "best_for",
+    "tradeoff",
+    "fit",
     "general",
 ]
 
@@ -382,6 +388,12 @@ def compose_evidence_answer(question: str, packet: DecisionEvidencePacket) -> Ev
         "voucher": _answer_voucher,
         "warranty": _answer_warranty,
         "freshness": _answer_freshness,
+        "shopper": _answer_shopper,
+        "product": _answer_product,
+        "offer_url": _answer_offer_url,
+        "best_for": _answer_best_for,
+        "tradeoff": _answer_tradeoff,
+        "fit": _answer_fit,
         "topic": _answer_topic,
         "general": _answer_general,
     }
@@ -456,6 +468,43 @@ def classify_question(question: str, packet: DecisionEvidencePacket) -> Question
         return "unknowns"
     if "fresh" in text or "when did you check" in text or "how old" in text:
         return "freshness"
+    if any(
+        phrase in text
+        for phrase in (
+            "where can i buy",
+            "where can I buy",
+            "view offer",
+            "offer url",
+            "offer link",
+            "buy this",
+        )
+    ):
+        return "offer_url"
+    if (
+        "trade-off" in text
+        or "tradeoff" in text
+        or "when would" in text
+        or "when an alternative" in text
+    ):
+        return "tradeoff"
+    if "what is this best for" in text or "best for" in text:
+        return "best_for"
+    if any(
+        phrase in text
+        for phrase in (
+            "top priority",
+            "my budget",
+            "did i say",
+            "what did i say",
+            "what was my",
+            "use case",
+        )
+    ):
+        return "shopper"
+    if "which model" in text or "what model" in text or "what brand" in text:
+        return "product"
+    if "multipoint" in text or "does it support" in text or "fit attribute" in text:
+        return "fit"
     if "price" in text or "₱" in question or "cost" in text or "how much" in text:
         return "price"
     topics = {item.topic.lower() for item in packet.facts}
@@ -1033,6 +1082,152 @@ def _answer_freshness(question: str, packet: DecisionEvidencePacket) -> Evidence
         unknowns=packet.unknowns,
         packet=packet,
         kind="freshness",
+    )
+
+
+def _answer_shopper(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
+    facts = packet.facts_for(
+        "shopper", "budget", "priority", "use_case", "urgency", "required_feature"
+    )
+    if not facts:
+        return EvidenceAnswerResult(
+            answer="This decision does not include the original shopper context PiqSavi used.",
+            status="insufficient_evidence",
+            evidence_ids=("shopper-unavailable",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="shopper",
+        )
+    specific = tuple(item for item in facts if item.topic != "shopper")
+    return EvidenceAnswerResult(
+        answer=" ".join(item.fact for item in (specific or facts)),
+        status="answered",
+        evidence_ids=_cite(*facts),
+        product_ids=(),
+        unknowns=packet.unknowns,
+        packet=packet,
+        kind="shopper",
+    )
+
+
+def _answer_product(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
+    facts = packet.facts_for("brand", "model", "category")
+    if not facts:
+        return EvidenceAnswerResult(
+            answer="This decision does not include structured product identity beyond the evaluated display names.",
+            status="insufficient_evidence",
+            evidence_ids=("product-unavailable",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="product",
+        )
+    return EvidenceAnswerResult(
+        answer=" ".join(item.fact for item in facts),
+        status="answered",
+        evidence_ids=_cite(*facts),
+        product_ids=tuple(item.product_id for item in facts if item.product_id),
+        unknowns=packet.unknowns,
+        packet=packet,
+        kind="product",
+    )
+
+
+def _answer_offer_url(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
+    facts = packet.facts_for("offer_url")
+    if not facts:
+        return EvidenceAnswerResult(
+            answer="This decision does not include a canonical outbound offer destination.",
+            status="insufficient_evidence",
+            evidence_ids=("offer-url-unavailable",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="offer_url",
+        )
+    return EvidenceAnswerResult(
+        answer=" ".join(item.fact for item in facts),
+        status="answered",
+        evidence_ids=_cite(*facts),
+        product_ids=tuple(item.product_id for item in facts if item.product_id),
+        unknowns=packet.unknowns,
+        packet=packet,
+        kind="offer_url",
+    )
+
+
+def _answer_best_for(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
+    facts = packet.facts_for("best_for")
+    if not facts:
+        return EvidenceAnswerResult(
+            answer="This decision does not include a captured Best-for conclusion.",
+            status="insufficient_evidence",
+            evidence_ids=("best-for-unavailable",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="best_for",
+        )
+    return EvidenceAnswerResult(
+        answer="This Recommendation is best for: " + "; ".join(item.fact for item in facts) + ".",
+        status="answered",
+        evidence_ids=_cite(*facts),
+        product_ids=(),
+        unknowns=packet.unknowns,
+        packet=packet,
+        kind="best_for",
+    )
+
+
+def _answer_tradeoff(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
+    facts = packet.facts_for("tradeoff")
+    if not facts:
+        return EvidenceAnswerResult(
+            answer="This decision does not include captured alternative trade-off reasoning.",
+            status="insufficient_evidence",
+            evidence_ids=("tradeoff-unavailable",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="tradeoff",
+        )
+    return EvidenceAnswerResult(
+        answer=" ".join(item.fact for item in facts),
+        status="answered",
+        evidence_ids=_cite(*facts),
+        product_ids=tuple(item.product_id for item in facts if item.product_id),
+        unknowns=packet.unknowns,
+        packet=packet,
+        kind="tradeoff",
+    )
+
+
+def _answer_fit(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
+    facts = packet.facts_for("fit")
+    text = question.lower()
+    matched = tuple(
+        item for item in facts if any(part in item.fact.lower() for part in text.split())
+    )
+    chosen = matched or facts
+    if not chosen:
+        return EvidenceAnswerResult(
+            answer="This decision does not include captured product-fit attributes.",
+            status="insufficient_evidence",
+            evidence_ids=("fit-unavailable",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="fit",
+        )
+    return EvidenceAnswerResult(
+        answer=" ".join(item.fact for item in chosen),
+        status="answered",
+        evidence_ids=_cite(*chosen),
+        product_ids=tuple(item.product_id for item in chosen if item.product_id),
+        unknowns=packet.unknowns,
+        packet=packet,
+        kind="fit",
     )
 
 
