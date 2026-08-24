@@ -15,7 +15,7 @@ It does not:
 - add products or merchants
 - research, reprice, or call live integrations
 - write permanent account preferences
-- implement `propose_research` (Phase 29.4C)
+- execute research (Phase 29.4C proposes it; Sprints 31–38 execute it)
 
 Hard rule:
 
@@ -139,7 +139,7 @@ Usable evidence is only what the trusted snapshot already contains: evaluated pr
 
 Missing evidence is unknown. Missing is not “does not support.” Insufficient evidence is returned honestly.
 
-A named product outside `evaluated_products` is not a preference. 29.4B returns `outside_evaluated_set` and does not add it. Phase 29.4C will later propose research.
+A named product outside `evaluated_products` is not a preference. 29.4B returns `outside_evaluated_set` and does not add it. Phase 29.4C may then propose research.
 
 ## Ask routing
 
@@ -173,4 +173,4 @@ The same no-existence-leak path as 29.4A applies. Wrong owner and unknown UUID b
 
 ## Difference from Phase 29.4C
 
-29.4B never proposes or executes research. It cannot add a product, refresh a price, or create a new canonical snapshot. Those remain future `propose_research` work.
+29.4B never proposes or executes research. It cannot add a product, refresh a price, or create a new canonical snapshot. See [`PHASE_29_4C_PROPOSE_RESEARCH.md`](PHASE_29_4C_PROPOSE_RESEARCH.md) for the proposal boundary.

@@ -14622,6 +14622,29 @@
             ],
             "title": "Recommendation Changed"
           },
+          "requires_research_confirmation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requires Research Confirmation"
+          },
+          "research_proposal": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Proposal"
+          },
           "session_best_piq_product_id": {
             "anyOf": [
               {

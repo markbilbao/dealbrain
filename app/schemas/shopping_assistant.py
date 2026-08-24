@@ -123,6 +123,8 @@ class ShoppingAssistantResponse(BaseModel):
     session_best_piq_product_id: str | None = None
     original_best_piq_product_id: str | None = None
     recommendation_changed: bool | None = None
+    requires_research_confirmation: bool | None = None
+    research_proposal: dict[str, Any] | None = None
 
 
 class ShoppingAssistantDemoMeta(BaseModel):

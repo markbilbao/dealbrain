@@ -56,9 +56,17 @@ Response (normalized):
   "comparison": null,
   "conversation_id": "uuid",
   "disagreements": [],
-  "buy_now_or_wait": null
+  "buy_now_or_wait": null,
+  "action": "answer_from_evidence",
+  "requires_research_confirmation": false,
+  "research_proposal": null
 }
 ```
+
+Decision-bound Ask responses may set `action` to `answer_from_evidence`,
+`refine_session_recommendation`, or `propose_research`. A research proposal is
+server-authored, stays `pending_confirmation` until explicit confirmation, and
+never starts live research in this phase.
 
 Comparisons also populate `comparison` with category winners, strengths,
 weaknesses, price/review differences, recommended use case, overall
