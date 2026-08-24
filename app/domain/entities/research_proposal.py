@@ -54,6 +54,7 @@ class ResearchProposal:
     original_best_piq_product_id: str | None = None
     canonical_context_version: int = 1
     replaced_proposal_id: str | None = None
+    authorization_id: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -76,6 +77,10 @@ class ResearchProposal:
     @property
     def is_pending(self) -> bool:
         return self.status == "pending_confirmation"
+
+    @property
+    def is_confirmation_recorded(self) -> bool:
+        return self.status == "research_confirmation_received_but_execution_unavailable"
 
     def to_contract(self) -> dict[str, Any]:
         """Closed research_proposal object for the frozen conversation-action schema."""
@@ -114,6 +119,7 @@ class ResearchProposal:
             "original_best_piq_product_id": self.original_best_piq_product_id,
             "canonical_context_version": self.canonical_context_version,
             "replaced_proposal_id": self.replaced_proposal_id,
+            "authorization_id": self.authorization_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "execution_started": False,

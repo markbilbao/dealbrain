@@ -69,7 +69,7 @@ No research starts merely because:
 - the shopper said “maybe”
 - the shopper asked a factual question that needs freshness
 
-Explicit confirmation examples: “Yes, research AirPods Max.”, “Yes, check the current prices.”, “Go ahead.”
+Explicit confirmation examples: “Yes, research AirPods Max.”, “Yes, check the current prices.”, “Go ahead.” Those phrases classify confirmation; authorization still requires the exact `proposal_id` and `proposal_version`. Generic text alone does not authorize whichever proposal is currently active. See `docs/architecture/RESEARCH_AUTHORIZATION_HANDOFF_CONTRACT.md`.
 
 Ambiguous replies such as “Maybe.”, “Interesting.”, or “What would you check?” do not authorize research. The proposal stays pending.
 
@@ -127,6 +127,8 @@ If 29.4B already refined session Best Piq, that overlay remains. A later authori
 
 29.4B may return `insufficient_evidence` when a priority change cannot be refined from captured facts. That outcome must not start research. 29.4C may transform it into a pending proposal. Supported refinements such as “Comfort matters more.” still stay on 29.4B.
 
-## Relationship to future live research
+## Relationship to the Research Authorization / Execution Handoff Contract
 
-Live research execution remains owned by Sprints 31–38. Sprint 29 only owns the conversational proposal → confirmation boundary. This phase records confirmation but does not launch the certified research pipeline.
+29.4C still owns proposal creation and the explicit-confirmation classifier. A later Research Authorization / Execution Handoff Contract turns explicit confirmation of the exact active proposal into a server-authoritative authorization.
+
+Live research execution remains owned by Sprints 31–38. A proposal is not authorization, and authorization is not execution.

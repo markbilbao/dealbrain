@@ -1034,6 +1034,9 @@ class ShoppingAssistantService:
             decision_id=request.get("decision_id"),
             context_version=request.get("context_version"),
             surface=request.get("surface"),
+            proposal_id=request.get("proposal_id"),
+            proposal_version=request.get("proposal_version"),
+            confirmation_token=request.get("confirmation_token"),
         )
 
     def _require_query(self, query: str) -> str:

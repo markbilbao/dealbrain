@@ -18,6 +18,7 @@ from app.consumer.location import DeliveryContext
 from app.consumer.presentation import build_page_view
 from app.consumer.session_overlay import apply_session_overlay_to_packet
 from app.domain.entities.decision_snapshot import CanonicalDecisionSnapshot
+from app.domain.entities.research_authorization import ResearchAuthorization
 from app.domain.entities.research_proposal import (
     ResearchProposal,
     ResearchProposalStatus,
@@ -33,6 +34,7 @@ from app.domain.entities.shopping_assistant import (
     ShoppingQuery,
 )
 from app.domain.exceptions import (
+    ConversationVersionConflictError,
     DecisionSnapshotIntegrityError,
     DecisionSnapshotOwnershipError,
     ShoppingAssistantNotFoundError,
@@ -61,14 +63,37 @@ from app.services.refine_session_recommendation import (
     compose_session_refinement,
     is_refinement_request,
 )
+from app.services.research_authorization import (
+    cancel_research_authorization,
+    create_research_authorization_from_proposal,
+    current_unconsumed_authorization,
+    ignore_client_scope_overrides,
+    invalidate_research_authorization,
+    upsert_authorization,
+)
 
 ProposalLifecycle = Literal[
     "confirm",
+    "reconfirm",
     "cancel",
     "ambiguous",
     "replace",
     "propose",
+    "stale",
+    "unbound",
+    "no_pending",
 ]
+ProposalAnswerStatus = (
+    ResearchProposalStatus
+    | Literal[
+        "no_pending_research_proposal",
+        "stale_research_proposal",
+    ]
+)
+_CONFIRMED_STATUS: ResearchProposalStatus = (
+    "research_confirmation_received_but_execution_unavailable"
+)
+_PERSIST_ATTEMPTS = 3
 
 _FRESHNESS_PHRASES = (
     "today",
@@ -160,6 +185,10 @@ _EXPLICIT_CONFIRM_PHRASES = (
     "confirm",
 )
 _CONFIRM_STANDALONE = re.compile(r"^(yes|yep|yeah|ok|okay|sure|do that|research that)\.?$", re.I)
+_CONFIRM_TARGET_RE = re.compile(
+    r"(?:yes,?\s+)?(?:research|check|compare)\s+(.+?)(?:\?|$)",
+    re.I,
+)
 _OUTSIDE_NAME_RE = re.compile(
     r"(?:what about|how about|compare|versus|vs\.?|instead(?: of)?|rather get)\s+(.+?)(?:\?|$)",
     re.I,
@@ -228,12 +257,14 @@ class ResearchNeed:
 
 @dataclass(frozen=True, slots=True)
 class ProposalResult:
-    status: ResearchProposalStatus
+    status: ProposalAnswerStatus
     answer: str
     proposal: ResearchProposal | None
     packet: DecisionEvidencePacket
     snapshot: CanonicalDecisionSnapshot | None
     lifecycle: ProposalLifecycle
+    authorization: ResearchAuthorization | None = None
+    authorization_created: bool = False
 
 
 class ProposeResearchService:
@@ -262,7 +293,8 @@ class ProposeResearchService:
     ) -> ShoppingAssistantResponse | None:
         """Return a proposal response when 29.4C owns the turn; otherwise None."""
 
-        payload = request if isinstance(request, dict) else request.to_dict()
+        raw = request if isinstance(request, dict) else request.to_dict()
+        payload = ignore_client_scope_overrides(dict(raw))
         question = str(payload.get("query") or "").strip()
         if not question:
             raise ShoppingAssistantValidationError("query must not be blank.")
@@ -272,6 +304,12 @@ class ProposeResearchService:
         context_version = int(payload.get("context_version") or 1)
         surface = str(payload.get("surface") or "results")
         conversation_id = payload.get("conversation_id")
+        client_proposal_id = str(payload.get("proposal_id") or "").strip() or None
+        client_proposal_version_raw = payload.get("proposal_version")
+        client_proposal_version = (
+            int(client_proposal_version_raw) if client_proposal_version_raw else None
+        )
+        client_confirmation_token = str(payload.get("confirmation_token") or "").strip() or None
         page = surface if surface in {"results", "compare", "why"} else "results"
 
         packet, resolved = self._resolve_packet(
@@ -295,11 +333,18 @@ class ProposeResearchService:
             decision_id=packet.decision_id,
             conversation_id=str(conversation_id) if conversation_id else None,
         )
+        existing_authorizations = self._existing_authorizations(
+            owner=owner,
+            decision_id=packet.decision_id,
+            conversation_id=str(conversation_id) if conversation_id else None,
+        )
 
         before_digest = resolved.content_sha256 if resolved else None
         before_rec = resolved.recommendation.snapshot_sha256 if resolved else None
         before_scores = resolved.canonical_piqscore_set_sha256 if resolved else None
         before_ids = resolved.evaluated_product_ids if resolved else packet.evaluated_product_ids
+        before_economics = resolved.offer_economics if resolved else None
+        schema_version = resolved.schema_version if resolved else None
 
         result = compose_research_proposal(
             question,
@@ -309,6 +354,8 @@ class ProposeResearchService:
             overlay=overlay,
             now=self._clock(),
             id_factory=self._id_factory,
+            client_proposal_id=client_proposal_id,
+            client_proposal_version=client_proposal_version,
         )
         if result is None:
             return None
@@ -318,20 +365,24 @@ class ProposeResearchService:
             or resolved.recommendation.snapshot_sha256 != before_rec
             or resolved.canonical_piqscore_set_sha256 != before_scores
             or resolved.evaluated_product_ids != before_ids
+            or resolved.offer_economics != before_economics
         ):
             raise DecisionSnapshotIntegrityError(decision_id, context_version)
 
-        bound_conversation_id = self._persist_proposal(
+        bound_conversation_id, stored_result = self._persist_proposal(
             result=result,
             owner=owner,
             conversation_id=str(conversation_id) if conversation_id else None,
             snapshot=resolved,
             question=question,
             overlay=overlay,
+            existing_authorizations=existing_authorizations,
+            client_confirmation_token=client_confirmation_token,
+            schema_version=schema_version,
         )
         return self._to_response(
             question,
-            result,
+            stored_result,
             conversation_id=bound_conversation_id or conversation_id,
             overlay=overlay,
         )
@@ -417,9 +468,26 @@ class ProposeResearchService:
         )
         if context is None or context.research_proposal is None:
             return None
-        if context.research_proposal.status != "pending_confirmation":
+        if context.research_proposal.status not in {
+            "pending_confirmation",
+            _CONFIRMED_STATUS,
+        }:
             return None
         return context.research_proposal
+
+    def _existing_authorizations(
+        self,
+        *,
+        owner: ConversationOwner | None,
+        decision_id: str,
+        conversation_id: str | None,
+    ) -> tuple[ResearchAuthorization, ...]:
+        context = self._bound_context(
+            owner=owner, decision_id=decision_id, conversation_id=conversation_id
+        )
+        if context is None:
+            return ()
+        return context.research_authorizations
 
     def _bound_context(
         self,
@@ -451,56 +519,160 @@ class ProposeResearchService:
         snapshot: CanonicalDecisionSnapshot | None,
         question: str,
         overlay: SessionRecommendationRefinement | None,
-    ) -> str | None:
+        existing_authorizations: tuple[ResearchAuthorization, ...] = (),
+        client_confirmation_token: str | None = None,
+        schema_version: str | None = None,
+    ) -> tuple[str | None, ProposalResult]:
         if self._conversations is None or owner is None:
-            return conversation_id
-        context = None
-        if conversation_id:
-            context = self._conversations.get_for_owner(conversation_id, owner)
-        if context is None:
-            context = self._conversations.find_bound_for_owner(owner, result.packet.decision_id)
-        if context is None:
-            reference = snapshot.to_reference() if snapshot is not None else None
-            if reference is None:
-                return conversation_id
-            context = self._conversations.create(owner=owner, decision_context=reference)
-        proposal = result.proposal
-        if proposal is not None:
-            proposal = replace(proposal, conversation_id=context.conversation_id)
-        stored = proposal
-        if result.status in {"cancelled"}:
-            stored = None
-        context = self._conversations.save(
-            replace(
-                context,
-                research_proposal=stored,
-                session_refinement=overlay or context.session_refinement,
-            ),
-            expected_version=context.persistence_version,
-        )
-        allowed = (
-            context.decision_context.evaluated_product_ids
-            if context.decision_context is not None
-            else result.packet.evaluated_product_ids
-        )
-        self._conversations.append_turn(
-            context.conversation_id,
-            ConversationTurn(
-                role="user",
-                intent="general",
-                product_ids=allowed,
-                product_names=(),
-                query=question,
-                created_at=self._clock(),
-                turn_id=self._id_factory(),
-                decision_id=result.packet.decision_id,
-                context_version=result.packet.context_version,
-                action="propose_research",
-            ),
-            last_intent="general",
-            last_product_ids=allowed,
-        )
-        return context.conversation_id
+            if result.lifecycle in {"confirm", "reconfirm"}:
+                return conversation_id, replace(
+                    result,
+                    answer=(
+                        "I recorded your confirmation, but research cannot be authorized "
+                        "without an owner-bound conversation. No research was started."
+                    ),
+                    authorization=None,
+                    authorization_created=False,
+                )
+            return conversation_id, result
+
+        last_error: Exception | None = None
+        working = result
+        stored_authorizations = existing_authorizations
+        for _attempt in range(_PERSIST_ATTEMPTS):
+            try:
+                context = None
+                if conversation_id:
+                    context = self._conversations.get_for_owner(conversation_id, owner)
+                if context is None:
+                    context = self._conversations.find_bound_for_owner(
+                        owner, working.packet.decision_id
+                    )
+                if context is None:
+                    reference = snapshot.to_reference() if snapshot is not None else None
+                    if reference is None:
+                        if working.lifecycle in {"confirm", "reconfirm"}:
+                            return conversation_id, replace(
+                                working,
+                                answer=(
+                                    "I recorded your confirmation, but research cannot be "
+                                    "authorized without an owner-bound decision conversation. "
+                                    "No research was started."
+                                ),
+                                authorization=None,
+                                authorization_created=False,
+                            )
+                        return conversation_id, working
+                    context = self._conversations.create(owner=owner, decision_context=reference)
+                stored_authorizations = context.research_authorizations or stored_authorizations
+                proposal = working.proposal
+                if proposal is not None:
+                    proposal = replace(proposal, conversation_id=context.conversation_id)
+                authorization, created = self._authorization_for_persist(
+                    working,
+                    proposal=proposal,
+                    owner=owner,
+                    conversation_id=context.conversation_id,
+                    existing=stored_authorizations,
+                    client_confirmation_token=client_confirmation_token,
+                    schema_version=schema_version,
+                )
+                if authorization is not None:
+                    stored_authorizations = upsert_authorization(
+                        stored_authorizations, authorization
+                    )
+                    if proposal is not None and working.lifecycle in {"confirm", "reconfirm"}:
+                        proposal = replace(
+                            proposal,
+                            status=_CONFIRMED_STATUS,
+                            confirmation_required=False,
+                            authorization_id=authorization.authorization_id,
+                            updated_at=self._clock(),
+                        )
+                stored_proposal = proposal
+                if working.status == "cancelled" or working.lifecycle == "cancel":
+                    stored_proposal = None
+                context = self._conversations.save(
+                    replace(
+                        context,
+                        research_proposal=stored_proposal,
+                        research_authorizations=stored_authorizations,
+                        session_refinement=overlay or context.session_refinement,
+                    ),
+                    expected_version=context.persistence_version,
+                )
+                allowed = (
+                    context.decision_context.evaluated_product_ids
+                    if context.decision_context is not None
+                    else working.packet.evaluated_product_ids
+                )
+                self._conversations.append_turn(
+                    context.conversation_id,
+                    ConversationTurn(
+                        role="user",
+                        intent="general",
+                        product_ids=allowed,
+                        product_names=(),
+                        query=question,
+                        created_at=self._clock(),
+                        turn_id=self._id_factory(),
+                        decision_id=working.packet.decision_id,
+                        context_version=working.packet.context_version,
+                        action="propose_research",
+                    ),
+                    last_intent="general",
+                    last_product_ids=allowed,
+                )
+                stored_result = replace(
+                    working,
+                    proposal=stored_proposal if stored_proposal is not None else proposal,
+                    authorization=authorization,
+                    authorization_created=created,
+                )
+                return context.conversation_id, stored_result
+            except ConversationVersionConflictError as exc:
+                last_error = exc
+                conversation_id = conversation_id or getattr(exc, "conversation_id", None)
+                continue
+        if last_error is not None:
+            raise last_error
+        return conversation_id, working
+
+    def _authorization_for_persist(
+        self,
+        result: ProposalResult,
+        *,
+        proposal: ResearchProposal | None,
+        owner: ConversationOwner,
+        conversation_id: str,
+        existing: tuple[ResearchAuthorization, ...],
+        client_confirmation_token: str | None,
+        schema_version: str | None,
+    ) -> tuple[ResearchAuthorization | None, bool]:
+        now = self._clock()
+        current = current_unconsumed_authorization(existing)
+        if result.lifecycle in {"confirm", "reconfirm"}:
+            if proposal is None:
+                return None, False
+            created_or_reused = create_research_authorization_from_proposal(
+                proposal,
+                owner=owner,
+                conversation_id=conversation_id,
+                now=now,
+                id_factory=self._id_factory,
+                existing=existing,
+                client_confirmation_token=client_confirmation_token,
+                schema_version=schema_version,
+            )
+            created = not any(
+                item.authorization_id == created_or_reused.authorization_id for item in existing
+            )
+            return created_or_reused, created
+        if result.lifecycle == "cancel" and current is not None:
+            return cancel_research_authorization(current, now=now), False
+        if result.lifecycle == "replace" and current is not None:
+            return invalidate_research_authorization(current, now=now), False
+        return None, False
 
     def _to_response(
         self,
@@ -527,11 +699,40 @@ class ProposeResearchService:
                     code="research_not_started",
                 ),
             )
-        if result.status == "research_confirmation_received_but_execution_unavailable":
+        if result.status == _CONFIRMED_STATUS:
             warnings = (
                 AssistantWarning(
-                    message="Confirmation was recorded, but live research execution is not available.",
+                    message=(
+                        "Research is approved for this request. Execution is not available yet."
+                    ),
                     code="research_execution_unavailable",
+                ),
+            )
+        if result.status == "no_pending_research_proposal":
+            warnings = (
+                AssistantWarning(
+                    message="There is no pending research proposal to authorize.",
+                    code="research_not_started",
+                ),
+            )
+        if result.status == "stale_research_proposal":
+            warnings = (
+                AssistantWarning(
+                    message=(
+                        "That confirmation no longer matches the current research proposal. "
+                        "No research was authorized."
+                    ),
+                    code="research_not_started",
+                ),
+            )
+        if result.lifecycle == "unbound":
+            warnings = (
+                AssistantWarning(
+                    message=(
+                        "Research was not authorized because the confirmation is not bound "
+                        "to the exact proposal."
+                    ),
+                    code="research_not_started",
                 ),
             )
         processing: dict[str, Any] = {
@@ -549,6 +750,8 @@ class ProposeResearchService:
             "secrets_included": False,
             "execution_started": False,
             "research_executed": False,
+            "execution_available": False,
+            "authorization_created": result.authorization_created,
         }
         if overlay is not None:
             processing["session_best_piq_product_id"] = overlay.session_best_piq_product_id
@@ -563,6 +766,11 @@ class ProposeResearchService:
             processing["proposal_id"] = proposal.proposal_id
             processing["proposal_version"] = proposal.proposal_version
             processing["proposal_status"] = proposal.status
+        if result.authorization is not None:
+            processing["research_authorization"] = result.authorization.to_public_dict()
+            processing["research_authorization_id"] = result.authorization.authorization_id
+            processing["authorization_status"] = result.authorization.status
+            processing["authorization_version"] = result.authorization.authorization_version
         return ShoppingAssistantResponse(
             query=question,
             intent="general",
@@ -623,6 +831,134 @@ def is_explicit_confirmation(question: str, proposal: ResearchProposal | None = 
     return False
 
 
+def confirmation_correlation(
+    question: str,
+    proposal: ResearchProposal,
+    *,
+    client_proposal_id: str | None = None,
+    client_proposal_version: int | None = None,
+) -> Literal["match", "missing", "stale"]:
+    """Correlate a confirmation to one exact server-authored proposal.
+
+    Client proposal_id/version identify the proposal only. They never define
+    scope. A confirmation token is not a substitute for this binding.
+    """
+
+    if not client_proposal_id or client_proposal_version is None:
+        return "missing"
+    if client_proposal_id != proposal.proposal_id:
+        return "stale"
+    if client_proposal_version != proposal.proposal_version:
+        return "stale"
+    if not confirmation_applies_to_proposal(
+        question,
+        proposal,
+        client_proposal_id=client_proposal_id,
+        client_proposal_version=client_proposal_version,
+    ):
+        return "stale"
+    return "match"
+
+
+def confirmation_applies_to_proposal(
+    question: str,
+    proposal: ResearchProposal,
+    *,
+    client_proposal_id: str | None = None,
+    client_proposal_version: int | None = None,
+) -> bool:
+    """True only when ID/version bind this proposal and text does not contradict it."""
+
+    if not client_proposal_id or client_proposal_version is None:
+        return False
+    if client_proposal_id != proposal.proposal_id:
+        return False
+    if client_proposal_version != proposal.proposal_version:
+        return False
+    named_products = {item.lower() for item in extract_outside_product_names(question, None)}
+    confirm_target = _confirmation_target_name(question)
+    if confirm_target:
+        named_products.add(confirm_target)
+    proposal_products = {item.lower() for item in proposal.outside_set_product_names}
+    product_mentions = {name for name in named_products if _looks_like_product_name(name)}
+    if product_mentions and proposal_products and product_mentions.isdisjoint(proposal_products):
+        return False
+    if product_mentions and not proposal_products:
+        return False
+    text = question.lower()
+    named_sources = tuple(hint for hint in _SOURCE_HINTS if hint in text)
+    proposal_sources = tuple(item.lower() for item in proposal.requested_sources)
+    if (
+        named_sources
+        and proposal_sources
+        and not any(source in proposal_sources for source in named_sources)
+    ):
+        return False
+    named_destination = _extract_destination(question)
+    destination_mismatch = bool(
+        named_destination
+        and proposal.destination_label
+        and named_destination.lower() not in proposal.destination_label.lower()
+        and proposal.destination_label.lower() not in named_destination.lower()
+    )
+    return not destination_mismatch
+
+
+def _unbound_confirmation_result(
+    existing: ResearchProposal,
+    *,
+    packet: DecisionEvidencePacket,
+    snapshot: CanonicalDecisionSnapshot | None,
+    pending: bool,
+) -> ProposalResult:
+    if pending:
+        return ProposalResult(
+            status="pending_confirmation",
+            answer=(
+                "I still have a pending research proposal, but that confirmation is not "
+                "bound to this exact request. I have not authorized research. "
+                f"{existing.proposal_text}"
+            ),
+            proposal=existing,
+            packet=packet,
+            snapshot=snapshot,
+            lifecycle="unbound",
+        )
+    return ProposalResult(
+        status=_CONFIRMED_STATUS,
+        answer=(
+            "That confirmation is not bound to the approved research request. "
+            "I have not created a new authorization or changed the previous one."
+        ),
+        proposal=existing,
+        packet=packet,
+        snapshot=snapshot,
+        lifecycle="unbound",
+    )
+
+
+def _confirmation_target_name(question: str) -> str | None:
+    match = _CONFIRM_TARGET_RE.search(question)
+    if not match:
+        return None
+    cleaned = _clean_extracted_name(match.group(1)).lower()
+    if not cleaned or cleaned in _NON_PRODUCT_TOKENS:
+        return None
+    return cleaned
+
+
+def _looks_like_product_name(name: str) -> bool:
+    text = name.strip().lower()
+    if not text or text in _NON_PRODUCT_TOKENS:
+        return False
+    tokens = [token for token in re.split(r"[\s,]+", text) if token]
+    if tokens and all(token in set(_SOURCE_HINTS) | {"and", "too", "the"} for token in tokens):
+        return False
+    price_like = any(token in {"price", "prices", "current", "today"} for token in tokens)
+    product_like = any(token in {"airpods", "beats", "sony", "bose"} for token in tokens)
+    return not (price_like and not product_like)
+
+
 def is_cancellation(question: str) -> bool:
     text = question.lower()
     return any(phrase in text for phrase in _CANCEL_PHRASES)
@@ -666,6 +1002,8 @@ def compose_research_proposal(
     overlay: SessionRecommendationRefinement | None = None,
     now: datetime | None = None,
     id_factory=None,  # noqa: ANN001
+    client_proposal_id: str | None = None,
+    client_proposal_version: int | None = None,
 ) -> ProposalResult | None:
     """Pure composer. None means 29.4A/29.4B should keep the turn."""
 
@@ -703,17 +1041,44 @@ def compose_research_proposal(
                 lifecycle="ambiguous",
             )
         if is_explicit_confirmation(question, existing):
+            correlation = confirmation_correlation(
+                question,
+                existing,
+                client_proposal_id=client_proposal_id,
+                client_proposal_version=client_proposal_version,
+            )
+            if correlation == "missing":
+                return _unbound_confirmation_result(
+                    existing,
+                    packet=packet,
+                    snapshot=snapshot,
+                    pending=True,
+                )
+            if correlation == "stale":
+                return ProposalResult(
+                    status="stale_research_proposal",
+                    answer=(
+                        "That confirmation no longer matches the current research proposal. "
+                        "I have not authorized research, and I will not apply an old "
+                        "confirmation to a newer request."
+                    ),
+                    proposal=existing,
+                    packet=packet,
+                    snapshot=snapshot,
+                    lifecycle="stale",
+                )
             confirmed = replace(
                 existing,
-                status="research_confirmation_received_but_execution_unavailable",
+                status=_CONFIRMED_STATUS,
                 confirmation_required=False,
                 updated_at=clock,
             )
             return ProposalResult(
-                status="research_confirmation_received_but_execution_unavailable",
+                status=_CONFIRMED_STATUS,
                 answer=(
-                    f"I recorded your confirmation to research {existing.scope_text}. "
-                    "Live research execution is not available yet, so no sources were checked, "
+                    "Research is approved for that exact request. "
+                    f"The authorized scope is {existing.scope_text}. "
+                    "Execution is not available yet, so no sources were checked, "
                     "no products were added, and the Recommendation is unchanged."
                 ),
                 proposal=confirmed,
@@ -722,13 +1087,127 @@ def compose_research_proposal(
                 lifecycle="confirm",
             )
 
+    if existing is not None and existing.is_confirmation_recorded:
+        if is_cancellation(question):
+            cancelled = replace(
+                existing,
+                status="cancelled",
+                confirmation_required=False,
+                updated_at=clock,
+            )
+            return ProposalResult(
+                status="cancelled",
+                answer=(
+                    "Okay — I cancelled the approved research request before execution. "
+                    "No research was started, and the current decision is unchanged."
+                ),
+                proposal=cancelled,
+                packet=packet,
+                snapshot=snapshot,
+                lifecycle="cancel",
+            )
+        if is_ambiguous_confirmation(question):
+            return ProposalResult(
+                status=_CONFIRMED_STATUS,
+                answer=(
+                    "Research is already approved for that exact request. "
+                    "Execution is not available yet, and that reply does not change it."
+                ),
+                proposal=existing,
+                packet=packet,
+                snapshot=snapshot,
+                lifecycle="ambiguous",
+            )
+        if is_explicit_confirmation(question, existing):
+            correlation = confirmation_correlation(
+                question,
+                existing,
+                client_proposal_id=client_proposal_id,
+                client_proposal_version=client_proposal_version,
+            )
+            if correlation == "missing":
+                return _unbound_confirmation_result(
+                    existing,
+                    packet=packet,
+                    snapshot=snapshot,
+                    pending=False,
+                )
+            if correlation == "stale":
+                return ProposalResult(
+                    status="stale_research_proposal",
+                    answer=(
+                        "That confirmation does not match the approved research request. "
+                        "I have not created a new authorization or changed the previous one."
+                    ),
+                    proposal=existing,
+                    packet=packet,
+                    snapshot=snapshot,
+                    lifecycle="stale",
+                )
+            return ProposalResult(
+                status=_CONFIRMED_STATUS,
+                answer=(
+                    "Research is already approved for that exact request. "
+                    "Execution is not available yet, so no additional research was started."
+                ),
+                proposal=existing,
+                packet=packet,
+                snapshot=snapshot,
+                lifecycle="reconfirm",
+            )
+
+    if is_explicit_confirmation(question, existing) and (
+        client_proposal_id or client_proposal_version is not None
+    ):
+        return ProposalResult(
+            status="stale_research_proposal",
+            answer=(
+                "That confirmation no longer matches a current research proposal. "
+                "I have not authorized research, and I will not guess a replacement request."
+            ),
+            proposal=existing,
+            packet=packet,
+            snapshot=snapshot,
+            lifecycle="stale",
+        )
+
     need = detect_research_need(question, packet, snapshot=snapshot)
     if need is None and existing is not None and existing.is_pending:
         return None
     if need is None:
+        if is_explicit_confirmation(question, existing):
+            return ProposalResult(
+                status="no_pending_research_proposal",
+                answer=(
+                    "There isn't a pending research proposal to confirm. "
+                    "I have not authorized research, and I will not guess what to check."
+                ),
+                proposal=existing,
+                packet=packet,
+                snapshot=snapshot,
+                lifecycle="no_pending",
+            )
+        if existing is not None and existing.is_confirmation_recorded:
+            return None
+        if is_cancellation(question) and existing is None:
+            return ProposalResult(
+                status="no_pending_research_proposal",
+                answer=(
+                    "There isn't a pending or approved research request to cancel. "
+                    "No research was started."
+                ),
+                proposal=None,
+                packet=packet,
+                snapshot=snapshot,
+                lifecycle="no_pending",
+            )
         return None
 
-    replaced_id = existing.proposal_id if existing is not None and existing.is_pending else None
+    replaced_id = (
+        existing.proposal_id
+        if existing is not None and (existing.is_pending or existing.is_confirmation_recorded)
+        else None
+    )
     version = 1 if existing is None else existing.proposal_version + 1
     session_best = (
         overlay.session_best_piq_product_id if overlay is not None else packet.best_piq_product_id

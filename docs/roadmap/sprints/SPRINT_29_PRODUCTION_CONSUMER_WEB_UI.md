@@ -2,7 +2,7 @@
 
 **Filename retained** for link stability: `SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`
 
-**Status:** In progress — 29.0–29.4B, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. Phase 29.4C `propose_research` is **implemented**; research execution remains unimplemented and owned by Sprints 31–38. Sprint 29 is **not closed**.
+**Status:** In progress — 29.0–29.4B, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. Phase 29.4C `propose_research` is **implemented**. The Research Authorization / Execution Handoff Contract is **implemented**; research execution remains unimplemented and owned by Sprints 31–38. Sprint 29 is **not closed**.
 **Primary owner / domain:** Frontend / product / conversational continuity
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-6 (public UX); CC-01; persistent Ask; SEO technical foundation
@@ -31,6 +31,7 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | Canonical decision presentation contract | merged | PR #91 / schema 1.2 — Recommendation qualification, shopper decision context, product identity metadata, category-flexible product fit, Recommendation reasons, Best For, alternative trade-offs, outbound offer reference, integrity protection, Ask evidence support |
 | 29.4B `refine_session_recommendation` | merged | Shopper may clarify preferences after Recommendation. Session Best Piq may change using already-evaluated products/evidence. PiqScore does not change. Canonical snapshot does not mutate. Original Recommendation remains historical. Evaluated set cannot expand. No new research. No affiliate influence. |
 | 29.4C `propose_research` | implemented | Detect when the shopper asks for evidence/product outside currently evaluated evidence. PiqSavi may propose additional research. Research does **not** automatically execute. User confirmation remains required. Research execution remains unimplemented and owned by Sprints 31–38. |
+| Research Authorization / Execution Handoff Contract | implemented | Explicit confirmation of the exact active proposal creates a server-authoritative authorization. Execution remains unavailable and owned by Sprints 31–38. |
 
 **Truthfulness rules already locked for presentation:**
 

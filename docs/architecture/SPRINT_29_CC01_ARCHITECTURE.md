@@ -81,8 +81,10 @@ Every follow-up resolves to exactly one server-selected action:
    session-level overlay. Canonical snapshots stay immutable. See
    [`PHASE_29_4B_SESSION_RECOMMENDATION_REFINEMENT.md`](PHASE_29_4B_SESSION_RECOMMENDATION_REFINEMENT.md).
 3. `propose_research` — implemented in Phase 29.4C as a pending confirmation
-   boundary only. Research is not executed. See
-   [`PHASE_29_4C_PROPOSE_RESEARCH.md`](PHASE_29_4C_PROPOSE_RESEARCH.md).
+   boundary. Explicit confirmation is turned into a Research Authorization /
+   Execution Handoff Contract; live execution remains unimplemented. See
+   [`PHASE_29_4C_PROPOSE_RESEARCH.md`](PHASE_29_4C_PROPOSE_RESEARCH.md) and
+   [`RESEARCH_AUTHORIZATION_HANDOFF_CONTRACT.md`](RESEARCH_AUTHORIZATION_HANDOFF_CONTRACT.md).
 
 The client may render the returned action but must not choose it, calculate a
 score, or alter the evaluated set. Research proposals require a separate,

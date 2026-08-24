@@ -515,6 +515,8 @@ def test_explicit_confirmation_does_not_execute() -> None:
             "query": "Yes, research AirPods Max.",
             "decision_id": DECISION_ID,
             "conversation_id": first.conversation_id,
+            "proposal_id": first.processing["proposal_id"],
+            "proposal_version": first.processing["proposal_version"],
         },
         owner=_owner(),
         snapshot=snapshot,
@@ -526,6 +528,11 @@ def test_explicit_confirmation_does_not_execute() -> None:
     )
     assert confirmed.processing["execution_started"] is False
     assert confirmed.processing["research_executed"] is False
+    assert confirmed.processing["execution_available"] is False
+    assert confirmed.processing["authorization_created"] is True
+    assert confirmed.processing["authorization_status"] == "authorized_pending_execution"
+    assert confirmed.processing["research_authorization_id"]
+    assert "approved" in confirmed.answer.lower()
     assert "not available" in confirmed.answer.lower()
     loaded = snapshots.get(DECISION_ID, 1)
     assert loaded is not None
@@ -576,6 +583,8 @@ def test_29_4a_and_29_4b_files_still_do_not_define_propose_research() -> None:
     assert "propose_research" not in js
     assert "Researching…" not in js
     assert "Researching..." not in js
+    assert "data-proposal-id" in js
+    assert "data-proposal-version" in js
 
 
 @pytest.mark.asyncio
@@ -612,6 +621,8 @@ async def test_http_owner_can_propose_from_ask() -> None:
                 "decision_id": HTTP_DECISION_ID,
                 "conversation_id": body["conversation_id"],
                 "surface": "results",
+                "proposal_id": body["research_proposal"]["proposal_id"],
+                "proposal_version": body["research_proposal"]["proposal_version"],
             },
         )
         assert confirm.status_code == 200
@@ -619,3 +630,7 @@ async def test_http_owner_can_propose_from_ask() -> None:
             "research_confirmation_received_but_execution_unavailable"
         )
         assert confirm.json()["requires_research_confirmation"] is False
+        assert confirm.json()["execution_available"] is False
+        assert confirm.json()["research_handoff_created"] is True
+        assert confirm.json()["research_handoff_status"] == "authorized_pending_execution"
+        assert confirm.json()["research_handoff_id"]

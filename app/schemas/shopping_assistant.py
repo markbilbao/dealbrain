@@ -22,6 +22,9 @@ class ShoppingAssistantQueryRequest(BaseModel):
     decision_id: str | None = Field(default=None, max_length=128)
     context_version: int | None = Field(default=None, ge=1)
     surface: Literal["results", "compare", "why"] | None = None
+    proposal_id: str | None = Field(default=None, max_length=128)
+    proposal_version: int | None = Field(default=None, ge=1)
+    confirmation_token: str | None = Field(default=None, max_length=128)
 
 
 class EvidencePayload(BaseModel):
@@ -125,6 +128,11 @@ class ShoppingAssistantResponse(BaseModel):
     recommendation_changed: bool | None = None
     requires_research_confirmation: bool | None = None
     research_proposal: dict[str, Any] | None = None
+    research_handoff_id: str | None = None
+    research_handoff_status: str | None = None
+    research_handoff_version: int | None = None
+    research_handoff_created: bool | None = None
+    execution_available: bool | None = None
 
 
 class ShoppingAssistantDemoMeta(BaseModel):
