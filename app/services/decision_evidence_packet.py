@@ -81,6 +81,7 @@ class DecisionEvidencePacket:
     canonical_piqscore_set_sha256: str
     recommendation_snapshot_sha256: str
     evaluated_product_ids: tuple[str, ...]
+    qualification_state: str | None = None
 
     def offer(self, product_id: str) -> EvaluatedOfferFact | None:
         for item in self.offers:
@@ -185,6 +186,9 @@ def packet_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DecisionEvidenc
         recommendation_decision=snapshot.recommendation.decision,
         is_qualified=bool(snapshot.qualification and snapshot.qualification.is_qualified),
         qualified_reason=_qualified_reason(snapshot),
+        qualification_state=(
+            snapshot.qualification.state if snapshot.qualification is not None else None
+        ),
         delivery_label=delivery_label or None,
         delivery_verified=bool(delivery_label) and shipping_known,
         sources=sources,
@@ -602,6 +606,16 @@ def _facts_from_presentation_contract(
     return facts
 
 
+def _qualification_state_from_view(view: DecisionPageView) -> str | None:
+    if view.qualification_state is not None:
+        return view.qualification_state
+    if view.presentation_mode == "canonical":
+        return None
+    if view.best_piq.is_qualified:
+        return "qualified"
+    return "unqualified"
+
+
 def packet_from_page_view(view: DecisionPageView) -> DecisionEvidencePacket:
     if view.data_unavailable:
         return unavailable_packet(view.decision_id, view.context_version)
@@ -615,12 +629,13 @@ def packet_from_page_view(view: DecisionPageView) -> DecisionEvidencePacket:
         data_classification=view.data_classification,
         available=True,
         best_piq_product_id=view.best_piq.product_id,
-        best_piq_name=f"{view.best_piq.brand} {view.best_piq.model}".strip(),
+        best_piq_name=view.best_piq.identity_name,
         highest_piqscore_product_id=view.highest_piqscore_product_id,
         highest_piqscore_name=view.highest_piqscore_name,
         recommendation_decision=view.recommendation_decision,
         is_qualified=view.best_piq.is_qualified,
         qualified_reason=view.recommendation_qualified_message,
+        qualification_state=_qualification_state_from_view(view),
         delivery_label=view.location.display_place or None,
         delivery_verified=view.delivery_costs_verified,
         sources=sources,
@@ -667,7 +682,7 @@ def _offer_from_card(card: ProductCardView) -> EvaluatedOfferFact:
     import_status = card.economics.import_charges.status if card.economics.import_charges else None
     return EvaluatedOfferFact(
         product_id=card.product_id,
-        display_name=f"{card.brand} {card.model}".strip(),
+        display_name=card.identity_name,
         piqscore=card.piqscore.value,
         is_best_piq=card.is_best_piq,
         is_highest_piqscore=card.is_highest_piqscore,

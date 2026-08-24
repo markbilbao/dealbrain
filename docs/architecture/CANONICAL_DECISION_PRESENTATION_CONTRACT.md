@@ -25,7 +25,11 @@ claims such as Top 5% are not invented.
 
 ## Qualification
 
-`qualification.state` is `unqualified` or `qualified`.
+`qualification.state` is `unqualified` or `qualified` when captured.
+
+`qualification=None` means qualification was not captured. It is not an
+explicit unqualified Recommendation. Ask returns insufficient evidence for
+legacy snapshots instead of claiming they were evaluated as unqualified.
 
 A qualified Recommendation stores:
 
@@ -60,7 +64,12 @@ Optional per evaluated product:
 - outbound offer URL (`http`/`https` only)
 - category-flexible fit attributes (key, label, value, unit, status, evidence IDs)
 
-Images are not part of this contract.
+Brand and model are used only when captured. Canonical presentation does not
+parse `display_name` to invent them. `display_name` may still render as the
+product identity. Images are not part of this contract.
+
+Fit rows come only from captured `fit_attributes`. Canonical UUID Compare does
+not fall back to headphone fixture rows such as Comfort or Sound quality.
 
 ## Recommendation reasoning
 

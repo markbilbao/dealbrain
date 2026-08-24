@@ -587,7 +587,11 @@ def test_missing_metadata_does_not_use_fixtures() -> None:
     )
     assert view.best_piq.image_key == ""
     assert view.best_piq.offer_url == ""
-    assert all(value == "—" for row in view.compare_fit_rows for value in row.values)
+    assert view.best_piq.brand == ""
+    assert view.best_piq.model == ""
+    assert view.best_piq.display_name == "Sony WH-1000XM5"
+    assert view.compare_fit_rows == ()
+    assert view.qualification_state is None
     assert view.best_piq.piqscore.percentile_label is None
     assert "Lazada" not in view.best_piq.merchant
     sources = " ".join(item.name for item in view.sources)

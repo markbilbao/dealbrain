@@ -140,6 +140,9 @@ def page_view_from_snapshot(
         session_location_differs=session_differs,
         session_location_label=session_location.display_place or None,
         presentation_mode="canonical",
+        qualification_state=(
+            snapshot.qualification.state if snapshot.qualification is not None else None
+        ),
     )
 
 
@@ -163,13 +166,6 @@ def _session_differs(historical: DeliveryContext, session: DeliveryContext) -> b
     return historical.destination_key != session.destination_key
 
 
-def _split_display_name(display_name: str) -> tuple[str, str]:
-    parts = display_name.strip().split(None, 1)
-    if len(parts) == 2:
-        return parts[0], parts[1]
-    return "", display_name
-
-
 def _card_from_product(
     product: EvaluatedProductSnapshot,
     *,
@@ -179,7 +175,7 @@ def _card_from_product(
     historical: DeliveryContext,
 ) -> ProductCardView:
     presentation = _product_presentation(snapshot, product.product_id)
-    brand, model = _identity_from_presentation(product, presentation)
+    brand, model = _captured_identity(presentation)
     listing = MoneyComponent(kind="listing", label="Listing price", amount=None, status="unknown")
     shipping = MoneyComponent(kind="shipping", label="Shipping", amount=None, status="unknown")
     taxes = MoneyComponent(kind="tax", label="Taxes / duties", amount=None, status="unknown")
@@ -267,6 +263,7 @@ def _card_from_product(
         why_it_won=why_won,
         freshness_label=freshness,
         origin_label=dest if historical.is_known else None,
+        display_name=product.display_name,
     )
 
 
@@ -324,13 +321,12 @@ def _product_presentation(
     )
 
 
-def _identity_from_presentation(
-    product: EvaluatedProductSnapshot,
+def _captured_identity(
     presentation: CanonicalProductPresentation | None,
 ) -> tuple[str, str]:
-    if presentation and (presentation.brand or presentation.model):
-        return presentation.brand or "", presentation.model or product.display_name
-    return _split_display_name(product.display_name)
+    if presentation is None:
+        return "", ""
+    return presentation.brand or "", presentation.model or ""
 
 
 def _why_won_from_snapshot(
@@ -360,10 +356,7 @@ def _shopper_from_snapshot(
     best: ProductCardView,
 ) -> ShopperContextView:
     context = snapshot.shopper_context
-    why_fits = (
-        f"{best.brand} {best.model}".strip()
-        + " is the canonical Best Piq for You in this decision."
-    )
+    why_fits = f"{best.identity_name} is the canonical Best Piq for You in this decision."
     if snapshot.recommendation_reasons:
         why_fits = snapshot.recommendation_reasons[0].reason
     if context is None:
@@ -464,8 +457,7 @@ def _why_sections_from_snapshot(
         narrative = " ".join(item.reason for item in snapshot.recommendation_reasons)
     else:
         narrative = (
-            f"{best.brand} {best.model}".strip()
-            + f" is Best Piq for You from the evaluated offers. "
+            f"{best.identity_name} is Best Piq for You from the evaluated offers. "
             f"The canonical Recommendation is {rec}."
         )
     if best.product_id != snapshot.evaluated_products[0].product_id or any(
@@ -473,9 +465,8 @@ def _why_sections_from_snapshot(
     ):
         highest = next(card for card in cards if card.is_highest_piqscore)
         narrative += (
-            f" {highest.brand} {highest.model}".strip()
-            + " has the higher objective PiqScore. PiqScore evaluates the offer; "
-            "Best Piq for You reflects what best fits the shopper."
+            f" {highest.identity_name} has the higher objective PiqScore. "
+            "PiqScore evaluates the offer; Best Piq for You reflects what best fits the shopper."
         )
     know_bullets: list[tuple[str, str]] = []
     if best.economics.dominant_amount is not None:
@@ -506,7 +497,7 @@ def _why_sections_from_snapshot(
         alts = [item.reason for item in snapshot.alternative_tradeoffs]
     else:
         alts = [
-            f"{card.brand} {card.model}".strip() + " remains an evaluated alternative."
+            f"{card.identity_name} remains an evaluated alternative."
             for card in cards
             if not card.is_best_piq
         ]
@@ -524,7 +515,7 @@ def _why_sections_from_snapshot(
     why_bullets: list[tuple[str, str]] = [
         ("priority", f"Recommendation: {rec}"),
         ("delivery", f"Delivery to: {delivery}"),
-        ("check", f"Best Piq: {best.brand} {best.model}".strip()),
+        ("check", f"Best Piq: {best.identity_name}"),
     ]
     if snapshot.shopper_context and snapshot.shopper_context.top_priority:
         why_bullets.append(("priority", f"Top priority: {snapshot.shopper_context.top_priority}"))
@@ -647,16 +638,7 @@ def _fit_rows_from_snapshot(
         for item in product.fit_attributes
     }
     if not attributes:
-        keys = (
-            ("Comfort", "stars"),
-            ("Sound quality", "stars"),
-            ("Noise cancellation", "stars"),
-            ("Battery life", "text"),
-            ("Warranty", "text"),
-            ("Seller reliability", "text"),
-        )
-        unknown = tuple("—" for _ in cards)
-        return tuple(CompareFitRow(label, unknown, kind=kind) for label, kind in keys)  # type: ignore[misc]
+        return ()
     by_product = {item.product_id: item for item in snapshot.product_presentation}
     rows: list[CompareFitRow] = []
     for key, label in attributes.items():

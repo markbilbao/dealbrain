@@ -690,7 +690,21 @@ def _answer_unknowns(question: str, packet: DecisionEvidencePacket) -> EvidenceA
 
 def _answer_qualified(question: str, packet: DecisionEvidencePacket) -> EvidenceAnswerResult:
     best = _best(packet)
-    if not packet.is_qualified:
+    if packet.qualification_state is None:
+        return EvidenceAnswerResult(
+            answer=(
+                "Qualification status was not captured for this decision. "
+                "PiqSavi will not treat a missing qualification field as an explicit "
+                "unqualified Recommendation."
+            ),
+            status="insufficient_evidence",
+            evidence_ids=("qualification-not-captured",),
+            product_ids=(),
+            unknowns=packet.unknowns,
+            packet=packet,
+            kind="qualified",
+        )
+    if packet.qualification_state == "unqualified" or not packet.is_qualified:
         return EvidenceAnswerResult(
             answer=(
                 f"{packet.best_piq_name} is the current Best Piq for You and is not marked as "

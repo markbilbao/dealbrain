@@ -360,6 +360,7 @@ def test_qualification_does_not_change_piqscore_or_best_piq() -> None:
     )
     assert absent.best_piq.is_qualified is False
     assert absent.recommendation_qualified_message is None
+    assert absent.qualification_state is None
 
 
 def test_shopper_context_is_historical_and_not_session_mutated() -> None:
@@ -566,8 +567,100 @@ def test_legacy_pages_do_not_backfill_presentation() -> None:
     )
     assert view.shopper.top_priority == "Not captured"
     assert view.best_piq.is_qualified is False
-    assert all(value == "—" for row in view.compare_fit_rows for value in row.values)
-    assert "headphones-standard" not in render_page(view)
+    assert view.qualification_state is None
+    assert view.compare_fit_rows == ()
+    html = render_page(view)
+    assert "headphones-standard" not in html
+    assert "Sound quality" not in html
+
+
+def test_canonical_does_not_infer_brand_or_model_from_display_name() -> None:
+    view = page_view_from_snapshot(
+        _economics_snapshot(),
+        page="results",
+        session_location=DeliveryContext(),
+    )
+    assert view.best_piq.brand == ""
+    assert view.best_piq.model == ""
+    assert view.best_piq.display_name == "Bose QuietComfort Ultra"
+    assert view.best_piq.identity_name == "Bose QuietComfort Ultra"
+    sony = next(card for card in view.compared if card.product_id == SONY_ID)
+    assert sony.brand == ""
+    assert sony.model == ""
+    assert sony.display_name == "Sony WH-1000XM5"
+    html = render_page(view)
+    assert "Bose QuietComfort Ultra" in html
+    assert "Sony WH-1000XM5" in html
+    brand_only = attach_presentation_contract(
+        _economics_snapshot(),
+        product_presentation=(
+            CanonicalProductPresentation(product_id=BOSE_ID, brand="Bose"),
+            CanonicalProductPresentation(product_id=SONY_ID, model="WH-1000XM5"),
+        ),
+        data_classification="canonical_decision",
+    )
+    branded = page_view_from_snapshot(
+        brand_only,
+        page="results",
+        session_location=DeliveryContext(),
+    )
+    assert branded.best_piq.brand == "Bose"
+    assert branded.best_piq.model == ""
+    assert branded.best_piq.display_name == "Bose QuietComfort Ultra"
+    sony_branded = next(card for card in branded.compared if card.product_id == SONY_ID)
+    assert sony_branded.brand == ""
+    assert sony_branded.model == "WH-1000XM5"
+
+
+def test_canonical_fit_rows_do_not_use_headphone_fallback() -> None:
+    view = page_view_from_snapshot(
+        _economics_snapshot(),
+        page="compare",
+        session_location=DeliveryContext(),
+    )
+    assert view.compare_fit_rows == ()
+    html = render_page(view)
+    assert "PRODUCT FIT" in html
+    assert "Not captured for this decision." in html
+    assert "Sound quality" not in html
+    assert "Noise cancellation" not in html
+    assert "Battery life" not in html
+    assert "Seller reliability" not in html
+    assert "Comfort</th>" not in html
+    captured = page_view_from_snapshot(
+        _presentation(),
+        page="compare",
+        session_location=DeliveryContext(),
+    )
+    labels = {row.label for row in captured.compare_fit_rows}
+    assert labels == {"Comfort", "Noise cancellation", "Multipoint"}
+
+
+def test_missing_qualification_is_not_explicit_unqualified() -> None:
+    missing = packet_from_snapshot(_economics_snapshot())
+    assert missing.qualification_state is None
+    assert missing.is_qualified is False
+    unanswered = compose_evidence_answer("Why is this Recommendation qualified?", missing)
+    assert unanswered.status == "insufficient_evidence"
+    assert "not captured" in unanswered.answer.lower()
+    assert "fully asserted" not in unanswered.answer.lower()
+    explicit = packet_from_snapshot(
+        attach_presentation_contract(
+            _economics_snapshot(),
+            qualification=CanonicalQualification(state="unqualified"),
+            data_classification="canonical_decision",
+        )
+    )
+    assert explicit.qualification_state == "unqualified"
+    assert explicit.is_qualified is False
+    answered = compose_evidence_answer("Why is this qualified?", explicit)
+    assert answered.status == "answered"
+    assert "not marked as qualified" in answered.answer.lower()
+    qualified = packet_from_snapshot(_presentation())
+    assert qualified.qualification_state == "qualified"
+    assert compose_evidence_answer("Why is this qualified?", qualified).status == (
+        "partially_answered"
+    )
 
 
 def test_refine_and_propose_remain_absent() -> None:
