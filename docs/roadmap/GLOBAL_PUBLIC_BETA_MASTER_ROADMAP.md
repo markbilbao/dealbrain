@@ -323,7 +323,7 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | Canonical decision presentation contract (schema 1.2) | **merged** | PR #91 on baseline `ab23d29` |
 | 29.4B `refine_session_recommendation` | **merged** | Session overlay only; PiqScore and canonical snapshot stay immutable |
 | 29.4C `propose_research` | **implemented** | Proposal + confirmation only; research execution remains unimplemented and owned by Sprints 31–38 |
-| Research Authorization / Execution Handoff Contract | **implemented** | Server-authoritative confirmation artifact; live research execution remains unimplemented and owned by Sprints 31–38 |
+| Research Authorization / Execution Handoff Contract | **implemented** | Server-authoritative confirmation artifact; Sprint 31 planning is separate; live research execution remains unimplemented and owned by Sprints 31–38 |
 | Live research execution | **not owned here** | Sprints 31–38 |
 | Full CC-01 staging proof on frozen launch candidate | **pending** | Required for EC-02 / EC-22 |
 

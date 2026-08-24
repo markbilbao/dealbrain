@@ -123,9 +123,9 @@ This inventory records every material Global Public Beta requirement and its cov
 |-------------|-------|------------------|---------------|
 | One canonical MerchantConnector contract | `planned_underspecified` | Sprint 4 vs Sprint 18 parallel | 31 |
 | One MerchantRegistry | `planned_underspecified` | Separate registries | 31 |
-| One MarketRouter | `missing_from_roadmap` | — | 31 |
-| MerchantCapability / supported-market metadata | `planned_sufficient_ac` | Roadmap AC in Sprint 31; unsupported-market product policy still finalizes in 37; **implementation future until Sprint 31 executes** | 31 |
-| Merchant contractual capability/policy (fail-closed; distinct from technical ConnectorCapability) | `planned_sufficient_ac` | Roadmap-locked in Sprint 31 + 32–36 certification + EC-09; affiliate ≠ data permission; provider approval ≠ blanket enablement; **implementation future until Sprint 31 executes** | 31 / 32–36 / 45 |
+| One MarketRouter | `planned_underspecified` | Authorized-research execution router implemented (planning only); capability, certification, and routing-policy catalogs are separate; Sprint 4/18 marketplace unification remaining | 31 |
+| MerchantCapability / supported-market metadata | `planned_sufficient_ac` | Sprint 31 research-provider technical capability/market metadata implemented; certification is a separate catalog; unsupported-market product policy still finalizes in 37; production providers uncertified | 31 |
+| Merchant contractual capability/policy (fail-closed; distinct from technical ConnectorCapability) | `planned_sufficient_ac` | Sprint 31 fail-closed trusted certification/policy catalog exported (empty in production); Sprints 32–36 still own provider/market evidence; affiliate ≠ data permission | 31 / 32–36 / 45 |
 | Merchant-country mapping | `missing_from_roadmap` | — | 31 |
 | Query-time + background sync routing | `planned_underspecified` | Split ownership 4/18 | 31 |
 | Normalized listing/offer contracts | `implemented_verified` | Present; unify producers | 18 / 31 |
@@ -133,7 +133,7 @@ This inventory records every material Global Public Beta requirement and its cov
 | Merchant/credential configuration authority | `planned_underspecified` | — | 31 |
 | Feature flags / duplicate registration prevention | `planned_underspecified` | Launch flags exist; merchant kill switch incomplete | 31 / 38 |
 | Sprint 4 and 18 path unification | `planned_underspecified` | Lock forbids silent merge; needs explicit sprint | 31 |
-| Connector certification suite | `planned_sufficient_ac` | Suite + capability-policy harness expectations owned by 31; real-path evidence in 32–36; **implementation future** | 31 / 32–36 |
+| Connector certification suite | `planned_sufficient_ac` | Sprint 31 fail-closed harness/tests exist; real-path evidence remains 32–36 | 31 / 32–36 |
 | Merchant legal/terms documentation | `planned_sufficient_ac` | Non-secret terms/evidence checklist hooks in 31; provider evidence in 32–36; consumer ToS/Privacy remain 28 — not conflated; **implementation future** | 31 / 32–36 / 28 |
 | Merchant onboarding runbook | `planned_sufficient_ac` | Sprint 31 deliverable; **implementation future** | 31 |
 | Merchant deactivation / kill switch | `missing_from_roadmap` | Health disable partial | 38 |
