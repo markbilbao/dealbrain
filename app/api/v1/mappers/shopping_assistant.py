@@ -154,4 +154,6 @@ def to_assistant_response(
         session_best_piq_product_id=response.processing.get("session_best_piq_product_id"),
         original_best_piq_product_id=response.processing.get("original_best_piq_product_id"),
         recommendation_changed=response.processing.get("recommendation_changed"),
+        requires_research_confirmation=response.processing.get("requires_research_confirmation"),
+        research_proposal=response.processing.get("research_proposal"),
     )

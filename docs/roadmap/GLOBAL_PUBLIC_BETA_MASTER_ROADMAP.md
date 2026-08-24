@@ -321,8 +321,8 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | Canonical offer economics (schema 1.1) | **merged** | PR #89 |
 | Canonical UUID consumer presentation | **merged** | PR #90 |
 | Canonical decision presentation contract (schema 1.2) | **merged** | PR #91 on baseline `ab23d29` |
-| 29.4B `refine_session_recommendation` | **in progress** | Active branch `feat/phase-29.4b-refine-session-recommendation`; **not merged**; not complete |
-| 29.4C `propose_research` | **planned** | Proposal + confirmation only; live execution is 31–38 |
+| 29.4B `refine_session_recommendation` | **merged** | Session overlay only; PiqScore and canonical snapshot stay immutable |
+| 29.4C `propose_research` | **implemented** | Proposal + confirmation only; research execution remains unimplemented and owned by Sprints 31–38 |
 | Live research execution | **not owned here** | Sprints 31–38 |
 | Full CC-01 staging proof on frozen launch candidate | **pending** | Required for EC-02 / EC-22 |
 

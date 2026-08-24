@@ -1551,6 +1551,8 @@ def get_shopping_assistant_service(
     _SHOPPING_ASSISTANT_SERVICE._evidence_answers._conversations = conversations  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._session_refinements._snapshots = snapshots  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._session_refinements._conversations = conversations  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._research_proposals._snapshots = snapshots  # noqa: SLF001
+    _SHOPPING_ASSISTANT_SERVICE._research_proposals._conversations = conversations  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._community = community  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._knowledge_graph = graph  # noqa: SLF001
     _SHOPPING_ASSISTANT_SERVICE._personal_agent = personal  # noqa: SLF001

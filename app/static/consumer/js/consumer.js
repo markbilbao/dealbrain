@@ -103,6 +103,17 @@ function showAsk(text) {
   overlay.hidden = false;
 }
 
+function bindAskChips(root) {
+  if (!root) return;
+  root.querySelectorAll(".js-ask-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const input = qs("ask-input-dock") || qs("ask-input-top");
+      if (input) input.value = chip.textContent.trim();
+      input?.focus();
+    });
+  });
+}
+
 function initAsk() {
   const overlay = qs("ask-overlay");
   document.querySelectorAll(".js-close-ask").forEach((btn) => {
@@ -162,8 +173,22 @@ function initAsk() {
         const warnings = Array.isArray(payloadJson.warnings)
           ? payloadJson.warnings.map((item) => item.message || item).join(" ")
           : "";
-        showAsk(`<p>${escapeHtml(String(answer))}</p>${warnings ? `<p class="form-hint">${escapeHtml(warnings)}</p>` : ""}`);
         const processing = payloadJson.processing || {};
+        const confirmationNeeded = Boolean(
+          payloadJson.requires_research_confirmation || processing.requires_research_confirmation,
+        );
+        const confirmActions = confirmationNeeded
+          ? `<p class="ask-confirm">${[
+              '<button type="button" class="chip js-ask-chip">Yes, research that</button>',
+              '<button type="button" class="chip js-ask-chip">Never mind</button>',
+            ].join("")}</p>`
+          : "";
+        showAsk(
+          `<p>${escapeHtml(String(answer))}</p>${
+            warnings ? `<p class="form-hint">${escapeHtml(warnings)}</p>` : ""
+          }${confirmActions}`,
+        );
+        bindAskChips(qs("ask-panel-body"));
         const sessionBest = processing.session_best_piq_product_id;
         const currentBest = document.body?.dataset?.bestPiq;
         if (

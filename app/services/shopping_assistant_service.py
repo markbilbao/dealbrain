@@ -36,6 +36,7 @@ from app.intelligence.shopping_assistant.orchestrator import ShoppingAssistantOr
 from app.intelligence.shopping_assistant.recommendation import ShoppingRecommendationRanker
 from app.intelligence.shopping_assistant.validator import ShoppingResponseValidator
 from app.services.answer_from_evidence import AnswerFromEvidenceService
+from app.services.propose_research import ProposeResearchService
 from app.services.refine_session_recommendation import (
     RefineSessionRecommendationService,
     is_refinement_request,
@@ -106,6 +107,12 @@ class ShoppingAssistantService:
             clock=self._clock,
             id_factory=self._id_factory,
         )
+        self._research_proposals = ProposeResearchService(
+            snapshots=snapshot_repository,
+            conversations=conversation_repository,
+            clock=self._clock,
+            id_factory=self._id_factory,
+        )
         self._confidence = confidence_calculator or ConfidenceCalculator()
         self._community = community_service
         self._knowledge_graph = knowledge_graph_service
@@ -131,19 +138,21 @@ class ShoppingAssistantService:
             cleaned = self._require_query(str(request.get("query") or ""))
             payload = dict(request)
             payload["query"] = cleaned
+            proposed = self._research_proposals.handle(payload, location=location, owner=owner)
+            if proposed is not None:
+                return proposed
             if is_refinement_request(cleaned):
-                return self._session_refinements.refine(
-                    payload, location=location, owner=owner
-                )
+                return self._session_refinements.refine(payload, location=location, owner=owner)
             return self._evidence_answers.answer(payload, location=location, owner=owner)
         if isinstance(request, ShoppingQuery) and request.decision_id:
             cleaned = self._require_query(request.query)
             payload = request.to_dict()
             payload["query"] = cleaned
+            proposed = self._research_proposals.handle(payload, location=location, owner=owner)
+            if proposed is not None:
+                return proposed
             if is_refinement_request(cleaned):
-                return self._session_refinements.refine(
-                    payload, location=location, owner=owner
-                )
+                return self._session_refinements.refine(payload, location=location, owner=owner)
             return self._evidence_answers.answer(payload, location=location, owner=owner)
         shopping_query = self._normalize_request(request)
         cleaned = self._require_query(shopping_query.query)

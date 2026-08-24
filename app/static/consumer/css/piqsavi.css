@@ -627,6 +627,13 @@ h1, h2, h3 { margin: 0.15rem 0; letter-spacing: -0.02em; }
   cursor: pointer;
 }
 
+.ask-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
 .ask-dock {
   position: sticky;
   bottom: 0;
