@@ -59,8 +59,21 @@ def apply_session_overlay_to_view(
     elif overlay.reasons:
         shopper = replace(shopper, why_this_fits=overlay.reasons[0])
     why_variant = view.why_variant
-    if best.product_id != view.highest_piqscore_product_id and why_variant == "standard":
+    session_qualification = overlay.qualification
+    qualified_message = (
+        session_qualification.message()
+        if session_qualification is not None
+        else view.recommendation_qualified_message
+    )
+    if session_qualification is not None and session_qualification.is_qualified:
+        why_variant = "qualified"
+    elif best.product_id != view.highest_piqscore_product_id and why_variant == "standard":
         why_variant = "score_diff"
+    unknowns = view.unknowns
+    if session_qualification is not None and session_qualification.material_unknowns:
+        unknowns = tuple(
+            dict.fromkeys((*view.unknowns, *session_qualification.material_unknowns))
+        )
     return replace(
         view,
         recommendation_changed=changed or view.recommendation_changed,
@@ -72,6 +85,8 @@ def apply_session_overlay_to_view(
         why_variant=why_variant,
         why_sections=_overlay_why_sections(view, overlay, best, original),
         qualification_state=overlay.qualification_state or view.qualification_state,
+        recommendation_qualified_message=qualified_message,
+        unknowns=unknowns,
     )
 
 
@@ -133,14 +148,45 @@ def apply_session_overlay_to_packet(
         )
         for index, reason in enumerate(overlay.reasons)
     )
+    if overlay.qualification is not None:
+        extra.append(
+            EvidenceFact(
+                evidence_id="session-qualification",
+                topic="qualification",
+                fact=(
+                    overlay.qualification.message()
+                    or f"Session Recommendation qualification is {overlay.qualification.state}."
+                ),
+                product_id=best.product_id,
+                source="session-refinement",
+            )
+        )
+        extra.extend(
+            EvidenceFact(
+                evidence_id=f"session-unknown:{index}",
+                topic="unknown",
+                fact=unknown,
+                product_id=None,
+                source="session-refinement",
+            )
+            for index, unknown in enumerate(overlay.qualification.material_unknowns)
+        )
+    session_qualified = packet.is_qualified
+    session_unknowns = packet.unknowns
+    if overlay.qualification is not None:
+        session_qualified = overlay.qualification.is_qualified
+        session_unknowns = tuple(
+            dict.fromkeys((*packet.unknowns, *overlay.qualification.material_unknowns))
+        )
     return replace(
         packet,
         best_piq_product_id=best.product_id,
         best_piq_name=best.display_name,
         offers=offers,
         facts=packet.facts + tuple(extra),
-        is_qualified=bool(overlay.qualification_state == "qualified" or packet.is_qualified),
+        is_qualified=session_qualified,
         qualification_state=overlay.qualification_state or packet.qualification_state,
+        unknowns=session_unknowns,
     )
 
 
@@ -150,9 +196,11 @@ def _card_with_session_flag(
     overlay: SessionRecommendationRefinement,
 ) -> ProductCardView:
     is_best = card.product_id == session_id
-    qualified = bool(
-        overlay.qualification_state == "qualified" and is_best
-    ) or (card.is_qualified and is_best)
+    if overlay.qualification is not None:
+        session_qualified = overlay.qualification.is_qualified
+    else:
+        session_qualified = overlay.qualification_state == "qualified"
+    qualified = bool(session_qualified and is_best)
     why = card.why_it_won
     if is_best and overlay.reasons:
         why = overlay.reasons[:3]

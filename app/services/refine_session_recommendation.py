@@ -20,6 +20,7 @@ from app.domain.entities.decision_snapshot import CanonicalDecisionSnapshot
 from app.domain.entities.session_refinement import (
     RefinementStatus,
     SessionPriorities,
+    SessionQualification,
     SessionRecommendationRefinement,
 )
 from app.domain.entities.shopping_assistant import (
@@ -69,28 +70,6 @@ _ATTRIBUTE_ALIASES: dict[str, tuple[str, ...]] = {
     "warranty": ("warranty", "support"),
     "storage": ("storage",),
 }
-_POSITIVE_RANK = (
-    "class-leading",
-    "excellent",
-    "best",
-    "strongest",
-    "outstanding",
-    "superior",
-    "very strong",
-    "strong",
-    "good",
-    "supported",
-    "yes",
-    "true",
-    "firm",
-    "fair",
-    "basic",
-    "weak",
-    "poor",
-    "unsupported",
-    "no",
-    "false",
-)
 _RESET_PHRASES = (
     "original priorities",
     "original priority",
@@ -118,7 +97,21 @@ _EXPANSION_PHRASES = (
     "research",
 )
 _HARD_PHRASES = ("must ", "required", "i actually need", "i need ", "has to ", "have to ")
-_NUMBER_RE = re.compile(r"(\d+(?:\.\d+)?)")
+_COMPLETE_COST_STATES = frozenset({"final_effective_cost"})
+_INCOMPLETE_COST_STATES = frozenset(
+    {
+        "estimated_landed_cost",
+        "price_before_shipping",
+        "before_unverified_import_charges",
+        "potential_checkout_price",
+    }
+)
+_BOOLEAN_TRUE = frozenset({"true", "yes", "supported", "support"})
+_BOOLEAN_FALSE = frozenset({"false", "no", "unsupported", "not supported", "does not support"})
+_TRADEOFF_TOPIC_RE = re.compile(
+    r"(?:better (?:if|for)|if|for)\s+(?P<topic>[a-z0-9 \-]+?)(?:\s+(?:matters|is|than)|$)",
+    re.I,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -472,6 +465,19 @@ class RefineSessionRecommendationService:
                     "session_best_piq_product_id": overlay.session_best_piq_product_id,
                     "recommendation_changed": overlay.recommendation_changed,
                     "session_qualification_state": overlay.qualification_state,
+                    "session_qualification_reasons": (
+                        list(overlay.qualification.reasons) if overlay.qualification else []
+                    ),
+                    "session_material_unknowns": (
+                        list(overlay.qualification.material_unknowns)
+                        if overlay.qualification
+                        else []
+                    ),
+                    "session_could_change_recommendation": (
+                        overlay.qualification.could_change_recommendation
+                        if overlay.qualification
+                        else False
+                    ),
                 }
             )
         return ShoppingAssistantResponse(
@@ -640,7 +646,7 @@ def compose_session_refinement(
             reasons=selection.reasons,
             evidence_ids=selection.evidence_ids,
             now=clock,
-            qualification_state=selection.qualification_state,
+            qualification=selection.qualification,
         )
     return RefinementResult(
         status=selection.status,
@@ -708,7 +714,7 @@ class _Selection:
     reasons: tuple[str, ...]
     evidence_ids: tuple[str, ...]
     persist: bool
-    qualification_state: str | None = None
+    qualification: SessionQualification | None = None
 
 
 def select_session_best(
@@ -724,49 +730,51 @@ def select_session_best(
     names = {item.product_id: item.display_name for item in packet.offers}
     current_name = names.get(current_best_id, "the current Best Piq")
     original_name = names.get(original_id, "the original Best Piq")
-    qualification = _session_qualification(packet, snapshot, priorities)
 
     if priorities.budget_max is not None:
-        affordable, unknown_cost, over = _budget_partition(packet, priorities.budget_max)
-        if not affordable:
-            detail = "No evaluated offer has a captured cost that fits that session budget."
-            if unknown_cost:
-                detail += (
-                    " Some offers have unknown cost, and unknown cost is not treated as affordable."
+        budget = _apply_budget(packet, priorities, current_best_id=current_best_id)
+        if budget is not None:
+            if budget.product_id != current_best_id and budget.status == "ok":
+                return _explain_change(
+                    packet,
+                    priorities,
+                    original_id=original_id,
+                    previous_id=current_best_id,
+                    chosen_id=budget.product_id,
+                    reasons=budget.reasons,
+                    evidence_ids=budget.evidence_ids,
+                    qualification=_compose_qualification(
+                        packet,
+                        snapshot,
+                        extra_unknowns=budget.material_unknowns,
+                        extra_reasons=budget.reasons,
+                        could_change=budget.could_change_recommendation,
+                    ),
                 )
-            if over:
-                detail += f" {len(over)} evaluated offer(s) exceed the stated budget."
             return _Selection(
                 product_id=current_best_id,
-                status="none_fit_constraint",
-                answer=(
-                    f"I applied your session budget of {priorities.budget_label or 'the new amount'}. "
-                    f"{detail} I did not search for other products or reprice these offers. "
-                    f"{current_name} remains the current session Best Piq."
+                status=budget.status if budget.status != "ok" else "recommendation_unchanged",
+                answer=budget.answer,
+                reasons=budget.reasons,
+                evidence_ids=budget.evidence_ids,
+                persist=budget.persist,
+                qualification=_compose_qualification(
+                    packet,
+                    snapshot,
+                    extra_unknowns=budget.material_unknowns,
+                    extra_reasons=budget.reasons,
+                    could_change=budget.could_change_recommendation,
+                    force_qualified=budget.status in {"none_fit_constraint", "insufficient_evidence"},
                 ),
-                reasons=(detail,),
-                evidence_ids=_price_evidence(packet),
-                persist=True,
-                qualification_state=qualification,
-            )
-        if current_best_id not in affordable:
-            chosen = _best_among(affordable, packet, priorities, snapshot)
-            return _explain_change(
-                packet,
-                priorities,
-                original_id=original_id,
-                previous_id=current_best_id,
-                chosen_id=chosen,
-                reasons=(
-                    f"{names.get(chosen, chosen)} fits the session budget "
-                    f"{priorities.budget_label or ''} from captured cost evidence.".strip(),
-                ),
-                evidence_ids=_price_evidence(packet),
-                qualification=qualification,
             )
 
     if priorities.required_features:
-        hard = _apply_required_features(packet, snapshot, priorities.required_features)
+        hard = _apply_required_features(
+            packet,
+            snapshot,
+            priorities.required_features,
+            current_best_id=current_best_id,
+        )
         if hard.status != "ok":
             return _Selection(
                 product_id=current_best_id,
@@ -775,7 +783,14 @@ def select_session_best(
                 reasons=hard.reasons,
                 evidence_ids=hard.evidence_ids,
                 persist=hard.persist,
-                qualification_state=qualification or "qualified",
+                qualification=_compose_qualification(
+                    packet,
+                    snapshot,
+                    extra_unknowns=hard.material_unknowns,
+                    extra_reasons=hard.reasons,
+                    could_change=hard.could_change_recommendation,
+                    force_qualified=True,
+                ),
             )
         if hard.product_id and hard.product_id != current_best_id:
             return _explain_change(
@@ -786,27 +801,62 @@ def select_session_best(
                 chosen_id=hard.product_id,
                 reasons=hard.reasons,
                 evidence_ids=hard.evidence_ids,
-                qualification=qualification,
+                qualification=_compose_qualification(
+                    packet,
+                    snapshot,
+                    extra_unknowns=hard.material_unknowns,
+                    extra_reasons=hard.reasons,
+                    could_change=hard.could_change_recommendation,
+                ),
             )
-
-    topic = priorities.top_priority or (priorities.use_case or "")
-    if topic:
-        comparison = _compare_attribute(packet, snapshot, topic)
-        if comparison.insufficient:
+        if hard.product_id == current_best_id:
             return _Selection(
                 product_id=current_best_id,
-                status="insufficient_evidence",
-                answer=(
-                    f"I understand {topic} matters more now, but I don't have enough captured "
-                    f"{topic} evidence across the evaluated options to reliably change the "
-                    f"Recommendation. {current_name} remains Best Piq for You. "
-                    "No additional research was started."
-                ),
-                reasons=(f"Insufficient captured {topic} evidence.",),
-                evidence_ids=comparison.evidence_ids,
+                status="recommendation_unchanged",
+                answer=hard.answer
+                or f"{current_name} already satisfies the required feature from captured evidence.",
+                reasons=hard.reasons,
+                evidence_ids=hard.evidence_ids,
                 persist=True,
-                qualification_state=qualification or "qualified",
+                qualification=_compose_qualification(
+                    packet,
+                    snapshot,
+                    extra_unknowns=hard.material_unknowns,
+                    extra_reasons=hard.reasons,
+                    could_change=hard.could_change_recommendation,
+                ),
             )
+
+    topics = _priority_topics(priorities)
+    last_comparison: _CompareResult | None = None
+    for index, topic in enumerate(topics):
+        comparison = _compare_attribute(packet, snapshot, topic)
+        last_comparison = comparison
+        if comparison.insufficient:
+            if index == 0:
+                return _Selection(
+                    product_id=current_best_id,
+                    status="insufficient_evidence",
+                    answer=(
+                        f"I understand {topic} matters more now, but I don't have enough captured "
+                        f"{topic} evidence across the evaluated options to reliably change the "
+                        f"Recommendation. {current_name} remains Best Piq for You. "
+                        "No additional research was started."
+                    ),
+                    reasons=(f"Insufficient captured {topic} evidence.",),
+                    evidence_ids=comparison.evidence_ids,
+                    persist=True,
+                    qualification=_compose_qualification(
+                        packet,
+                        snapshot,
+                        extra_unknowns=comparison.material_unknowns
+                        or (f"No captured {topic} evidence across the evaluated set.",),
+                        extra_reasons=(f"Insufficient captured {topic} evidence.",),
+                        could_change=False,
+                        force_qualified=True,
+                    ),
+                )
+            continue
         if comparison.winner_id and comparison.winner_id != current_best_id:
             return _explain_change(
                 packet,
@@ -816,8 +866,16 @@ def select_session_best(
                 chosen_id=comparison.winner_id,
                 reasons=comparison.reasons,
                 evidence_ids=comparison.evidence_ids,
-                qualification=qualification,
+                qualification=_compose_qualification(
+                    packet,
+                    snapshot,
+                    extra_unknowns=comparison.material_unknowns,
+                    extra_reasons=comparison.reasons[:1],
+                    could_change=comparison.could_change_recommendation,
+                ),
             )
+        if comparison.winner_id is None and index < len(topics) - 1:
+            continue
         return _Selection(
             product_id=current_best_id,
             status="recommendation_unchanged",
@@ -830,7 +888,12 @@ def select_session_best(
             or (f"{current_name} still best matches the updated {topic} priority.",),
             evidence_ids=comparison.evidence_ids or _recommendation_evidence(packet),
             persist=True,
-            qualification_state=qualification,
+            qualification=_compose_qualification(
+                packet,
+                snapshot,
+                extra_unknowns=comparison.material_unknowns,
+                could_change=comparison.could_change_recommendation,
+            ),
         )
 
     return _Selection(
@@ -843,7 +906,12 @@ def select_session_best(
         reasons=("No differentiating captured evidence for a switch.",),
         evidence_ids=_recommendation_evidence(packet),
         persist=True,
-        qualification_state=qualification,
+        qualification=_compose_qualification(
+            packet,
+            snapshot,
+            extra_unknowns=last_comparison.material_unknowns if last_comparison else (),
+            could_change=bool(last_comparison and last_comparison.could_change_recommendation),
+        ),
     )
 
 
@@ -856,7 +924,7 @@ def _explain_change(
     chosen_id: str,
     reasons: tuple[str, ...],
     evidence_ids: tuple[str, ...],
-    qualification: str | None,
+    qualification: SessionQualification | None,
 ) -> _Selection:
     names = {item.product_id: item.display_name for item in packet.offers}
     scores = {item.product_id: item.piqscore for item in packet.offers}
@@ -888,7 +956,7 @@ def _explain_change(
         reasons=reasons or (why,),
         evidence_ids=evidence_ids,
         persist=True,
-        qualification_state=qualification,
+        qualification=qualification,
     )
 
 
@@ -903,7 +971,7 @@ def _build_overlay(
     reasons: tuple[str, ...],
     evidence_ids: tuple[str, ...],
     now: datetime,
-    qualification_state: str | None = None,
+    qualification: SessionQualification | None = None,
 ) -> SessionRecommendationRefinement:
     original = (
         existing.original_best_piq_product_id
@@ -923,8 +991,8 @@ def _build_overlay(
         status=status,
         evidence_ids=evidence_ids,
         reasons=reasons,
-        qualification_state=qualification_state
-        or (snapshot.qualification.state if snapshot and snapshot.qualification else None),
+        qualification=qualification
+        or _compose_qualification(packet, snapshot),
         created_at=created,
         updated_at=now,
     )
@@ -966,42 +1034,149 @@ def _attribute_catalog(
     return catalog
 
 
-def _budget_partition(
+def _priority_topics(priorities: SessionPriorities) -> tuple[str, ...]:
+    ordered = (
+        *((priorities.top_priority,) if priorities.top_priority else ()),
+        *priorities.priorities,
+        *priorities.preferred_features,
+        *((priorities.use_case,) if priorities.use_case else ()),
+    )
+    skipped = set(priorities.deprioritized)
+    return tuple(item for item in dict.fromkeys(ordered) if item and item not in skipped)
+
+
+def _complete_cost(offer: Any) -> float | None:
+    if offer.price_amount is None:
+        return None
+    if offer.price_state not in _COMPLETE_COST_STATES:
+        return None
+    if offer.import_status in {"unknown", "unverified", "estimated"}:
+        return None
+    return offer.price_amount
+
+
+def _cost_unknown_reason(offer: Any) -> str | None:
+    name = offer.display_name
+    if offer.price_amount is None:
+        return f"{name} has no captured total cost."
+    if offer.price_state in _INCOMPLETE_COST_STATES:
+        return f"{name} is captured as {offer.price_label or offer.price_state}, not a complete buying cost."
+    if offer.import_status in {"unknown", "unverified", "estimated"}:
+        return f"{name} has material import uncertainty ({offer.import_status})."
+    return None
+
+
+@dataclass(frozen=True, slots=True)
+class _ConstraintResult:
+    status: RefinementStatus | Literal["ok"]
+    product_id: str
+    answer: str
+    reasons: tuple[str, ...]
+    evidence_ids: tuple[str, ...]
+    persist: bool
+    material_unknowns: tuple[str, ...] = ()
+    could_change_recommendation: bool = False
+
+
+def _apply_budget(
     packet: DecisionEvidencePacket,
-    budget_max: float,
-) -> tuple[list[str], list[str], list[str]]:
+    priorities: SessionPriorities,
+    *,
+    current_best_id: str,
+) -> _ConstraintResult | None:
+    if priorities.budget_max is None:
+        return None
+    budget = priorities.budget_max
+    label = priorities.budget_label or "the new amount"
     affordable: list[str] = []
     unknown: list[str] = []
     over: list[str] = []
+    unknown_reasons: list[str] = []
+    names = {item.product_id: item.display_name for item in packet.offers}
     for offer in packet.offers:
-        if offer.price_amount is None:
+        cost = _complete_cost(offer)
+        if cost is None:
             unknown.append(offer.product_id)
+            reason = _cost_unknown_reason(offer)
+            if reason:
+                unknown_reasons.append(reason)
             continue
-        if offer.price_amount <= budget_max:
+        if cost <= budget:
             affordable.append(offer.product_id)
         else:
             over.append(offer.product_id)
-    return affordable, unknown, over
-
-
-def _best_among(
-    product_ids: list[str],
-    packet: DecisionEvidencePacket,
-    priorities: SessionPriorities,
-    snapshot: CanonicalDecisionSnapshot | None,
-) -> str:
-    if priorities.top_priority:
-        comparison = _compare_attribute(packet, snapshot, priorities.top_priority)
-        if comparison.winner_id in product_ids:
-            return comparison.winner_id
-    known_prices = [
-        (item.price_amount, item.product_id)
-        for item in packet.offers
-        if item.product_id in product_ids and item.price_amount is not None
-    ]
-    if known_prices:
-        return min(known_prices)[1]
-    return product_ids[0]
+    current_name = names.get(current_best_id, "the current Best Piq")
+    if not affordable:
+        detail = "No evaluated offer has a captured complete cost that fits that session budget."
+        if unknown:
+            detail += (
+                " Unknown, estimated, before-shipping, or import-uncertain cost is not treated as affordable."
+            )
+        if over:
+            detail += f" {len(over)} evaluated offer(s) have a known complete cost above the budget."
+        return _ConstraintResult(
+            status="none_fit_constraint",
+            product_id=current_best_id,
+            answer=(
+                f"I applied your session budget of {label}. {detail} "
+                "I did not search for other products or reprice these offers. "
+                f"{current_name} remains the current session Best Piq."
+            ),
+            reasons=(detail, *unknown_reasons[:2]),
+            evidence_ids=_price_evidence(packet),
+            persist=True,
+            material_unknowns=tuple(unknown_reasons),
+            could_change_recommendation=bool(unknown),
+        )
+    if current_best_id in affordable:
+        extra = ""
+        if unknown:
+            extra = (
+                " Offers with incomplete or unknown cost were not treated as fitting the budget."
+            )
+        return _ConstraintResult(
+            status="ok",
+            product_id=current_best_id,
+            answer=(
+                f"I applied your session budget of {label}. {current_name} already has a captured "
+                f"final effective cost within that budget.{extra}"
+            ),
+            reasons=(f"{current_name} fits the session budget from captured complete cost.",),
+            evidence_ids=_price_evidence(packet),
+            persist=True,
+            material_unknowns=tuple(unknown_reasons),
+            could_change_recommendation=bool(unknown),
+        )
+    if len(affordable) == 1:
+        chosen = affordable[0]
+        return _ConstraintResult(
+            status="ok",
+            product_id=chosen,
+            answer="",
+            reasons=(
+                f"{names.get(chosen, chosen)} is the only evaluated offer with a captured "
+                f"final effective cost within {label}.",
+            ),
+            evidence_ids=_price_evidence(packet),
+            persist=True,
+            material_unknowns=tuple(unknown_reasons),
+            could_change_recommendation=bool(unknown),
+        )
+    return _ConstraintResult(
+        status="insufficient_evidence",
+        product_id=current_best_id,
+        answer=(
+            f"I applied your session budget of {label}. {current_name} exceeds that budget, "
+            f"and {len(affordable)} evaluated offers have captured complete costs that fit. "
+            "Those offers are not further distinguished by captured evidence, so I will not "
+            "invent a session Best Piq among them."
+        ),
+        reasons=("Multiple evaluated offers fit the session budget without further distinction.",),
+        evidence_ids=_price_evidence(packet),
+        persist=True,
+        material_unknowns=tuple(unknown_reasons),
+        could_change_recommendation=True,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -1012,13 +1187,18 @@ class _HardResult:
     reasons: tuple[str, ...]
     evidence_ids: tuple[str, ...]
     persist: bool
+    material_unknowns: tuple[str, ...] = ()
+    could_change_recommendation: bool = False
 
 
 def _apply_required_features(
     packet: DecisionEvidencePacket,
     snapshot: CanonicalDecisionSnapshot | None,
     features: tuple[str, ...],
+    *,
+    current_best_id: str,
 ) -> _HardResult:
+    names = {item.product_id: item.display_name for item in packet.offers}
     for feature in features:
         statuses = {
             offer.product_id: _feature_status(packet, snapshot, offer.product_id, feature)
@@ -1028,11 +1208,27 @@ def _apply_required_features(
         known_false = [pid for pid, status in statuses.items() if status == "false"]
         unknown = [pid for pid, status in statuses.items() if status == "unknown"]
         evidence_ids = _attribute_evidence(packet, snapshot, feature)
-        names = {item.product_id: item.display_name for item in packet.offers}
+        unknown_note = (
+            f"{len(unknown)} evaluated option(s) have unknown {feature} evidence. "
+            "Unknown is not treated as false and is not treated as confirmed true."
+        )
         if not known_true:
+            if known_false and not unknown:
+                return _HardResult(
+                    status="none_fit_constraint",
+                    product_id=current_best_id,
+                    answer=(
+                        f"I understand {feature} is required, but every evaluated option has "
+                        f"captured evidence that it does not support {feature}. "
+                        "I did not invent a session Best Piq that violates that requirement."
+                    ),
+                    reasons=(f"No evaluated option has captured {feature} support.",),
+                    evidence_ids=evidence_ids,
+                    persist=True,
+                )
             return _HardResult(
                 status="insufficient_evidence",
-                product_id=None,
+                product_id=current_best_id,
                 answer=(
                     f"I understand {feature} is required, but I don't have captured evidence "
                     f"that any evaluated option supports it. Unknown is not treated as false, "
@@ -1041,35 +1237,56 @@ def _apply_required_features(
                 reasons=(f"No captured true evidence for required {feature}.",),
                 evidence_ids=evidence_ids,
                 persist=True,
+                material_unknowns=(unknown_note,) if unknown else (),
+                could_change_recommendation=bool(unknown),
+            )
+        if current_best_id in known_true:
+            return _HardResult(
+                status="ok",
+                product_id=current_best_id,
+                answer=(
+                    f"{names.get(current_best_id, current_best_id)} already has captured "
+                    f"evidence of {feature} support."
+                    + (f" {unknown_note}" if unknown else "")
+                ),
+                reasons=(
+                    f"{names.get(current_best_id, current_best_id)} has captured {feature} support.",
+                    *(() if not unknown else (unknown_note,)),
+                ),
+                evidence_ids=evidence_ids,
+                persist=True,
+                material_unknowns=(unknown_note,) if unknown else (),
+                could_change_recommendation=False,
             )
         if len(known_true) == 1:
             chosen = known_true[0]
-            unknown_note = ""
-            if unknown:
-                unknown_note = (
-                    f" {len(unknown)} other evaluated option(s) have unknown {feature} evidence "
-                    "and were not treated as lacking the feature."
-                )
             return _HardResult(
                 status="ok",
                 product_id=chosen,
                 answer="",
                 reasons=(
                     f"{names.get(chosen, chosen)} has captured evidence of {feature} support.",
-                    *(() if not unknown_note else (unknown_note.strip(),)),
+                    *(() if not unknown else (unknown_note,)),
                 ),
                 evidence_ids=evidence_ids,
                 persist=True,
+                material_unknowns=(unknown_note,) if unknown else (),
+                could_change_recommendation=bool(unknown),
             )
-        if known_false:
-            return _HardResult(
-                status="ok",
-                product_id=known_true[0],
-                answer="",
-                reasons=(f"Required {feature} is captured as supported on {len(known_true)} options.",),
-                evidence_ids=evidence_ids,
-                persist=True,
-            )
+        return _HardResult(
+            status="insufficient_evidence",
+            product_id=current_best_id,
+            answer=(
+                f"I understand {feature} is required. {len(known_true)} evaluated options have "
+                f"captured support, and captured evidence does not distinguish them further. "
+                "I will not invent a session Best Piq among those confirmed options."
+            ),
+            reasons=(f"Multiple options have captured {feature} support without further distinction.",),
+            evidence_ids=evidence_ids,
+            persist=True,
+            material_unknowns=(unknown_note,) if unknown else (),
+            could_change_recommendation=True,
+        )
     return _HardResult(
         status="ok",
         product_id=None,
@@ -1086,6 +1303,8 @@ class _CompareResult:
     insufficient: bool
     reasons: tuple[str, ...]
     evidence_ids: tuple[str, ...]
+    material_unknowns: tuple[str, ...] = ()
+    could_change_recommendation: bool = False
 
 
 def _compare_attribute(
@@ -1094,130 +1313,271 @@ def _compare_attribute(
     topic: str,
 ) -> _CompareResult:
     if topic == "price":
-        priced = [
-            (item.price_amount, item.product_id, item.display_name)
-            for item in packet.offers
-            if item.price_amount is not None
-        ]
-        if len(priced) < 1:
-            return _CompareResult(
-                winner_id=None,
-                insufficient=True,
-                reasons=("No captured known cost is available to compare price.",),
-                evidence_ids=_price_evidence(packet),
-            )
-        priced.sort()
-        winner_amount, winner_id, winner_name = priced[0]
-        return _CompareResult(
-            winner_id=winner_id,
-            insufficient=False,
-            reasons=(
-                f"{winner_name} has the lowest captured known cost "
-                f"among evaluated offers with known prices.",
-            ),
-            evidence_ids=_price_evidence(packet),
-        )
+        return _compare_complete_cost(packet)
 
-    per_product: dict[str, list[tuple[int | None, str, str]]] = {
-        offer.product_id: [] for offer in packet.offers
-    }
-    evidence_ids: list[str] = []
     aliases = _attribute_catalog(packet, snapshot).get(topic, (topic,))
+    names = {item.product_id: item.display_name for item in packet.offers}
+    evidence_ids: list[str] = []
+    tradeoff_ids: list[str] = []
+    reason_ids: list[str] = []
+    known_ids: list[str] = []
+    boolean_true: list[str] = []
+    boolean_false: list[str] = []
+    unknown_ids: list[str] = []
+    known_facts: dict[str, str] = {}
 
     if snapshot is not None:
+        for item in snapshot.alternative_tradeoffs:
+            if _reason_prefers_topic(item.reason, topic, aliases):
+                evidence_ids.extend(item.evidence_ids)
+                tradeoff_ids.append(item.product_id)
+                known_facts.setdefault(item.product_id, item.reason)
+        for item in snapshot.recommendation_reasons:
+            related = (item.related_attribute or item.shopper_priority or "").lower()
+            if item.product_id and (
+                related == topic or _reason_prefers_topic(item.reason, topic, aliases)
+            ):
+                evidence_ids.extend(item.evidence_ids)
+                reason_ids.append(item.product_id)
+                known_facts.setdefault(item.product_id, item.reason)
+        for item in snapshot.best_for:
+            if any(alias in item.label.lower() for alias in aliases) or topic in item.label.lower():
+                evidence_ids.extend(item.evidence_ids)
         for product in snapshot.product_presentation:
             for attr in product.fit_attributes:
                 if attr.key.lower() != topic and attr.label.lower() not in aliases:
                     continue
                 evidence_ids.extend(attr.evidence_ids)
                 if attr.status == "unknown":
+                    unknown_ids.append(product.product_id)
                     continue
-                per_product[product.product_id].append(
-                    (_qualitative_rank(attr.value), attr.display_value(), "fit")
-                )
+                status = _boolean_from_text(attr.value)
+                if status == "true":
+                    boolean_true.append(product.product_id)
+                    known_ids.append(product.product_id)
+                    known_facts.setdefault(product.product_id, attr.display_value())
+                elif status == "false":
+                    boolean_false.append(product.product_id)
+                    known_ids.append(product.product_id)
+                    known_facts.setdefault(product.product_id, attr.display_value())
+                else:
+                    known_ids.append(product.product_id)
+                    known_facts.setdefault(product.product_id, attr.display_value())
         for item in snapshot.evidence:
-            if item.topic.lower() == topic or any(alias in item.fact.lower() for alias in aliases):
-                evidence_ids.append(item.evidence_id)
-                per_product.setdefault(item.product_id, []).append(
-                    (_qualitative_rank(item.fact), item.fact, "evidence")
-                )
-        for item in snapshot.alternative_tradeoffs:
-            if any(alias in item.reason.lower() for alias in aliases):
-                evidence_ids.extend(item.evidence_ids)
-                if "better" in item.reason.lower() or "if" in item.reason.lower():
-                    per_product.setdefault(item.product_id, []).append(
-                        (4, item.reason, "tradeoff")
-                    )
-        for item in snapshot.recommendation_reasons:
-            related = (item.related_attribute or item.shopper_priority or "").lower()
-            if related == topic or any(alias in item.reason.lower() for alias in aliases):
-                evidence_ids.extend(item.evidence_ids)
-                if item.product_id:
-                    per_product.setdefault(item.product_id, []).append(
-                        (5, item.reason, "reason")
-                    )
-        for item in snapshot.best_for:
-            if any(alias in item.label.lower() for alias in aliases):
-                evidence_ids.extend(item.evidence_ids)
-                best_id = snapshot.recommendation.best_piq_product_id
-                per_product.setdefault(best_id, []).append((5, item.label, "best_for"))
+            if item.topic.lower() != topic and not _reason_prefers_topic(
+                item.fact, topic, aliases
+            ):
+                continue
+            evidence_ids.append(item.evidence_id)
+            known_ids.append(item.product_id)
+            known_facts.setdefault(item.product_id, item.fact)
     else:
         for fact in packet.facts:
             blob = f"{fact.topic} {fact.fact}".lower()
-            if fact.topic.lower() == topic or any(alias in blob for alias in aliases):
-                evidence_ids.append(fact.evidence_id)
-                if fact.product_id:
-                    per_product.setdefault(fact.product_id, []).append(
-                        (_qualitative_rank(fact.fact), fact.fact, fact.topic)
-                    )
+            if fact.topic.lower() != topic and not any(alias in blob for alias in aliases):
+                continue
+            evidence_ids.append(fact.evidence_id)
+            if fact.product_id:
+                if fact.status == "unknown":
+                    unknown_ids.append(fact.product_id)
+                    continue
+                known_ids.append(fact.product_id)
+                known_facts.setdefault(fact.product_id, fact.fact)
         for offer in packet.offers:
-            for reason in offer.why_it_won:
-                if any(alias in reason.lower() for alias in aliases):
-                    per_product[offer.product_id].append((5, reason, "reason"))
-            if offer.alternative_reason and any(
-                alias in offer.alternative_reason.lower() for alias in aliases
+            if offer.alternative_reason and _reason_prefers_topic(
+                offer.alternative_reason, topic, aliases
             ):
-                per_product[offer.product_id].append((4, offer.alternative_reason, "tradeoff"))
+                tradeoff_ids.append(offer.product_id)
+                known_facts.setdefault(offer.product_id, offer.alternative_reason)
 
-    covered = {pid: rows for pid, rows in per_product.items() if rows}
-    if not covered:
+    tradeoff_ids = list(dict.fromkeys(tradeoff_ids))
+    reason_ids = list(dict.fromkeys(reason_ids))
+    known_ids = list(dict.fromkeys(known_ids))
+    boolean_true = list(dict.fromkeys(boolean_true))
+    boolean_false = list(dict.fromkeys(boolean_false))
+    missing = [
+        offer.product_id
+        for offer in packet.offers
+        if offer.product_id not in known_ids
+        and offer.product_id not in tradeoff_ids
+        and offer.product_id not in reason_ids
+        and offer.product_id not in boolean_true
+        and offer.product_id not in boolean_false
+    ]
+    unknown_ids = list(dict.fromkeys([*unknown_ids, *missing]))
+    unknown_note = (
+        tuple(
+            f"{names.get(pid, pid)} has no captured comparable {topic} evidence."
+            for pid in unknown_ids
+        )
+        if unknown_ids
+        else ()
+    )
+
+    if tradeoff_ids:
+        unique = list(dict.fromkeys(tradeoff_ids))
+        if len(unique) == 1:
+            chosen = unique[0]
+            return _CompareResult(
+                winner_id=chosen,
+                insufficient=False,
+                reasons=(
+                    known_facts.get(chosen)
+                    or f"Captured trade-off evidence prefers {names.get(chosen, chosen)} when {topic} matters more.",
+                ),
+                evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+                material_unknowns=unknown_note,
+                could_change_recommendation=bool(unknown_ids),
+            )
+        return _CompareResult(
+            winner_id=None,
+            insufficient=False,
+            reasons=(f"Captured {topic} trade-offs do not distinguish a single option.",),
+            evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+            material_unknowns=unknown_note,
+        )
+
+    if reason_ids:
+        unique = list(dict.fromkeys(reason_ids))
+        if len(unique) == 1:
+            chosen = unique[0]
+            return _CompareResult(
+                winner_id=chosen,
+                insufficient=False,
+                reasons=(
+                    known_facts.get(chosen)
+                    or f"Captured Recommendation reasoning selected {names.get(chosen, chosen)} for {topic}.",
+                ),
+                evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+                material_unknowns=unknown_note,
+                could_change_recommendation=bool(unknown_ids),
+            )
+
+    if boolean_true or boolean_false:
+        if len(boolean_true) == 1 and not (set(known_ids) - set(boolean_true) - set(boolean_false)):
+            chosen = boolean_true[0]
+            return _CompareResult(
+                winner_id=chosen,
+                insufficient=False,
+                reasons=(f"{names.get(chosen, chosen)} has captured {topic} support.",),
+                evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+                material_unknowns=unknown_note,
+                could_change_recommendation=bool(unknown_ids),
+            )
+        if boolean_true and not unknown_ids and len(set(boolean_true)) > 1:
+            return _CompareResult(
+                winner_id=None,
+                insufficient=False,
+                reasons=(f"Captured {topic} support does not distinguish the evaluated options.",),
+                evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+            )
+
+    if not known_ids and not reason_ids and not tradeoff_ids:
         return _CompareResult(
             winner_id=None,
             insufficient=True,
             reasons=(f"No captured {topic} evidence exists in this decision.",),
             evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+            material_unknowns=unknown_note or (f"No captured {topic} evidence.",),
         )
 
-    best_id = None
-    best_rank = None
-    reasons: list[str] = []
-    for product_id, rows in covered.items():
-        rank = max(row[0] if row[0] is not None else 1 for row in rows)
-        fact = rows[0][1]
-        name = next(
-            (item.display_name for item in packet.offers if item.product_id == product_id),
-            product_id,
+    unique_known = list(dict.fromkeys(known_ids))
+    if len(unique_known) == 1:
+        chosen = unique_known[0]
+        return _CompareResult(
+            winner_id=chosen,
+            insufficient=False,
+            reasons=(
+                known_facts.get(chosen)
+                or f"{names.get(chosen, chosen)} is the only evaluated option with captured {topic} evidence.",
+            ),
+            evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+            material_unknowns=unknown_note,
+            could_change_recommendation=True,
         )
-        reasons.append(f"{name}: {fact}")
-        if best_rank is None or rank > best_rank:
-            best_rank = rank
-            best_id = product_id
-        elif rank == best_rank and best_id != product_id:
-            return _CompareResult(
-                winner_id=None,
-                insufficient=False,
-                reasons=(
-                    f"Captured {topic} evidence does not distinguish the evaluated options.",
-                    *reasons,
-                ),
-                evidence_ids=tuple(dict.fromkeys(evidence_ids)),
-            )
+
     return _CompareResult(
-        winner_id=best_id,
-        insufficient=False,
-        reasons=tuple(reasons),
+        winner_id=None,
+        insufficient=True,
+        reasons=(
+            f"Captured {topic} values are not comparable under an approved contract, "
+            "so I will not invent an ordering."
+        ),
         evidence_ids=tuple(dict.fromkeys(evidence_ids)),
+        material_unknowns=unknown_note,
     )
+
+
+def _compare_complete_cost(packet: DecisionEvidencePacket) -> _CompareResult:
+    priced: list[tuple[float, str, str]] = []
+    unknown_notes: list[str] = []
+    for offer in packet.offers:
+        cost = _complete_cost(offer)
+        if cost is None:
+            reason = _cost_unknown_reason(offer)
+            if reason:
+                unknown_notes.append(reason)
+            continue
+        priced.append((cost, offer.product_id, offer.display_name))
+    if not priced:
+        return _CompareResult(
+            winner_id=None,
+            insufficient=True,
+            reasons=("No captured final effective cost is available to compare price.",),
+            evidence_ids=_price_evidence(packet),
+            material_unknowns=tuple(unknown_notes),
+            could_change_recommendation=bool(unknown_notes),
+        )
+    priced.sort()
+    lowest = priced[0][0]
+    winners = [item for item in priced if item[0] == lowest]
+    if len(winners) != 1:
+        return _CompareResult(
+            winner_id=None,
+            insufficient=False,
+            reasons=("Captured complete costs do not distinguish a single lowest-price offer.",),
+            evidence_ids=_price_evidence(packet),
+            material_unknowns=tuple(unknown_notes),
+        )
+    _, winner_id, winner_name = winners[0]
+    return _CompareResult(
+        winner_id=winner_id,
+        insufficient=False,
+        reasons=(
+            f"{winner_name} has the lowest captured final effective cost "
+            "among evaluated offers with complete known cost.",
+        ),
+        evidence_ids=_price_evidence(packet),
+        material_unknowns=tuple(unknown_notes),
+        could_change_recommendation=bool(unknown_notes),
+    )
+
+
+def _reason_prefers_topic(reason: str, topic: str, aliases: tuple[str, ...]) -> bool:
+    text = reason.lower()
+    for alias in (topic, *aliases):
+        if re.search(
+            rf"(?:better (?:if|for)|if|for)\s+{re.escape(alias)}\b",
+            text,
+        ):
+            return True
+        if re.search(
+            rf"\b{re.escape(alias)}\s+(?:matters more|is more important|is required|is now)",
+            text,
+        ):
+            return True
+    return False
+
+
+def _boolean_from_text(value: str) -> Literal["true", "false", "unknown"]:
+    text = value.strip().lower()
+    if text in {"unknown", ""}:
+        return "unknown"
+    if text in _BOOLEAN_FALSE or text.startswith("not supported") or text.startswith("unsupported"):
+        return "false"
+    if text in _BOOLEAN_TRUE:
+        return "true"
+    return "unknown"
 
 
 def _feature_status(
@@ -1238,58 +1598,64 @@ def _feature_status(
                     continue
                 if attr.status == "unknown":
                     return "unknown"
-                value = attr.value.lower()
-                if any(token in value for token in ("unsupported", "no", "false", "not supported")):
-                    return "false"
-                if any(token in value for token in ("supported", "yes", "true")):
-                    return "true"
-                return "true"
+                return _boolean_from_text(attr.value)
         for item in snapshot.evidence:
             if item.product_id != product_id:
                 continue
-            if item.topic.lower() == feature or any(alias in item.fact.lower() for alias in aliases):
-                fact = item.fact.lower()
-                if any(token in fact for token in ("unsupported", "does not", "no ")):
-                    return "false"
-                return "true"
+            if item.topic.lower() == feature:
+                return _boolean_from_text(item.fact)
     for fact in packet.facts:
         if fact.product_id != product_id:
             continue
-        blob = f"{fact.topic} {fact.fact}".lower()
-        if fact.topic.lower() == feature or any(alias in blob for alias in aliases):
+        if fact.topic.lower() == feature:
             if fact.status == "unknown":
                 return "unknown"
-            if any(token in blob for token in ("unsupported", "does not", "no ")):
-                return "false"
-            return "true"
+            return _boolean_from_text(fact.fact)
     return "unknown"
 
 
-def _qualitative_rank(value: str) -> int | None:
-    text = value.lower()
-    match = _NUMBER_RE.search(text)
-    number = float(match.group(1)) if match else None
-    for index, token in enumerate(_POSITIVE_RANK):
-        if token in text:
-            rank = len(_POSITIVE_RANK) - index
-            return int(rank + (number or 0))
-    if number is not None:
-        return int(number)
-    return 1
-
-
-def _session_qualification(
+def _compose_qualification(
     packet: DecisionEvidencePacket,
     snapshot: CanonicalDecisionSnapshot | None,
-    priorities: SessionPriorities,
-) -> str | None:
-    if packet.qualification_state == "qualified" or packet.is_qualified:
-        return "qualified"
+    *,
+    extra_unknowns: tuple[str, ...] = (),
+    extra_reasons: tuple[str, ...] = (),
+    could_change: bool = False,
+    force_qualified: bool = False,
+) -> SessionQualification:
+    reasons: list[str] = []
+    unknowns: list[str] = []
+    reverse = could_change
     if snapshot is not None and snapshot.qualification is not None:
-        return snapshot.qualification.state
-    if priorities.required_features or priorities.budget_max is not None:
-        return None
-    return packet.qualification_state
+        canonical = snapshot.qualification
+        unknowns.extend(canonical.material_unknowns)
+        if canonical.is_qualified:
+            reasons.extend(canonical.reasons)
+            reverse = reverse or canonical.could_change_recommendation
+    elif packet.is_qualified:
+        if packet.qualified_reason:
+            reasons.append(packet.qualified_reason)
+        unknowns.extend(packet.unknowns)
+        reverse = True
+    unknowns.extend(extra_unknowns)
+    reasons.extend(extra_reasons)
+    reasons = list(dict.fromkeys(item for item in reasons if item and item.strip()))
+    unknowns = list(dict.fromkeys(item for item in unknowns if item and item.strip()))
+    qualified = force_qualified or reverse or bool(unknowns) or (
+        snapshot is not None
+        and snapshot.qualification is not None
+        and snapshot.qualification.is_qualified
+    ) or packet.is_qualified
+    if qualified:
+        if not reasons and not unknowns:
+            reasons = ["Session priorities introduce material uncertainty."]
+        return SessionQualification(
+            state="qualified",
+            reasons=tuple(reasons),
+            material_unknowns=tuple(unknowns),
+            could_change_recommendation=reverse,
+        )
+    return SessionQualification(state="unqualified")
 
 
 def _recommendation_evidence(packet: DecisionEvidencePacket) -> tuple[str, ...]:

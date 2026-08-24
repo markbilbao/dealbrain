@@ -14,7 +14,10 @@ from app.consumer.decision_owner import OWNER_COOKIE, owner_cookie_payload
 from app.consumer.location import DeliveryContext
 from app.consumer.pages import render_page
 from app.consumer.pricing import MoneyComponent
-from app.consumer.session_overlay import apply_session_overlay_to_view
+from app.consumer.session_overlay import (
+    apply_session_overlay_to_packet,
+    apply_session_overlay_to_view,
+)
 from app.core.dependencies import get_shopping_decision_snapshot_repository
 from app.domain.entities.decision_presentation import (
     CanonicalAlternativeTradeoff,
@@ -849,3 +852,445 @@ async def test_http_owner_can_refine_and_pages_show_session_best() -> None:
         assert ask.status_code == 200
         assert ask.json()["action"] == "answer_from_evidence"
         assert "Bose" in ask.json()["answer"]
+
+
+def test_no_hidden_score_or_qualitative_ranker() -> None:
+    source = (ROOT / "app/services/refine_session_recommendation.py").read_text(encoding="utf-8")
+    assert "_qualitative_rank" not in source
+    assert "_POSITIVE_RANK" not in source
+    assert "Personal PiqScore" not in source
+    assert "adjusted piqscore" not in source.lower()
+    snapshot = _presentation()
+    result = compose_session_refinement("Comfort matters more.", packet_from_snapshot(snapshot), snapshot=snapshot)
+    scores = tuple(item.canonical_piqscore.value for item in snapshot.evaluated_products)
+    assert scores == (94.0, 91.0, 88.0)
+    assert "piqscore" not in (result.overlay.reasons[0].lower() if result.overlay and result.overlay.reasons else "")
+
+
+def test_incomparable_fit_text_does_not_invent_a_winner() -> None:
+    snapshot = _presentation(
+        alternative_tradeoffs=(),
+        recommendation_reasons=(),
+        product_presentation=(
+            CanonicalProductPresentation(
+                product_id=SONY_ID,
+                brand="Sony",
+                model="WH-1000XM5",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="comfort",
+                        label="Comfort",
+                        value="Excellent",
+                        status="known",
+                        evidence_ids=("session-comfort-bose",),
+                    ),
+                ),
+            ),
+            CanonicalProductPresentation(
+                product_id=BOSE_ID,
+                brand="Bose",
+                model="QuietComfort Ultra",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="comfort",
+                        label="Comfort",
+                        value="Good",
+                        status="known",
+                        evidence_ids=("session-comfort-bose",),
+                    ),
+                ),
+            ),
+            CanonicalProductPresentation(
+                product_id=SENN_ID,
+                brand="Sennheiser",
+                model="Momentum 4",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="comfort",
+                        label="Comfort",
+                        value="Fair",
+                        status="known",
+                        evidence_ids=("session-comfort-bose",),
+                    ),
+                ),
+            ),
+        ),
+    )
+    result = compose_session_refinement(
+        "Comfort matters more.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "insufficient_evidence"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == SONY_ID
+    assert "not comparable" in result.answer.lower() or "don't have enough" in result.answer.lower()
+
+
+def test_keyword_count_alone_does_not_win() -> None:
+    snapshot = _presentation(
+        alternative_tradeoffs=(),
+        recommendation_reasons=(),
+        product_presentation=(
+            CanonicalProductPresentation(
+                product_id=SONY_ID,
+                brand="Sony",
+                model="WH-1000XM5",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="comfort",
+                        label="Comfort",
+                        value="Known comfort comfort comfort",
+                        status="known",
+                        evidence_ids=("session-comfort-bose",),
+                    ),
+                ),
+            ),
+            CanonicalProductPresentation(
+                product_id=BOSE_ID,
+                brand="Bose",
+                model="QuietComfort Ultra",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="comfort",
+                        label="Comfort",
+                        value="Known",
+                        status="known",
+                        evidence_ids=("session-comfort-bose",),
+                    ),
+                ),
+            ),
+        ),
+    )
+    result = compose_session_refinement(
+        "Comfort matters more.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "insufficient_evidence"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == SONY_ID
+
+
+def test_tie_does_not_force_a_switch() -> None:
+    snapshot = _presentation(
+        alternative_tradeoffs=(
+            CanonicalAlternativeTradeoff(
+                product_id=BOSE_ID,
+                reason="Bose may be better if comfort matters more.",
+                evidence_ids=("session-comfort-bose",),
+            ),
+            CanonicalAlternativeTradeoff(
+                product_id=SONY_ID,
+                reason="Sony may be better if comfort matters more.",
+                evidence_ids=("session-comfort-bose",),
+            ),
+        )
+    )
+    result = compose_session_refinement(
+        "Comfort matters more.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "recommendation_unchanged"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == SONY_ID
+
+
+def test_hard_feature_true_unknown_false() -> None:
+    snapshot = _presentation()
+    result = compose_session_refinement(
+        "Multipoint is required.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == SONY_ID
+    assert result.status in {"recommendation_unchanged", "recommendation_changed"}
+    joined = " ".join(result.overlay.reasons) + result.answer
+    assert "unknown" in joined.lower()
+    assert result.overlay.qualification is not None
+    assert "unknown" in " ".join(result.overlay.qualification.material_unknowns).lower() or "unknown" in joined.lower()
+    assert result.overlay.session_best_piq_product_id != BOSE_ID
+
+
+def test_hard_feature_all_unknown_is_insufficient() -> None:
+    snapshot = _presentation(
+        product_presentation=(
+            CanonicalProductPresentation(
+                product_id=SONY_ID,
+                brand="Sony",
+                model="WH-1000XM5",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="multipoint",
+                        label="Multipoint",
+                        value="Unknown",
+                        status="unknown",
+                    ),
+                ),
+            ),
+            CanonicalProductPresentation(
+                product_id=BOSE_ID,
+                brand="Bose",
+                model="QuietComfort Ultra",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="multipoint",
+                        label="Multipoint",
+                        value="Unknown",
+                        status="unknown",
+                    ),
+                ),
+            ),
+            CanonicalProductPresentation(
+                product_id=SENN_ID,
+                brand="Sennheiser",
+                model="Momentum 4",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="multipoint",
+                        label="Multipoint",
+                        value="Unknown",
+                        status="unknown",
+                    ),
+                ),
+            ),
+        )
+    )
+    result = compose_session_refinement(
+        "Multipoint is required.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "insufficient_evidence"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == SONY_ID
+    assert "will not invent" in result.answer.lower() or "don't have captured evidence" in result.answer.lower()
+
+
+def test_budget_estimated_landed_cost_is_not_confirmed_affordable() -> None:
+    snapshot = attach_presentation_contract(
+        attach_offer_economics(
+            _base_snapshot(),
+            (
+                capture_offer_economics(
+                    offer_id="offer-sony",
+                    product_id=SONY_ID,
+                    listing=_money("listing", 19990),
+                    shipping=_money("shipping", 0),
+                    taxes=_money("tax", None, "not_applicable"),
+                    price_state="final_effective_cost",
+                    dominant_amount=19990,
+                    merchant="Captured Merchant A",
+                    provenance_source="captured-offer://merchant/sony",
+                ),
+                capture_offer_economics(
+                    offer_id="offer-bose",
+                    product_id=BOSE_ID,
+                    listing=_money("listing", 9000),
+                    shipping=_money("shipping", 0, "estimated"),
+                    taxes=_money("tax", None, "not_applicable"),
+                    price_state="estimated_landed_cost",
+                    dominant_amount=9000,
+                    merchant="Captured Merchant B",
+                    provenance_source="captured-offer://merchant/bose",
+                ),
+                capture_offer_economics(
+                    offer_id="offer-senn",
+                    product_id=SENN_ID,
+                    listing=_money("listing", 16990),
+                    shipping=_money("shipping", 0),
+                    taxes=_money("tax", None, "not_applicable"),
+                    price_state="final_effective_cost",
+                    dominant_amount=16990,
+                    merchant="Captured Merchant C",
+                    provenance_source="captured-offer://merchant/senn",
+                ),
+            ),
+            delivery=delivery_from_location(city="Taguig City", postal_code="1630", country="PH"),
+        )
+    )
+    result = compose_session_refinement(
+        "My budget is now ₱15,000.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "none_fit_constraint"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id != BOSE_ID
+    assert "estimated" in result.answer.lower() or "complete" in result.answer.lower()
+
+
+def test_budget_price_before_shipping_is_not_confirmed_affordable() -> None:
+    snapshot = _economics_snapshot(senn_amount=4000, senn_status="unknown")
+    result = compose_session_refinement(
+        "My budget is now ₱15,000.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id != SENN_ID
+    assert result.status in {"recommendation_changed", "recommendation_unchanged", "none_fit_constraint"}
+
+
+def test_budget_import_unknown_is_not_confirmed_affordable() -> None:
+    snapshot = attach_presentation_contract(
+        attach_offer_economics(
+            _base_snapshot(),
+            (
+                capture_offer_economics(
+                    offer_id="offer-sony",
+                    product_id=SONY_ID,
+                    listing=_money("listing", 19990),
+                    shipping=_money("shipping", 0),
+                    taxes=_money("tax", None, "not_applicable"),
+                    price_state="final_effective_cost",
+                    dominant_amount=19990,
+                    merchant="Captured Merchant A",
+                    provenance_source="captured-offer://merchant/sony",
+                ),
+                capture_offer_economics(
+                    offer_id="offer-bose",
+                    product_id=BOSE_ID,
+                    listing=_money("listing", 14990),
+                    shipping=_money("shipping", 0),
+                    taxes=_money("tax", None, "not_applicable"),
+                    import_charges=_money("import", None, "unknown"),
+                    price_state="final_effective_cost",
+                    dominant_amount=14990,
+                    merchant="Captured Merchant B",
+                    provenance_source="captured-offer://merchant/bose",
+                ),
+                capture_offer_economics(
+                    offer_id="offer-senn",
+                    product_id=SENN_ID,
+                    listing=_money("listing", 16990),
+                    shipping=_money("shipping", 0),
+                    taxes=_money("tax", None, "not_applicable"),
+                    price_state="final_effective_cost",
+                    dominant_amount=16990,
+                    merchant="Captured Merchant C",
+                    provenance_source="captured-offer://merchant/senn",
+                ),
+            ),
+            delivery=delivery_from_location(city="Taguig City", postal_code="1630", country="PH"),
+        )
+    )
+    result = compose_session_refinement(
+        "My budget is now ₱15,000.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id != BOSE_ID
+    assert "import" in result.answer.lower() or result.status == "none_fit_constraint"
+
+
+def test_session_qualification_complete_evidence_can_be_unqualified() -> None:
+    snapshot = _presentation(
+        qualification=CanonicalQualification(state="unqualified"),
+    )
+    result = compose_session_refinement(
+        "Comfort matters more.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "recommendation_changed"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == BOSE_ID
+    assert result.overlay.qualification is not None
+    assert result.overlay.qualification.state == "unqualified"
+    assert result.overlay.qualification.could_change_recommendation is False
+
+
+def test_session_qualification_when_unknown_could_reverse() -> None:
+    snapshot = _presentation(
+        qualification=CanonicalQualification(state="unqualified"),
+        alternative_tradeoffs=(),
+        recommendation_reasons=(),
+        product_presentation=(
+            CanonicalProductPresentation(
+                product_id=SONY_ID,
+                brand="Sony",
+                model="WH-1000XM5",
+                fit_attributes=(),
+            ),
+            CanonicalProductPresentation(
+                product_id=BOSE_ID,
+                brand="Bose",
+                model="QuietComfort Ultra",
+                fit_attributes=(
+                    CanonicalFitAttribute(
+                        key="warranty",
+                        label="Warranty",
+                        value="Supported",
+                        status="known",
+                        evidence_ids=("session-battery-senn",),
+                    ),
+                ),
+            ),
+            CanonicalProductPresentation(
+                product_id=SENN_ID,
+                brand="Sennheiser",
+                model="Momentum 4",
+                fit_attributes=(),
+            ),
+        ),
+    )
+    result = compose_session_refinement(
+        "Warranty is now most important.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "recommendation_changed"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == BOSE_ID
+    assert result.overlay.qualification is not None
+    assert result.overlay.qualification.state == "qualified"
+    assert result.overlay.qualification.could_change_recommendation is True
+    assert result.overlay.qualification.material_unknowns
+
+
+def test_session_qualification_too_weak_is_insufficient() -> None:
+    snapshot = _presentation(
+        qualification=CanonicalQualification(state="unqualified"),
+        alternative_tradeoffs=(),
+        recommendation_reasons=(),
+    )
+    result = compose_session_refinement(
+        "Microphone quality is now my #1 priority.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    assert result.status == "insufficient_evidence"
+    assert result.overlay is not None
+    assert result.overlay.session_best_piq_product_id == SONY_ID
+
+
+def test_cross_surface_uses_same_session_qualification() -> None:
+    snapshot = _presentation()
+    result = compose_session_refinement(
+        "Comfort matters more.",
+        packet_from_snapshot(snapshot),
+        snapshot=snapshot,
+    )
+    location = DeliveryContext()
+    views = [
+        apply_session_overlay_to_view(
+            page_view_from_snapshot(snapshot, page=page, session_location=location),
+            result.overlay,
+        )
+        for page in ("results", "compare", "why")
+    ]
+    assert {view.best_piq.product_id for view in views} == {BOSE_ID}
+    assert {view.qualification_state for view in views} == {"qualified"}
+    messages = {view.recommendation_qualified_message for view in views}
+    assert len(messages) == 1
+    assert all(view.canonical_piqscore_set_sha256 == snapshot.canonical_piqscore_set_sha256 for view in views)
+    assert result.overlay is not None
+    assert result.overlay.refinement_version == 1
+    packet = apply_session_overlay_to_packet(packet_from_snapshot(snapshot), result.overlay)
+    assert packet.best_piq_product_id == BOSE_ID
+    assert packet.qualification_state == "qualified"
+    assert any(item.evidence_id == "session-qualification" for item in packet.facts)

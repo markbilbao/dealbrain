@@ -92,14 +92,46 @@ Statuses:
 
 This is not a second PiqScore and not an LLM relevance score.
 
+`CanonicalFitAttribute` is category-flexible display evidence. It does **not**
+define a universal ordinal such as Excellent > Good, and 29.4B does not invent
+one. Numeric strings such as `30 hours` or `250 g` are not ordered unless a
+captured trade-off or boolean contract already says how they compare.
+
 The selector is a bounded evidence matcher:
 
-1. Hard required features: captured `true` may qualify a product; captured `false` excludes it; **unknown ≠ false**.
-2. Session budget: only known captured costs are compared. Unknown cost is not treated as affordable. If none fit, the overlay says so and does not invent a Best Piq that violates the constraint.
-3. Soft priorities: compare captured fit attributes, evidence topics, recommendation reasons, trade-offs, and best-for labels already on the snapshot.
-4. If the changed priority has no captured evidence across the set, return insufficient evidence. Do not research.
-5. If evidence does not differentiate, keep the current Best Piq and explain why.
-6. Affiliate commission is never consulted. `affiliate_influence` remains `false`.
+1. Hard required features: only captured boolean `true` / `false` / `unknown`.
+   Confirmed true may satisfy. Confirmed false is excluded. **Unknown is not
+   false and is not confirmed true.** Unknown cannot beat a confirmed-true
+   option. If no option is confirmed true, return insufficient evidence or
+   none-fit. If several are confirmed true without further captured
+   distinction, do not invent a winner.
+2. Session budget: only `final_effective_cost` with a known amount is a
+   confirmed complete cost. Estimated landed cost, price before shipping,
+   unverified import, and missing totals are unknown and are not treated as
+   affordable. One confirmed fit may be selected. Several confirmed fits
+   without further distinction are not ranked by price unless the shopper
+   asked for price and those amounts share the complete-cost contract.
+3. Soft priorities: a captured `alternative_tradeoff` that names the new
+   priority, or a captured Recommendation reason bound to that attribute, may
+   select a session Best Piq. One product with captured topic evidence and
+   unknown others may be a **qualified** session Recommendation. Two
+   incomparable fit values with no trade-off are insufficient. Keyword counts
+   and qualitative word ranks are not used.
+4. Ordered priorities: evaluate in order. Missing evidence on the top
+   priority is insufficient. A tie on an earlier priority may continue.
+5. Deprioritized attributes are ignored, not reverse-ranked.
+6. Reset restores the canonical Recommendation in session state only.
+7. Affiliate commission is never consulted. `affiliate_influence` remains `false`.
+
+## Session qualification
+
+Canonical qualification is historical and immutable.
+
+Session qualification lives on the overlay (`SessionQualification`). It may
+preserve remaining canonical material unknowns and add new unknowns created
+by the preference change. If those unknowns could reverse the session
+Recommendation, the session Best Piq is qualified. Results, Compare, Why, and
+Ask consume the same overlay qualification.
 
 ## Evidence and evaluated-set boundaries
 

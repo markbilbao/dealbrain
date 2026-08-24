@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
+from app.domain.entities.decision_presentation import QualificationState
+
 RefinementStatus = Literal[
     "recommendation_changed",
     "recommendation_unchanged",
@@ -132,6 +134,50 @@ class SessionPriorities:
 
 
 @dataclass(frozen=True, slots=True)
+class SessionQualification:
+    """Current-session Recommendation uncertainty. Does not mutate canonical qualification."""
+
+    state: QualificationState = "unqualified"
+    reasons: tuple[str, ...] = ()
+    material_unknowns: tuple[str, ...] = ()
+    could_change_recommendation: bool = False
+
+    def __post_init__(self) -> None:
+        if self.state not in {"unqualified", "qualified"}:
+            raise ValueError("session qualification state must be unqualified or qualified")
+        if any(not item.strip() for item in self.reasons):
+            raise ValueError("session qualification reasons must not contain empty values")
+        if any(not item.strip() for item in self.material_unknowns):
+            raise ValueError("session material unknowns must not contain empty values")
+        if self.state == "qualified" and not self.reasons and not self.material_unknowns:
+            raise ValueError(
+                "qualified session Recommendation requires a reason or material unknown"
+            )
+
+    @property
+    def is_qualified(self) -> bool:
+        return self.state == "qualified"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "state": self.state,
+            "reasons": list(self.reasons),
+            "material_unknowns": list(self.material_unknowns),
+            "could_change_recommendation": self.could_change_recommendation,
+        }
+
+    def message(self) -> str | None:
+        if not self.is_qualified:
+            return None
+        parts = list(self.reasons)
+        if self.material_unknowns:
+            parts.append("Material unknown: " + "; ".join(self.material_unknowns))
+        if self.could_change_recommendation:
+            parts.append("This unknown could materially change the Recommendation.")
+        return " ".join(parts) if parts else "This is a qualified session Best Piq for You."
+
+
+@dataclass(frozen=True, slots=True)
 class SessionRecommendationRefinement:
     """Authoritative server-side session overlay for one owned decision."""
 
@@ -145,10 +191,14 @@ class SessionRecommendationRefinement:
     status: RefinementStatus
     evidence_ids: tuple[str, ...] = ()
     reasons: tuple[str, ...] = ()
-    qualification_state: str | None = None
+    qualification: SessionQualification | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
     conversation_id: str | None = None
+
+    @property
+    def qualification_state(self) -> str | None:
+        return self.qualification.state if self.qualification is not None else None
 
     def __post_init__(self) -> None:
         if not self.decision_id:
@@ -174,6 +224,9 @@ class SessionRecommendationRefinement:
                 "priorities": self.priorities.to_dict(),
                 "recommendation_changed": self.recommendation_changed,
                 "status": self.status,
+                "qualification": (
+                    self.qualification.to_dict() if self.qualification is not None else None
+                ),
             }
         )
 
@@ -189,6 +242,7 @@ class SessionRecommendationRefinement:
             "status": self.status,
             "evidence_ids": list(self.evidence_ids),
             "reasons": list(self.reasons),
+            "qualification": self.qualification.to_dict() if self.qualification else None,
             "qualification_state": self.qualification_state,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
