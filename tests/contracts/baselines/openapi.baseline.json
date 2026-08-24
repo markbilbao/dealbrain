@@ -14561,6 +14561,17 @@
             "title": "Mode",
             "type": "string"
           },
+          "original_best_piq_product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Best Piq Product Id"
+          },
           "personal_recommendation": {
             "anyOf": [
               {
@@ -14599,6 +14610,28 @@
           "query": {
             "title": "Query",
             "type": "string"
+          },
+          "recommendation_changed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Changed"
+          },
+          "session_best_piq_product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Best Piq Product Id"
           },
           "top_recommendation": {
             "anyOf": [

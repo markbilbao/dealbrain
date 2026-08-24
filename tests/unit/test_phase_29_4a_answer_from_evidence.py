@@ -377,13 +377,14 @@ def test_import_unverified_is_not_complete_landed_cost() -> None:
     assert "zero" not in result.answer.lower() or "not treated as zero" in result.answer.lower()
 
 
-def test_phase_29_4b_and_29_4c_remain_unimplemented() -> None:
+def test_phase_29_4c_remains_unimplemented() -> None:
     source = (ROOT / "app/services/answer_from_evidence.py").read_text(encoding="utf-8")
+    refine = (ROOT / "app/services/refine_session_recommendation.py").read_text(encoding="utf-8")
     js = (ROOT / "app/static/consumer/js/consumer.js").read_text(encoding="utf-8")
-    assert "def refine_session_recommendation" not in source
     assert "def propose_research" not in source
-    assert "refine_session_recommendation" not in js
+    assert "def propose_research" not in refine
     assert "propose_research" not in js
+    assert "refine_session_recommendation" not in js
     assert "answer_from_evidence" not in js
 
 

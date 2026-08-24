@@ -693,7 +693,7 @@ def test_sql_latest_for_owner_is_owner_bound(tmp_path: Path) -> None:
     engine.dispose()
 
 
-def test_refine_and_propose_remain_absent() -> None:
+def test_propose_research_remains_absent() -> None:
     source = (ROOT / "app/consumer/canonical_presentation.py").read_text(encoding="utf-8")
     routes = (ROOT / "app/api/consumer.py").read_text(encoding="utf-8")
     js = (ROOT / "app/static/consumer/js/consumer.js").read_text(encoding="utf-8")

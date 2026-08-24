@@ -663,7 +663,7 @@ def test_missing_qualification_is_not_explicit_unqualified() -> None:
     )
 
 
-def test_refine_and_propose_remain_absent() -> None:
+def test_propose_research_remains_absent() -> None:
     source = (ROOT / "app/services/canonical_presentation_contract.py").read_text()
     adapter = (ROOT / "app/consumer/canonical_presentation.py").read_text()
     js = (ROOT / "app/static/consumer/js/consumer.js").read_text()

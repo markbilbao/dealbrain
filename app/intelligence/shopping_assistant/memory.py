@@ -259,6 +259,35 @@ class InMemoryConversationRepository(ConversationRepository):
                 del self._store[key]
             return len(expired)
 
+    def find_bound_for_owner(
+        self,
+        owner: ConversationOwner,
+        decision_id: str,
+    ) -> ConversationContext | None:
+        with self._lock:
+            matches: list[ConversationContext] = []
+            for context in self._store.values():
+                if self._is_expired(context):
+                    continue
+                if context.owner is None or not context.owner.has_same_identity(owner):
+                    continue
+                if context.decision_context is None:
+                    continue
+                if context.decision_context.decision_id != decision_id:
+                    continue
+                matches.append(context)
+            if not matches:
+                return None
+            matches.sort(
+                key=lambda item: (
+                    item.session_refinement.refinement_version
+                    if item.session_refinement is not None
+                    else 0,
+                    item.persistence_version,
+                )
+            )
+            return matches[-1]
+
     def _is_expired(self, context: ConversationContext) -> bool:
         now = self._clock()
         return context.expires_at <= now or (

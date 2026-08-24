@@ -77,7 +77,10 @@ and `schemas/sprint29-decision-context.schema.json`.
 Every follow-up resolves to exactly one server-selected action:
 
 1. `answer_from_evidence`
-2. `refine_session_recommendation`
+2. `refine_session_recommendation` — implemented in Phase 29.4B as a
+   session-level overlay. See
+   [`PHASE_29_4B_SESSION_RECOMMENDATION_REFINEMENT.md`](PHASE_29_4B_SESSION_RECOMMENDATION_REFINEMENT.md).
+   Canonical snapshots stay immutable. `propose_research` remains unimplemented.
 3. `propose_research`
 
 The client may render the returned action but must not choose it, calculate a

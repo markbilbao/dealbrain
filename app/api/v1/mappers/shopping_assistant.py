@@ -151,4 +151,7 @@ def to_assistant_response(
         action=response.processing.get("action"),
         answer_status=response.processing.get("answer_status"),
         decision_id=response.processing.get("decision_id"),
+        session_best_piq_product_id=response.processing.get("session_best_piq_product_id"),
+        original_best_piq_product_id=response.processing.get("original_best_piq_product_id"),
+        recommendation_changed=response.processing.get("recommendation_changed"),
     )

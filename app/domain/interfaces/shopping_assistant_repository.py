@@ -87,6 +87,14 @@ class ConversationRepository(ABC):
     def cleanup_expired(self, *, limit: int = 100) -> int:
         """Remove at most ``limit`` expired conversations; return count removed."""
 
+    @abstractmethod
+    def find_bound_for_owner(
+        self,
+        owner: ConversationOwner,
+        decision_id: str,
+    ) -> ConversationContext | None:
+        """Return the latest active conversation bound to this owner and decision."""
+
 
 class ShoppingExplanationProvider(ABC):
     """Provider-neutral port for narrative explanation over structured evidence.

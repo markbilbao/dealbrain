@@ -16,6 +16,7 @@ from uuid import uuid4
 from app.consumer.location import DeliveryContext
 from app.consumer.presentation import build_page_view
 from app.consumer.pricing import PRICE_STATE_LABELS, format_php
+from app.consumer.session_overlay import apply_session_overlay_to_packet
 from app.domain.entities.decision_snapshot import CanonicalDecisionSnapshot
 from app.domain.entities.shopping_assistant import (
     AssistantConfidence,
@@ -149,6 +150,20 @@ class AnswerFromEvidenceService:
             snapshot=snapshot,
             page=page,  # type: ignore[arg-type]
         )
+        overlay = None
+        if self._conversations is not None:
+            if conversation_id:
+                bound = (
+                    self._conversations.get_for_owner(str(conversation_id), owner)
+                    if owner is not None
+                    else self._conversations.get(str(conversation_id))
+                )
+                overlay = bound.session_refinement if bound is not None else None
+            if overlay is None and owner is not None:
+                bound = self._conversations.find_bound_for_owner(owner, packet.decision_id)
+                overlay = bound.session_refinement if bound is not None else None
+        if overlay is not None:
+            packet = apply_session_overlay_to_packet(packet, overlay)
         before_digest = resolved_snapshot.content_sha256 if resolved_snapshot else None
         before_rec = resolved_snapshot.recommendation.snapshot_sha256 if resolved_snapshot else None
         before_scores = (
@@ -440,6 +455,10 @@ def classify_question(question: str, packet: DecisionEvidencePacket) -> Question
             "why did sony",
             "why did bose",
             "why this recommendation",
+            "why did you switch",
+            "why are you still",
+            "why didn't it change",
+            "why didnt it change",
         )
     ):
         return "recommendation"
@@ -823,10 +842,27 @@ def _answer_recommendation(question: str, packet: DecisionEvidencePacket) -> Evi
     )
     if mentioned_alt and mentioned_alt.alternative_reason:
         alt = f" {mentioned_alt.display_name} was not selected: {mentioned_alt.alternative_reason}"
+    session = next(
+        (item.fact for item in packet.facts if item.evidence_id == "session-current-best"),
+        "",
+    )
+    historical = next(
+        (item.fact for item in packet.facts if item.evidence_id == "session-original-best"),
+        "",
+    )
+    session_note = ""
+    if session:
+        session_note = f" {session}"
+        if historical:
+            session_note += f" {historical}"
+        if "why did you switch" in question.lower() or "why are you still" in question.lower():
+            session_note += " " + " ".join(
+                item.fact for item in packet.facts if item.evidence_id.startswith("session-reason:")
+            )
     return EvidenceAnswerResult(
         answer=(
             f"{best.display_name} is Best Piq for You from the evaluated offers.{extra}{alt}"
-            f"{qualified} PiqScore itself is not personalized."
+            f"{session_note}{qualified} PiqScore itself is not personalized."
         ).strip(),
         status="partially_answered" if packet.is_qualified else "answered",
         evidence_ids=_cite(*facts[:6]) or ("recommendation",),
