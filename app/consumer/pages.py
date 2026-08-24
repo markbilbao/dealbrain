@@ -446,9 +446,7 @@ def _compare_product(card: ProductCardView, view: DecisionPageView) -> str:
 
 
 def _compare_table(title: str, rows, view: DecisionPageView) -> str:
-    head = "".join(
-        f"<th scope='col'>{h(card.identity_name)}</th>" for card in view.compared
-    )
+    head = "".join(f"<th scope='col'>{h(card.identity_name)}</th>" for card in view.compared)
     if not rows:
         return f"""
     <section class="compare-table-wrap">
