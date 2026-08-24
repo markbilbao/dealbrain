@@ -57,9 +57,14 @@ Canonical pages display the decision-time destination. A later session cookie
 for a different city does not rewrite economics or Recommendation. A minimal
 note may say the current session location differs.
 
+Schema 1.2 snapshots may also carry qualification, shopper context, product
+identity, fit attributes, outbound offer URLs, and Recommendation reasoning.
+See [`CANONICAL_DECISION_PRESENTATION_CONTRACT.md`](CANONICAL_DECISION_PRESENTATION_CONTRACT.md).
+Older 1.0/1.1 snapshots continue to degrade without fixture backfill.
+
 ## Remaining metadata gaps
 
-Canonical Phase 29.3 products currently carry `display_name` and `variant` only.
+Schema 1.0/1.1 products currently carry `display_name` and `variant` only.
 The adapter does not invent:
 
 - product images

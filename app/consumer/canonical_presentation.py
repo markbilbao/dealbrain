@@ -37,6 +37,7 @@ from app.consumer.view_models import (
     WhySectionView,
     WhyVariant,
 )
+from app.domain.entities.decision_presentation import CanonicalProductPresentation
 from app.domain.entities.decision_snapshot import (
     CanonicalDecisionSnapshot,
     EvaluatedProductSnapshot,
@@ -81,10 +82,16 @@ def page_view_from_snapshot(
         card for card in cards if card.product_id == snapshot.recommendation.best_piq_product_id
     )
     alternatives = tuple(card for card in cards if not card.is_best_piq)
+    qualified = snapshot.qualification.is_qualified if snapshot.qualification else False
+    qualified_message = _qualified_message(snapshot)
     why_variant: WhyVariant = (
-        "score_diff"
-        if highest.product_id != snapshot.recommendation.best_piq_product_id
-        else "standard"
+        "qualified"
+        if qualified
+        else (
+            "score_diff"
+            if highest.product_id != snapshot.recommendation.best_piq_product_id
+            else "standard"
+        )
     )
     sources = _sources_from_snapshot(snapshot)
     unknowns = _unknowns_from_snapshot(snapshot, session_differs, session_location)
@@ -108,17 +115,7 @@ def page_view_from_snapshot(
         highest_piqscore_product_id=highest.product_id,
         highest_piqscore_name=highest.display_name,
         recommendation_decision=snapshot.recommendation.decision,
-        shopper=ShopperContextView(
-            budget_label="Not captured",
-            top_priority="Not captured",
-            use_case="Not captured",
-            delivery_label=historical.display_place or "Not set",
-            urgency="Not captured",
-            why_this_fits=(
-                f"{best.brand} {best.model}".strip()
-                + " is the canonical Best Piq for You in this decision."
-            ),
-        ),
+        shopper=_shopper_from_snapshot(snapshot, historical, best),
         affiliate_disclosure=AFFILIATE_DISCLOSURE,
         freshness_disclaimer=FRESHNESS_DISCLAIMER,
         data_classification=snapshot.data_classification,
@@ -127,9 +124,9 @@ def page_view_from_snapshot(
         sources=sources,
         why_sections=_why_sections_from_snapshot(snapshot, cards, historical, unknowns, sources),
         ask_placeholder=_ask_placeholder(page),
-        ask_suggestions=_canonical_ask_suggestions(cards),
+        ask_suggestions=_canonical_ask_suggestions(snapshot),
         compare_pay_rows=_pay_rows_from_cards(cards, historical),
-        compare_fit_rows=_unknown_fit_rows(cards),
+        compare_fit_rows=_fit_rows_from_snapshot(snapshot, cards),
         canonical_piqscore_set_sha256=snapshot.canonical_piqscore_set_sha256,
         recommendation_snapshot_sha256=snapshot.recommendation.snapshot_sha256,
         geocode_available=False,
@@ -139,10 +136,13 @@ def page_view_from_snapshot(
         data_unavailable=False,
         unavailable_message=None,
         destination_snapshot_known=historical.is_known,
-        recommendation_qualified_message=None,
+        recommendation_qualified_message=qualified_message,
         session_location_differs=session_differs,
         session_location_label=session_location.display_place or None,
         presentation_mode="canonical",
+        qualification_state=(
+            snapshot.qualification.state if snapshot.qualification is not None else None
+        ),
     )
 
 
@@ -166,13 +166,6 @@ def _session_differs(historical: DeliveryContext, session: DeliveryContext) -> b
     return historical.destination_key != session.destination_key
 
 
-def _split_display_name(display_name: str) -> tuple[str, str]:
-    parts = display_name.strip().split(None, 1)
-    if len(parts) == 2:
-        return parts[0], parts[1]
-    return "", display_name
-
-
 def _card_from_product(
     product: EvaluatedProductSnapshot,
     *,
@@ -181,7 +174,8 @@ def _card_from_product(
     highest_id: str,
     historical: DeliveryContext,
 ) -> ProductCardView:
-    brand, model = _split_display_name(product.display_name)
+    presentation = _product_presentation(snapshot, product.product_id)
+    brand, model = _captured_identity(presentation)
     listing = MoneyComponent(kind="listing", label="Listing price", amount=None, status="unknown")
     shipping = MoneyComponent(kind="shipping", label="Shipping", amount=None, status="unknown")
     taxes = MoneyComponent(kind="tax", label="Taxes / duties", amount=None, status="unknown")
@@ -217,17 +211,17 @@ def _card_from_product(
                 applies=shipping.applies,
             )
     dest = historical.display_place if historical.is_known else "the decision destination"
-    why_won = _why_won_from_evidence(snapshot, product.product_id)
-    alt_reason = ""
-    if product.product_id != snapshot.recommendation.best_piq_product_id:
+    why_won = _why_won_from_snapshot(snapshot, product.product_id)
+    alt_reason = _tradeoff_for(snapshot, product.product_id)
+    if not alt_reason and product.product_id != snapshot.recommendation.best_piq_product_id:
         alt_reason = "This offer is in the evaluated set and was not selected as Best Piq."
     return ProductCardView(
         product_id=product.product_id,
         brand=brand,
         model=model,
-        category="",
+        category=presentation.category if presentation and presentation.category else "",
         merchant=merchant,
-        offer_url="",
+        offer_url=presentation.offer_url if presentation and presentation.offer_url else "",
         image_key="",
         tags=(),
         piqscore=PiqScoreView(
@@ -258,13 +252,18 @@ def _card_from_product(
         ),
         is_best_piq=product.product_id == snapshot.recommendation.best_piq_product_id,
         is_highest_piqscore=product.product_id == highest_id,
-        is_qualified=False,
+        is_qualified=bool(
+            snapshot.qualification
+            and snapshot.qualification.is_qualified
+            and product.product_id == snapshot.recommendation.best_piq_product_id
+        ),
         alternative_badge=None,
         alternative_reason=alt_reason,
         compact_breakdown=_compact_from_components(listing, voucher, shipping),
         why_it_won=why_won,
         freshness_label=freshness,
         origin_label=dest if historical.is_known else None,
+        display_name=product.display_name,
     )
 
 
@@ -312,11 +311,83 @@ def _compact_from_components(
     return " · ".join(parts)
 
 
-def _why_won_from_evidence(
+def _product_presentation(
+    snapshot: CanonicalDecisionSnapshot,
+    product_id: str,
+) -> CanonicalProductPresentation | None:
+    return next(
+        (item for item in snapshot.product_presentation if item.product_id == product_id),
+        None,
+    )
+
+
+def _captured_identity(
+    presentation: CanonicalProductPresentation | None,
+) -> tuple[str, str]:
+    if presentation is None:
+        return "", ""
+    return presentation.brand or "", presentation.model or ""
+
+
+def _why_won_from_snapshot(
     snapshot: CanonicalDecisionSnapshot,
     product_id: str,
 ) -> tuple[str, ...]:
+    reasons = tuple(
+        item.reason
+        for item in snapshot.recommendation_reasons
+        if item.product_id in {None, product_id}
+    )
+    if reasons:
+        return reasons[:3]
     return tuple(item.fact for item in snapshot.evidence if item.product_id == product_id)[:3]
+
+
+def _tradeoff_for(snapshot: CanonicalDecisionSnapshot, product_id: str) -> str:
+    return next(
+        (item.reason for item in snapshot.alternative_tradeoffs if item.product_id == product_id),
+        "",
+    )
+
+
+def _shopper_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+    historical: DeliveryContext,
+    best: ProductCardView,
+) -> ShopperContextView:
+    context = snapshot.shopper_context
+    why_fits = f"{best.identity_name} is the canonical Best Piq for You in this decision."
+    if snapshot.recommendation_reasons:
+        why_fits = snapshot.recommendation_reasons[0].reason
+    if context is None:
+        return ShopperContextView(
+            budget_label="Not captured",
+            top_priority="Not captured",
+            use_case="Not captured",
+            delivery_label=historical.display_place or "Not set",
+            urgency="Not captured",
+            why_this_fits=why_fits,
+        )
+    return ShopperContextView(
+        budget_label=context.budget_label or "Not captured",
+        top_priority=context.top_priority or "Not captured",
+        use_case=context.use_case or "Not captured",
+        delivery_label=historical.display_place or "Not set",
+        urgency=context.urgency or "Not captured",
+        why_this_fits=why_fits,
+    )
+
+
+def _qualified_message(snapshot: CanonicalDecisionSnapshot) -> str | None:
+    qualification = snapshot.qualification
+    if qualification is None or not qualification.is_qualified:
+        return None
+    parts = list(qualification.reasons)
+    if qualification.material_unknowns:
+        parts.append("Material unknown: " + "; ".join(qualification.material_unknowns))
+    if qualification.could_change_recommendation:
+        parts.append("This unknown could materially change the Recommendation.")
+    return " ".join(parts) if parts else "This is a qualified Best Piq for You."
 
 
 def _sources_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> tuple[SourceView, ...]:
@@ -354,6 +425,10 @@ def _unknowns_from_snapshot(
         for unknown in offer.unknowns:
             if unknown not in items:
                 items.append(unknown)
+    if snapshot.qualification is not None:
+        for unknown in snapshot.qualification.material_unknowns:
+            if unknown not in items:
+                items.append(unknown)
     if not snapshot.offer_economics:
         items.append("Offer economics were not captured in this decision snapshot.")
     if session_differs and session_location.display_place:
@@ -378,18 +453,20 @@ def _why_sections_from_snapshot(
     best = next(card for card in cards if card.is_best_piq)
     delivery = historical.display_place or "the captured destination"
     rec = snapshot.recommendation.decision
-    narrative = (
-        f"{best.brand} {best.model}".strip() + f" is Best Piq for You from the evaluated offers. "
-        f"The canonical Recommendation is {rec}."
-    )
+    if snapshot.recommendation_reasons:
+        narrative = " ".join(item.reason for item in snapshot.recommendation_reasons)
+    else:
+        narrative = (
+            f"{best.identity_name} is Best Piq for You from the evaluated offers. "
+            f"The canonical Recommendation is {rec}."
+        )
     if best.product_id != snapshot.evaluated_products[0].product_id or any(
         card.is_highest_piqscore and not card.is_best_piq for card in cards
     ):
         highest = next(card for card in cards if card.is_highest_piqscore)
         narrative += (
-            f" {highest.brand} {highest.model}".strip()
-            + " has the higher objective PiqScore. PiqScore evaluates the offer; "
-            "Best Piq for You reflects what best fits the shopper."
+            f" {highest.identity_name} has the higher objective PiqScore. "
+            "PiqScore evaluates the offer; Best Piq for You reflects what best fits the shopper."
         )
     know_bullets: list[tuple[str, str]] = []
     if best.economics.dominant_amount is not None:
@@ -416,23 +493,44 @@ def _why_sections_from_snapshot(
         )
     for item in snapshot.evidence[:4]:
         know_bullets.append(("check", item.fact))
-    alts = [
-        f"{card.brand} {card.model}".strip() + " remains an evaluated alternative."
-        for card in cards
-        if not card.is_best_piq
-    ]
+    if snapshot.alternative_tradeoffs:
+        alts = [item.reason for item in snapshot.alternative_tradeoffs]
+    else:
+        alts = [
+            f"{card.identity_name} remains an evaluated alternative."
+            for card in cards
+            if not card.is_best_piq
+        ]
     if not alts:
         alts = ["No alternative products were captured in this decision."]
+    if snapshot.best_for:
+        best_for = tuple(("check", item.label) for item in snapshot.best_for)
+    else:
+        best_for = (
+            (
+                "check",
+                "Shopper priorities were not captured as structured fields on this snapshot.",
+            ),
+        )
+    why_bullets: list[tuple[str, str]] = [
+        ("priority", f"Recommendation: {rec}"),
+        ("delivery", f"Delivery to: {delivery}"),
+        ("check", f"Best Piq: {best.identity_name}"),
+    ]
+    if snapshot.shopper_context and snapshot.shopper_context.top_priority:
+        why_bullets.append(("priority", f"Top priority: {snapshot.shopper_context.top_priority}"))
+    if snapshot.shopper_context and snapshot.shopper_context.budget_label:
+        why_bullets.append(("budget", f"Budget: {snapshot.shopper_context.budget_label}"))
     return (
         WhySectionView(
             number=1,
             title="Why PiqSavi recommends this",
             narrative=narrative,
-            bullets=(
-                ("priority", f"Recommendation: {rec}"),
-                ("delivery", f"Delivery to: {delivery}"),
-                ("check", f"Best Piq: {best.brand} {best.model}".strip()),
-            ),
+            bullets=tuple(why_bullets),
+            callout=_qualified_message(snapshot),
+            callout_tone="warn"
+            if snapshot.qualification and snapshot.qualification.is_qualified
+            else "info",
         ),
         WhySectionView(
             number=2,
@@ -444,12 +542,7 @@ def _why_sections_from_snapshot(
             number=3,
             title="Best for",
             narrative="",
-            bullets=(
-                (
-                    "check",
-                    "Shopper priorities were not captured as structured fields on this snapshot.",
-                ),
-            ),
+            bullets=best_for,
         ),
         WhySectionView(
             number=4,
@@ -478,13 +571,22 @@ def _why_sections_from_snapshot(
     )
 
 
-def _canonical_ask_suggestions(cards: tuple[ProductCardView, ...]) -> tuple[str, ...]:
-    return (
+def _canonical_ask_suggestions(snapshot: CanonicalDecisionSnapshot) -> tuple[str, ...]:
+    suggestions = [
         "What price did you evaluate?",
         "Does this include shipping?",
         "Which merchant is this?",
         "What don’t you know?",
-    )
+    ]
+    if snapshot.shopper_context is not None:
+        suggestions.insert(0, "What was my top priority?")
+    if snapshot.qualification is not None:
+        suggestions.insert(1, "Why is this qualified?")
+    if snapshot.best_for:
+        suggestions.append("What is this best for?")
+    if any(item.offer_url for item in snapshot.product_presentation):
+        suggestions.append("Where can I buy this?")
+    return tuple(suggestions[:6])
 
 
 def _pay_rows_from_cards(
@@ -526,14 +628,31 @@ def _pay_rows_from_cards(
     )
 
 
-def _unknown_fit_rows(cards: tuple[ProductCardView, ...]) -> tuple[CompareFitRow, ...]:
-    keys = (
-        ("Comfort", "stars"),
-        ("Sound quality", "stars"),
-        ("Noise cancellation", "stars"),
-        ("Battery life", "text"),
-        ("Warranty", "text"),
-        ("Seller reliability", "text"),
-    )
-    unknown = tuple("—" for _ in cards)
-    return tuple(CompareFitRow(label, unknown, kind=kind) for label, kind in keys)  # type: ignore[misc]
+def _fit_rows_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+    cards: tuple[ProductCardView, ...],
+) -> tuple[CompareFitRow, ...]:
+    attributes = {
+        item.key: item.label
+        for product in snapshot.product_presentation
+        for item in product.fit_attributes
+    }
+    if not attributes:
+        return ()
+    by_product = {item.product_id: item for item in snapshot.product_presentation}
+    rows: list[CompareFitRow] = []
+    for key, label in attributes.items():
+        values: list[str] = []
+        for card in cards:
+            presentation = by_product.get(card.product_id)
+            match = next(
+                (
+                    item
+                    for item in (presentation.fit_attributes if presentation else ())
+                    if item.key == key
+                ),
+                None,
+            )
+            values.append(match.display_value() if match else "—")
+        rows.append(CompareFitRow(label, tuple(values), kind="text"))
+    return tuple(rows)

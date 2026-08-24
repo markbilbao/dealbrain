@@ -13,6 +13,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
 
+from app.domain.entities.decision_presentation import (
+    CanonicalAlternativeTradeoff,
+    CanonicalBestFor,
+    CanonicalProductPresentation,
+    CanonicalQualification,
+    CanonicalRecommendationReason,
+    CanonicalShopperContext,
+)
 from app.domain.entities.offer_economics import (
     CanonicalDeliveryContext,
     CanonicalOfferEconomics,
@@ -26,6 +34,7 @@ RecommendationDecision = Literal["buy", "wait", "consider", "avoid"]
 EvidenceFreshness = Literal["fresh", "stale", "unknown"]
 SCHEMA_VERSION_V1 = "1.0"
 SCHEMA_VERSION_V1_1 = "1.1"
+SCHEMA_VERSION_V1_2 = "1.2"
 DATA_CLASSIFICATION_V1 = "non_live_contract_fixture"
 
 PIQSCORE_AUTHORITY = "canonical-piqscore-dealscore-engine"
@@ -221,6 +230,12 @@ class CanonicalDecisionSnapshot:
     offer_economics: tuple[CanonicalOfferEconomics, ...] = ()
     delivery_context: CanonicalDeliveryContext | None = None
     data_classification: str = DATA_CLASSIFICATION_V1
+    qualification: CanonicalQualification | None = None
+    shopper_context: CanonicalShopperContext | None = None
+    product_presentation: tuple[CanonicalProductPresentation, ...] = ()
+    recommendation_reasons: tuple[CanonicalRecommendationReason, ...] = ()
+    best_for: tuple[CanonicalBestFor, ...] = ()
+    alternative_tradeoffs: tuple[CanonicalAlternativeTradeoff, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.decision_id:
@@ -264,6 +279,32 @@ class CanonicalDecisionSnapshot:
             raise ValueError("offer economics product IDs must be unique")
         if any(product_id not in product_ids for product_id in economics_ids):
             raise ValueError("offer economics must refer only to evaluated products")
+        presentation_ids = tuple(item.product_id for item in self.product_presentation)
+        if len(presentation_ids) != len(set(presentation_ids)):
+            raise ValueError("product presentation IDs must be unique")
+        if any(product_id not in product_ids for product_id in presentation_ids):
+            raise ValueError("product presentation must refer only to evaluated products")
+        if any(item.is_empty for item in self.product_presentation):
+            raise ValueError("product presentation must include at least one captured field")
+        if self.shopper_context is not None and self.shopper_context.is_empty:
+            raise ValueError("shopper_context must include at least one captured field")
+        tradeoff_ids = tuple(item.product_id for item in self.alternative_tradeoffs)
+        if any(product_id not in product_ids for product_id in tradeoff_ids):
+            raise ValueError("alternative trade-offs must refer only to evaluated products")
+        reason_ids = tuple(
+            item.product_id for item in self.recommendation_reasons if item.product_id
+        )
+        if any(product_id not in product_ids for product_id in reason_ids):
+            raise ValueError("Recommendation reasons must refer only to evaluated products")
+        known_evidence = set(evidence_ids)
+        for item in (
+            *self.recommendation_reasons,
+            *self.best_for,
+            *self.alternative_tradeoffs,
+            *(attr for product in self.product_presentation for attr in product.fit_attributes),
+        ):
+            if any(evidence_id not in known_evidence for evidence_id in item.evidence_ids):
+                raise ValueError("presentation evidence IDs must belong to snapshot evidence")
 
     @property
     def evaluated_product_ids(self) -> tuple[str, ...]:
@@ -274,7 +315,20 @@ class CanonicalDecisionSnapshot:
         return tuple(item.evidence_id for item in self.evidence)
 
     @property
+    def has_presentation_contract(self) -> bool:
+        return bool(
+            self.qualification is not None
+            or self.shopper_context is not None
+            or self.product_presentation
+            or self.recommendation_reasons
+            or self.best_for
+            or self.alternative_tradeoffs
+        )
+
+    @property
     def schema_version(self) -> str:
+        if self.has_presentation_contract:
+            return SCHEMA_VERSION_V1_2
         return SCHEMA_VERSION_V1_1 if self.offer_economics else SCHEMA_VERSION_V1
 
     @property
@@ -322,11 +376,33 @@ class CanonicalDecisionSnapshot:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
-        if not self.offer_economics:
+        has_presentation = self.has_presentation_contract
+        if not self.offer_economics and not has_presentation:
             return payload
-        payload["schema_version"] = SCHEMA_VERSION_V1_1
+        if self.offer_economics:
+            payload["schema_version"] = SCHEMA_VERSION_V1_1
+            payload["data_classification"] = self.data_classification
+            payload["offer_economics"] = [item.to_dict() for item in self.offer_economics]
+            if self.delivery_context is not None:
+                payload["delivery_context"] = self.delivery_context.to_dict()
+            if not has_presentation:
+                return payload
+        payload["schema_version"] = SCHEMA_VERSION_V1_2
         payload["data_classification"] = self.data_classification
-        payload["offer_economics"] = [item.to_dict() for item in self.offer_economics]
-        if self.delivery_context is not None:
-            payload["delivery_context"] = self.delivery_context.to_dict()
+        if self.qualification is not None:
+            payload["qualification"] = self.qualification.to_dict()
+        if self.shopper_context is not None:
+            payload["shopper_context"] = self.shopper_context.to_dict()
+        if self.product_presentation:
+            payload["product_presentation"] = [item.to_dict() for item in self.product_presentation]
+        if self.recommendation_reasons:
+            payload["recommendation_reasons"] = [
+                item.to_dict() for item in self.recommendation_reasons
+            ]
+        if self.best_for:
+            payload["best_for"] = [item.to_dict() for item in self.best_for]
+        if self.alternative_tradeoffs:
+            payload["alternative_tradeoffs"] = [
+                item.to_dict() for item in self.alternative_tradeoffs
+            ]
         return payload

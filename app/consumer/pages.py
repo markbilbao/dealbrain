@@ -33,6 +33,10 @@ def _offer_link(url: str, css: str) -> str:
     return f'<a class="{css}" href="{h(url)}" rel="nofollow noopener">View offer</a>'
 
 
+def _card_title(card: ProductCardView) -> str:
+    return card.model or card.display_name
+
+
 def render_page(view: DecisionPageView) -> str:
     body = {
         "results": _results_main,
@@ -269,10 +273,10 @@ def _hero_card(view: DecisionPageView) -> str:
     <article class="hero-card" aria-labelledby="hero-title">
       <p class="badge {badge_class}">{h(badge)}</p>
       <div class="hero-grid">
-        {product_visual(best.image_key, f"{best.brand} {best.model}")}
+        {product_visual(best.image_key, best.identity_name)}
         <div class="hero-copy">
           <p class="brand">{h(best.brand)}</p>
-          <h1 id="hero-title">{h(best.model)}</h1>
+          <h1 id="hero-title">{h(_card_title(best))}</h1>
           <p class="category">{h(best.category)}</p>
           <ul class="tag-list">{tags}</ul>
           <div class="fit-box">{ICON_USER}
@@ -344,10 +348,10 @@ def _alt_card(card: ProductCardView, view: DecisionPageView) -> str:
     return f"""
     <article class="alt-card">
       {badge}
-      {product_visual(card.image_key, f"{card.brand} {card.model}")}
+      {product_visual(card.image_key, card.identity_name)}
       <div class="alt-copy">
         <p class="brand">{h(card.brand)}</p>
-        <h3>{h(card.model)}</h3>
+        <h3>{h(_card_title(card))}</h3>
         <p class="category">{h(card.category)}</p>
         <div class="alt-score">
           {piqscore_gauge(card.piqscore.value, "sm")}
@@ -406,7 +410,7 @@ def _compare_main(view: DecisionPageView) -> str:
     {pay}
     {fit}
     <aside class="compare-cta">
-      <p><strong>Best Piq for You</strong> {h(view.best_piq.brand)} {h(view.best_piq.model)}</p>
+      <p><strong>Best Piq for You</strong> {h(view.best_piq.identity_name)}</p>
       {_offer_link(view.best_piq.offer_url, "btn btn-gradient")}
       <a class="btn btn-secondary" href="/why-best-piq/{h(view.decision_id)}">See full reasoning →</a>
     </aside>
@@ -429,8 +433,8 @@ def _compare_product(card: ProductCardView, view: DecisionPageView) -> str:
     return f"""
     <article class="compare-card" data-product-id="{h(card.product_id)}">
       {badge}
-      {product_visual(card.image_key, f"{card.brand} {card.model}")}
-      <h2>{h(card.brand)} {h(card.model)}</h2>
+      {product_visual(card.image_key, card.identity_name)}
+      <h2>{h(card.identity_name)}</h2>
       <ul class="tag-list">{tags}</ul>
       {piqscore_gauge(card.piqscore.value, "sm")}
       <p class="score-inline">PiqScore {h(int(round(card.piqscore.value)))}</p>
@@ -442,9 +446,14 @@ def _compare_product(card: ProductCardView, view: DecisionPageView) -> str:
 
 
 def _compare_table(title: str, rows, view: DecisionPageView) -> str:
-    head = "".join(
-        f"<th scope='col'>{h(card.brand)} {h(card.model)}</th>" for card in view.compared
-    )
+    head = "".join(f"<th scope='col'>{h(card.identity_name)}</th>" for card in view.compared)
+    if not rows:
+        return f"""
+    <section class="compare-table-wrap">
+      <h2>{h(title)}</h2>
+      <p class="muted">Not captured for this decision.</p>
+    </section>
+    """
     body = []
     for row in rows:
         cells = []
@@ -500,10 +509,10 @@ def _why_main(view: DecisionPageView) -> str:
     <article class="hero-card why-hero">
       <p class="badge {"badge-qualified" if best.is_qualified else "badge-best"}">{h(badge)}</p>
       <div class="hero-grid">
-        {product_visual(best.image_key, f"{best.brand} {best.model}")}
+        {product_visual(best.image_key, best.identity_name)}
         <div class="hero-copy">
           <p class="brand">{h(best.brand)}</p>
-          <h2>{h(best.model)}</h2>
+          <h2>{h(_card_title(best))}</h2>
           <p class="category">{h(best.category)}</p>
           <p class="merchant">from {h(best.merchant)}</p>
           <p class="price-label tone-{h(_tone(best))}">{h(best.economics.dominant_label)}</p>

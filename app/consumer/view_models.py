@@ -63,6 +63,12 @@ class ProductCardView:
     why_it_won: tuple[str, ...]
     freshness_label: str | None
     origin_label: str | None
+    display_name: str = ""
+
+    @property
+    def identity_name(self) -> str:
+        captured = f"{self.brand} {self.model}".strip()
+        return captured or self.display_name
 
 
 @dataclass(frozen=True, slots=True)
@@ -151,3 +157,4 @@ class DecisionPageView:
     session_location_differs: bool = False
     session_location_label: str | None = None
     presentation_mode: Literal["canonical", "fixture", "unavailable"] = "fixture"
+    qualification_state: str | None = None
