@@ -19,6 +19,8 @@ After explicit confirmation of the exact active proposal, the server authors a b
 
 A generic “Yes.” never itself becomes enough to execute research later. Authorization is bound to the exact approved request.
 
+Authorization-producing confirmation must be correlated to the exact proposal ID and proposal version. The server must never interpret a delayed generic confirmation as approval of whichever proposal is currently active.
+
 Hard rule:
 
 > Execution is still unavailable. This phase ends at a valid authorized handoff. It does not perform merchant, network, or connector research.
@@ -34,6 +36,29 @@ Hard rule:
 | Certified live research execution | Connectors, merchants, search, rerank, new canonical decision | **No** — Sprints 31–38 |
 
 Routing order is unchanged. Authorization logic attaches only to explicit confirmation of an active proposal. Ordinary “yes” replies outside that context do not create an authorization.
+
+## Confirmation correlation
+
+A confirmation may authorize only the exact proposal it was created for. It must never authorize whichever proposal happens to be current when the request arrives.
+
+Authorization-producing confirmation must carry the exact server-authored:
+
+- `proposal_id`
+- `proposal_version`
+
+Those fields identify the proposal only. They do not give the client authority over scope, products, sources, evidence topics, destination, evaluated set, Recommendation, or PiqScore. The server still loads the trusted proposal and freezes that server-authored scope.
+
+The rendered **Yes, research that** action must bind to the proposal identity from that rendered response. It must not read a global “latest proposal” that can change before the click arrives.
+
+If a later turn replaces proposal A with proposal B, a still-visible chip for A must still submit A’s ID and version. The server rejects that as `stale_research_proposal`. B is not authorized. A is not resurrected.
+
+Missing trustworthy correlation fails closed:
+
+- typed generic text such as “Go ahead.”, “Yes.”, or “Sure.” with no bound proposal ID/version does not authorize the current proposal
+- named text such as “Yes, research AirPods Max.” without ID/version is not a security boundary and does not authorize
+- a client `confirmation_token` is never enough by itself; it is not cryptographically bound to a proposal and cannot select the current proposal
+
+Ordinary Ask messages do not require proposal ID or version. Only an authorization-producing confirmation does.
 
 ## Exact authorization binding
 
@@ -67,11 +92,11 @@ A deterministic `scope_digest` covers those stable server-authoritative values p
 
 Explicit confirmation is idempotent.
 
-Repeated “Yes, research that” against the same current proposal returns the same logical authorization. Distinct proposal versions produce distinct authorizations.
+Repeated confirmation of the same owner, conversation, decision, context version, proposal ID, proposal version, and frozen scope returns the same logical authorization. Distinct proposal versions produce distinct authorizations.
 
 **Idempotency key authority is the server.** The key is derived from owner binding, conversation, decision, context version, proposal ID/version, and scope digest.
 
-If the client supplies a `confirmation_token`, it is accepted only after that context is bound and is **not** used as execution identity. The browser cannot mint an unrelated research run by sending a different token.
+If the client supplies a `confirmation_token`, it is accepted only after that exact proposal is already bound and is **not** used as execution identity. A generic reusable token cannot select the current proposal. Proposal ID/version validation remains mandatory. The browser cannot mint an unrelated research run by sending a different token.
 
 Near-simultaneous confirmations use conversation compare-and-swap. A lost race reloads session state and reuses the authorization already stored under the same server key.
 
@@ -94,10 +119,13 @@ Fail closed. Do not resurrect. Do not silently upgrade.
 | Event | Result |
 |---|---|
 | No pending proposal, shopper says “Go ahead.” | Safe conversational refusal. No authorization. |
+| Pending proposal, generic “Go ahead.” with no proposal ID/version | Unbound. No authorization. Current proposal stays pending. |
 | Ambiguous reply (“Maybe.”, “Interesting.”) | Proposal stays pending. No authorization. |
+| Rendered chip for A arrives after B replaced A | `stale_research_proposal`. Does not authorize B. Does not resurrect A. B stays pending. |
 | Confirmation names a replaced proposal (v1 AirPods after v2 Beats) | Stale. Does not authorize v2. Does not resurrect v1. |
 | Client `proposal_id` / `proposal_version` does not match the active proposal | Stale. No authorization. |
-| Pending proposal cancelled before confirmation | No authorization. |
+| Matching proposal ID with a stale version | Stale. No authorization. |
+| Pending proposal cancelled before confirmation | No authorization. A late confirmation for that ID/version fails closed. |
 | Authorized but unconsumed, then “Never mind.” | Authorization becomes `cancelled`. Cannot validate for execution. |
 | Authorized but unconsumed, then a material new research request (Beats instead of AirPods, new destination, and similar) | Previous authorization is `invalidated`. New request needs its own proposal and confirmation. |
 

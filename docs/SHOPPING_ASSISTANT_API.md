@@ -71,10 +71,12 @@ proposal creates a server-authoritative research authorization bound to that
 exact scope. Execution remains unavailable; `execution_available` is always
 `false`.
 
-Optional confirmation-binding fields (`proposal_id`, `proposal_version`,
-`confirmation_token`) do not choose the action and cannot widen research
-scope. The server derives the authorization idempotency key; a client token
-is never execution identity. Additive response fields include
+Ordinary Ask messages do not require `proposal_id` or `proposal_version`.
+An authorization-producing confirmation must send those fields for the exact
+proposal being confirmed. They identify the proposal only and cannot widen
+research scope; the server still freezes the trusted server-authored proposal.
+A `confirmation_token` is not a substitute for that binding and is never
+execution identity. Additive response fields include
 `research_handoff_id`, `research_handoff_status`, `research_handoff_version`,
 `research_handoff_created`, and `execution_available`.
 

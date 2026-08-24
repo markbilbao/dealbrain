@@ -69,7 +69,7 @@ No research starts merely because:
 - the shopper said “maybe”
 - the shopper asked a factual question that needs freshness
 
-Explicit confirmation examples: “Yes, research AirPods Max.”, “Yes, check the current prices.”, “Go ahead.”
+Explicit confirmation examples: “Yes, research AirPods Max.”, “Yes, check the current prices.”, “Go ahead.” Those phrases classify confirmation; authorization still requires the exact `proposal_id` and `proposal_version`. Generic text alone does not authorize whichever proposal is currently active. See `docs/architecture/RESEARCH_AUTHORIZATION_HANDOFF_CONTRACT.md`.
 
 Ambiguous replies such as “Maybe.”, “Interesting.”, or “What would you check?” do not authorize research. The proposal stays pending.
 

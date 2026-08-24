@@ -21,6 +21,7 @@ from app.services.decision_evidence_packet import packet_from_snapshot, unavaila
 from app.services.propose_research import (
     compose_research_proposal,
     confirmation_applies_to_proposal,
+    confirmation_correlation,
     is_explicit_confirmation,
 )
 from app.services.research_authorization import (
@@ -49,13 +50,16 @@ AUTH_HTTP_DECISION_ID = "00000000-0000-4000-8000-00000000029d"
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def _confirm(service, first, query="Yes, research that", **extra):
+def _confirm(service, first, query="Yes, research that", *, bind=True, **extra):
     payload = {
         "query": query,
         "decision_id": DECISION_ID,
         "conversation_id": first.conversation_id,
         **extra,
     }
+    if bind:
+        payload.setdefault("proposal_id", first.processing["proposal_id"])
+        payload.setdefault("proposal_version", first.processing["proposal_version"])
     return service.handle(payload, owner=_owner(), snapshot=_presentation())
 
 
@@ -156,7 +160,7 @@ def test_distinct_proposal_versions_get_distinct_authorizations() -> None:
         snapshot=snapshot,
     )
     assert beats is not None
-    beats_auth = _confirm(service, first, "Yes, research Beats Studio Pro.")
+    beats_auth = _confirm(service, beats, "Yes, research Beats Studio Pro.")
     assert airpods is not None and beats_auth is not None
     assert airpods.processing["research_authorization_id"] != beats_auth.processing["research_authorization_id"]
     context = conversations.get(first.conversation_id)
@@ -191,6 +195,8 @@ def test_wrong_owner_cannot_authorize_inspect_cancel_or_validate() -> None:
                 "query": "Yes, research that",
                 "decision_id": DECISION_ID,
                 "conversation_id": first.conversation_id,
+                "proposal_id": first.processing["proposal_id"],
+                "proposal_version": first.processing["proposal_version"],
             },
             owner=stranger,
         )
@@ -269,7 +275,151 @@ def test_stale_proposal_confirmation_fails_closed() -> None:
     assert context is not None
     assert context.research_proposal is not None
     assert context.research_proposal.status == "pending_confirmation"
+    assert context.research_proposal.proposal_id == second.processing["proposal_id"]
+    assert "Beats Studio Pro" in context.research_proposal.outside_set_product_names
     assert context.research_authorizations == ()
+
+
+def test_stale_rendered_confirmation_does_not_authorize_replacement() -> None:
+    service, snapshots, conversations, snapshot = _service()
+    before = (
+        snapshot.content_sha256,
+        snapshot.canonical_piqscore_set_sha256,
+        snapshot.recommendation.snapshot_sha256,
+        snapshot.evaluated_product_ids,
+        snapshot.recommendation.best_piq_product_id,
+    )
+    first = service.handle(
+        {"query": "What about AirPods Max?", "decision_id": DECISION_ID},
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert first is not None
+    airpods_id = first.processing["proposal_id"]
+    airpods_version = first.processing["proposal_version"]
+    beats = service.handle(
+        {
+            "query": "Actually compare Beats Studio Pro instead.",
+            "decision_id": DECISION_ID,
+            "conversation_id": first.conversation_id,
+        },
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert beats is not None
+    delayed = service.handle(
+        {
+            "query": "Go ahead.",
+            "decision_id": DECISION_ID,
+            "conversation_id": first.conversation_id,
+            "proposal_id": airpods_id,
+            "proposal_version": airpods_version,
+        },
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert delayed is not None
+    assert delayed.processing["answer_status"] == "stale_research_proposal"
+    assert "research_authorization_id" not in delayed.processing
+    context = conversations.get(first.conversation_id)
+    assert context is not None
+    assert context.research_authorizations == ()
+    assert context.research_proposal is not None
+    assert context.research_proposal.proposal_id == beats.processing["proposal_id"]
+    assert context.research_proposal.status == "pending_confirmation"
+    assert "Beats Studio Pro" in context.research_proposal.outside_set_product_names
+    assert "AirPods Max" not in context.research_proposal.outside_set_product_names
+    loaded = snapshots.get(DECISION_ID, 1)
+    assert loaded is not None
+    assert loaded.content_sha256 == before[0]
+    assert loaded.canonical_piqscore_set_sha256 == before[1]
+    assert loaded.recommendation.snapshot_sha256 == before[2]
+    assert loaded.evaluated_product_ids == before[3]
+    assert loaded.recommendation.best_piq_product_id == before[4]
+
+
+def test_missing_proposal_correlation_does_not_authorize() -> None:
+    service, _, conversations, snapshot = _service()
+    first = service.handle(
+        {"query": "What about AirPods Max?", "decision_id": DECISION_ID},
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert first is not None
+    generic = _confirm(service, first, "Go ahead.", bind=False)
+    assert generic is not None
+    assert generic.processing["answer_status"] == "pending_confirmation"
+    assert "research_authorization_id" not in generic.processing
+    named = _confirm(service, first, "Yes, research AirPods Max.", bind=False)
+    assert named is not None
+    assert named.processing["answer_status"] == "pending_confirmation"
+    assert "research_authorization_id" not in named.processing
+    token_only = _confirm(
+        service,
+        first,
+        "Yes, research that",
+        bind=False,
+        confirmation_token="browser-token",
+    )
+    assert token_only is not None
+    assert token_only.processing["answer_status"] == "pending_confirmation"
+    assert "research_authorization_id" not in token_only.processing
+    context = conversations.get(first.conversation_id)
+    assert context is not None
+    assert context.research_proposal is not None
+    assert context.research_proposal.status == "pending_confirmation"
+    assert context.research_proposal.proposal_id == first.processing["proposal_id"]
+    assert context.research_authorizations == ()
+
+
+def test_stale_proposal_version_fails_closed() -> None:
+    service, _, conversations, snapshot = _service()
+    first = service.handle(
+        {"query": "What about AirPods Max?", "decision_id": DECISION_ID},
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert first is not None
+    beats = service.handle(
+        {
+            "query": "Actually compare Beats Studio Pro instead.",
+            "decision_id": DECISION_ID,
+            "conversation_id": first.conversation_id,
+        },
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert beats is not None
+    stale_version = _confirm(service, beats, proposal_version=1)
+    assert stale_version is not None
+    assert stale_version.processing["answer_status"] == "stale_research_proposal"
+    assert "research_authorization_id" not in stale_version.processing
+    context = conversations.get(first.conversation_id)
+    assert context is not None
+    assert context.research_authorizations == ()
+    assert context.research_proposal is not None
+    assert context.research_proposal.status == "pending_confirmation"
+    assert context.research_proposal.proposal_id == beats.processing["proposal_id"]
+
+
+def test_wrong_proposal_id_does_not_redirect() -> None:
+    service, _, conversations, snapshot = _service()
+    first = service.handle(
+        {"query": "What about AirPods Max?", "decision_id": DECISION_ID},
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert first is not None
+    wrong = _confirm(service, first, proposal_id="00000000-0000-4000-8000-00000000beef")
+    assert wrong is not None
+    assert wrong.processing["answer_status"] == "stale_research_proposal"
+    assert "research_authorization_id" not in wrong.processing
+    context = conversations.get(first.conversation_id)
+    assert context is not None
+    assert context.research_authorizations == ()
+    assert context.research_proposal is not None
+    assert context.research_proposal.proposal_id == first.processing["proposal_id"]
+    assert context.research_proposal.status == "pending_confirmation"
 
 
 def test_wrong_context_version_fails_validation() -> None:
@@ -318,9 +468,13 @@ def test_client_cannot_widen_frozen_scope() -> None:
             "query": "Yes, check Amazon, Shopee and Lazada.",
             "decision_id": DECISION_ID,
             "conversation_id": first.conversation_id,
+            "proposal_id": first.processing["proposal_id"],
+            "proposal_version": first.processing["proposal_version"],
             "requested_sources": ["amazon", "shopee", "lazada"],
             "expansion_required": True,
             "outside_set_product_names": ["AirPods Max USB-C"],
+            "destination_label": "Cebu",
+            "requested_evidence_topics": ["warranty"],
         },
         owner=_owner(),
         snapshot=snapshot,
@@ -335,6 +489,15 @@ def test_client_cannot_widen_frozen_scope() -> None:
     assert "lazada" not in auth.scope.requested_sources
     assert auth.scope.outside_set_product_names == ()
     assert auth.scope.expansion_required is False
+    assert auth.scope.destination_label is None
+    assert list(auth.scope.requested_evidence_topics) == first.processing["research_proposal"][
+        "requested_evidence_topics"
+    ]
+    assert "warranty" not in auth.scope.requested_evidence_topics
+    assert auth.scope_digest
+    assert auth.scope.requested_sources == tuple(
+        first.processing["research_proposal"]["requested_sources"]
+    )
 
 
 def test_cancelled_pending_proposal_cannot_be_authorized() -> None:
@@ -357,10 +520,11 @@ def test_cancelled_pending_proposal_cannot_be_authorized() -> None:
     assert cancelled is not None
     late = _confirm(service, first)
     assert late is not None
-    assert late.processing["answer_status"] == "no_pending_research_proposal"
+    assert late.processing["answer_status"] == "stale_research_proposal"
     assert "research_authorization_id" not in late.processing
     context = conversations.get(first.conversation_id)
     assert context is not None
+    assert context.research_proposal is None
     assert context.research_authorizations == ()
 
 
@@ -486,6 +650,8 @@ def test_session_best_piq_survives_authorization() -> None:
             "query": "Yes, research that",
             "decision_id": DECISION_ID,
             "conversation_id": refine.conversation_id,
+            "proposal_id": proposed.processing["proposal_id"],
+            "proposal_version": proposed.processing["proposal_version"],
         },
         owner=_owner(),
     )
@@ -678,14 +844,45 @@ def test_confirmation_matching_helpers() -> None:
     packet = packet_from_snapshot(snapshot)
     result = compose_research_proposal("What about AirPods Max?", packet, snapshot=snapshot)
     assert result is not None and result.proposal is not None
-    assert is_explicit_confirmation("Yes, research that.", result.proposal)
-    assert confirmation_applies_to_proposal("Yes, research that.", result.proposal)
-    assert confirmation_applies_to_proposal("Yes, research AirPods Max.", result.proposal)
-    assert not confirmation_applies_to_proposal("Yes, research Beats Studio Pro.", result.proposal)
+    proposal = result.proposal
+    assert is_explicit_confirmation("Yes, research that.", proposal)
+    assert confirmation_correlation("Yes, research that.", proposal) == "missing"
+    assert not confirmation_applies_to_proposal("Yes, research that.", proposal)
+    assert confirmation_correlation(
+        "Yes, research that.",
+        proposal,
+        client_proposal_id=proposal.proposal_id,
+        client_proposal_version=proposal.proposal_version,
+    ) == "match"
+    assert confirmation_applies_to_proposal(
+        "Yes, research that.",
+        proposal,
+        client_proposal_id=proposal.proposal_id,
+        client_proposal_version=proposal.proposal_version,
+    )
+    assert confirmation_applies_to_proposal(
+        "Yes, research AirPods Max.",
+        proposal,
+        client_proposal_id=proposal.proposal_id,
+        client_proposal_version=proposal.proposal_version,
+    )
+    assert not confirmation_applies_to_proposal(
+        "Yes, research Beats Studio Pro.",
+        proposal,
+        client_proposal_id=proposal.proposal_id,
+        client_proposal_version=proposal.proposal_version,
+    )
+    assert confirmation_correlation(
+        "Yes, research that.",
+        proposal,
+        client_proposal_id="other-id",
+        client_proposal_version=proposal.proposal_version,
+    ) == "stale"
     assert not confirmation_applies_to_proposal(
         "Yes, research that.",
-        result.proposal,
+        proposal,
         client_proposal_id="other-id",
+        client_proposal_version=proposal.proposal_version,
     )
 
 
@@ -723,6 +920,10 @@ def test_no_network_or_connector_imports() -> None:
     assert "Researching…" not in js
     assert "Researching..." not in js
     assert "propose_research" not in js
+    assert "data-proposal-id" in js
+    assert "data-proposal-version" in js
+    assert "proposal_id" in js
+    assert "proposal_version" in js
 
 
 def test_authorization_creation_does_not_consume() -> None:
@@ -784,6 +985,8 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
                 "decision_id": AUTH_HTTP_DECISION_ID,
                 "conversation_id": body["conversation_id"],
                 "surface": "results",
+                "proposal_id": body["research_proposal"]["proposal_id"],
+                "proposal_version": body["research_proposal"]["proposal_version"],
                 "requested_sources": ["amazon", "shopee"],
             },
         )
@@ -802,6 +1005,8 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
                 "decision_id": AUTH_HTTP_DECISION_ID,
                 "conversation_id": body["conversation_id"],
                 "surface": "results",
+                "proposal_id": body["research_proposal"]["proposal_id"],
+                "proposal_version": body["research_proposal"]["proposal_version"],
             },
         )
         assert repeat.status_code == 200

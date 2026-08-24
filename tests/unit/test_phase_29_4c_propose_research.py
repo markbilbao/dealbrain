@@ -515,6 +515,8 @@ def test_explicit_confirmation_does_not_execute() -> None:
             "query": "Yes, research AirPods Max.",
             "decision_id": DECISION_ID,
             "conversation_id": first.conversation_id,
+            "proposal_id": first.processing["proposal_id"],
+            "proposal_version": first.processing["proposal_version"],
         },
         owner=_owner(),
         snapshot=snapshot,
@@ -581,6 +583,8 @@ def test_29_4a_and_29_4b_files_still_do_not_define_propose_research() -> None:
     assert "propose_research" not in js
     assert "Researching…" not in js
     assert "Researching..." not in js
+    assert "data-proposal-id" in js
+    assert "data-proposal-version" in js
 
 
 @pytest.mark.asyncio
@@ -617,6 +621,8 @@ async def test_http_owner_can_propose_from_ask() -> None:
                 "decision_id": HTTP_DECISION_ID,
                 "conversation_id": body["conversation_id"],
                 "surface": "results",
+                "proposal_id": body["research_proposal"]["proposal_id"],
+                "proposal_version": body["research_proposal"]["proposal_version"],
             },
         )
         assert confirm.status_code == 200

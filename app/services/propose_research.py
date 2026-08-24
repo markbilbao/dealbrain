@@ -80,6 +80,7 @@ ProposalLifecycle = Literal[
     "replace",
     "propose",
     "stale",
+    "unbound",
     "no_pending",
 ]
 ProposalAnswerStatus = ResearchProposalStatus | Literal[
@@ -721,6 +722,16 @@ class ProposeResearchService:
                     code="research_not_started",
                 ),
             )
+        if result.lifecycle == "unbound":
+            warnings = (
+                AssistantWarning(
+                    message=(
+                        "Research was not authorized because the confirmation is not bound "
+                        "to the exact proposal."
+                    ),
+                    code="research_not_started",
+                ),
+            )
         processing: dict[str, Any] = {
             "action": "propose_research",
             "answer_status": result.status,
@@ -817,6 +828,35 @@ def is_explicit_confirmation(question: str, proposal: ResearchProposal | None = 
     return False
 
 
+def confirmation_correlation(
+    question: str,
+    proposal: ResearchProposal,
+    *,
+    client_proposal_id: str | None = None,
+    client_proposal_version: int | None = None,
+) -> Literal["match", "missing", "stale"]:
+    """Correlate a confirmation to one exact server-authored proposal.
+
+    Client proposal_id/version identify the proposal only. They never define
+    scope. A confirmation token is not a substitute for this binding.
+    """
+
+    if not client_proposal_id or client_proposal_version is None:
+        return "missing"
+    if client_proposal_id != proposal.proposal_id:
+        return "stale"
+    if client_proposal_version != proposal.proposal_version:
+        return "stale"
+    if not confirmation_applies_to_proposal(
+        question,
+        proposal,
+        client_proposal_id=client_proposal_id,
+        client_proposal_version=client_proposal_version,
+    ):
+        return "stale"
+    return "match"
+
+
 def confirmation_applies_to_proposal(
     question: str,
     proposal: ResearchProposal,
@@ -824,11 +864,13 @@ def confirmation_applies_to_proposal(
     client_proposal_id: str | None = None,
     client_proposal_version: int | None = None,
 ) -> bool:
-    """True only when confirmation is generic or clearly refers to this proposal."""
+    """True only when ID/version bind this proposal and text does not contradict it."""
 
-    if client_proposal_id and client_proposal_id != proposal.proposal_id:
+    if not client_proposal_id or client_proposal_version is None:
         return False
-    if client_proposal_version is not None and client_proposal_version != proposal.proposal_version:
+    if client_proposal_id != proposal.proposal_id:
+        return False
+    if client_proposal_version != proposal.proposal_version:
         return False
     named_products = {item.lower() for item in extract_outside_product_names(question, None)}
     confirm_target = _confirmation_target_name(question)
@@ -855,6 +897,39 @@ def confirmation_applies_to_proposal(
         and proposal.destination_label.lower() not in named_destination.lower()
     )
     return not destination_mismatch
+
+
+def _unbound_confirmation_result(
+    existing: ResearchProposal,
+    *,
+    packet: DecisionEvidencePacket,
+    snapshot: CanonicalDecisionSnapshot | None,
+    pending: bool,
+) -> ProposalResult:
+    if pending:
+        return ProposalResult(
+            status="pending_confirmation",
+            answer=(
+                "I still have a pending research proposal, but that confirmation is not "
+                "bound to this exact request. I have not authorized research. "
+                f"{existing.proposal_text}"
+            ),
+            proposal=existing,
+            packet=packet,
+            snapshot=snapshot,
+            lifecycle="unbound",
+        )
+    return ProposalResult(
+        status=_CONFIRMED_STATUS,
+        answer=(
+            "That confirmation is not bound to the approved research request. "
+            "I have not created a new authorization or changed the previous one."
+        ),
+        proposal=existing,
+        packet=packet,
+        snapshot=snapshot,
+        lifecycle="unbound",
+    )
 
 
 def _confirmation_target_name(question: str) -> str | None:
@@ -961,12 +1036,20 @@ def compose_research_proposal(
                 lifecycle="ambiguous",
             )
         if is_explicit_confirmation(question, existing):
-            if not confirmation_applies_to_proposal(
+            correlation = confirmation_correlation(
                 question,
                 existing,
                 client_proposal_id=client_proposal_id,
                 client_proposal_version=client_proposal_version,
-            ):
+            )
+            if correlation == "missing":
+                return _unbound_confirmation_result(
+                    existing,
+                    packet=packet,
+                    snapshot=snapshot,
+                    pending=True,
+                )
+            if correlation == "stale":
                 return ProposalResult(
                     status="stale_research_proposal",
                     answer=(
@@ -1031,12 +1114,20 @@ def compose_research_proposal(
                 lifecycle="ambiguous",
             )
         if is_explicit_confirmation(question, existing):
-            if not confirmation_applies_to_proposal(
+            correlation = confirmation_correlation(
                 question,
                 existing,
                 client_proposal_id=client_proposal_id,
                 client_proposal_version=client_proposal_version,
-            ):
+            )
+            if correlation == "missing":
+                return _unbound_confirmation_result(
+                    existing,
+                    packet=packet,
+                    snapshot=snapshot,
+                    pending=False,
+                )
+            if correlation == "stale":
                 return ProposalResult(
                     status="stale_research_proposal",
                     answer=(
@@ -1059,6 +1150,21 @@ def compose_research_proposal(
                 snapshot=snapshot,
                 lifecycle="reconfirm",
             )
+
+    if is_explicit_confirmation(question, existing) and (
+        client_proposal_id or client_proposal_version is not None
+    ):
+        return ProposalResult(
+            status="stale_research_proposal",
+            answer=(
+                "That confirmation no longer matches a current research proposal. "
+                "I have not authorized research, and I will not guess a replacement request."
+            ),
+            proposal=existing,
+            packet=packet,
+            snapshot=snapshot,
+            lifecycle="stale",
+        )
 
     need = detect_research_need(question, packet, snapshot=snapshot)
     if need is None and existing is not None and existing.is_pending:

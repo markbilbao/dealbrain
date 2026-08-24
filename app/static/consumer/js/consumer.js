@@ -103,14 +103,29 @@ function showAsk(text) {
   overlay.hidden = false;
 }
 
+function clearAskProposalBinding(input) {
+  if (!input) return;
+  delete input.dataset.proposalId;
+  delete input.dataset.proposalVersion;
+}
+
+function copyChipToAskInput(chip) {
+  const input = qs("ask-input-dock") || qs("ask-input-top");
+  if (!input) return;
+  input.value = chip.textContent.trim();
+  if (chip.dataset.proposalId && chip.dataset.proposalVersion) {
+    input.dataset.proposalId = chip.dataset.proposalId;
+    input.dataset.proposalVersion = chip.dataset.proposalVersion;
+  } else {
+    clearAskProposalBinding(input);
+  }
+  input.focus();
+}
+
 function bindAskChips(root) {
   if (!root) return;
   root.querySelectorAll(".js-ask-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const input = qs("ask-input-dock") || qs("ask-input-top");
-      if (input) input.value = chip.textContent.trim();
-      input?.focus();
-    });
+    chip.addEventListener("click", () => copyChipToAskInput(chip));
   });
 }
 
@@ -125,11 +140,10 @@ function initAsk() {
     btn.addEventListener("click", () => qs("ask-input-dock")?.focus());
   });
   document.querySelectorAll(".js-ask-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const input = qs("ask-input-dock") || qs("ask-input-top");
-      if (input) input.value = chip.textContent.trim();
-      input?.focus();
-    });
+    chip.addEventListener("click", () => copyChipToAskInput(chip));
+  });
+  document.querySelectorAll(".ask-input").forEach((input) => {
+    input.addEventListener("input", () => clearAskProposalBinding(input));
   });
   document.querySelectorAll(".js-ask-form").forEach((form) => {
     form.addEventListener("submit", async (event) => {
@@ -137,8 +151,13 @@ function initAsk() {
       const input = form.querySelector(".ask-input");
       const question = (input?.value || "").trim();
       if (!question) return;
+      const boundProposalId = input?.dataset.proposalId || "";
+      const boundProposalVersion = input?.dataset.proposalVersion || "";
+      clearAskProposalBinding(input);
       showAsk("<p>Looking at the current decision…</p>");
       const payload = { query: question };
+      if (boundProposalId) payload.proposal_id = boundProposalId;
+      if (boundProposalVersion) payload.proposal_version = Number(boundProposalVersion);
       const decisionId = document.body?.dataset?.decisionId;
       const surface = document.body?.dataset?.page;
       if (decisionId) payload.decision_id = decisionId;
@@ -177,9 +196,23 @@ function initAsk() {
         const confirmationNeeded = Boolean(
           payloadJson.requires_research_confirmation || processing.requires_research_confirmation,
         );
+        const renderedProposal = payloadJson.research_proposal || processing.research_proposal || {};
+        const renderedProposalId = String(
+          renderedProposal.proposal_id || processing.proposal_id || "",
+        );
+        const renderedProposalVersion =
+          renderedProposal.proposal_version ?? processing.proposal_version;
+        const confirmChip =
+          renderedProposalId && renderedProposalVersion != null
+            ? `<button type="button" class="chip js-ask-chip" data-proposal-id="${escapeHtml(
+                renderedProposalId,
+              )}" data-proposal-version="${escapeHtml(
+                String(renderedProposalVersion),
+              )}">Yes, research that</button>`
+            : '<button type="button" class="chip js-ask-chip">Yes, research that</button>';
         const confirmActions = confirmationNeeded
           ? `<p class="ask-confirm">${[
-              '<button type="button" class="chip js-ask-chip">Yes, research that</button>',
+              confirmChip,
               '<button type="button" class="chip js-ask-chip">Never mind</button>',
             ].join("")}</p>`
           : "";

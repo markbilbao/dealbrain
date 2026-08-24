@@ -105,11 +105,11 @@ def derive_authorization_idempotency_key(
 ) -> str:
     """Server-derived execution identity.
 
-    A client confirmation token may be supplied on the Ask request. It is
-    accepted only after owner/conversation/proposal context is already bound,
-    and it never becomes the authorization identity. Repeated confirmations of
-    the same proposal reuse this server key even when the client omits or
-    changes a token.
+    A client confirmation token is never execution identity and is never
+    enough to select the current proposal. Authorization-producing
+    confirmation must also carry the exact server-authored proposal_id and
+    proposal_version. Repeated confirmations of the same bound proposal reuse
+    this server key even when the client omits or changes a token.
     """
 
     material = {
