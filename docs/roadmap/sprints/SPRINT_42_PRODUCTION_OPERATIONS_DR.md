@@ -19,6 +19,7 @@ Complete M30-class operations evidence: logging, metrics, alerts, paging, backup
 - Incident-response plan; operational runbooks RB-01…RB-10 (or successor set); escalation ownership
 - Maintenance mode; feature flags; kill switches integration
 - Ranking-integrity violation monitoring hooks
+- Require: production logs; metrics; dashboards; alerts; active paging; connector monitoring; AI/provider monitoring; backup; restore drill; incident response; runbooks; escalation; maintenance/kill switches
 
 ## Explicit non-goals
 

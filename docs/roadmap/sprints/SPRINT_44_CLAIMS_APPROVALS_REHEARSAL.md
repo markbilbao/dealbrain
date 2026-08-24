@@ -28,6 +28,27 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 - Verify that session Recommendation refinement leaves canonical PiqScores unchanged.
 - Verify affiliate neutrality across answers, refinement, alternatives, research, and updated Results.
 - Verify the Product Foundation manifest and artwork checksums against the implemented Results, Compare, Why, overlay, mobile-sheet, research, and updated-Results states.
+- Reconcile actual production capability for: supported markets; supported merchant/source coverage; live-vs-unavailable research; price freshness; shipping/tax/import semantics; Recommendation claims; PiqScore claims; affiliate disclosures; SEO/indexability; data/privacy behavior; support; infrastructure; operations; security
+- Require final legal/security/ops approvals according to the master roadmap
+- Run end-to-end production rehearsal
+
+### SEO / indexing rehearsal
+
+- `robots.txt`
+- XML sitemap
+- canonical tags
+- noindex rules
+- structured-data validity
+- title/meta quality
+- public/private URL separation
+- accidental UUID indexing
+- freshness claims
+- product/price claims
+- mobile rendering
+- Core Web Vitals/performance where applicable
+- broken internal links
+- unsupported market pages
+- unsupported source claims
 
 ## Explicit non-goals
 

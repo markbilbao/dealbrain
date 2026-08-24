@@ -2,7 +2,10 @@
 
 **Status:** Authoritative register for Global Public Beta
 **Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Base HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
+**Reconciled:** 2026-08-24 against current register evidence. Statuses below were **not guessed** and were not advanced by this lock.
+**Historical inventory HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
+**Current approved engineering baseline:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0`
+**Owner target:** Controlled Global Public Beta Launch no later than September 30, 2026
 **Rule:** No external dependency is guaranteed. Fallbacks must be honest (delay market naming, disable self-serve feature, or delay launch).
 
 ## Status legend
@@ -30,41 +33,53 @@
 | `Canada market` | Blocks naming CA as supported |
 | `optional beta capability` | Degrades a beta capability; not whole launch |
 | `post-beta` | Out of Global Public Beta scope |
+| `seo / indexing` | Blocks ranking claims and Search Console proof; private-route noindex remains a separate NON-WAIVABLE engineering gate |
+
+### September 30 risk legend
+
+Derived from current evidence only. Do not mark external approvals green without proof.
+
+| Risk | Meaning |
+|------|---------|
+| **GREEN** | Controllable/internal and on path, or already evidenced for the stated claim |
+| **AMBER** | External or schedule-sensitive |
+| **RED** | Currently blocks the September 30 target unless resolved or scope-reduced |
 
 ---
 
 ## Register
 
-| ID | Dependency | Owner | Target sprint | Scope | Application date | Expected decision window | Current status | Evidence required | Fallback | Blocks |
-|----|------------|-------|---------------|-------|------------------|--------------------------|----------------|-------------------|----------|--------|
-| EXT-01 | PH merchant/API or affiliate access | Marketplace eng + legal | 32 | Philippines market | Sprint 26 kickoff | 2–8 weeks | `not_started` | Signed terms + sandbox/live credential proof + live normalized offer | Delay PH as named supported market; site may still launch with other markets | Market PH |
-| EXT-02 | US merchant/API or affiliate access | Marketplace eng + legal | 33 | United States market | Sprint 26 kickoff | 2–8 weeks | `not_started` | Same as EXT-01 for US | Delay US market naming | Market US |
-| EXT-03 | SG merchant/API or affiliate access | Marketplace eng + legal | 34 | Singapore market | Sprint 26 kickoff | 2–8 weeks | `not_started` | Same for SG | Delay SG market naming | Market SG |
-| EXT-04 | UK merchant/API or affiliate access | Marketplace eng + legal | 35 | United Kingdom market | Sprint 26 kickoff | 2–8 weeks | `not_started` | Same for UK | Delay UK market naming | Market UK |
-| EXT-05 | CA merchant/API or affiliate access | Marketplace eng + legal | 36 | Canada market | Sprint 26 kickoff | 2–8 weeks | `not_started` | Same for CA | Delay CA market naming | Market CA |
-| EXT-06 | Merchant credentials (all markets) | Ops + marketplace | 32–36 | global launch *(per named market)* | After approval | 1–2 weeks | `not_started` | Secrets Manager entries; no plaintext in git | Market cannot certify | Market(s) |
-| EXT-07 | Affiliate tracking IDs | Growth + marketplace | 32–36 | optional beta capability | After partner approval | 1–4 weeks | `not_started` | Valid tracked redirect in staging/prod | Organic links without monetization claims; disclose | Monetized affiliate claims |
-| EXT-08 | Transactional email provider (Resend) | Identity eng | 27 | identity | evidence verified 2026-08-08 | 3–10 days | `applied` | Sanitized Resend dashboard/account-establishment proof retained at [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) (see EXT-08 notes); delivery/reset+verify remains Sprint 27 | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
-| EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | evidence verified 2026-08-08 | 3–14 days | `applied` | Sanitized Resend sender-domain DNS-authentication plan retained at [`evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png) (see EXT-09 notes); DNS apply/verify + delivery remain Sprint 27 | Same as EXT-08 | Public self-serve auth |
-| EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
-| EXT-11 | DNS for public hostname | Ops | 41 | production infrastructure | After EXT-10 | 1–3 days | `not_started` | Records resolving to ALB | Delay public access | Public web access |
-| EXT-12 | TLS certificate (ACM or equivalent) | Ops | 41 | production infrastructure | After DNS | 1–7 days | `not_started` | HTTPS synthetics green | Delay public access | Public web access |
-| EXT-13 | AWS production account/resources | Ops | 41 | production infrastructure | Ongoing | Continuous | Partial TF only; not applied | Applied TF + live `/ready` | Cannot launch production | Entire production launch |
-| EXT-14 | Production secrets populated | Ops | 41 | production infrastructure | With EXT-13 | 1–5 days | `not_started` | Redacted env dump; deploy fail-closed test | Cannot deploy prod | Entire production launch |
-| EXT-15 | Analytics provider | Product eng | 39 | optional beta capability | Sprint 28 | 3–14 days | `not_started` | Consent-gated events in staging | Privacy-safe first-party minimal events only; disclose limited learning | Beta learning (not whole launch) |
-| EXT-16 | Error-tracking provider | Ops | 42 | optional beta capability | Sprint 39 | 3–10 days | `not_started` | Sample error event + PII-safe config | CloudWatch logs-only (weaker) | Ops quality (launch if CW paging OK) |
-| EXT-17 | Support email inbox | Ops + support | 28 / 39 | global launch | 2026-08-09 | 1–3 days | `provisioned` | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png) (see EXT-17 notes); public address `support@piqsavi.com` monitored | Delay public launch | Support obligation |
-| EXT-18 | Privacy contact | Legal / DPO-equivalent | 28 | global launch | 2026-08-09 | 1–3 days | `provisioned` | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) (see EXT-18 notes); public address `privacy@piqsavi.com` designated and reachable | Delay public launch | Legal |
-| EXT-19 | Legal review (ToS/Privacy/disclosures) | Legal counsel | 28 / 44 | global launch | 2026-08-10 | 2–6 weeks | `applied` | Sanitized counsel engagement + schedule confirmation retained at [`evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png) and [`evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png) (see EXT-19 notes); written approval still required before `approved` | Delay public launch | Entire launch |
-| EXT-20 | Privacy Policy publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | Live URL | Delay public launch | Entire launch |
-| EXT-21 | Terms of Service publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | Live URL | Delay public launch | Entire launch |
-| EXT-22 | Cookie-consent solution | Product + legal | 28 / 39 | optional beta capability | Sprint 28 | 1–3 weeks | `not_started` | Consent gate before non-essential analytics | First-party essential-only cookies; no third-party analytics | Analytics / tracking claims |
-| EXT-23 | FX provider | Marketplace eng | 37 | optional beta capability | Sprint 31 | 1–3 weeks | `not_started` | Rates + timestamps; fail-closed tests | No cross-currency compare; disclose | Multi-currency compare |
-| EXT-24 | Monitoring / paging destination | Ops / on-call | 42 | production infrastructure | Sprint 41 | 3–10 days | `not_started` | Page + ack ≤15m evidence | Delay production launch | Entire production launch |
-| EXT-25 | AI-provider production quota | AI eng + ops | 38 / 43 | optional beta capability | Sprint 29 | 1–3 weeks | Unknown | Quota letter / console proof | Deterministic explanation fallback only; disclose | AI explanation claims |
-| EXT-26 | Payment provider | — | — | post-beta | — | — | `n_a_beta` | — | Not required for beta | — |
-| EXT-27 | Apple App Store account | — | — | post-beta | — | — | `n_a_beta` | — | Native app out of scope | — |
-| EXT-28 | Google Play account | — | — | post-beta | — | — | `n_a_beta` | — | Native app out of scope | — |
+| ID | Dependency | Owner | Target sprint | Scope | Application date | Expected decision window | Current status | Sept 30 risk | Evidence required | Fallback | Blocks |
+|----|------------|-------|---------------|-------|------------------|--------------------------|----------------|--------------|-------------------|----------|--------|
+| EXT-01 | PH merchant/API or affiliate access | Marketplace eng + legal | 32 | Philippines market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name PH; shopping launch **RED** until ≥1 market is certified | Signed terms + sandbox/live credential proof + live normalized offer | Delay PH as named supported market; site may still launch with other markets | Market PH |
+| EXT-02 | US merchant/API or affiliate access | Marketplace eng + legal | 33 | United States market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name US | Same as EXT-01 for US | Delay US market naming | Market US |
+| EXT-03 | SG merchant/API or affiliate access | Marketplace eng + legal | 34 | Singapore market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name SG | Same for SG | Delay SG market naming | Market SG |
+| EXT-04 | UK merchant/API or affiliate access | Marketplace eng + legal | 35 | United Kingdom market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name UK | Same for UK | Delay UK market naming | Market UK |
+| EXT-05 | CA merchant/API or affiliate access | Marketplace eng + legal | 36 | Canada market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name CA | Same for CA | Delay CA market naming | Market CA |
+| EXT-06 | Merchant credentials (all markets) | Ops + marketplace | 32–36 | global launch *(per named market)* | After approval | 1–2 weeks | `not_started` | **RED** per named market | Secrets Manager entries; no plaintext in git | Market cannot certify | Market(s) |
+| EXT-07 | Affiliate tracking IDs | Growth + marketplace | 32–36 | optional beta capability | After partner approval | 1–4 weeks | `not_started` | **AMBER** (optional) | Valid tracked redirect in staging/prod | Organic links without monetization claims; disclose | Monetized affiliate claims |
+| EXT-08 | Transactional email provider (Resend) | Identity eng | 27 | identity | evidence verified 2026-08-08 | 3–10 days | `applied` | **AMBER** | Sanitized Resend dashboard/account-establishment proof retained at [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) (see EXT-08 notes); delivery/reset+verify remains Sprint 27 | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
+| EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | evidence verified 2026-08-08 | 3–14 days | `applied` | **AMBER** | Sanitized Resend sender-domain DNS-authentication plan retained at [`evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png) (see EXT-09 notes); DNS apply/verify + delivery remain Sprint 27 | Same as EXT-08 | Public self-serve auth |
+| EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | **GREEN** for ownership | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
+| EXT-11 | DNS for public hostname | Ops | 41 | production infrastructure | After EXT-10 | 1–3 days | `not_started` | **AMBER** | Records resolving to ALB | Delay public access | Public web access |
+| EXT-12 | TLS certificate (ACM or equivalent) | Ops | 41 | production infrastructure | After DNS | 1–7 days | `not_started` | **AMBER** | HTTPS synthetics green | Delay public access | Public web access |
+| EXT-13 | AWS production account/resources | Ops | 41 | production infrastructure | Ongoing | Continuous | Partial TF only; not applied | **AMBER** | Applied TF + live `/ready` | Cannot launch production | Entire production launch |
+| EXT-14 | Production secrets populated | Ops | 41 | production infrastructure | With EXT-13 | 1–5 days | `not_started` | **AMBER** | Redacted env dump; deploy fail-closed test | Cannot deploy prod | Entire production launch |
+| EXT-15 | Analytics provider | Product eng | 39 | optional beta capability | Sprint 28 | 3–14 days | `not_started` | **AMBER** (optional) | Consent-gated events in staging | Privacy-safe first-party minimal events only; disclose limited learning | Beta learning (not whole launch) |
+| EXT-16 | Error-tracking provider | Ops | 42 | optional beta capability | Sprint 39 | 3–10 days | `not_started` | **AMBER** (optional) | Sample error event + PII-safe config | CloudWatch logs-only (weaker) | Ops quality (launch if CW paging OK) |
+| EXT-17 | Support email inbox | Ops + support | 28 / 39 | global launch | 2026-08-09 | 1–3 days | `provisioned` | **GREEN** for bootstrap reachability | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png) (see EXT-17 notes); public address `support@piqsavi.com` monitored | Delay public launch | Support obligation |
+| EXT-18 | Privacy contact | Legal / DPO-equivalent | 28 | global launch | 2026-08-09 | 1–3 days | `provisioned` | **GREEN** for bootstrap reachability | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) (see EXT-18 notes); public address `privacy@piqsavi.com` designated and reachable | Delay public launch | Legal |
+| EXT-19 | Legal review (ToS/Privacy/disclosures) | Legal counsel | 28 / 44 | global launch | 2026-08-10 | 2–6 weeks | `applied` | **AMBER** | Sanitized counsel engagement + schedule confirmation retained at [`evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png) and [`evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png) (see EXT-19 notes); written approval still required before `approved` | Delay public launch | Entire launch |
+| EXT-20 | Privacy Policy publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | **AMBER** | Live URL | Delay public launch | Entire launch |
+| EXT-21 | Terms of Service publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `not_started` | **AMBER** | Live URL | Delay public launch | Entire launch |
+| EXT-22 | Cookie-consent solution | Product + legal | 28 / 39 | optional beta capability | Sprint 28 | 1–3 weeks | `not_started` | **AMBER** (optional) | Consent gate before non-essential analytics | First-party essential-only cookies; no third-party analytics | Analytics / tracking claims |
+| EXT-23 | FX provider | Marketplace eng | 37 | optional beta capability | Sprint 31 | 1–3 weeks | `not_started` | **AMBER** (optional) | Rates + timestamps; fail-closed tests | No cross-currency compare; disclose | Multi-currency compare |
+| EXT-24 | Monitoring / paging destination | Ops / on-call | 42 | production infrastructure | Sprint 41 | 3–10 days | `not_started` | **AMBER** | Page + ack ≤15m evidence | Delay production launch | Entire production launch |
+| EXT-25 | AI-provider production quota | AI eng + ops | 38 / 43 | optional beta capability | Sprint 29 | 1–3 weeks | Unknown | **AMBER** (optional) | Quota letter / console proof | Deterministic explanation fallback only; disclose | AI explanation claims |
+| EXT-26 | Payment provider | — | — | post-beta | — | — | `n_a_beta` | **GREEN** (out of scope) | — | Not required for beta | — |
+| EXT-27 | Apple App Store account | — | — | post-beta | — | — | `n_a_beta` | **GREEN** (out of scope) | — | Native app out of scope | — |
+| EXT-28 | Google Play account | — | — | post-beta | — | — | `n_a_beta` | **GREEN** (out of scope) | — | Native app out of scope | — |
+| EXT-29 | Google Search Console | Product / SEO | 39 / 45 | seo / indexing | Not started | 1–14 days | `not_started` | **AMBER** | Property verified; sitemap submitted; intended public URLs visible; private UUID routes absent | Launch without ranking claims; private-route noindex remains mandatory | Ranking/indexability claims |
 
 ---
 
@@ -74,7 +89,30 @@ Sprint 26 must open applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EX
 
 **Action checklist (statuses unchanged until real evidence):** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 
-Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-09 is now `applied` on sanitized Resend sender-domain DNS-authentication **preparation** evidence (see EXT-09 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes). EXT-17 is now `provisioned` on sanitized support-inbox receipt evidence (see EXT-17 notes). EXT-18 is now `provisioned` on sanitized privacy-contact designation and receipt evidence (see EXT-18 notes). EXT-19 is now `applied` on sanitized counsel engagement and schedule-confirmation evidence (see EXT-19 notes).
+Technical current-main staging proof does **not** advance any EXT row. Remaining Sprint 26 bootstrap rows stay `not_started` until real application/purchase/engagement evidence is retained. EXT-08 is now `applied` on sanitized Resend provider-selection/account-establishment evidence (see EXT-08 notes). EXT-09 is now `applied` on sanitized Resend sender-domain DNS-authentication **preparation** evidence (see EXT-09 notes). EXT-10 is now `approved` on sanitized ownership/control evidence (see EXT-10 notes). EXT-17 is now `provisioned` on sanitized support-inbox receipt evidence (see EXT-17 notes). EXT-18 is now `provisioned` on sanitized privacy-contact designation and receipt evidence (see EXT-18 notes). EXT-19 is now `applied` on sanitized counsel engagement and schedule-confirmation evidence (see EXT-19 notes). EXT-29 is newly registered as `not_started` for Search Console; this lock does not invent setup evidence.
+
+### September 30, 2026 — items that can threaten the target
+
+**RED (unless resolved or scope-reduced):**
+
+- EXT-01…EXT-06 — no merchant applications or credentials evidenced. Naming any of PH/US/SG/UK/CA is blocked. Public shopping launch remains blocked until **at least one** market is certified. Individual markets may be omitted.
+
+**AMBER (schedule-sensitive / external):**
+
+- EXT-08 / EXT-09 — Resend account and DNS plan only; delivery and domain verification remain Sprint 27
+- EXT-11 / EXT-12 / EXT-13 / EXT-14 — public DNS/TLS/production AWS/secrets not applied
+- EXT-19 / EXT-20 / EXT-21 — counsel engaged; written approval and live policy URLs missing
+- EXT-24 — paging destination not started
+- EXT-29 — Search Console not started
+- EXT-07 / EXT-15 / EXT-16 / EXT-22 / EXT-23 / EXT-25 — optional; reduce claims rather than delay launch
+
+**GREEN (for the stated claim only):**
+
+- EXT-10 ownership
+- EXT-17 / EXT-18 bootstrap reachability
+- EXT-26…28 out of beta scope
+
+Do not treat counsel’s scheduled 2026-08-19 consultation as written approval. No later consultation outcome is recorded in this register.
 
 ### EXT-08 notes (transactional email provider — applied)
 

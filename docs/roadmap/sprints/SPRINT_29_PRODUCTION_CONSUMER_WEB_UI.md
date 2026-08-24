@@ -1,15 +1,47 @@
-# Sprint 29 — Production Consumer Web UI & Accessibility
+# Sprint 29 — Production Consumer Decision Experience & Conversational Continuity
 
-**Status:** Planned
-**Primary owner / domain:** Frontend / product
+**Filename retained** for link stability: `SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`
+
+**Status:** In progress — 29.0–29.4A, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged** on `ab23d29`. Phase 29.4B is **in progress / not merged**. Phase 29.4C is **planned**. Sprint 29 is **not closed**.
+**Primary owner / domain:** Frontend / product / conversational continuity
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Beta blocker classification:** Yes — P1-6 (public UX)
+**Beta blocker classification:** Yes — P1-6 (public UX); CC-01; persistent Ask; SEO technical foundation
+**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). This is not the final launch candidate and does not prove live merchant research.
 
 ## Objective
 
-Deliver a production consumer web application covering the core shopping and account journey, including Results-bound Conversational Continuity through Ask PiqSavi, with accessibility and end-to-end baselines — not a visual reskin of `demo.html` and not a second conversation, Results, Recommendation, or PiqScore system.
+Deliver the production consumer **decision experience** and Results-bound Conversational Continuity through Ask PiqSavi, including accessibility, SEO technical foundation, and the conversational contract for proposal → confirmation → authorized research request — not a visual reskin of `demo.html` and not a second conversation, Results, Recommendation, or PiqScore system.
+
+Frontend/accessibility responsibility is preserved. The sprint purpose is no longer only “Production Consumer Web UI & Accessibility.”
 
 ## Included requirements
+
+### Current implementation record (truthful; not a close)
+
+| Work | Status | Notes |
+|------|--------|-------|
+| 29.0 CC-01 contract freeze | merged | PR #83 |
+| 29.1 Conversation domain | merged | PR #84 |
+| 29.2 Conversation persistence | merged | PR #85 |
+| 29.3 Canonical decision snapshots | merged | PR #86 — immutable snapshots, owner binding, evaluated-set authority, Recommendation authority, canonical PiqScores, evidence/provenance, unknowns, integrity verification, affiliate-neutrality preservation |
+| Product Foundation | merged | PR #87 — Results, Compare, Why This Is the Best Piq for You, persistent Ask PiqSavi, desktop/mobile behavior, truthful price-state presentation, delivery/location UX, unknown/not-captured states, qualification presentation, truthful source/evidence behavior, no fixture claims in production UUID mode |
+| 29.4A `answer_from_evidence` | merged | PR #88 — Ask can answer post-Recommendation questions using bounded existing evidence. It cannot research, add products, or modify Recommendation / PiqScore |
+| Canonical offer economics | merged | PR #89 — listing price, verified discounts, verified vouchers where captured, shipping, taxes/duties, import costs, dominant price state, dominant amount, location context, structured unknowns, evidence/provenance, freshness where known; schema 1.0 compatibility preserved |
+| Canonical UUID consumer presentation | merged | PR #90 — one canonical owner-bound UUID drives Results → Compare → Why → Ask PiqSavi with no fixture fallback for real UUID decisions |
+| Canonical decision presentation contract | merged | PR #91 / schema 1.2 — Recommendation qualification, shopper decision context, product identity metadata, category-flexible product fit, Recommendation reasons, Best For, alternative trade-offs, outbound offer reference, integrity protection, Ask evidence support |
+| 29.4B `refine_session_recommendation` | in progress | Not merged. Shopper may clarify preferences after Recommendation. Session Best Piq may change using already-evaluated products/evidence. PiqScore does not change. Canonical snapshot does not mutate. Original Recommendation remains historical. Evaluated set cannot expand. No new research. No affiliate influence. |
+| 29.4C `propose_research` | planned | Detect when the shopper asks for evidence/product outside currently evaluated evidence. PiqSavi may propose additional research. Research does **not** automatically execute. User confirmation remains required. |
+
+**Truthfulness rules already locked for presentation:**
+
+- no brand/model inference from display name
+- no universal headphone fit fallback
+- qualification absent ≠ explicit unqualified
+- do not claim live merchant research
+
+**Intent sufficiency (locked):** Ask only when missing information could materially change the Recommendation. Otherwise, research first. Do not introduce long onboarding/questionnaire friction.
+
+**Ask PiqSavi lock:** remains available after Recommendation on Results, Compare, and Why This Is the Best Piq for You. Recommendation is not the end of the shopping conversation.
 
 ### Full shopping and account journey UI
 
@@ -51,6 +83,60 @@ Deliver a production consumer web application covering the core shopping and acc
 - Affiliate commission and partner economics remain post-selection and cannot influence answers, refinement, alternatives, research, canonical scores, or organic ordering.
 - Implement the approved Product Foundation artwork exactly under its owner-approved manifest; desktop insertion height is 80 px and mobile insertion height is 72 px.
 
+### Research confirmation / handoff (Sprint 29 owns the conversational contract only)
+
+Remaining Sprint 29 acceptance includes:
+
+proposal
+→ user confirmation
+→ authorized research request
+
+Actual **LIVE** research execution belongs to Sprints 31–38. Sprint 29 must not pretend merchant research exists before those dependencies are satisfied. `propose_research` does not imply research automatically executes.
+
+### SEO technical foundation (Sprint 29)
+
+- semantic HTML
+- descriptive page metadata infrastructure
+- canonical URL support
+- index/noindex controls
+- robots architecture
+- sitemap architecture
+- structured-data / JSON-LD infrastructure where truthful
+- crawl-safe public URL architecture
+- internal linking support for public pages
+
+**Critical privacy rule:** Personalized decision/session pages such as canonical UUID Results/Compare/Why must remain private/non-indexable unless a separately designed public representation exists.
+
+Private/personalized examples (`/results/{uuid}`, `/compare/{uuid}`, `/why-best-piq/{uuid}`) may contain shopper location, budget, priorities, personalized Recommendation, and session state. They must not become general search-index pages.
+
+Public SEO surfaces, if later approved, may include `/product/...`, `/compare/...-vs-...`, `/best/...`, and category/budget buying guides. Publish/index only when content is supported by sufficiently trustworthy public evidence. No mass thin AI page generation.
+
+Do **not** create a separate large pre-launch SEO sprint. Measurement is Sprint 39. Rehearsal is Sprint 44. Cutover is Sprint 45. Observation is Sprint 46.
+
+### Frontend architecture (reconcile stale wording)
+
+Production consumer frontend remains:
+
+- FastAPI-served semantic HTML
+- shared CSS
+- native vanilla-JavaScript ES modules
+
+Mandatory React, Next.js, Vite, TypeScript production build, SPA architecture, and Node production build are **not** required unless independently approved later.
+
+### Search / Save / Watch and guest continuity
+
+- Search / Ask = research/decision action
+- Save = preserve a buying decision/context for later
+- Watch = explicitly subscribe to future monitoring where that capability genuinely exists
+- Do not silently turn Save into Watch
+- Do not promise notifications before monitoring is operational
+- Guest→account continuity must retain current decision context and Saved intent/state where safely possible
+- Do not silently lose the decision because signup occurred
+
+### Live decision creation (shared launch requirement)
+
+Sprint 29 owns capture/presentation of the canonical snapshot and UUID consumer Results. Sprint 31 owns routing/eligibility. Sprint 38 owns live execution. Fixture-created UUIDs are not sufficient for Sprint 45.
+
 ### Market-selection interface (ownership split)
 
 - **Sprint 29 owns** the accessible, responsive market-selection UI shell/component
@@ -62,7 +148,7 @@ Deliver a production consumer web application covering the core shopping and acc
 - Responsive mobile web
 - Accessibility baseline (keyboard, labels, contrast, focus)
 - Supported-browser validation matrix
-- Frontend production build validation in CI
+- Document-route / static-asset validation in CI (not a Node/React production build unless later approved)
 - Unit/component tests
 - End-to-end tests using non-live provider contracts where necessary
 - Staging E2E after required backend dependencies (26/27/28 hooks) are available
@@ -82,7 +168,7 @@ Deliver a production consumer web application covering the core shopping and acc
 
 ## Implementation deliverables
 
-- Frontend package + build pipeline
+- FastAPI document routes + semantic HTML + shared CSS + vanilla-JS ES modules
 - Wired API client
 - Account, privacy, deletion/export, feedback/support entry components
 - Market-selection UI shell (domain wiring finalized in 37)
@@ -105,7 +191,7 @@ Deliver a production consumer web application covering the core shopping and acc
 
 - Component/unit as appropriate
 - E2E happy path + key failure states (non-live contracts OK)
-- Build size budget check
+- Asset/size budget check appropriate to the FastAPI static consumer
 - A11y smoke
 - Minimum 20 explicit Conversational Continuity behavior tests
 - Stable evaluated-set regression coverage across follow-up questions
@@ -130,7 +216,10 @@ Deliver a production consumer web application covering the core shopping and acc
 ## Acceptance criteria
 
 - Staging e2e journey green for registration/login/recovery/verification-state, search→PiqScore→recommendation→explanation→redirect, account settings, deletion/export entry points, and feedback/support entry points
-- A11y baseline checklist signed; browser matrix recorded; CI validates production frontend build
+- A11y baseline checklist signed; browser matrix recorded; CI validates the FastAPI HTML/CSS/vanilla-JS consumer
+- UUID Results/Compare/Why are non-indexable; no fixture fallback for real UUID decisions
+- Live merchant research is not claimed
+- `propose_research` never executes research before explicit confirmation
 - Unsupported-market and stale-data states do not present fixtures as live
 - Market-selection UI shell present; domain/policy integration explicitly deferred to Sprint 37
 - Sprint 29 does **not** certify live merchant data or final MarketContext behavior

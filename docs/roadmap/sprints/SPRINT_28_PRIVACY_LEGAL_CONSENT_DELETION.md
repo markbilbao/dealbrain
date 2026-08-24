@@ -20,6 +20,8 @@ Ship the consumer legal and privacy minimum: policies, consent records, deletion
 - Privacy contact + support contact published internally
 - Minimum age policy; country-specific notice placeholders
 - Start formal legal review (EXT-19)
+- Search-index privacy policy: personalized/private decision URLs must not become public SEO pages
+- Final counsel/approval gate remains Sprint 44/45; this sprint produces the package, not the launch signature
 
 ## Explicit non-goals
 
@@ -66,6 +68,24 @@ Ship the consumer legal and privacy minimum: policies, consent records, deletion
 - Publication URLs may wait for 44/45 after counsel approval
 
 ## Acceptance criteria
+
+Launch acceptance explicitly covers:
+
+- Terms of Service
+- Privacy Policy
+- cookie / consent policy
+- consent persistence
+- account deletion
+- data export
+- retention policy
+- PII inventory
+- vendor/data-processor register
+- support/privacy contacts
+- age/legal notices where applicable
+- final counsel/approval gate in Sprint 44/45
+- explicit search-index privacy policy: personalized/private decision URLs must not become public SEO pages
+
+Also:
 
 - Staging deletion and export pass
 - Consent and policy-version records persisted

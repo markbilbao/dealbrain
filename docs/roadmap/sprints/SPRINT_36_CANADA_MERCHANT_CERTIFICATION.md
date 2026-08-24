@@ -64,6 +64,8 @@ Certify at least one real Canada merchant-data path under the same bar as Sprint
 - Kill switch tested
 - FR-CA scope dependency recorded for Sprint 37
 - **Fixtures, mocks, imported samples, or simulations cannot close this sprint**
+- Failure of CA certification removes/delays CA only; it does not necessarily delay Sprint 45 if another certified useful market exists
+- Sprint 45 does not require all five planned markets
 
 ## Predecessor sprints
 

@@ -21,6 +21,8 @@ Produce capacity evidence for announced rollout sizes; forbid unproven capacity 
 - Rate-limit capacity; AI/merchant quotas; graceful overload
 - Celebrity/creator spike simulation
 - Evidence gates for 1k registered, 1k DAU, 10k registered, 10k DAU, short spike
+- Test: expected beta load; search bursts; Ask PiqSavi bursts; merchant/provider degradation; AI quota degradation; DB/cache/queue; public SEO/crawler traffic where relevant; graceful overload
+- Public traffic claims may not exceed demonstrated capacity
 - Validate shared ConversationRepository capacity across restarts and multiple application workers.
 - Load-test decision-context reads/writes, bounded conversation history, session cleanup, AI-answer concurrency, and confirmed-research job concurrency.
 - Measure database payload size, cleanup/index behavior, connection-pool pressure, idempotency storage, queue requirements, provider quotas, and graceful overload.

@@ -19,6 +19,8 @@ Provision isolated production AWS and validate production deploy/rollback workfl
 - DB migration policy + rollback compatibility confirmation
 - Environment isolation proof (staging cannot read prod secrets)
 - Preserve staging deploy/rollback architecture
+- Launch acceptance requires **real evidence** for: isolated production AWS; DB; secrets; IAM; deploy path; rollback path; DNS; TLS; public hostname; migration strategy; appropriate CORS/host/security configuration
+- Infrastructure-as-code alone is not launch proof
 
 ## Explicit non-goals
 

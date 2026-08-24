@@ -7,7 +7,9 @@
 
 ## Objective
 
-Execute controlled public launch by performing **final go/no-go verification** against all Global Public Beta exit criteria (EC-01…EC-22). Sprint 45 does not re-own implementation for criteria primarily owned by earlier sprints, except launch-control items EC-20 and EC-22.
+Execute controlled public launch **no later than September 30, 2026** by performing **final go/no-go verification** against all Global Public Beta exit criteria (EC-01…EC-30). Sprint 45 does not re-own implementation for criteria primarily owned by earlier sprints, except launch-control items EC-20, EC-22, and EC-30.
+
+September 30, 2026 is the owner target launch date. It is not permission to bypass security, privacy/legal, truthfulness, evidence, rehearsal, or production-readiness gates. Reduce optional market/provider/feature scope rather than weaken those gates.
 
 ## Included requirements
 
@@ -16,8 +18,20 @@ Execute controlled public launch by performing **final go/no-go verification** a
 - Launch monitoring window + handoff package for Sprint 46
 - Publish legal URLs if not live
 - Publish coverage matrix
-- Enforce exit criteria EC-01…EC-22 from master roadmap §9 (verify owners’ evidence; do not substitute documentation for runtime proof)
+- Enforce exit criteria EC-01…EC-30 from master roadmap §9 (verify owners’ evidence; do not substitute documentation for runtime proof)
 - Market subset rule applied if EXT failures (remove markets rather than fake readiness)
+- Do not mark launch ready if any non-waivable blocker remains
+- Where an optional market is not certified: remove that market from launch claims
+- Where an optional non-core feature is not ready: demote/remove the claim or feature rather than fake readiness
+- Public launch must provide a genuinely useful PiqSavi shopping experience in the supported scope
+- At least one genuinely useful certified market must exist for public shopping launch
+
+### SEO public cutover
+
+- Only approved public pages may become indexable
+- Do not promise ranking position
+- Sprint 45 proves: pages are technically indexable where intended; private routes are not; sitemap/robots/canonicals are correct; Search Console is connected; structured data is valid where used
+- SEO ranking is an acquisition outcome, not an acceptance guarantee
 - Incident war-room staffing; rollback authority assignment (EC-20)
 - Signed final launch checklist (EC-22)
 - Confirm Sprint 26 promotion discipline still holds for the frozen launch candidate (final verification of P1-7 — not duplicate primary ownership)
@@ -64,7 +78,9 @@ Execute controlled public launch by performing **final go/no-go verification** a
 
 ## Acceptance criteria
 
-- All applicable EC-01…EC-22 true (or market removed where EC-09/EC-10 require)
+- All applicable EC-01…EC-30 true (or market/feature removed where the criterion allows)
+- Owner target date: no later than September 30, 2026
+- No non-waivable blocker remains
 - Only certified markets named
 - EC-09 capability-policy invariant verified for every named shopping market (declared, evidence-backed, fail-closed enforced; unknown permissions do not enable production features); remove/disable markets or providers that fail rather than weakening the gate
 - Rollback authority on-call

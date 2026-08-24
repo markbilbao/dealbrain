@@ -198,7 +198,11 @@ Go if staging smoke green; No-go blocks 27+ public-path work that assumes stagin
 
 **Technical staging gate:** satisfied for SHA `79bd03f9e3df99efe4a978c48bec79eceec46767` (see evidence package).
 
-**Sprint close gate:** still blocked on external bootstrap actions and register updates.
+**Current approved engineering baseline (2026-08-24):** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` is the latest approved merged baseline for completed canonical presentation work (2819 passed / 0 failed / 0 skipped / 168 warnings). It is **not** Sprint 26 close evidence, **not** a replacement for the packaged `79bd03f` staging proof, and **not** the final launch candidate. EC-01 still requires staging proof of the frozen launch candidate.
+
+Do not close Sprint 26 merely because later Sprint 29 work proceeded under an approved sequencing exception.
+
+**Sprint close gate:** still blocked on external bootstrap actions and register updates. EXT-01…EXT-05 remain `not_started`. EXT-08/09 remain `applied` (not provisioned). EXT-10 remains `approved` (not provisioned). EXT-17/18 remain `provisioned` for bootstrap reachability. EXT-19 remains `applied` (not written approval).
 
 ## Rollback or contingency
 
