@@ -18,13 +18,19 @@ from app.domain.entities.connector_reliability import (
 )
 from app.domain.entities.research_authorization import FrozenResearchScope, ResearchAuthorization
 from app.domain.entities.research_execution import (
-    CapabilityCertification,
+    CapabilityPolicyState,
+    ProviderCertificationStatus,
     ResearchCapability,
     ResearchProviderDescriptor,
     TrustedMarketContext,
     empty_execution_trace,
 )
 from app.domain.exceptions import ShoppingAssistantNotFoundError
+from app.research.certification import (
+    make_research_provider_certification,
+    production_research_provider_certification_catalog,
+    research_provider_certification_catalog_for_tests,
+)
 from app.research.providers import StaticResearchProvider
 from app.research.registry import (
     production_research_provider_registry,
@@ -129,44 +135,13 @@ def _authorization(scope: FrozenResearchScope | None = None, **overrides) -> Res
     return ResearchAuthorization(**values)
 
 
-def _cert(
-    capability: ResearchCapability,
-    *,
-    markets: tuple[str, ...] = ("PH",),
-    sources: tuple[str, ...] = ("amazon",),
-    policy: str = "allowed",
-    version: str = "cap-v1",
-) -> CapabilityCertification:
-    return CapabilityCertification(
-        capability=capability,
-        markets=markets,
-        sources=sources,
-        policy=policy,
-        certification_version=version,
-        may_expand_evaluated_set=capability is ResearchCapability.PRODUCT_DISCOVERY,
-        can_provide_pricing=capability is ResearchCapability.CURRENT_PRICING,
-        can_provide_shipping_taxes=capability
-        in {ResearchCapability.SHIPPING, ResearchCapability.TAXES_IMPORT},
-        can_provide_product_evidence=capability
-        in {
-            ResearchCapability.PRODUCT_DISCOVERY,
-            ResearchCapability.OFFER_DISCOVERY,
-            ResearchCapability.PRODUCT_SPECIFICATION,
-            ResearchCapability.WARRANTY_EVIDENCE,
-        },
-        can_provide_review_evidence=capability is ResearchCapability.REVIEW_COMMUNITY_EVIDENCE,
-    )
-
-
 def _provider(
     provider_id: str = "test-merchant-a",
     *,
-    certified: bool = True,
     markets: tuple[str, ...] = ("PH",),
     capabilities: tuple[ResearchCapability, ...] = _DISCOVERY
     + (ResearchCapability.CURRENT_PRICING,),
     sources: tuple[str, ...] = ("amazon",),
-    policy: str = "allowed",
     selection_priority: int = 100,
     commission: float | None = None,
     operational_status: ConnectorOperationalStatus = ConnectorOperationalStatus.AVAILABLE,
@@ -180,12 +155,7 @@ def _provider(
             supported_markets=markets,
             supported_capabilities=capabilities,
             supported_sources=sources,
-            certification_status="certified" if certified else "registered",
-            certification_version="prov-v1",
             operational_status=operational_status,
-            capability_certifications=tuple(
-                _cert(item, markets=markets, sources=sources, policy=policy) for item in capabilities
-            ),
             selection_priority=selection_priority,
             test_fixture=True,
             kill_switch=kill_switch or KillSwitch(),
@@ -199,12 +169,60 @@ def _provider(
     )
 
 
+def _cert_record(
+    provider: StaticResearchProvider,
+    capability: ResearchCapability,
+    *,
+    market: str | None = None,
+    source: str | None = None,
+    status: ProviderCertificationStatus = "certified",
+    policy: CapabilityPolicyState = "allowed",
+    version: str = "cert-v1",
+):
+    descriptor = provider.descriptor
+    return make_research_provider_certification(
+        provider_id=provider.provider_id,
+        capability=capability,
+        market=market or descriptor.supported_markets[0],
+        source=source if source is not None else descriptor.supported_sources[0],
+        certification_version=version,
+        status=status,
+        policy=policy,
+        test_fixture=True,
+    )
+
+
+def _catalog_for_registry(registry, **kwargs):
+    records = []
+    for provider in registry.list_providers():
+        for capability in provider.descriptor.supported_capabilities:
+            for market in provider.descriptor.supported_markets:
+                for source in provider.descriptor.supported_sources:
+                    records.append(
+                        _cert_record(
+                            provider,
+                            capability,
+                            market=market,
+                            source=source,
+                            **kwargs,
+                        )
+                    )
+    return research_provider_certification_catalog_for_tests(records)
+
+
 def _registry(*providers: StaticResearchProvider):
     return research_provider_registry_for_tests(providers)
 
 
-def _plan(authorization=None, registry=None, market="PH", **kwargs):
+def _plan(authorization=None, registry=None, catalog=None, market="PH", certify=True, **kwargs):
     auth = authorization or _authorization()
+    registry = registry or _registry(_provider())
+    if catalog is None:
+        catalog = (
+            _catalog_for_registry(registry)
+            if certify
+            else research_provider_certification_catalog_for_tests(())
+        )
     return plan_authorized_research(
         auth,
         owner=kwargs.pop("owner", _owner()),
@@ -213,7 +231,8 @@ def _plan(authorization=None, registry=None, market="PH", **kwargs):
         canonical_context_version=kwargs.pop(
             "canonical_context_version", auth.canonical_context_version
         ),
-        registry=registry or _registry(_provider()),
+        registry=registry,
+        catalog=catalog,
         trusted_market=None if market is None else TrustedMarketContext(country_code=market),
         **kwargs,
     )
@@ -249,13 +268,13 @@ def test_valid_authorization_with_certified_provider_is_ready_and_not_executed()
 
 
 def test_uncertified_provider_is_not_eligible() -> None:
-    result = _plan(registry=_registry(_provider(certified=False)))
+    result = _plan(registry=_registry(_provider()), certify=False)
     plan = result.plan
     assert plan is not None
     assert plan.plan_ready is False
     assert plan.eligible_steps == ()
     assert plan.support_status == "blocked_missing_certified_provider"
-    assert any(item.reason == "not_certified" for item in plan.blocked_requirements)
+    assert any(item.reason == "certification_missing" for item in plan.blocked_requirements)
 
 
 def test_wrong_market_does_not_fallback() -> None:
@@ -264,7 +283,7 @@ def test_wrong_market_does_not_fallback() -> None:
     assert plan is not None
     assert plan.eligible_steps == ()
     assert plan.support_status == "blocked_missing_certified_provider"
-    assert any(item.reason == "market_mismatch" for item in plan.blocked_requirements)
+    assert any(item.reason == "provider_market_not_supported" for item in plan.blocked_requirements)
 
 
 def test_source_mismatch_does_not_substitute_shopee_for_amazon() -> None:
@@ -281,7 +300,7 @@ def test_source_mismatch_does_not_substitute_shopee_for_amazon() -> None:
     plan = result.plan
     assert plan is not None
     assert plan.eligible_steps == ()
-    assert any(item.reason == "source_mismatch" for item in plan.blocked_requirements)
+    assert any(item.reason == "source_not_supported" for item in plan.blocked_requirements)
     assert "shopee" not in {
         source for step in plan.eligible_steps for source in step.source_identities
     }
@@ -359,7 +378,9 @@ def test_partial_capabilities_keep_shipping_unknown() -> None:
     assert plan is not None
     assert plan.support_status == "partially_supported"
     assert plan.plan_ready is False
-    assert any(step.capability is ResearchCapability.CURRENT_PRICING for step in plan.eligible_steps)
+    assert any(
+        step.capability is ResearchCapability.CURRENT_PRICING for step in plan.eligible_steps
+    )
     shipping = next(
         item for item in plan.blocked_requirements if item.capability is ResearchCapability.SHIPPING
     )
@@ -368,7 +389,10 @@ def test_partial_capabilities_keep_shipping_unknown() -> None:
 
 
 def test_production_registry_fail_closes_without_fixture_or_llm_fallback() -> None:
-    result = _plan(registry=production_research_provider_registry())
+    result = _plan(
+        registry=production_research_provider_registry(),
+        catalog=production_research_provider_certification_catalog(),
+    )
     plan = result.plan
     assert plan is not None
     assert plan.eligible_steps == ()
@@ -528,9 +552,20 @@ def test_client_cannot_select_provider_or_widen_sources() -> None:
 
 
 def test_unknown_policy_and_restricted_policy_are_not_executable() -> None:
-    unknown = _plan(registry=_registry(_provider(policy="unknown")))
-    prohibited = _plan(registry=_registry(_provider(policy="prohibited")))
-    restricted = _plan(registry=_registry(_provider(policy="restricted")))
+    provider = _provider()
+    registry = _registry(provider)
+    unknown = _plan(
+        registry=registry,
+        catalog=_catalog_for_registry(registry, policy="unknown"),
+    )
+    prohibited = _plan(
+        registry=registry,
+        catalog=_catalog_for_registry(registry, policy="prohibited"),
+    )
+    restricted = _plan(
+        registry=registry,
+        catalog=_catalog_for_registry(registry, policy="restricted"),
+    )
     for result in (unknown, prohibited, restricted):
         assert result.plan is not None
         assert result.plan.eligible_steps == ()
@@ -538,7 +573,9 @@ def test_unknown_policy_and_restricted_policy_are_not_executable() -> None:
 
 
 def test_kill_switch_and_open_circuit_are_ineligible() -> None:
-    killed = _plan(registry=_registry(_provider(kill_switch=KillSwitch(engaged=True, reason="off"))))
+    killed = _plan(
+        registry=_registry(_provider(kill_switch=KillSwitch(engaged=True, reason="off")))
+    )
     open_circuit = _plan(
         registry=_registry(
             _provider(circuit=CircuitBreakerSnapshot(state=CircuitBreakerState.OPEN))
@@ -616,13 +653,15 @@ def test_authorization_to_plan_does_not_mutate_canonical_decision() -> None:
     assert context is not None
     auth = context.research_authorization
     assert auth is not None
+    registry = _registry(_provider())
     result = plan_authorized_research(
         auth,
         owner=_owner(),
         conversation_id=first.conversation_id,
         decision_id=DECISION_ID,
         canonical_context_version=1,
-        registry=_registry(_provider()),
+        registry=registry,
+        catalog=_catalog_for_registry(registry),
         trusted_market=TrustedMarketContext(country_code="PH"),
     )
     assert result.planned is True
@@ -642,7 +681,7 @@ def test_router_and_provider_modules_have_no_network_or_live_connectors() -> Non
         ROOT / "app/services/research_execution.py",
         ROOT / "app/research/providers.py",
         ROOT / "app/research/registry.py",
-        ROOT / "app/research/eligibility.py",
+        ROOT / "app/research/certification.py",
         ROOT / "app/research/capabilities.py",
         ROOT / "app/domain/entities/research_execution.py",
         ROOT / "app/domain/interfaces/research_provider.py",
@@ -668,7 +707,7 @@ def test_public_plan_does_not_expose_certification_secrets_or_commission() -> No
     public = result.to_public_dict()
     blob = str(public)
     assert "0.25" not in blob
-    assert "prov-v1" not in blob
+    assert "cert-v1" not in blob
     assert "affiliate" not in blob
     assert "credential" not in blob
     assert result.plan is not None
@@ -683,8 +722,10 @@ def test_planning_does_not_consume_authorization() -> None:
 
 
 def test_capability_policy_unknown_is_not_enabled_by_payload_presence() -> None:
-    descriptor = _provider(policy="unknown").descriptor
-    assert descriptor.capability_certifications[0].is_executable is False
-    result = _plan(registry=_registry(_provider(policy="unknown")))
+    provider = _provider()
+    registry = _registry(provider)
+    catalog = _catalog_for_registry(registry, policy="unknown")
+    assert catalog.list_records()[0].is_executable is False
+    result = _plan(registry=registry, catalog=catalog)
     assert result.plan is not None
     assert result.plan.eligible_steps == ()

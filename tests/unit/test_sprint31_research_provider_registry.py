@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 from app.domain.entities.research_execution import (
-    CapabilityCertification,
     ResearchCapability,
     ResearchProviderDescriptor,
 )
@@ -28,18 +27,7 @@ def _provider(provider_id: str, *, test_fixture: bool = True) -> StaticResearchP
             supported_markets=("PH",),
             supported_capabilities=(capability,),
             supported_sources=("amazon",),
-            certification_status="registered",
-            certification_version="v1",
             test_fixture=test_fixture,
-            capability_certifications=(
-                CapabilityCertification(
-                    capability=capability,
-                    markets=("PH",),
-                    sources=("amazon",),
-                    policy="unknown",
-                    certification_version="v1",
-                ),
-            ),
         )
     )
 
@@ -47,7 +35,6 @@ def _provider(provider_id: str, *, test_fixture: bool = True) -> StaticResearchP
 def test_production_registry_is_empty_and_refuses_test_fixtures() -> None:
     registry = production_research_provider_registry()
     assert registry.list_providers() == ()
-    assert registry.certified_providers() == ()
     with pytest.raises(ValueError, match="test providers"):
         registry.register(_provider("test-amazon-ph"))
 
@@ -60,20 +47,24 @@ def test_duplicate_provider_ids_are_rejected() -> None:
 
 
 def test_registry_listing_is_deterministic() -> None:
-    registry = research_provider_registry_for_tests(
-        [_provider("test-b"), _provider("test-a")]
-    )
+    registry = research_provider_registry_for_tests([_provider("test-b"), _provider("test-a")])
     assert [item.provider_id for item in registry.list_providers()] == ["test-b", "test-a"]
-    again = research_provider_registry_for_tests(
-        [_provider("test-b"), _provider("test-a")]
-    )
+    again = research_provider_registry_for_tests([_provider("test-b"), _provider("test-a")])
     assert again.fingerprint() == registry.fingerprint()
+
+
+def test_registry_fingerprint_is_technical_only() -> None:
+    first = research_provider_registry_for_tests([_provider("test-a")]).fingerprint()
+    second = research_provider_registry_for_tests([_provider("test-a")]).fingerprint()
+    assert first == second
+    assert "certified" not in first
 
 
 def test_production_registry_module_does_not_import_test_or_network_clients() -> None:
     sources = [
         (ROOT / "app/research/registry.py").read_text(encoding="utf-8"),
         (ROOT / "app/research/providers.py").read_text(encoding="utf-8"),
+        (ROOT / "app/research/certification.py").read_text(encoding="utf-8"),
         (ROOT / "app/research/__init__.py").read_text(encoding="utf-8"),
     ]
     for source in sources:
@@ -88,3 +79,5 @@ def test_production_registry_module_does_not_import_test_or_network_clients() ->
     production = (ROOT / "app/research/registry.py").read_text(encoding="utf-8")
     assert "allow_test_providers=False" in production
     assert "Product Foundation" in production or "test providers are never registered" in production
+    catalog = (ROOT / "app/research/certification.py").read_text(encoding="utf-8")
+    assert "allow_test_certifications=False" in catalog

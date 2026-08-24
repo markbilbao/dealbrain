@@ -1,6 +1,6 @@
 # Sprint 31 — Merchant Platform Unification
 
-**Status:** In progress — research execution router / certified provider contract **implemented** (planning only). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence. Sprint 4 / 18 connector unification is **not** closed by this increment.
+**Status:** In progress — research execution router is planning-only; provider capability declarations are distinct from the trusted PiqSavi certification catalog (production catalog empty). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence. Sprint 4 / 18 connector unification is **not** closed by this increment. Sprint 31 is not complete.
 
 **Architecture:** [`../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md)
 **Primary owner / domain:** Marketplace platform (coordinates Sprint 4 + 18; no silent ownership theft)

@@ -87,10 +87,11 @@ Extension guide for official connectors
 
 Sprint 31 research execution routing
 ------------------------------------
-Authorized-research planning uses a separate certified-provider contract
-(``docs/architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md``). It does not
-replace this Sprint 18 sync registry, Sprint 4 search connectors, or Sprint 8
-collectors. Technical ``ConnectorCapability`` remains distinct from Sprint 31
-contractual certification. Live merchant execution is still not implemented.
+Authorized-research planning uses a separate provider registry plus a trusted
+certification catalog (``docs/architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md``).
+It does not replace this Sprint 18 sync registry, Sprint 4 search connectors, or
+Sprint 8 collectors. Technical ``ConnectorCapability`` remains distinct from
+Sprint 31 contractual certification, and a provider descriptor cannot certify
+itself. Live merchant execution is still not implemented.
 
 """

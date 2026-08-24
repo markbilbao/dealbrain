@@ -28,6 +28,10 @@ from app.domain.entities.research_execution import (
 from app.domain.entities.research_proposal import ResearchProposal
 from app.domain.entities.shopping_assistant import ConversationOwner
 from app.research.capabilities import derive_required_capabilities
+from app.research.certification import (
+    ResearchProviderCertificationCatalog,
+    production_research_provider_certification_catalog,
+)
 from app.research.digest import stable_sha256
 from app.research.eligibility import assign_capability_step, destination_sensitive_required
 from app.research.registry import ResearchProviderRegistry
@@ -44,16 +48,13 @@ def execution_request_from_handoff(
 ) -> ResearchExecutionRequest:
     """Build the trusted planning input from a validated authorization handoff."""
 
-    request_id = (
-        "research-exec-req:"
-        + stable_sha256(
-            {
-                "kind": "research_execution_request_v1",
-                "authorization_id": handoff.authorization_id,
-                "authorization_version": handoff.authorization_version,
-                "scope_digest": handoff.scope_digest,
-            }
-        )
+    request_id = "research-exec-req:" + stable_sha256(
+        {
+            "kind": "research_execution_request_v1",
+            "authorization_id": handoff.authorization_id,
+            "authorization_version": handoff.authorization_version,
+            "scope_digest": handoff.scope_digest,
+        }
     )
     return ResearchExecutionRequest(
         execution_request_id=request_id,
@@ -80,6 +81,7 @@ def plan_authorized_research(
     decision_id: str,
     canonical_context_version: int,
     registry: ResearchProviderRegistry,
+    catalog: ResearchProviderCertificationCatalog | None = None,
     trusted_market: TrustedMarketContext | None = None,
     proposal: ResearchProposal | None = None,
     expected_scope_digest: str | None = None,
@@ -91,8 +93,11 @@ def plan_authorized_research(
     Input must be a server-held authorization. Client-selected providers,
     markets, sources, and product SKUs are ignored. This function never
     calls ``execute`` and never sets ``execution_available=True``.
+    Technical provider support is not certification. Missing catalog records
+    fail closed.
     """
 
+    certification_catalog = catalog or production_research_provider_certification_catalog()
     validation = validate_research_authorization_for_execution(
         authorization,
         owner=owner,
@@ -119,7 +124,7 @@ def plan_authorized_research(
         return ResearchPlanningResult(planned=False, reason="stale_authorization")
 
     request = execution_request_from_handoff(handoff, trusted_market=trusted_market)
-    plan = build_execution_plan(request, registry)
+    plan = build_execution_plan(request, registry, certification_catalog)
     return ResearchPlanningResult(
         planned=True,
         reason=plan.support_status,
@@ -130,6 +135,7 @@ def plan_authorized_research(
 def build_execution_plan(
     request: ResearchExecutionRequest,
     registry: ResearchProviderRegistry,
+    catalog: ResearchProviderCertificationCatalog,
 ) -> ResearchExecutionPlan:
     """Construct a fail-closed plan from a trusted execution request."""
 
@@ -142,6 +148,7 @@ def build_execution_plan(
     for capability in required:
         assigned, blocked_items, capability_audits = assign_capability_step(
             registry,
+            catalog,
             capability=capability,
             market=request.market,
             sources=request.scope.requested_sources,
@@ -170,6 +177,7 @@ def build_execution_plan(
         blocked=blocked,
         status=status,
         registry_fingerprint=registry.fingerprint(),
+        certification_fingerprint=catalog.fingerprint(),
     )
     plan = ResearchExecutionPlan(
         plan_id=f"research-plan:{digest}",
@@ -209,6 +217,7 @@ def research_plan_digest(
     blocked: list[BlockedRequirement],
     status: str,
     registry_fingerprint: str,
+    certification_fingerprint: str,
 ) -> str:
     return stable_sha256(
         {
@@ -225,8 +234,8 @@ def research_plan_digest(
                     "capability": step.capability.value,
                     "sources": list(step.source_identities),
                     "market": step.market,
+                    "certification_id": step.certification_id,
                     "certification_version": step.certification_version,
-                    "capability_certification_version": step.capability_certification_version,
                 }
                 for step in steps
             ],
@@ -235,6 +244,7 @@ def research_plan_digest(
             ],
             "status": status,
             "registry_fingerprint": registry_fingerprint,
+            "certification_fingerprint": certification_fingerprint,
         }
     )
 

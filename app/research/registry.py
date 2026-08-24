@@ -1,7 +1,8 @@
-"""Server-authoritative research provider registry.
+"""Server-authoritative technical research provider registry.
 
-Deterministic, browser-immutable, and empty of certified production providers.
-Test fixtures cannot be registered unless explicitly allowed.
+Deterministic, browser-immutable, and empty of production providers.
+Answers what implementations exist and what they can technically do.
+Certification is a separate catalog authority.
 """
 
 from __future__ import annotations
@@ -14,10 +15,11 @@ from app.research.providers import StaticResearchProvider
 
 
 class ResearchProviderRegistry:
-    """Catalog of research providers eligible for routing.
+    """Catalog of research provider implementations.
 
     Duplicate ``provider_id`` values are rejected. Production construction
-    (``allow_test_providers=False``) refuses test fixtures.
+    (``allow_test_providers=False``) refuses test fixtures. Registration is
+    not certification.
     """
 
     def __init__(
@@ -40,10 +42,6 @@ class ResearchProviderRegistry:
         descriptor = provider.descriptor
         if descriptor.test_fixture and not self._allow_test_providers:
             raise ValueError("test providers cannot be registered in the production registry")
-        if not descriptor.test_fixture and self._allow_test_providers is False:
-            # Production may later register real certified providers. Until
-            # Sprints 32–36 populate certification, none are registered here.
-            pass
         if descriptor.provider_id in self._providers:
             raise ValueError(f"duplicate provider_id: {descriptor.provider_id}")
         self._order.append(descriptor.provider_id)
@@ -59,37 +57,22 @@ class ResearchProviderRegistry:
     def list_descriptors(self) -> tuple[ResearchProviderDescriptor, ...]:
         return tuple(provider.descriptor for provider in self.list_providers())
 
-    def certified_providers(self) -> tuple[StaticResearchProvider, ...]:
-        result: list[StaticResearchProvider] = []
-        for provider in self.list_providers():
-            if not provider.descriptor.is_certified:
-                continue
-            if provider.descriptor.test_fixture and not self._allow_test_providers:
-                continue
-            result.append(provider)
-        return tuple(result)
-
     def fingerprint(self) -> str:
-        """Deterministic catalog identity for plan digests."""
+        """Deterministic technical catalog identity for plan digests."""
 
         payload = [
             {
                 "provider_id": descriptor.provider_id,
-                "certification_status": descriptor.certification_status,
-                "certification_version": descriptor.certification_version,
                 "supported_markets": list(descriptor.supported_markets),
                 "supported_capabilities": [
                     item.value for item in descriptor.supported_capabilities
                 ],
                 "supported_sources": list(descriptor.supported_sources),
                 "selection_priority": descriptor.selection_priority,
-                "capability_certifications": [
-                    item.to_dict() for item in descriptor.capability_certifications
-                ],
             }
             for descriptor in self.list_descriptors()
         ]
-        return stable_sha256(payload)
+        return stable_sha256({"kind": "research_provider_registry_v1", "providers": payload})
 
 
 def production_research_provider_registry() -> ResearchProviderRegistry:

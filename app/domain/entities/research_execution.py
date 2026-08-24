@@ -34,9 +34,17 @@ ResearchExecutionPlanStatus = Literal[
 ]
 
 ProviderType = Literal["merchant", "manufacturer", "community", "test"]
-CertificationStatus = Literal["registered", "certified", "unavailable", "disabled"]
+ProviderCertificationStatus = Literal[
+    "certified",
+    "revoked",
+    "disabled",
+    "pending",
+    "expired",
+]
 CapabilityPolicyState = Literal["allowed", "restricted", "prohibited", "unknown"]
+CertificationSourceScope = Literal["exact", "source_agnostic"]
 MarketContextSource = Literal["server_trusted"]
+EXECUTABLE_CERTIFICATION_STATUS: ProviderCertificationStatus = "certified"
 
 
 class ResearchCapability(StrEnum):
@@ -95,60 +103,99 @@ class TrustedMarketContext:
 
 
 @dataclass(frozen=True, slots=True)
-class CapabilityCertification:
-    """Per-capability contractual certification. Distinct from technical ConnectorCapability."""
+class ResearchProviderCertification:
+    """Trusted PiqSavi certification for one exact provider requirement.
 
+    Distinct from technical provider capability. A provider must not author
+    this record. No certification record means not certified.
+    """
+
+    provider_id: str
     capability: ResearchCapability
-    markets: tuple[str, ...]
-    sources: tuple[str, ...]
-    policy: CapabilityPolicyState
+    market: str
     certification_version: str
-    may_expand_evaluated_set: bool = False
-    can_provide_pricing: bool = False
-    can_provide_shipping_taxes: bool = False
-    can_provide_product_evidence: bool = False
-    can_provide_review_evidence: bool = False
+    status: ProviderCertificationStatus
+    policy: CapabilityPolicyState
+    source: str | None = None
+    source_scope: CertificationSourceScope = "exact"
+    test_fixture: bool = False
+    certification_id: str = ""
 
     def __post_init__(self) -> None:
+        if not self.provider_id:
+            raise ValueError("provider_id is required")
         if not self.certification_version:
-            raise ValueError("capability certification_version is required")
-        codes = tuple(normalize_country_code(code) or "" for code in self.markets)
-        if any(not code or not is_valid_country_code(code) for code in codes):
-            raise ValueError("capability markets must be valid ISO country codes")
-        object.__setattr__(self, "markets", codes)
+            raise ValueError("certification_version is required")
+        code = normalize_country_code(self.market)
+        if not code or not is_valid_country_code(code):
+            raise ValueError("certification market must be a valid ISO country code")
+        if code != self.market:
+            object.__setattr__(self, "market", code)
+        if self.status not in {
+            "certified",
+            "revoked",
+            "disabled",
+            "pending",
+            "expired",
+        }:
+            raise ValueError("certification status is unknown and fails closed")
+        if self.policy not in {"allowed", "restricted", "prohibited", "unknown"}:
+            raise ValueError("certification policy is unknown and fails closed")
+        if self.source_scope == "exact":
+            if not self.source:
+                raise ValueError("exact certification requires an explicit source identity")
+        elif self.source_scope == "source_agnostic":
+            if self.source is not None:
+                raise ValueError("source-agnostic certification must not name a source")
+        else:
+            raise ValueError("source_scope must be exact or source_agnostic")
+
+    @property
+    def is_production_eligible(self) -> bool:
+        return (
+            self.status == EXECUTABLE_CERTIFICATION_STATUS
+            and self.policy == "allowed"
+            and not self.test_fixture
+        )
 
     @property
     def is_executable(self) -> bool:
-        return self.policy == "allowed"
+        return self.status == EXECUTABLE_CERTIFICATION_STATUS and self.policy == "allowed"
+
+    def lookup_key(self) -> tuple[str, str, str, str, str]:
+        return (
+            self.provider_id,
+            self.capability.value,
+            self.market,
+            self.source_scope,
+            self.source or "",
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "certification_id": self.certification_id,
+            "provider_id": self.provider_id,
             "capability": self.capability.value,
-            "markets": list(self.markets),
-            "sources": list(self.sources),
+            "market": self.market,
+            "source": self.source,
+            "source_scope": self.source_scope,
+            "status": self.status,
             "policy": self.policy,
             "certification_version": self.certification_version,
-            "may_expand_evaluated_set": self.may_expand_evaluated_set,
-            "can_provide_pricing": self.can_provide_pricing,
-            "can_provide_shipping_taxes": self.can_provide_shipping_taxes,
-            "can_provide_product_evidence": self.can_provide_product_evidence,
-            "can_provide_review_evidence": self.can_provide_review_evidence,
+            "test_fixture": self.test_fixture,
         }
 
 
 @dataclass(frozen=True, slots=True)
 class ResearchProviderDescriptor:
-    """Server-known provider metadata used for routing. No secrets."""
+    """Technical provider metadata. Does not grant production certification."""
 
     provider_id: str
     provider_type: ProviderType
     supported_markets: tuple[str, ...]
     supported_capabilities: tuple[ResearchCapability, ...]
     supported_sources: tuple[str, ...]
-    certification_status: CertificationStatus
-    certification_version: str
     operational_status: ConnectorOperationalStatus = ConnectorOperationalStatus.AVAILABLE
-    capability_certifications: tuple[CapabilityCertification, ...] = ()
     selection_priority: int = 100
     test_fixture: bool = False
     kill_switch: KillSwitch = KillSwitch()
@@ -163,8 +210,6 @@ class ResearchProviderDescriptor:
     def __post_init__(self) -> None:
         if not self.provider_id:
             raise ValueError("provider_id is required")
-        if not self.certification_version:
-            raise ValueError("certification_version is required")
         codes = tuple(normalize_country_code(code) or "" for code in self.supported_markets)
         if any(not code or not is_valid_country_code(code) for code in codes):
             raise ValueError("supported_markets must be valid ISO country codes")
@@ -173,10 +218,6 @@ class ResearchProviderDescriptor:
             raise ValueError("test fixtures must use provider_type='test'")
         if not self.test_fixture and self.provider_type == "test":
             raise ValueError("provider_type='test' requires test_fixture=True")
-
-    @property
-    def is_certified(self) -> bool:
-        return self.certification_status == "certified"
 
     @property
     def is_operationally_available(self) -> bool:
@@ -193,8 +234,6 @@ class ResearchProviderDescriptor:
             "supported_markets": list(self.supported_markets),
             "supported_capabilities": [item.value for item in self.supported_capabilities],
             "supported_sources": list(self.supported_sources),
-            "certification_status": self.certification_status,
-            "certification_version": self.certification_version,
             "operational_status": self.operational_status.value,
             "selection_priority": self.selection_priority,
             "test_fixture": self.test_fixture,
@@ -287,8 +326,8 @@ class ResearchProviderStep:
     capability: ResearchCapability
     source_identities: tuple[str, ...]
     market: str | None
+    certification_id: str
     certification_version: str
-    capability_certification_version: str
     selection_reason: str
     attempted: bool = False
 
@@ -306,8 +345,8 @@ class ResearchProviderStep:
             "capability": self.capability.value,
             "source_identities": list(self.source_identities),
             "market": self.market,
+            "certification_id": self.certification_id,
             "certification_version": self.certification_version,
-            "capability_certification_version": self.capability_certification_version,
             "selection_reason": self.selection_reason,
             "attempted": False,
         }
