@@ -25,9 +25,13 @@ from app.consumer.location import (
 )
 from app.consumer.pages import render_page
 from app.consumer.presentation import build_page_view
+from app.consumer.session_overlay import apply_session_overlay_to_view
 from app.consumer.uuid import is_canonical_uuid
 from app.consumer.view_models import DecisionPageView, PageName
-from app.core.dependencies import get_shopping_decision_snapshot_repository
+from app.core.dependencies import (
+    get_shopping_conversation_repository,
+    get_shopping_decision_snapshot_repository,
+)
 from app.core.logging import get_logger, log_extra
 from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 
@@ -77,7 +81,7 @@ def _page_view(
                 recalculating=False,
                 location_error=location_error,
             )
-        return page_view_from_snapshot(
+        view = page_view_from_snapshot(
             snapshot,
             page=page,
             session_location=location,
@@ -85,6 +89,15 @@ def _page_view(
             recalculating=False,
             location_error=location_error,
         )
+        owner = _owner_from_request(request)
+        if owner is not None:
+            conversation = get_shopping_conversation_repository().find_bound_for_owner(
+                owner,
+                decision_id,
+            )
+            if conversation is not None:
+                view = apply_session_overlay_to_view(view, conversation.session_refinement)
+        return view
     return build_page_view(
         decision_id=decision_id,
         page=page,

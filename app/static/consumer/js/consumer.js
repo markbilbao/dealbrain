@@ -163,6 +163,17 @@ function initAsk() {
           ? payloadJson.warnings.map((item) => item.message || item).join(" ")
           : "";
         showAsk(`<p>${escapeHtml(String(answer))}</p>${warnings ? `<p class="form-hint">${escapeHtml(warnings)}</p>` : ""}`);
+        const processing = payloadJson.processing || {};
+        const sessionBest = processing.session_best_piq_product_id;
+        const currentBest = document.body?.dataset?.bestPiq;
+        if (
+          sessionBest &&
+          currentBest &&
+          sessionBest !== currentBest &&
+          processing.recommendation_changed
+        ) {
+          window.setTimeout(() => window.location.reload(), 1200);
+        }
       } catch {
         showAsk("<p>Ask PiqSavi is unavailable right now. Try again in a moment.</p>");
       }

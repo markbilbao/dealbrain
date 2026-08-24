@@ -120,6 +120,9 @@ class ShoppingAssistantResponse(BaseModel):
     action: str | None = None
     answer_status: str | None = None
     decision_id: str | None = None
+    session_best_piq_product_id: str | None = None
+    original_best_piq_product_id: str | None = None
+    recommendation_changed: bool | None = None
 
 
 class ShoppingAssistantDemoMeta(BaseModel):

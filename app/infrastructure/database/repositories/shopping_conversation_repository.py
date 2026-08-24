@@ -274,6 +274,37 @@ class SqlAlchemyConversationRepository(ConversationRepository, SessionBound):
             ),
         )
 
+    def find_bound_for_owner(
+        self,
+        owner: ConversationOwner,
+        decision_id: str,
+    ) -> ConversationContext | None:
+        owner_key = self._owner_key(owner)
+        with self._ops() as ops:
+            matches = ops.list(
+                SHOPPING_CONVERSATIONS,
+                ConversationContext,
+                owner_id=owner_key,
+                predicate=lambda context: (
+                    not self._is_expired(context)
+                    and context.decision_context is not None
+                    and context.decision_context.decision_id == decision_id
+                    and context.owner is not None
+                    and context.owner.has_same_identity(owner)
+                ),
+            )
+        if not matches:
+            return None
+        matches.sort(
+            key=lambda item: (
+                item.session_refinement.refinement_version
+                if item.session_refinement is not None
+                else 0,
+                item.persistence_version,
+            )
+        )
+        return matches[-1]
+
     def cleanup_expired(self, *, limit: int = 100) -> int:
         if limit <= 0:
             return 0

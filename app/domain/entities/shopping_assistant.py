@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
 
+from app.domain.entities.session_refinement import SessionRecommendationRefinement
+
 ShoppingIntentType = Literal[
     "recommendation",
     "comparison",
@@ -485,6 +487,7 @@ class ConversationContext:
     last_category: str | None = None
     owner: ConversationOwner | None = None
     decision_context: DecisionContextReference | None = None
+    session_refinement: SessionRecommendationRefinement | None = None
     persistence_version: int = 0
 
     def __post_init__(self) -> None:
@@ -505,6 +508,9 @@ class ConversationContext:
             "owner": self.owner.to_dict() if self.owner else None,
             "decision_context": (
                 self.decision_context.to_dict() if self.decision_context else None
+            ),
+            "session_refinement": (
+                self.session_refinement.to_dict() if self.session_refinement else None
             ),
             "persistence_version": self.persistence_version,
         }
