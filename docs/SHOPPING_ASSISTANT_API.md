@@ -66,7 +66,17 @@ Response (normalized):
 Decision-bound Ask responses may set `action` to `answer_from_evidence`,
 `refine_session_recommendation`, or `propose_research`. A research proposal is
 server-authored, stays `pending_confirmation` until explicit confirmation, and
-never starts live research in this phase.
+never starts live research in this phase. Explicit confirmation of the active
+proposal creates a server-authoritative research authorization bound to that
+exact scope. Execution remains unavailable; `execution_available` is always
+`false`.
+
+Optional confirmation-binding fields (`proposal_id`, `proposal_version`,
+`confirmation_token`) do not choose the action and cannot widen research
+scope. The server derives the authorization idempotency key; a client token
+is never execution identity. Additive response fields include
+`research_handoff_id`, `research_handoff_status`, `research_handoff_version`,
+`research_handoff_created`, and `execution_available`.
 
 Comparisons also populate `comparison` with category winners, strengths,
 weaknesses, price/review differences, recommended use case, overall

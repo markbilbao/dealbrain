@@ -526,6 +526,11 @@ def test_explicit_confirmation_does_not_execute() -> None:
     )
     assert confirmed.processing["execution_started"] is False
     assert confirmed.processing["research_executed"] is False
+    assert confirmed.processing["execution_available"] is False
+    assert confirmed.processing["authorization_created"] is True
+    assert confirmed.processing["authorization_status"] == "authorized_pending_execution"
+    assert confirmed.processing["research_authorization_id"]
+    assert "approved" in confirmed.answer.lower()
     assert "not available" in confirmed.answer.lower()
     loaded = snapshots.get(DECISION_ID, 1)
     assert loaded is not None
@@ -619,3 +624,7 @@ async def test_http_owner_can_propose_from_ask() -> None:
             "research_confirmation_received_but_execution_unavailable"
         )
         assert confirm.json()["requires_research_confirmation"] is False
+        assert confirm.json()["execution_available"] is False
+        assert confirm.json()["research_handoff_created"] is True
+        assert confirm.json()["research_handoff_status"] == "authorized_pending_execution"
+        assert confirm.json()["research_handoff_id"]

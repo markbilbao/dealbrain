@@ -127,6 +127,8 @@ If 29.4B already refined session Best Piq, that overlay remains. A later authori
 
 29.4B may return `insufficient_evidence` when a priority change cannot be refined from captured facts. That outcome must not start research. 29.4C may transform it into a pending proposal. Supported refinements such as “Comfort matters more.” still stay on 29.4B.
 
-## Relationship to future live research
+## Relationship to the Research Authorization / Execution Handoff Contract
 
-Live research execution remains owned by Sprints 31–38. Sprint 29 only owns the conversational proposal → confirmation boundary. This phase records confirmation but does not launch the certified research pipeline.
+29.4C still owns proposal creation and the explicit-confirmation classifier. A later Research Authorization / Execution Handoff Contract turns explicit confirmation of the exact active proposal into a server-authoritative authorization.
+
+Live research execution remains owned by Sprints 31–38. A proposal is not authorization, and authorization is not execution.

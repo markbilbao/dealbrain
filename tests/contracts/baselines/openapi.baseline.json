@@ -14283,6 +14283,18 @@
             ],
             "title": "Category"
           },
+          "confirmation_token": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Token"
+          },
           "context_version": {
             "anyOf": [
               {
@@ -14364,6 +14376,30 @@
               }
             ],
             "title": "Profile Id"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Id"
+          },
+          "proposal_version": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Version"
           },
           "query": {
             "maxLength": 2000,
@@ -14525,6 +14561,17 @@
             "title": "Evidence",
             "type": "array"
           },
+          "execution_available": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Available"
+          },
           "fallback_reason": {
             "anyOf": [
               {
@@ -14632,6 +14679,50 @@
               }
             ],
             "title": "Requires Research Confirmation"
+          },
+          "research_handoff_created": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Handoff Created"
+          },
+          "research_handoff_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Handoff Id"
+          },
+          "research_handoff_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Handoff Status"
+          },
+          "research_handoff_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Handoff Version"
           },
           "research_proposal": {
             "anyOf": [

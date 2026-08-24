@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Literal
 
+from app.domain.entities.research_authorization import ResearchAuthorization
 from app.domain.entities.research_proposal import ResearchProposal
 from app.domain.entities.session_refinement import SessionRecommendationRefinement
 
@@ -130,6 +131,9 @@ class ShoppingQuery:
     decision_id: str | None = None
     context_version: int | None = None
     surface: str | None = None
+    proposal_id: str | None = None
+    proposal_version: int | None = None
+    confirmation_token: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -147,6 +151,9 @@ class ShoppingQuery:
             "decision_id": self.decision_id,
             "context_version": self.context_version,
             "surface": self.surface,
+            "proposal_id": self.proposal_id,
+            "proposal_version": self.proposal_version,
+            "confirmation_token": self.confirmation_token,
         }
 
 
@@ -490,6 +497,7 @@ class ConversationContext:
     decision_context: DecisionContextReference | None = None
     session_refinement: SessionRecommendationRefinement | None = None
     research_proposal: ResearchProposal | None = None
+    research_authorizations: tuple[ResearchAuthorization, ...] = ()
     persistence_version: int = 0
 
     def __post_init__(self) -> None:
@@ -497,6 +505,10 @@ class ConversationContext:
             raise ValueError("a decision-bound conversation requires an owner")
         if self.persistence_version < 0:
             raise ValueError("persistence_version must not be negative")
+
+    @property
+    def research_authorization(self) -> ResearchAuthorization | None:
+        return self.research_authorizations[-1] if self.research_authorizations else None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -517,6 +529,7 @@ class ConversationContext:
             "research_proposal": (
                 self.research_proposal.to_dict() if self.research_proposal else None
             ),
+            "research_authorizations": [item.to_dict() for item in self.research_authorizations],
             "persistence_version": self.persistence_version,
         }
 
