@@ -84,4 +84,13 @@ Extension guide for official connectors
 5. Add unit tests for fixture/disabled/mock paths and rate-limit/health.
 6. Document capabilities and legal requirements.
 7. **Never scrape.** Prefer official partner APIs only after legal review.
+
+Sprint 31 research execution routing
+------------------------------------
+Authorized-research planning uses a separate certified-provider contract
+(``docs/architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md``). It does not
+replace this Sprint 18 sync registry, Sprint 4 search connectors, or Sprint 8
+collectors. Technical ``ConnectorCapability`` remains distinct from Sprint 31
+contractual certification. Live merchant execution is still not implemented.
+
 """

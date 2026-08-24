@@ -31,7 +31,7 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | Canonical decision presentation contract | merged | PR #91 / schema 1.2 — Recommendation qualification, shopper decision context, product identity metadata, category-flexible product fit, Recommendation reasons, Best For, alternative trade-offs, outbound offer reference, integrity protection, Ask evidence support |
 | 29.4B `refine_session_recommendation` | merged | Shopper may clarify preferences after Recommendation. Session Best Piq may change using already-evaluated products/evidence. PiqScore does not change. Canonical snapshot does not mutate. Original Recommendation remains historical. Evaluated set cannot expand. No new research. No affiliate influence. |
 | 29.4C `propose_research` | implemented | Detect when the shopper asks for evidence/product outside currently evaluated evidence. PiqSavi may propose additional research. Research does **not** automatically execute. User confirmation remains required. Research execution remains unimplemented and owned by Sprints 31–38. |
-| Research Authorization / Execution Handoff Contract | implemented | Explicit confirmation of the exact active proposal creates a server-authoritative authorization. Execution remains unavailable and owned by Sprints 31–38. |
+| Research Authorization / Execution Handoff Contract | implemented | Explicit confirmation of the exact active proposal creates a server-authoritative authorization. Sprint 31 planning is separate; live execution remains unavailable and owned by Sprints 31–38. |
 
 **Truthfulness rules already locked for presentation:**
 

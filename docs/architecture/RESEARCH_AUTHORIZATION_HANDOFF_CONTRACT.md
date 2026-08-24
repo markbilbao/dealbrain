@@ -255,8 +255,6 @@ This phase consumes that confirmation and turns it into a server-authoritative a
 
 Sprints 31–38 own certified research orchestration, router/provider execution contracts, loading/partial/failure evidence, and any new canonical decision that research may produce.
 
-The next true implementation step is:
+The Sprint 31 research execution router / certified provider contract is implemented as planning only. See [`SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](SPRINT_31_RESEARCH_EXECUTION_ROUTER.md).
 
-> Connect validated authorizations to the certified research orchestration path owned by Sprints 31–38, beginning with router/provider execution contracts rather than bypassing roadmap ownership.
-
-Until that work exists, live research execution remains **not implemented**.
+Live research execution remains **not implemented**. The next bounded step is Sprint 32–36 provider/market certification, then Sprint 38 execution — not uncontrolled live research.
