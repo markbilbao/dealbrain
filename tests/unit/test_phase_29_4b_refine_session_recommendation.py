@@ -526,7 +526,9 @@ def test_budget_unknown_cost_is_not_treated_as_affordable() -> None:
     result = compose_session_refinement("My budget is now ₱15,000.", packet, snapshot=snapshot)
     assert result.overlay is not None
     assert result.overlay.session_best_piq_product_id != SENN_ID
-    assert "unknown" in result.answer.lower() or result.overlay.session_best_piq_product_id == BOSE_ID
+    assert (
+        "unknown" in result.answer.lower() or result.overlay.session_best_piq_product_id == BOSE_ID
+    )
 
 
 def test_budget_none_fit() -> None:
@@ -545,7 +547,10 @@ def test_required_feature_known_true_unknown_not_false() -> None:
     assert result.status == "recommendation_unchanged" or result.applied
     assert result.overlay is not None
     assert result.overlay.session_best_piq_product_id == SONY_ID
-    assert "unknown" in " ".join(result.overlay.reasons).lower() or "multipoint" in result.answer.lower()
+    assert (
+        "unknown" in " ".join(result.overlay.reasons).lower()
+        or "multipoint" in result.answer.lower()
+    )
 
 
 def test_required_feature_missing_evidence_is_insufficient() -> None:
@@ -555,7 +560,10 @@ def test_required_feature_missing_evidence_is_insufficient() -> None:
     assert result.status == "insufficient_evidence"
     assert result.overlay is not None
     assert result.overlay.session_best_piq_product_id == SONY_ID
-    assert "don't have enough captured" in result.answer.lower() or "unknown is not treated as false" in result.answer.lower()
+    assert (
+        "don't have enough captured" in result.answer.lower()
+        or "unknown is not treated as false" in result.answer.lower()
+    )
 
 
 def test_multiple_refinements_evolve_session_not_snapshot() -> None:
@@ -628,7 +636,9 @@ def test_highest_piqscore_can_differ_from_session_best_piq() -> None:
     packet = packet_from_snapshot(snapshot)
     result = compose_session_refinement("Comfort matters more.", packet, snapshot=snapshot)
     assert result.overlay is not None
-    scores = {item.product_id: item.canonical_piqscore.value for item in snapshot.evaluated_products}
+    scores = {
+        item.product_id: item.canonical_piqscore.value for item in snapshot.evaluated_products
+    }
     assert scores[SONY_ID] == 94
     assert scores[BOSE_ID] == 91
     assert result.overlay.session_best_piq_product_id == BOSE_ID
@@ -763,7 +773,10 @@ def test_cross_surface_overlay_is_consistent() -> None:
     ]
     assert {view.best_piq.product_id for view in views} == {BOSE_ID}
     assert {view.highest_piqscore_product_id for view in views} == {SONY_ID}
-    assert all(view.canonical_piqscore_set_sha256 == snapshot.canonical_piqscore_set_sha256 for view in views)
+    assert all(
+        view.canonical_piqscore_set_sha256 == snapshot.canonical_piqscore_set_sha256
+        for view in views
+    )
     why = views[2]
     assert "Originally" in why.why_sections[0].narrative
     assert "comfort" in why.why_sections[0].narrative.lower()
@@ -797,7 +810,9 @@ def test_no_research_side_effects_and_29_4c_absent() -> None:
     assert "requests.get" not in source
     snapshot = _presentation()
     before = snapshot.content_sha256
-    compose_session_refinement("Comfort matters more.", packet_from_snapshot(snapshot), snapshot=snapshot)
+    compose_session_refinement(
+        "Comfort matters more.", packet_from_snapshot(snapshot), snapshot=snapshot
+    )
     assert snapshot.content_sha256 == before
 
 
@@ -820,7 +835,11 @@ async def test_http_owner_can_refine_and_pages_show_session_best() -> None:
         client.cookies.set(OWNER_COOKIE, owner_cookie_payload(_owner()))
         refine = await client.post(
             "/api/v1/shopping-assistant/query",
-            json={"query": "Comfort matters more.", "decision_id": DECISION_ID, "surface": "results"},
+            json={
+                "query": "Comfort matters more.",
+                "decision_id": DECISION_ID,
+                "surface": "results",
+            },
         )
         assert refine.status_code == 200, refine.text
         body = refine.json()
@@ -861,10 +880,14 @@ def test_no_hidden_score_or_qualitative_ranker() -> None:
     assert "Personal PiqScore" not in source
     assert "adjusted piqscore" not in source.lower()
     snapshot = _presentation()
-    result = compose_session_refinement("Comfort matters more.", packet_from_snapshot(snapshot), snapshot=snapshot)
+    result = compose_session_refinement(
+        "Comfort matters more.", packet_from_snapshot(snapshot), snapshot=snapshot
+    )
     scores = tuple(item.canonical_piqscore.value for item in snapshot.evaluated_products)
     assert scores == (94.0, 91.0, 88.0)
-    assert "piqscore" not in (result.overlay.reasons[0].lower() if result.overlay and result.overlay.reasons else "")
+    assert "piqscore" not in (
+        result.overlay.reasons[0].lower() if result.overlay and result.overlay.reasons else ""
+    )
 
 
 def test_incomparable_fit_text_does_not_invent_a_winner() -> None:
@@ -1010,7 +1033,10 @@ def test_hard_feature_true_unknown_false() -> None:
     joined = " ".join(result.overlay.reasons) + result.answer
     assert "unknown" in joined.lower()
     assert result.overlay.qualification is not None
-    assert "unknown" in " ".join(result.overlay.qualification.material_unknowns).lower() or "unknown" in joined.lower()
+    assert (
+        "unknown" in " ".join(result.overlay.qualification.material_unknowns).lower()
+        or "unknown" in joined.lower()
+    )
     assert result.overlay.session_best_piq_product_id != BOSE_ID
 
 
@@ -1066,7 +1092,10 @@ def test_hard_feature_all_unknown_is_insufficient() -> None:
     assert result.status == "insufficient_evidence"
     assert result.overlay is not None
     assert result.overlay.session_best_piq_product_id == SONY_ID
-    assert "will not invent" in result.answer.lower() or "don't have captured evidence" in result.answer.lower()
+    assert (
+        "will not invent" in result.answer.lower()
+        or "don't have captured evidence" in result.answer.lower()
+    )
 
 
 def test_budget_estimated_landed_cost_is_not_confirmed_affordable() -> None:
@@ -1131,7 +1160,11 @@ def test_budget_price_before_shipping_is_not_confirmed_affordable() -> None:
     )
     assert result.overlay is not None
     assert result.overlay.session_best_piq_product_id != SENN_ID
-    assert result.status in {"recommendation_changed", "recommendation_unchanged", "none_fit_constraint"}
+    assert result.status in {
+        "recommendation_changed",
+        "recommendation_unchanged",
+        "none_fit_constraint",
+    }
 
 
 def test_budget_import_unknown_is_not_confirmed_affordable() -> None:
@@ -1287,7 +1320,10 @@ def test_cross_surface_uses_same_session_qualification() -> None:
     assert {view.qualification_state for view in views} == {"qualified"}
     messages = {view.recommendation_qualified_message for view in views}
     assert len(messages) == 1
-    assert all(view.canonical_piqscore_set_sha256 == snapshot.canonical_piqscore_set_sha256 for view in views)
+    assert all(
+        view.canonical_piqscore_set_sha256 == snapshot.canonical_piqscore_set_sha256
+        for view in views
+    )
     assert result.overlay is not None
     assert result.overlay.refinement_version == 1
     packet = apply_session_overlay_to_packet(packet_from_snapshot(snapshot), result.overlay)

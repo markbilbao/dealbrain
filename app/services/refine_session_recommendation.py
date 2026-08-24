@@ -220,9 +220,7 @@ class RefineSessionRecommendationService:
         before_digest = resolved.content_sha256 if resolved else None
         before_rec = resolved.recommendation.snapshot_sha256 if resolved else None
         before_scores = resolved.canonical_piqscore_set_sha256 if resolved else None
-        before_ids = (
-            resolved.evaluated_product_ids if resolved else packet.evaluated_product_ids
-        )
+        before_ids = resolved.evaluated_product_ids if resolved else packet.evaluated_product_ids
 
         existing = self._existing_overlay(
             owner=owner,
@@ -606,11 +604,15 @@ def compose_session_refinement(
             snapshot=snapshot,
             applied=True,
         )
-    if incoming.top_priority is None and not incoming.required_features and (
-        incoming.budget_max is None
-        and incoming.use_case is None
-        and not incoming.priorities
-        and not incoming.deprioritized
+    if (
+        incoming.top_priority is None
+        and not incoming.required_features
+        and (
+            incoming.budget_max is None
+            and incoming.use_case is None
+            and not incoming.priorities
+            and not incoming.deprioritized
+        )
     ):
         return RefinementResult(
             status="ambiguous_request",
@@ -764,7 +766,8 @@ def select_session_best(
                     extra_unknowns=budget.material_unknowns,
                     extra_reasons=budget.reasons,
                     could_change=budget.could_change_recommendation,
-                    force_qualified=budget.status in {"none_fit_constraint", "insufficient_evidence"},
+                    force_qualified=budget.status
+                    in {"none_fit_constraint", "insufficient_evidence"},
                 ),
             )
 
@@ -934,11 +937,7 @@ def _explain_change(
     original_score = scores.get(original_id)
     chosen_score = scores.get(chosen_id)
     score_note = ""
-    if (
-        original_score is not None
-        and chosen_score is not None
-        and original_score != chosen_score
-    ):
+    if original_score is not None and chosen_score is not None and original_score != chosen_score:
         higher = original if (original_score or 0) > (chosen_score or 0) else chosen
         score_note = (
             f" {higher} still has the higher objective PiqScore, but PiqScore evaluates "
@@ -991,8 +990,7 @@ def _build_overlay(
         status=status,
         evidence_ids=evidence_ids,
         reasons=reasons,
-        qualification=qualification
-        or _compose_qualification(packet, snapshot),
+        qualification=qualification or _compose_qualification(packet, snapshot),
         created_at=created,
         updated_at=now,
     )
@@ -1109,11 +1107,11 @@ def _apply_budget(
     if not affordable:
         detail = "No evaluated offer has a captured complete cost that fits that session budget."
         if unknown:
-            detail += (
-                " Unknown, estimated, before-shipping, or import-uncertain cost is not treated as affordable."
-            )
+            detail += " Unknown, estimated, before-shipping, or import-uncertain cost is not treated as affordable."
         if over:
-            detail += f" {len(over)} evaluated offer(s) have a known complete cost above the budget."
+            detail += (
+                f" {len(over)} evaluated offer(s) have a known complete cost above the budget."
+            )
         return _ConstraintResult(
             status="none_fit_constraint",
             product_id=current_best_id,
@@ -1246,8 +1244,7 @@ def _apply_required_features(
                 product_id=current_best_id,
                 answer=(
                     f"{names.get(current_best_id, current_best_id)} already has captured "
-                    f"evidence of {feature} support."
-                    + (f" {unknown_note}" if unknown else "")
+                    f"evidence of {feature} support." + (f" {unknown_note}" if unknown else "")
                 ),
                 reasons=(
                     f"{names.get(current_best_id, current_best_id)} has captured {feature} support.",
@@ -1281,7 +1278,9 @@ def _apply_required_features(
                 f"captured support, and captured evidence does not distinguish them further. "
                 "I will not invent a session Best Piq among those confirmed options."
             ),
-            reasons=(f"Multiple options have captured {feature} support without further distinction.",),
+            reasons=(
+                f"Multiple options have captured {feature} support without further distinction.",
+            ),
             evidence_ids=evidence_ids,
             persist=True,
             material_unknowns=(unknown_note,) if unknown else (),
@@ -1364,9 +1363,7 @@ def _compare_attribute(
                     known_ids.append(product.product_id)
                     known_facts.setdefault(product.product_id, attr.display_value())
         for item in snapshot.evidence:
-            if item.topic.lower() != topic and not _reason_prefers_topic(
-                item.fact, topic, aliases
-            ):
+            if item.topic.lower() != topic and not _reason_prefers_topic(item.fact, topic, aliases):
                 continue
             evidence_ids.append(item.evidence_id)
             known_ids.append(item.product_id)
@@ -1641,11 +1638,17 @@ def _compose_qualification(
     reasons.extend(extra_reasons)
     reasons = list(dict.fromkeys(item for item in reasons if item and item.strip()))
     unknowns = list(dict.fromkeys(item for item in unknowns if item and item.strip()))
-    qualified = force_qualified or reverse or bool(unknowns) or (
-        snapshot is not None
-        and snapshot.qualification is not None
-        and snapshot.qualification.is_qualified
-    ) or packet.is_qualified
+    qualified = (
+        force_qualified
+        or reverse
+        or bool(unknowns)
+        or (
+            snapshot is not None
+            and snapshot.qualification is not None
+            and snapshot.qualification.is_qualified
+        )
+        or packet.is_qualified
+    )
     if qualified:
         if not reasons and not unknowns:
             reasons = ["Session priorities introduce material uncertainty."]

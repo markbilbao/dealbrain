@@ -71,9 +71,7 @@ def apply_session_overlay_to_view(
         why_variant = "score_diff"
     unknowns = view.unknowns
     if session_qualification is not None and session_qualification.material_unknowns:
-        unknowns = tuple(
-            dict.fromkeys((*view.unknowns, *session_qualification.material_unknowns))
-        )
+        unknowns = tuple(dict.fromkeys((*view.unknowns, *session_qualification.material_unknowns)))
     return replace(
         view,
         recommendation_changed=changed or view.recommendation_changed,
@@ -206,9 +204,7 @@ def _card_with_session_flag(
         why = overlay.reasons[:3]
     alt = card.alternative_reason
     if not is_best and card.product_id == overlay.original_best_piq_product_id:
-        alt = (
-            "Originally Best Piq for You. Still in the evaluated set with the same PiqScore."
-        )
+        alt = "Originally Best Piq for You. Still in the evaluated set with the same PiqScore."
     return replace(
         card,
         is_best_piq=is_best,
@@ -229,9 +225,7 @@ def _overlay_why_sections(
         return view.why_sections
     priority = overlay.priorities.top_priority or overlay.priorities.use_case
     original_name = (
-        original.identity_name
-        if original is not None
-        else overlay.original_best_piq_product_id
+        original.identity_name if original is not None else overlay.original_best_piq_product_id
     )
     if overlay.status == "reset_to_original":
         narrative = (

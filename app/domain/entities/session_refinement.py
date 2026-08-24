@@ -94,9 +94,7 @@ class SessionPriorities:
             )
         )
         if incoming.top_priority:
-            priorities = tuple(
-                dict.fromkeys((incoming.top_priority, *priorities))
-            )
+            priorities = tuple(dict.fromkeys((incoming.top_priority, *priorities)))
         return SessionPriorities(
             top_priority=incoming.top_priority or self.top_priority,
             priorities=priorities,
@@ -106,13 +104,9 @@ class SessionPriorities:
             preferred_features=tuple(
                 dict.fromkeys((*self.preferred_features, *incoming.preferred_features))
             ),
-            deprioritized=tuple(
-                dict.fromkeys((*self.deprioritized, *incoming.deprioritized))
-            ),
+            deprioritized=tuple(dict.fromkeys((*self.deprioritized, *incoming.deprioritized))),
             use_case=incoming.use_case or self.use_case,
-            budget_max=incoming.budget_max
-            if incoming.budget_max is not None
-            else self.budget_max,
+            budget_max=incoming.budget_max if incoming.budget_max is not None else self.budget_max,
             budget_label=incoming.budget_label or self.budget_label,
             reset_to_original=False,
             hard_constraint=self.hard_constraint or incoming.hard_constraint,
