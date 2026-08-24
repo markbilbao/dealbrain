@@ -27,6 +27,10 @@ and surfaced with a warning; they never unlock secrets or prompts.
 - Internal prompts are never returned in API responses.
 - Response `processing` metadata is sanitized to strip keys containing
   `api_key`, `secret`, `token`, `authorization`, or `prompt`.
+  `authorization` is sensitive by default. Only these exact known-safe
+  research-authorization metadata keys are exempt: `research_authorization_id`,
+  `authorization_status`, `authorization_version`, `authorization_created`,
+  and `execution_available`.
 - Provider stack traces and private transport errors are not returned to clients.
 
 ## Limits

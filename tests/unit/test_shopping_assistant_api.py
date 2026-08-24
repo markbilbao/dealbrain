@@ -184,3 +184,117 @@ async def test_no_secrets_in_api_response(client) -> None:
     assert "api_key" not in text
     assert "authorization" not in text
     assert "sk-" not in text
+
+
+def test_sanitize_processing_allows_exact_research_authorization_metadata() -> None:
+    from app.api.v1.mappers.shopping_assistant import _sanitize_processing
+
+    cleaned = _sanitize_processing(
+        {
+            "research_authorization_id": "auth-1",
+            "authorization_status": "authorized_pending_execution",
+            "authorization_version": 1,
+            "authorization_created": True,
+            "execution_available": False,
+            "decision_id": "dec-1",
+        }
+    )
+    assert cleaned["research_authorization_id"] == "auth-1"
+    assert cleaned["authorization_status"] == "authorized_pending_execution"
+    assert cleaned["authorization_version"] == 1
+    assert cleaned["authorization_created"] is True
+    assert cleaned["execution_available"] is False
+    assert cleaned["decision_id"] == "dec-1"
+
+
+def test_sanitize_processing_strips_authorization_and_credential_keys() -> None:
+    from app.api.v1.mappers.shopping_assistant import _sanitize_processing
+
+    cleaned = _sanitize_processing(
+        {
+            "authorization": "secret-value",
+            "authorization_header": "Bearer leaked",
+            "authorization_value": "leaked",
+            "authorization_bearer": "leaked",
+            "provider_authorization": "leaked",
+            "merchant_authorization": "leaked",
+            "research_authorization": {"scope": "should-not-leak"},
+            "api_key": "k",
+            "apikey": "k",
+            "token": "t",
+            "secret": "s",
+            "prompt": "system prompt",
+            "system_prompt": "system prompt",
+            "Authorization_Header": "Bearer leaked",
+            "PROVIDER_AUTHORIZATION": "leaked",
+            "Api_Key": "k",
+            "decision_id": "keep",
+            "action": "propose_research",
+        }
+    )
+    assert "authorization" not in cleaned
+    assert "authorization_header" not in cleaned
+    assert "authorization_value" not in cleaned
+    assert "authorization_bearer" not in cleaned
+    assert "provider_authorization" not in cleaned
+    assert "merchant_authorization" not in cleaned
+    assert "research_authorization" not in cleaned
+    assert "api_key" not in cleaned
+    assert "apikey" not in cleaned
+    assert "token" not in cleaned
+    assert "secret" not in cleaned
+    assert "prompt" not in cleaned
+    assert "system_prompt" not in cleaned
+    assert "Authorization_Header" not in cleaned
+    assert "PROVIDER_AUTHORIZATION" not in cleaned
+    assert "Api_Key" not in cleaned
+    assert cleaned["decision_id"] == "keep"
+    assert cleaned["action"] == "propose_research"
+
+
+def test_research_handoff_fields_map_after_strict_sanitizer() -> None:
+    from app.api.v1.mappers.shopping_assistant import to_assistant_response
+    from app.domain.entities.shopping_assistant import AssistantConfidence
+    from app.domain.entities.shopping_assistant import (
+        ShoppingAssistantResponse as DomainResponse,
+    )
+
+    mapped = to_assistant_response(
+        DomainResponse(
+            query="Yes, research that",
+            intent="general",
+            answer="Research is approved for this request. Execution is not available yet.",
+            top_recommendation=None,
+            alternatives=(),
+            evidence=(),
+            warnings=(),
+            data_status="imported",
+            providers_used=("propose_research",),
+            fallback_used=True,
+            confidence=AssistantConfidence(score=0.55, band="Medium"),
+            processing={
+                "action": "propose_research",
+                "research_authorization_id": "auth-handoff-1",
+                "authorization_status": "authorized_pending_execution",
+                "authorization_version": 1,
+                "authorization_created": True,
+                "execution_available": False,
+                "research_authorization": {"owner_binding": "opaque"},
+                "authorization_header": "Bearer leaked",
+                "decision_id": "dec-1",
+            },
+        )
+    )
+    assert mapped.research_handoff_id == "auth-handoff-1"
+    assert mapped.research_handoff_status == "authorized_pending_execution"
+    assert mapped.research_handoff_version == 1
+    assert mapped.research_handoff_created is True
+    assert mapped.execution_available is False
+    assert mapped.processing["research_authorization_id"] == "auth-handoff-1"
+    assert mapped.processing["authorization_status"] == "authorized_pending_execution"
+    assert mapped.processing["authorization_version"] == 1
+    assert mapped.processing["authorization_created"] is True
+    assert mapped.processing["execution_available"] is False
+    assert "authorization_header" not in mapped.processing
+    assert "research_authorization" not in mapped.processing
+    assert mapped.processing["decision_id"] == "dec-1"

@@ -15,14 +15,26 @@ from app.schemas.shopping_assistant import (
     WarningPayload,
 )
 
+_SAFE_RESEARCH_AUTHORIZATION_KEYS = frozenset(
+    {
+        "research_authorization_id",
+        "authorization_status",
+        "authorization_version",
+        "authorization_created",
+        "execution_available",
+    }
+)
 _CREDENTIAL_KEYS = frozenset({"api_key", "apikey", "authorization", "secret", "token", "prompt"})
-_CREDENTIAL_FRAGMENTS = ("api_key", "apikey", "secret", "token", "prompt")
+_CREDENTIAL_FRAGMENTS = ("authorization", "api_key", "apikey", "secret", "token", "prompt")
 
 
 def _sanitize_processing(processing: dict) -> dict:
     cleaned: dict = {}
     for key, value in processing.items():
         lowered = str(key).lower()
+        if lowered in _SAFE_RESEARCH_AUTHORIZATION_KEYS:
+            cleaned[key] = value
+            continue
         if lowered in _CREDENTIAL_KEYS:
             continue
         if any(part in lowered for part in _CREDENTIAL_FRAGMENTS):

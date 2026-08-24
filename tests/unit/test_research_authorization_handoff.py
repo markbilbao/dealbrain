@@ -1012,6 +1012,13 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
         assert payload["research_handoff_created"] is True
         assert payload["research_handoff_status"] == "authorized_pending_execution"
         assert payload["research_handoff_id"]
+        assert payload["research_handoff_version"] == 1
+        assert payload["processing"]["research_authorization_id"] == payload["research_handoff_id"]
+        assert payload["processing"]["authorization_status"] == "authorized_pending_execution"
+        assert payload["processing"]["authorization_created"] is True
+        assert payload["processing"]["execution_available"] is False
+        assert "authorization_header" not in payload["processing"]
+        assert "authorization" not in payload["processing"]
         assert "Researching" not in payload["answer"]
         assert payload["processing"]["execution_started"] is False
         repeat = await client.post(
