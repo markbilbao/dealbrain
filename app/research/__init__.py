@@ -16,14 +16,22 @@ from app.research.registry import (
     production_research_provider_registry,
     research_provider_registry_for_tests,
 )
+from app.research.routing import (
+    ResearchProviderRoutingPolicyCatalog,
+    production_research_provider_routing_policy_catalog,
+    research_provider_routing_policy_catalog_for_tests,
+)
 
 __all__ = [
     "ResearchProviderCertificationCatalog",
     "ResearchProviderRegistry",
+    "ResearchProviderRoutingPolicyCatalog",
     "StaticResearchProvider",
     "derive_required_capabilities",
     "production_research_provider_certification_catalog",
     "production_research_provider_registry",
+    "production_research_provider_routing_policy_catalog",
     "research_provider_certification_catalog_for_tests",
     "research_provider_registry_for_tests",
+    "research_provider_routing_policy_catalog_for_tests",
 ]

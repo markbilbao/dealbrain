@@ -2,7 +2,8 @@
 
 Deterministic, browser-immutable, and empty of production providers.
 Answers what implementations exist and what they can technically do.
-Certification is a separate catalog authority.
+Certification is a separate catalog authority. Routing preference is a
+separate trusted policy catalog.
 """
 
 from __future__ import annotations
@@ -68,7 +69,6 @@ class ResearchProviderRegistry:
                     item.value for item in descriptor.supported_capabilities
                 ],
                 "supported_sources": list(descriptor.supported_sources),
-                "selection_priority": descriptor.selection_priority,
             }
             for descriptor in self.list_descriptors()
         ]

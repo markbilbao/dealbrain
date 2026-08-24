@@ -1,7 +1,8 @@
 """Certified provider eligibility and deterministic selection.
 
-Technical provider support and trusted certification are separate authorities.
-Affiliate commission, payout, and commercial priority are never consulted.
+Technical support, trusted certification, and trusted routing policy are
+separate authorities. Affiliate commission, payout, and commercial priority
+are never consulted.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from app.domain.entities.research_execution import (
 from app.research.certification import ResearchProviderCertificationCatalog
 from app.research.providers import StaticResearchProvider
 from app.research.registry import ResearchProviderRegistry
+from app.research.routing import ResearchProviderRoutingPolicyCatalog
 
 _AFFILIATE_FIELDS = frozenset({"affiliate_commission_rate"})
 _POLICY_REASONS = {
@@ -77,6 +79,7 @@ def evaluate_provider(
 def select_certified_provider(
     registry: ResearchProviderRegistry,
     catalog: ResearchProviderCertificationCatalog,
+    routing: ResearchProviderRoutingPolicyCatalog,
     *,
     capability: ResearchCapability,
     market: str | None,
@@ -87,10 +90,12 @@ def select_certified_provider(
     str | None,
     tuple[ProviderEligibility, ...],
 ]:
-    """Choose one eligible provider using configured priority then provider_id.
+    """Choose one eligible certified provider using trusted routing policy.
 
-    Equal certified providers are ordered by ``selection_priority`` ascending,
-    then by stable ``provider_id``. Affiliate metadata is ignored.
+    Eligibility is decided first. Among eligible providers, configured
+    routing priorities sort first (lower wins), then unconfigured providers
+    by stable ``provider_id``. Affiliate metadata is ignored. Routing policy
+    never grants certification.
     """
 
     audits: list[ProviderEligibility] = []
@@ -118,9 +123,7 @@ def select_certified_provider(
             eligible.append(matched)
     if not eligible:
         return None, None, None, tuple(audits)
-    eligible.sort(
-        key=lambda item: (item[0].descriptor.selection_priority, item[0].provider_id),
-    )
+    eligible.sort(key=lambda item: routing.sort_key(item[0].provider_id))
     chosen_provider, chosen_record, chosen_source = eligible[0]
     return chosen_provider, chosen_record, chosen_source, tuple(audits)
 
@@ -128,6 +131,7 @@ def select_certified_provider(
 def assign_capability_step(
     registry: ResearchProviderRegistry,
     catalog: ResearchProviderCertificationCatalog,
+    routing: ResearchProviderRoutingPolicyCatalog,
     *,
     capability: ResearchCapability,
     market: TrustedMarketContext | None,
@@ -169,6 +173,7 @@ def assign_capability_step(
         provider, record, matched_source, source_audits = select_certified_provider(
             registry,
             catalog,
+            routing,
             capability=capability,
             market=market.country_code,
             source=requested_source,
@@ -201,7 +206,11 @@ def assign_capability_step(
                 market=market.country_code,
                 certification_id=record.certification_id,
                 certification_version=record.certification_version,
-                selection_reason=_selection_reason(source_audits, provider.provider_id),
+                selection_reason=_selection_reason(
+                    source_audits,
+                    provider.provider_id,
+                    routing,
+                ),
             )
         )
     return tuple(steps), tuple(blocked), tuple(audits)
@@ -261,13 +270,22 @@ def _missing_certification_reasons(
     return ("certification_source_mismatch",)
 
 
-def _selection_reason(audits: Sequence[ProviderEligibility], selected_id: str) -> str:
-    eligible_ids = [item.provider_id for item in audits if item.eligible]
-    if len(eligible_ids) > 1:
-        return "deterministic_priority_then_provider_id"
-    if selected_id in eligible_ids:
+def _selection_reason(
+    audits: Sequence[ProviderEligibility],
+    selected_id: str,
+    routing: ResearchProviderRoutingPolicyCatalog,
+) -> str:
+    eligible_ids: list[str] = []
+    seen: set[str] = set()
+    for item in audits:
+        if item.eligible and item.provider_id not in seen:
+            seen.add(item.provider_id)
+            eligible_ids.append(item.provider_id)
+    if len(eligible_ids) <= 1:
         return "certified_capability_market_source"
-    return "certified_capability_market_source"
+    if routing.lookup(selected_id) is not None:
+        return "trusted_routing_priority"
+    return "provider_id_fallback"
 
 
 def _blocked_reason(audits: Sequence[ProviderEligibility], *, source: str | None) -> str:

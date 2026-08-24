@@ -1,7 +1,8 @@
 """Metadata-only research providers.
 
 Providers declare technical support only. They never certify themselves,
-call merchants, HTTP clients, or Product Foundation fixtures.
+set routing preference, call merchants, HTTP clients, or Product Foundation
+fixtures.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ class StaticResearchProvider:
     ``execute`` is intentionally unimplemented. Test fixtures must set
     ``descriptor.test_fixture=True`` and may only be registered when the
     registry explicitly allows test providers. Technical support is not
-    production certification.
+    production certification or routing preference.
     """
 
     def __init__(self, descriptor: ResearchProviderDescriptor) -> None:
@@ -40,7 +41,7 @@ class StaticResearchProvider:
         market: str | None,
         source: str | None,
     ) -> ProviderEligibility:
-        """Return technical support only. Certification is a separate authority."""
+        """Return technical support only. Certification and routing are separate authorities."""
 
         reasons = list(
             _technical_ineligibility_reasons(self._descriptor, capability, market, source)

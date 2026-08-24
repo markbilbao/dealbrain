@@ -65,6 +65,7 @@ def test_production_registry_module_does_not_import_test_or_network_clients() ->
         (ROOT / "app/research/registry.py").read_text(encoding="utf-8"),
         (ROOT / "app/research/providers.py").read_text(encoding="utf-8"),
         (ROOT / "app/research/certification.py").read_text(encoding="utf-8"),
+        (ROOT / "app/research/routing.py").read_text(encoding="utf-8"),
         (ROOT / "app/research/__init__.py").read_text(encoding="utf-8"),
     ]
     for source in sources:
@@ -81,3 +82,5 @@ def test_production_registry_module_does_not_import_test_or_network_clients() ->
     assert "Product Foundation" in production or "test providers are never registered" in production
     catalog = (ROOT / "app/research/certification.py").read_text(encoding="utf-8")
     assert "allow_test_certifications=False" in catalog
+    routing = (ROOT / "app/research/routing.py").read_text(encoding="utf-8")
+    assert "allow_test_policies=False" in routing

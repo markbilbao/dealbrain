@@ -187,8 +187,28 @@ class ResearchProviderCertification:
 
 
 @dataclass(frozen=True, slots=True)
+class ResearchProviderRoutingPolicy:
+    """Trusted server-owned routing preference. Does not certify a provider."""
+
+    provider_id: str
+    routing_priority: int
+    test_fixture: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.provider_id:
+            raise ValueError("provider_id is required")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "provider_id": self.provider_id,
+            "routing_priority": self.routing_priority,
+            "test_fixture": self.test_fixture,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class ResearchProviderDescriptor:
-    """Technical provider metadata. Does not grant production certification."""
+    """Technical provider metadata. Does not grant certification or routing preference."""
 
     provider_id: str
     provider_type: ProviderType
@@ -196,7 +216,6 @@ class ResearchProviderDescriptor:
     supported_capabilities: tuple[ResearchCapability, ...]
     supported_sources: tuple[str, ...]
     operational_status: ConnectorOperationalStatus = ConnectorOperationalStatus.AVAILABLE
-    selection_priority: int = 100
     test_fixture: bool = False
     kill_switch: KillSwitch = KillSwitch()
     circuit_breaker: CircuitBreakerSnapshot = CircuitBreakerSnapshot()
@@ -235,7 +254,6 @@ class ResearchProviderDescriptor:
             "supported_capabilities": [item.value for item in self.supported_capabilities],
             "supported_sources": list(self.supported_sources),
             "operational_status": self.operational_status.value,
-            "selection_priority": self.selection_priority,
             "test_fixture": self.test_fixture,
             "kill_switch": self.kill_switch.to_dict(),
             "circuit_breaker": self.circuit_breaker.to_dict(),

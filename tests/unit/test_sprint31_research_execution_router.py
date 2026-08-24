@@ -36,6 +36,10 @@ from app.research.registry import (
     production_research_provider_registry,
     research_provider_registry_for_tests,
 )
+from app.research.routing import (
+    make_research_provider_routing_policy,
+    research_provider_routing_policy_catalog_for_tests,
+)
 from app.services.research_authorization import (
     cancel_research_authorization,
     derive_authorization_idempotency_key,
@@ -142,7 +146,6 @@ def _provider(
     capabilities: tuple[ResearchCapability, ...] = _DISCOVERY
     + (ResearchCapability.CURRENT_PRICING,),
     sources: tuple[str, ...] = ("amazon",),
-    selection_priority: int = 100,
     commission: float | None = None,
     operational_status: ConnectorOperationalStatus = ConnectorOperationalStatus.AVAILABLE,
     kill_switch: KillSwitch | None = None,
@@ -156,7 +159,6 @@ def _provider(
             supported_capabilities=capabilities,
             supported_sources=sources,
             operational_status=operational_status,
-            selection_priority=selection_priority,
             test_fixture=True,
             kill_switch=kill_switch or KillSwitch(),
             circuit_breaker=circuit or CircuitBreakerSnapshot(),
@@ -208,6 +210,19 @@ def _catalog_for_registry(registry, **kwargs):
                         )
                     )
     return research_provider_certification_catalog_for_tests(records)
+
+
+def _routing(*pairs: tuple[str, int]):
+    return research_provider_routing_policy_catalog_for_tests(
+        tuple(
+            make_research_provider_routing_policy(
+                provider_id=provider_id,
+                routing_priority=priority,
+                test_fixture=True,
+            )
+            for provider_id, priority in pairs
+        )
+    )
 
 
 def _registry(*providers: StaticResearchProvider):
@@ -332,12 +347,12 @@ def test_capability_mismatch_leaves_requirement_blocked() -> None:
 
 def test_multiple_certified_providers_use_deterministic_neutral_selection() -> None:
     high_then_low = _registry(
-        _provider("test-zzz-commission", selection_priority=100, commission=0.99),
-        _provider("test-aaa-organic", selection_priority=100, commission=0.01),
+        _provider("test-zzz-commission", commission=0.99),
+        _provider("test-aaa-organic", commission=0.01),
     )
     low_then_high = _registry(
-        _provider("test-zzz-commission", selection_priority=100, commission=0.01),
-        _provider("test-aaa-organic", selection_priority=100, commission=0.99),
+        _provider("test-zzz-commission", commission=0.01),
+        _provider("test-aaa-organic", commission=0.99),
     )
     first = _plan(registry=high_then_low)
     swapped = _plan(registry=low_then_high)
@@ -349,17 +364,22 @@ def test_multiple_certified_providers_use_deterministic_neutral_selection() -> N
     assert first.plan.plan_id == second.plan.plan_id
     assert "commission" not in first.plan.to_dict()["eligible_steps"][0]["selection_reason"]
     assert all(
-        step.selection_reason == "deterministic_priority_then_provider_id"
-        for step in first.plan.eligible_steps
+        step.selection_reason == "provider_id_fallback" for step in first.plan.eligible_steps
     )
 
 
 def test_explicit_priority_beats_provider_id_without_using_affiliate() -> None:
-    preferred = _provider("test-zzz", selection_priority=1, commission=0.01)
-    other = _provider("test-aaa", selection_priority=50, commission=0.99)
-    result = _plan(registry=_registry(other, preferred))
+    preferred = _provider("test-zzz", commission=0.01)
+    other = _provider("test-aaa", commission=0.99)
+    result = _plan(
+        registry=_registry(other, preferred),
+        routing_policy=_routing(("test-zzz", 1), ("test-aaa", 50)),
+    )
     assert result.plan is not None
     assert {step.provider_id for step in result.plan.eligible_steps} == {"test-zzz"}
+    assert all(
+        step.selection_reason == "trusted_routing_priority" for step in result.plan.eligible_steps
+    )
 
 
 def test_partial_capabilities_keep_shipping_unknown() -> None:
@@ -596,9 +616,13 @@ def test_generic_cheaper_search_does_not_invent_a_source_preference() -> None:
         outside_set_product_names=(),
         requested_sources=(),
     )
-    shopee = _provider("test-shopee", sources=("shopee",), selection_priority=10)
-    amazon = _provider("test-amazon", sources=("amazon",), selection_priority=20)
-    result = _plan(_authorization(scope), registry=_registry(amazon, shopee))
+    shopee = _provider("test-shopee", sources=("shopee",))
+    amazon = _provider("test-amazon", sources=("amazon",))
+    result = _plan(
+        _authorization(scope),
+        registry=_registry(amazon, shopee),
+        routing_policy=_routing(("test-shopee", 10), ("test-amazon", 20)),
+    )
     plan = result.plan
     assert plan is not None
     assert plan.requested_sources == ()
@@ -682,6 +706,7 @@ def test_router_and_provider_modules_have_no_network_or_live_connectors() -> Non
         ROOT / "app/research/providers.py",
         ROOT / "app/research/registry.py",
         ROOT / "app/research/certification.py",
+        ROOT / "app/research/routing.py",
         ROOT / "app/research/capabilities.py",
         ROOT / "app/domain/entities/research_execution.py",
         ROOT / "app/domain/interfaces/research_provider.py",

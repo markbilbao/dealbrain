@@ -123,7 +123,7 @@ This inventory records every material Global Public Beta requirement and its cov
 |-------------|-------|------------------|---------------|
 | One canonical MerchantConnector contract | `planned_underspecified` | Sprint 4 vs Sprint 18 parallel | 31 |
 | One MerchantRegistry | `planned_underspecified` | Separate registries | 31 |
-| One MarketRouter | `planned_underspecified` | Authorized-research execution router implemented (planning only); Sprint 4/18 marketplace unification remaining | 31 |
+| One MarketRouter | `planned_underspecified` | Authorized-research execution router implemented (planning only); capability, certification, and routing-policy catalogs are separate; Sprint 4/18 marketplace unification remaining | 31 |
 | MerchantCapability / supported-market metadata | `planned_sufficient_ac` | Sprint 31 research-provider technical capability/market metadata implemented; certification is a separate catalog; unsupported-market product policy still finalizes in 37; production providers uncertified | 31 |
 | Merchant contractual capability/policy (fail-closed; distinct from technical ConnectorCapability) | `planned_sufficient_ac` | Sprint 31 fail-closed trusted certification/policy catalog exported (empty in production); Sprints 32–36 still own provider/market evidence; affiliate ≠ data permission | 31 / 32–36 / 45 |
 | Merchant-country mapping | `missing_from_roadmap` | — | 31 |

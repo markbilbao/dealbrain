@@ -1,6 +1,6 @@
 # Sprint 31 — Research Execution Router / Certified Provider Contract
 
-**Status:** In progress. Planning-only router exists; provider capability and PiqSavi certification are separate authorities. Live provider execution is **not implemented**. This document does not mark Sprint 31 complete.
+**Status:** In progress. Planning-only router exists; provider capability, PiqSavi certification, and routing policy are separate authorities. Live provider execution is **not implemented**. This document does not mark Sprint 31 complete.
 
 **Depends on:** Research Authorization / Execution Handoff Contract.
 
@@ -76,8 +76,7 @@ A provider may expose:
 - technically supported markets (ISO 3166-1 alpha-2, explicit)
 - technically supported research capabilities
 - technically supported source/merchant identities
-- operational status, kill-switch, and circuit-breaker snapshot
-- configured selection priority
+- operational status, kill-switch, and circuit-breaker snapshot (server/runtime snapshots set at registration; never accepted from browser input)
 - test-fixture flag
 - whether it may expand the evaluated set
 - whether it can provide pricing, shipping/taxes, product evidence, or review evidence
@@ -87,6 +86,9 @@ It must **not** own:
 - certification status
 - certification version
 - contractual/policy approval (`allowed` / `restricted` / `prohibited` / `unknown`)
+- routing / selection priority
+
+Providers cannot choose their own routing preference.
 
 Technical support is not certification. A provider that technically supports `CURRENT_PRICING` for Amazon in PH is still **not eligible** until a trusted certification record exists for that exact combination.
 
@@ -96,13 +98,15 @@ Technical Sprint 18 `ConnectorCapability` remains adapter operations. The Sprint
 
 This contract does not replace Sprint 4 `MarketplaceConnector` or Sprint 18 `MarketplaceDataConnector`. Future certified adapters may satisfy this routing contract without collapsing those ownerships.
 
-## Provider registry vs certification catalog
+## Provider registry vs certification catalog vs routing policy
 
 `ResearchProviderRegistry` answers: what provider implementations exist, and what can they technically do?
 
 `ResearchProviderCertificationCatalog` answers: which exact provider / capability / source / market combinations has PiqSavi approved for production planning?
 
-The two catalogs are separate. Registration is not certification. Production both start empty and fail closed.
+`ResearchProviderRoutingPolicyCatalog` answers: among equally eligible certified providers, what neutral server-owned order should PiqSavi use?
+
+These three catalogs are separate. Registration is not certification. Certification is not routing preference. Production registry and certification catalog start empty and fail closed. Production routing policy may be empty; unconfigured providers still participate using `provider_id` fallback.
 
 ## Capability model
 
@@ -184,18 +188,34 @@ Until Sprint 37, the only market input is optional `TrustedMarketContext` from s
 
 If the frozen scope names Amazon, the router must not substitute Shopee. Alternative-source execution is not invented here.
 
-If the scope is generic (“Find something cheaper.”), the router may choose among certified providers using capability, market, and the documented selection rule — never commission.
+If the scope is generic (“Find something cheaper.”), the router may choose among certified providers using trusted routing policy and the documented fallback — never commission.
 
 Destination-sensitive cost is owned by Sprint 37. If authorization requires shipping/tax to a named destination, the router blocks those capabilities with `destination_support_not_ready`. It does not call “price before shipping” a delivered price and does not invent client-side shipping estimates.
 
 ## Deterministic provider selection
 
-When multiple providers are equally certified for the same requirement:
+Eligibility and selection are separate stages.
 
-1. lower configured `selection_priority` wins
-2. stable `provider_id` ascending is the tie-breaker
+**Eligibility** answers whether a provider may participate (technical support, trusted certification, market/source/policy, operational state). Routing policy cannot create eligibility, grant certification, or bypass kill-switch/circuit/market/source rules.
 
-Affiliate payout, commission rate, and merchant commercial priority are never read by the selector. Affiliate processing remains downstream of Sprint 20.
+**Selection** answers which eligible provider is chosen first.
+
+When multiple providers are equally eligible for the same requirement:
+
+1. explicit trusted routing priorities sort first; lower `routing_priority` wins
+2. providers with no routing-policy record sort after configured providers, by stable `provider_id` ascending
+
+A missing routing-policy entry does not make a provider unusable. Production may have an empty routing catalog; ordering then uses `provider_id` fallback.
+
+Certification does not imply priority. A certified provider with no routing record is eligible and uses fallback. A provider with the highest routing priority and no certification remains ineligible.
+
+Affiliate payout, commission rate, and merchant commercial priority are never read by the selector or the routing catalog. Affiliate processing remains downstream of Sprint 20.
+
+Kill-switch, circuit-breaker, and operational status on the descriptor are trusted server/runtime snapshots constructed at registration. They are not merchant-controlled request fields and are not accepted from browser input.
+
+## Routing policy fingerprint
+
+`ResearchProviderRoutingPolicyCatalog.fingerprint()` is SHA-256 over provider ID and configured priority only. No timestamps and no commercial metadata. The plan digest binds this fingerprint. A trusted policy change that changes selected providers therefore changes the digest. Unused policy-catalog changes also change the fingerprint, matching the certification-catalog digest pattern.
 
 ## Execution plan
 
@@ -228,7 +248,7 @@ Statuses:
 
 There is no fake `researching`, `completed`, or `failed` status.
 
-Plan digest is SHA-256 over authorization identity, scope digest, selected provider IDs, capability assignments (including certification ID/version), market, blocked reasons, status, technical registry fingerprint, and certification-catalog fingerprint.
+Plan digest is SHA-256 over authorization identity, scope digest, selected provider IDs, capability assignments (including certification ID/version), market, blocked reasons, status, technical registry fingerprint, certification-catalog fingerprint, and routing-policy fingerprint.
 
 Repeated planning of the same unchanged valid authorization and catalog produces the same plan ID and digest.
 
@@ -254,7 +274,7 @@ A planned provider is not an attempted provider.
 
 The Sprint 38 trace skeleton exists (`ResearchExecutionTrace`) but planning populates an empty trace. Presence of a provider step must never cause evidence/UI to say that source was checked.
 
-Production `production_research_provider_registry()` is empty. Production `production_research_provider_certification_catalog()` is empty. Neither falls back to Product Foundation fixtures, test certifications, or generic model knowledge.
+Production `production_research_provider_registry()` is empty. Production `production_research_provider_certification_catalog()` is empty. Production `production_research_provider_routing_policy_catalog()` is empty. None of them fall back to Product Foundation fixtures, test certifications, test routing policies, or generic model knowledge.
 
 Kill-switch and circuit-open block planning without rewriting certification history. Runtime unavailability is not revocation.
 
@@ -268,7 +288,9 @@ Test providers must set `test_fixture=True` and `provider_type="test"`. They reg
 
 Test certifications must set `test_fixture=True` and register only through `research_provider_certification_catalog_for_tests(...)`.
 
-The production registry raises if a test fixture is registered. The production certification catalog raises if a test certification is registered. Production does not inherit test certifications.
+Test routing policies must set `test_fixture=True` and register only through `research_provider_routing_policy_catalog_for_tests(...)`.
+
+The production registry raises if a test fixture is registered. The production certification catalog raises if a test certification is registered. The production routing catalog raises if a test routing policy is registered. Production does not inherit test certifications or test routing policies.
 
 ## Reliability contracts
 

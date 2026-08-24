@@ -1,8 +1,8 @@
 """Research provider port — certified execution contract.
 
-Sprint 31 owns technical capability declaration and routing against a
-separate trusted certification catalog. Sprint 38 owns live execution.
-This port must not perform HTTP.
+Sprint 31 owns technical capability declaration and routing against
+separate trusted certification and routing-policy catalogs. Sprint 38
+owns live execution. This port must not perform HTTP.
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ class ResearchProvider(Protocol):
     ) -> ProviderEligibility:
         """Return technical support for one capability/market/source triple.
 
-        Technical support is not production certification.
+        Technical support is not production certification or routing preference.
         """
 
     def execute(self, step: ResearchProviderStep) -> None:

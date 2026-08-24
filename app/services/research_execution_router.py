@@ -35,6 +35,10 @@ from app.research.certification import (
 from app.research.digest import stable_sha256
 from app.research.eligibility import assign_capability_step, destination_sensitive_required
 from app.research.registry import ResearchProviderRegistry
+from app.research.routing import (
+    ResearchProviderRoutingPolicyCatalog,
+    production_research_provider_routing_policy_catalog,
+)
 from app.services.research_authorization import (
     get_authorized_research_handoff,
     validate_research_authorization_for_execution,
@@ -82,6 +86,7 @@ def plan_authorized_research(
     canonical_context_version: int,
     registry: ResearchProviderRegistry,
     catalog: ResearchProviderCertificationCatalog | None = None,
+    routing_policy: ResearchProviderRoutingPolicyCatalog | None = None,
     trusted_market: TrustedMarketContext | None = None,
     proposal: ResearchProposal | None = None,
     expected_scope_digest: str | None = None,
@@ -98,6 +103,7 @@ def plan_authorized_research(
     """
 
     certification_catalog = catalog or production_research_provider_certification_catalog()
+    routing = routing_policy or production_research_provider_routing_policy_catalog()
     validation = validate_research_authorization_for_execution(
         authorization,
         owner=owner,
@@ -124,7 +130,7 @@ def plan_authorized_research(
         return ResearchPlanningResult(planned=False, reason="stale_authorization")
 
     request = execution_request_from_handoff(handoff, trusted_market=trusted_market)
-    plan = build_execution_plan(request, registry, certification_catalog)
+    plan = build_execution_plan(request, registry, certification_catalog, routing)
     return ResearchPlanningResult(
         planned=True,
         reason=plan.support_status,
@@ -136,6 +142,7 @@ def build_execution_plan(
     request: ResearchExecutionRequest,
     registry: ResearchProviderRegistry,
     catalog: ResearchProviderCertificationCatalog,
+    routing: ResearchProviderRoutingPolicyCatalog,
 ) -> ResearchExecutionPlan:
     """Construct a fail-closed plan from a trusted execution request."""
 
@@ -149,6 +156,7 @@ def build_execution_plan(
         assigned, blocked_items, capability_audits = assign_capability_step(
             registry,
             catalog,
+            routing,
             capability=capability,
             market=request.market,
             sources=request.scope.requested_sources,
@@ -178,6 +186,7 @@ def build_execution_plan(
         status=status,
         registry_fingerprint=registry.fingerprint(),
         certification_fingerprint=catalog.fingerprint(),
+        routing_policy_fingerprint=routing.fingerprint(),
     )
     plan = ResearchExecutionPlan(
         plan_id=f"research-plan:{digest}",
@@ -218,6 +227,7 @@ def research_plan_digest(
     status: str,
     registry_fingerprint: str,
     certification_fingerprint: str,
+    routing_policy_fingerprint: str,
 ) -> str:
     return stable_sha256(
         {
@@ -245,6 +255,7 @@ def research_plan_digest(
             "status": status,
             "registry_fingerprint": registry_fingerprint,
             "certification_fingerprint": certification_fingerprint,
+            "routing_policy_fingerprint": routing_policy_fingerprint,
         }
     )
 
