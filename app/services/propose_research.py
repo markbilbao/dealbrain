@@ -83,10 +83,13 @@ ProposalLifecycle = Literal[
     "unbound",
     "no_pending",
 ]
-ProposalAnswerStatus = ResearchProposalStatus | Literal[
-    "no_pending_research_proposal",
-    "stale_research_proposal",
-]
+ProposalAnswerStatus = (
+    ResearchProposalStatus
+    | Literal[
+        "no_pending_research_proposal",
+        "stale_research_proposal",
+    ]
+)
 _CONFIRMED_STATUS: ResearchProposalStatus = (
     "research_confirmation_received_but_execution_unavailable"
 )
@@ -885,8 +888,10 @@ def confirmation_applies_to_proposal(
     text = question.lower()
     named_sources = tuple(hint for hint in _SOURCE_HINTS if hint in text)
     proposal_sources = tuple(item.lower() for item in proposal.requested_sources)
-    if named_sources and proposal_sources and not any(
-        source in proposal_sources for source in named_sources
+    if (
+        named_sources
+        and proposal_sources
+        and not any(source in proposal_sources for source in named_sources)
     ):
         return False
     named_destination = _extract_destination(question)

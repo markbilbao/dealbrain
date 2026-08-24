@@ -128,7 +128,10 @@ def test_repeat_confirmation_reuses_same_authorization() -> None:
     once = _confirm(service, first)
     twice = _confirm(service, first)
     assert once is not None and twice is not None
-    assert once.processing["research_authorization_id"] == twice.processing["research_authorization_id"]
+    assert (
+        once.processing["research_authorization_id"]
+        == twice.processing["research_authorization_id"]
+    )
     assert twice.processing["authorization_created"] is False
     context = conversations.get(first.conversation_id)
     assert context is not None
@@ -162,7 +165,10 @@ def test_distinct_proposal_versions_get_distinct_authorizations() -> None:
     assert beats is not None
     beats_auth = _confirm(service, beats, "Yes, research Beats Studio Pro.")
     assert airpods is not None and beats_auth is not None
-    assert airpods.processing["research_authorization_id"] != beats_auth.processing["research_authorization_id"]
+    assert (
+        airpods.processing["research_authorization_id"]
+        != beats_auth.processing["research_authorization_id"]
+    )
     context = conversations.get(first.conversation_id)
     assert context is not None
     ids = {item.authorization_id for item in context.research_authorizations}
@@ -445,13 +451,16 @@ def test_wrong_context_version_fails_validation() -> None:
     )
     assert result.valid is False
     assert result.reason == "stale_context_version"
-    assert get_authorized_research_handoff(
-        auth,
-        owner=_owner(),
-        conversation_id=first.conversation_id,
-        decision_id=DECISION_ID,
-        canonical_context_version=2,
-    ) is None
+    assert (
+        get_authorized_research_handoff(
+            auth,
+            owner=_owner(),
+            conversation_id=first.conversation_id,
+            decision_id=DECISION_ID,
+            canonical_context_version=2,
+        )
+        is None
+    )
 
 
 def test_client_cannot_widen_frozen_scope() -> None:
@@ -490,9 +499,10 @@ def test_client_cannot_widen_frozen_scope() -> None:
     assert auth.scope.outside_set_product_names == ()
     assert auth.scope.expansion_required is False
     assert auth.scope.destination_label is None
-    assert list(auth.scope.requested_evidence_topics) == first.processing["research_proposal"][
-        "requested_evidence_topics"
-    ]
+    assert (
+        list(auth.scope.requested_evidence_topics)
+        == first.processing["research_proposal"]["requested_evidence_topics"]
+    )
     assert "warranty" not in auth.scope.requested_evidence_topics
     assert auth.scope_digest
     assert auth.scope.requested_sources == tuple(
@@ -848,12 +858,15 @@ def test_confirmation_matching_helpers() -> None:
     assert is_explicit_confirmation("Yes, research that.", proposal)
     assert confirmation_correlation("Yes, research that.", proposal) == "missing"
     assert not confirmation_applies_to_proposal("Yes, research that.", proposal)
-    assert confirmation_correlation(
-        "Yes, research that.",
-        proposal,
-        client_proposal_id=proposal.proposal_id,
-        client_proposal_version=proposal.proposal_version,
-    ) == "match"
+    assert (
+        confirmation_correlation(
+            "Yes, research that.",
+            proposal,
+            client_proposal_id=proposal.proposal_id,
+            client_proposal_version=proposal.proposal_version,
+        )
+        == "match"
+    )
     assert confirmation_applies_to_proposal(
         "Yes, research that.",
         proposal,
@@ -872,12 +885,15 @@ def test_confirmation_matching_helpers() -> None:
         client_proposal_id=proposal.proposal_id,
         client_proposal_version=proposal.proposal_version,
     )
-    assert confirmation_correlation(
-        "Yes, research that.",
-        proposal,
-        client_proposal_id="other-id",
-        client_proposal_version=proposal.proposal_version,
-    ) == "stale"
+    assert (
+        confirmation_correlation(
+            "Yes, research that.",
+            proposal,
+            client_proposal_id="other-id",
+            client_proposal_version=proposal.proposal_version,
+        )
+        == "stale"
+    )
     assert not confirmation_applies_to_proposal(
         "Yes, research that.",
         proposal,
