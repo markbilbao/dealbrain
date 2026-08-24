@@ -5,7 +5,7 @@
 **Audited HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50` (`main`, clean)
 **Verdict:** **NOT READY FOR PUBLIC BETA** (overall **3/10**)
 **Persisted summary path:** this file (`docs/roadmap/SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`)
-**Master roadmap disposition:** Reclassified — Sprint 30 is an audit identity, not a completed public shopping launch. Findings are owned by Sprints 26–46 in [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md).
+**Master roadmap disposition:** Reclassified — Sprint 30 is an audit identity, not a completed public shopping launch. Findings are owned by Sprints 26–46 in [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md); Sprint 47 is a later post-beta item and does not reopen this audit.
 
 ---
 
@@ -59,4 +59,4 @@ Not a Philippines shopping beta, not multinational, not Global Public Beta.
 ## Roadmap sufficiency conclusion (audit)
 
 The locked 40-sprint roadmap was **insufficient as written** for an honest Global Public Beta by Sprint 30.
-This persisted summary feeds the Sprint 46 endpoint expansion; it does not authorize claiming Sprint 30 launch completion.
+This persisted summary feeds the Global Public Beta expansion (Sprint 45 launch / Sprint 46 stabilize / Sprint 47 post-beta numbered stop); it does not authorize claiming Sprint 30 launch completion. Do not reopen Sprint 30.

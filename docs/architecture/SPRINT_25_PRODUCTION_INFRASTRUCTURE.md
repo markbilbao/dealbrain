@@ -6,7 +6,7 @@
 
 **Historical launch target:** Sprint 30 public launch — **superseded / unmet**
 
-**Current Global Public Beta sequencing:** [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (endpoint **Sprint 46**; remaining M30 evidence owned primarily by Sprints **26 / 41 / 42 / 44 / 45**)
+**Current Global Public Beta sequencing:** [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (Sprint **45** launch target no later than 2026-09-30; Sprint **46** stabilize; Sprint **47** post-beta numbered stop; remaining M30 evidence owned primarily by Sprints **26 / 41 / 42 / 44 / 45**)
 
 **Sprint 30 disposition:** Reclassified as Public Beta Readiness Audit — NOT READY ([persisted summary](../roadmap/SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md))
 
@@ -29,7 +29,7 @@
 
 ### 0.1 What Sprint 25 owns
 
-Sprint 25 owns the **runtime platform and operational practices** required to run DealBrain safely before the *historical* Sprint 30 public-launch target (superseded; see master roadmap endpoint Sprint 46):
+Sprint 25 owns the **runtime platform and operational practices** required to run DealBrain safely before the *historical* Sprint 30 public-launch target (superseded; see master roadmap Sprint 45 launch / Sprint 46 stabilize / Sprint 47 post-beta numbered stop):
 
 - Environments, deployment topology, CI/CD
 - Configuration and secrets handling (ops layer)
@@ -69,7 +69,7 @@ Sprint 25 **consumes** Sprint 22 probes and Sprint 23 readiness depth as black-b
 
 | Tag | Meaning |
 |-----|---------|
-| **M30** | *Historical label:* was “Mandatory for Sprint 30 public launch.” Sprint 30 launch was **superseded/unmet**; M30 rows remain **required evidence content** for Global Public Beta, now owned primarily by Sprints **26 / 41 / 42 / 44 / 45** in the master roadmap (endpoint Sprint 46). |
+| **M30** | *Historical label:* was “Mandatory for Sprint 30 public launch.” Sprint 30 launch was **superseded/unmet**; M30 rows remain **required evidence content** for Global Public Beta, now owned primarily by Sprints **26 / 41 / 42 / 44 / 45** in the master roadmap (Sprint 45 launch / Sprint 46 stabilize / Sprint 47 post-beta numbered stop). |
 | **P30+** | *Historical label:* recommended soon after the superseded Sprint 30 launch target |
 | **FUT** | Future scalability / multi-region / advanced ops |
 
@@ -844,7 +844,7 @@ Sprint 25 is **not** complete merely because infrastructure configuration files 
 | Production configuration failure **tested** (fail-closed) | Yes |
 | Architecture locks **preserved** (no domain/API/schema redesign) | Yes |
 
-Until the evidence matrix rows marked **Block launch** are complete (or explicitly risk-accepted in writing), Sprint 25 implementation is **incomplete** and **Global Public Beta production launch is blocked** (see master roadmap Sprints 26 / 41 / 42 / 44 / 45). The historical phrase “Sprint 30 launch is blocked” remains true as a sequencing failure mode and is superseded by the Sprint 46 endpoint program.
+Until the evidence matrix rows marked **Block launch** are complete (or explicitly risk-accepted in writing), Sprint 25 implementation is **incomplete** and **Global Public Beta production launch is blocked** (see master roadmap Sprints 26 / 41 / 42 / 44 / 45). The historical phrase “Sprint 30 launch is blocked” remains true as a sequencing failure mode and is superseded by the Sprint 45 launch / Sprint 46 stabilize / Sprint 47 post-beta program.
 
 ### 21.3 Explicit launch limitations (allowed if documented)
 

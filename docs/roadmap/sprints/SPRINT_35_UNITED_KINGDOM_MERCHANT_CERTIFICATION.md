@@ -60,6 +60,8 @@ Certify at least one real United Kingdom merchant-data path under the same bar a
 - Monitoring and public coverage disclosure published
 - Kill switch tested
 - **Fixtures, mocks, imported samples, or simulations cannot close this sprint**
+- Failure of UK certification removes/delays UK only; it does not necessarily delay Sprint 45 if another certified useful market exists
+- Sprint 45 does not require all five planned markets
 
 ## Predecessor sprints
 

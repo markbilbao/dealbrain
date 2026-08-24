@@ -43,4 +43,4 @@
 - EXT-18 `provisioned` does **not** close Sprint 26, does **not** start Sprint 27, and does **not** prove formal DPO appointment, EXT-19 written approval, or Privacy Policy legal sufficiency.
 - EXT-19 `applied` does **not** close Sprint 26, does **not** start Sprint 27, does **not** mean EXT-19 `approved`, and does **not** prove substantive legal review, Terms/Privacy approval, merchant-term approval, EXT-01…EXT-05 application, or launch legal approval.
 - P0/P1 items beyond the verified technical staging proof are **not** closed by this draft.
-- Roadmap endpoint remains **Sprint 46**.
+- Public launch gate remains **Sprint 45** (owner target no later than 2026-09-30). Sprint 46 remains post-launch stabilization. Numbered stop is now **Sprint 47** (post-beta; not a launch prerequisite). This draft still does **not** close Sprint 26.

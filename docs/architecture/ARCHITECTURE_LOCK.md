@@ -2,7 +2,7 @@
 
 **Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive); Sprint 25b.2 OIDC/deploy IAM ownership added (additive); Sprint 25b.3 staging deployment pipeline ownership added (additive); Global Public Beta roadmap ownership added (additive, documentation)
 
-**Launch roadmap endpoint (current):** Sprint 46 — see [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
+**Launch roadmap:** Sprint 45 is the public-launch gate (owner target no later than 2026-09-30); Sprint 46 is post-launch stabilization; numbered stop is Sprint 47 (post-beta, not a launch prerequisite) — see [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 
 **Public brand cross-reference:** Public consumer brand is **PiqSavi**; internal technical codename remains **DealBrain**. Internal infrastructure identifiers are intentionally protected from cosmetic rename. Public-brand authority: [`docs/roadmap/PIQSAVI_PUBLIC_BRAND_POLICY.md`](../roadmap/PIQSAVI_PUBLIC_BRAND_POLICY.md).
 
@@ -16,7 +16,7 @@
 
 This lock freezes domain ownership and architectural invariants established by the Sprint 1–22 architecture audit. Future sprints may harden adapters, operations, and integrations, but must not silently redistribute ownership or change ranking/recommendation semantics.
 
-Sprint 23 may **replace adapters**, not **domain owners**. Persistence changes must be **behavior-preserving**. Any future ownership change requires **explicit architecture review**. Launch sequencing through Global Public Beta is governed by the [Global Public Beta Master Roadmap](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (**endpoint Sprint 46**). The former Sprint 40 hard endpoint remains a historical identity marker only.
+Sprint 23 may **replace adapters**, not **domain owners**. Persistence changes must be **behavior-preserving**. Any future ownership change requires **explicit architecture review**. Launch sequencing through Global Public Beta is governed by the [Global Public Beta Master Roadmap](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (**Sprint 45 launch / Sprint 46 stabilize / Sprint 47 post-beta numbered stop**). The former Sprint 40 hard endpoint remains a historical identity marker only.
 
 Sprint 24 owns **API contracts only** (OpenAPI, response shapes, pagination/filter/sort conventions, error documentation, compatibility gates). It does **not** take domain or persistence ownership from Sprints 1–23.
 
@@ -163,17 +163,18 @@ Persistence and operational data must not alter:
 
 ---
 
-## 12. Change-control policy through Global Public Beta (Sprint 46)
+## 12. Change-control policy through Global Public Beta (Sprint 47 numbered stop)
 
 1. Propose ownership or invariant changes in architecture review before coding.
 2. Prefer adapter and operations work over domain rewrites.
-3. Keep scope controlled so Global Public Beta can launch by **Sprint 45** and stabilize in **Sprint 46**, per the [master roadmap](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md).
+3. Keep scope controlled so Global Public Beta can launch by **Sprint 45** no later than **September 30, 2026**, stabilize in **Sprint 46**, and keep **Sprint 47** post-beta, per the [master roadmap](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md).
 4. Do not absorb deferred roadmap items into persistence or unrelated sprints without explicit re-scoping and a single owning sprint in the master roadmap.
 5. Document limitations rather than silently changing behavior.
 6. **Supersession note:** The former “hard endpoint: Sprint 40” rule is superseded for launch sequencing. Sprint identities 1–40 remain historical and must not be renumbered.
 7. Roadmap additions require: gap ID, single primary owning sprint, acceptance evidence, beta-blocker classification, and Architecture Lock review when invariants/ownership change.
+8. New pre-launch sprints or major architectural scope may not be inserted without explicit owner approval. Launch-date pressure may reduce optional market/provider/feature scope but may not weaken truthfulness, privacy, security, legal, production, or evidence requirements.
 
-**Remember:** Sprint 23 replaces adapters, not domain owners. Persistence must be behavior-preserving. Ownership changes require explicit architecture review. Launch roadmap endpoint: **Sprint 46** (see master roadmap).
+**Remember:** Sprint 23 replaces adapters, not domain owners. Persistence must be behavior-preserving. Ownership changes require explicit architecture review. Public launch gate: **Sprint 45**. Numbered stop: **Sprint 47** (see master roadmap).
 
 ---
 

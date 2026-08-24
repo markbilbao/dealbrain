@@ -30,6 +30,8 @@ Close launch-blocking security findings and establish abuse protections appropri
 - Add idempotency and replay protection for message submission and research confirmation.
 - Redact conversation bodies and session identifiers from routine logs and analytics.
 - Review output encoding, XSS, user/merchant/review prompt injection, external-model data minimization, and research cost amplification.
+- Explicit coverage of: identity/AuthZ; owner-bound decisions; SSRF; redirect/link safety; CSP/security headers; secrets; rate limiting; credential stuffing; bot abuse; affiliate/click fraud; prompt injection / tool abuse; PII/logging/redaction; vulnerability response; private SEO/session isolation
+- Close HIGH and launch-blocking MEDIUM issues before Sprint 45
 
 ## Explicit non-goals
 

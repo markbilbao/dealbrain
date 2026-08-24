@@ -26,8 +26,17 @@ Establish one canonical connector contract, registry, and market router, plus th
 - Normalized listing/offer contracts preserved
 - Provenance + freshness required fields retained from Sprint 18
 - Connector certification suite (sandbox/real gates), including capability-policy harness expectations
+- Canonical connector registry
+- Router / orchestrator
+- Capability-policy enforcement
+- Source eligibility
+- Fail-closed provider selection
+- Research execution contracts
+- Kill-switch hooks
+- Provenance / execution-trace contracts
 - Merchant onboarding runbook; legal/terms checklist hooks (non-secret evidence references only)
 - Preserve DealScore / Recommendation / affiliate / sponsored boundaries
+- No unsupported provider may be presented as searched
 
 ### Merchant contractual capability / policy model (shared predecessor of 32–36)
 
@@ -151,6 +160,11 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 - Certification suite runnable, including capability-policy expectations
 - Architecture review recorded for 4/18 boundary
 - Neutrality tests green (affiliate/monetization remains outside DealScore / objective ranking)
+- Canonical registry/router/orchestrator is the only production selection path
+- Source eligibility and fail-closed provider selection are enforced
+- Research execution, provenance, and execution-trace contracts are exported for Sprint 38
+- No unsupported provider may be presented as searched
+- Shared ownership of live owner-bound decision creation: this sprint owns routing/eligibility; Sprint 29 owns snapshot presentation; Sprint 38 owns live execution
 
 ## Predecessor sprints
 

@@ -7,7 +7,7 @@
 
 ## Objective
 
-Stabilize the Global Public Beta after an **approved** launch, complete learning reviews, and close the program endpoint at Sprint 46.
+Stabilize the Global Public Beta after an **approved** launch, complete learning reviews, and close the immediate post-launch program at Sprint 46. Sprint 47 is a later post-beta intelligence sprint and is **not** required to close Sprint 46.
 
 **Hard rule:** Sprint 46 **cannot** be used to postpone unresolved Sprint 45 launch blockers until after public launch. Sprint 46 owns stabilization findings that arise after an approved launch, not pre-existing launch blockers.
 
@@ -15,7 +15,8 @@ Stabilize the Global Public Beta after an **approved** launch, complete learning
 
 - Dedicated launch-monitoring handoff from Sprint 45
 - Incident ownership handoff
-- Sev1/Sev2 burn-down
+- Sev 0/1/2 burn-down
+- Product regressions; production incidents; UX blockers; connector failures; Recommendation trust problems; indexing/SEO problems; analytics sanity; capacity re-check; market coverage review; privacy/security post-check; launch-retrospective evidence
 - Production error-budget review
 - Connector health, freshness, and provenance review
 - Merchant-data quality review
@@ -37,7 +38,9 @@ Stabilize the Global Public Beta after an **approved** launch, complete learning
 - Silent scope expansion
 - **Using Sprint 46 to postpone unresolved Sprint 45 launch blockers until after public launch**
 - Owning pre-existing launch blockers that should have failed Sprint 45 go/no-go
-- Turning Sprint 46 into a new branding implementation sprint (brand authority remains [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md); endpoint remains Sprint 46)
+- Turning Sprint 46 into a new branding implementation sprint (brand authority remains [`../PIQSAVI_PUBLIC_BRAND_POLICY.md`](../PIQSAVI_PUBLIC_BRAND_POLICY.md))
+- Absorbing Sprint 47 buying-action intelligence as a launch prerequisite
+- Observing SEO/indexing only as an optional extra — crawl errors, indexing failures, structured-data errors, page performance, organic traffic quality, unexpected private-route discovery, and claim/freshness problems are in scope
 
 ## External dependencies
 
@@ -79,7 +82,7 @@ Stabilize the Global Public Beta after an **approved** launch, complete learning
 - Launch-monitoring and incident ownership handoffs accepted
 - Learning review minutes filed
 - Post-beta backlog classified and approved
-- Master roadmap marked endpoint reached
+- Immediate post-launch program marked closed; Sprint 47 remains later/post-beta
 - Explicit confirmation: no deferred Sprint 45 launch blockers were absorbed into Sprint 46
 
 ## Predecessor sprints

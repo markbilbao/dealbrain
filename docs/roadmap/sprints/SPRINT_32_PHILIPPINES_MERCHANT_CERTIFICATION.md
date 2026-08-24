@@ -98,6 +98,9 @@ Certification stages must remain distinct (do not collapse):
 - Kill switch tested
 - **Fixtures, mocks, imported samples, or simulations cannot close this sprint**
 - PH may be named only after this gate + claims approval
+- Each named market requires: at least one legally usable real source path; current-data evidence; capability-policy evidence; credential/provider approval; truthful coverage definition; staging/limited production proof where required
+- Failure of PH certification removes/delays PH only; it does not necessarily delay Sprint 45 if another certified useful market exists
+- Sprint 45 does not require all five planned markets
 
 ## Predecessor sprints
 

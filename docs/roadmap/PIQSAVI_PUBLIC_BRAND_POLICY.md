@@ -4,7 +4,7 @@
 **Authority:** Product owner public-brand decision  
 **Scope:** Documentation-only brand lock; does not authorize application, DNS, TLS, email, or infrastructure mutation  
 **Internal technical codename:** DealBrain  
-**Roadmap endpoint:** Sprint 46 (unchanged)
+**Roadmap numbered stop:** Sprint 47 (post-beta). Public launch gate remains Sprint 45 (target no later than 2026-09-30). Sprint 46 remains post-launch stabilization.
 
 ---
 

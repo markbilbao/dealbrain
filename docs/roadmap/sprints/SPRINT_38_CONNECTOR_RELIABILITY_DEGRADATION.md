@@ -32,6 +32,17 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - Connector, merchant, offer, price, review, freshness, and coverage statements must be derived from actual execution and certified provider capabilities.
 - Repeated confirmations must not create duplicate research executions.
 - Partial, stale, timeout, quota, connector-failure, and no-merchants-available outcomes must preserve the prior decision and degrade honestly.
+- Own production live-research execution including: connector timeout behavior; retries where permitted; circuit breakers; partial failure; source health; degradation states; cache/freshness; research execution trace; attempted sources; succeeded sources; failed sources; timed-out sources; evaluated-offer count; truthful UI disclosure
+- Shared ownership of live owner-bound decision creation: this sprint owns live execution; Sprint 31 owns routing; Sprint 29 owns snapshot presentation. Fixture-created UUIDs are not sufficient for Sprint 45.
+
+### Hard live-mode rule
+
+`SHOPPING_RESEARCH_EXECUTION_MODE=live` may not be production-enabled unless:
+
+1. at least one relevant certified real connector exists for the requested supported market, and
+2. truthful partial-failure/execution-trace handling is operational.
+
+Mock remains non-production only.
 
 ## Explicit non-goals
 
@@ -87,6 +98,10 @@ Harden and consolidate certified connector behavior into production-grade cross-
 - No research occurs before explicit confirmation.
 - No timer, animation, fixture, or simulated count is accepted as evidence of live execution.
 - Completed research returns a canonical updated-Results snapshot; failed or partial research does not silently replace the prior valid decision.
+- `SHOPPING_RESEARCH_EXECUTION_MODE=live` is fail-closed unless a relevant certified real connector and truthful partial-failure/execution-trace handling exist
+- Execution traces record attempted, succeeded, failed, and timed-out sources plus evaluated-offer count
+- A real shopper request can create an owner-bound schema-current canonical decision from live certified evidence
+- Mock remains non-production only
 
 ## Predecessor sprints
 

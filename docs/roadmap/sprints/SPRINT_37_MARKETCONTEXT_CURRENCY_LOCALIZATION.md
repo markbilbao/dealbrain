@@ -38,6 +38,8 @@ Ship a coherent MarketContext with honest currency, localization, unsupported-ma
 - Regional variant disclosures (model, voltage/plug, warranty-region, seller-region)
 - Localization QA for five markets; English baseline
 - French-Canadian scope decision + disclosure
+- Country/market, currency, FX, locale, destination context, shipping-market honesty, unsupported-market behavior, cross-border cost semantics, delivery-location decision context
+- **Destination re-evaluation (locked):** if changing destination could materially change shipping/effective buying cost, PiqSavi must perform server-side re-evaluation using supported evidence. Do not implement client-side fake repricing. Potential result may change shipping, effective cost, qualification, and Best Piq. Canonical PiqScore changes only through a legitimate new/re-evaluated decision, not presentation manipulation.
 
 ## Explicit non-goals
 
@@ -89,7 +91,10 @@ Ship a coherent MarketContext with honest currency, localization, unsupported-ma
 - Unsafe FX comparisons fail closed
 - Unsupported markets never show fixture-as-live
 - FR-CA decision published
-- Five-market EN QA checklist signed
+- Five-market EN QA checklist signed (for markets still named; omitted markets need not be QA’d as supported)
+- Destination change that could materially change shipping/effective cost triggers server-side re-evaluation
+- No client-side fake repricing
+- Canonical PiqScore changes only through a new/re-evaluated decision
 
 ## Predecessor sprints
 

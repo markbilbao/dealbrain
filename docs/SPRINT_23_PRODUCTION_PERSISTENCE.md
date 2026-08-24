@@ -68,7 +68,7 @@ Covered under `tests/unit/persistence/`:
 
 ## Deferred (historical bucket — superseded for ownership)
 
-> **Superseded for sprint ownership:** The former undifferentiated “Sprints 24–40” deferred bucket is replaced by explicit Global Public Beta sprint ownership in [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (endpoint Sprint 46). Sprint identities 24–40 remain historical.
+> **Superseded for sprint ownership:** The former undifferentiated “Sprints 24–40” deferred bucket is replaced by explicit Global Public Beta sprint ownership in [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (Sprint 45 launch / Sprint 46 stabilize / Sprint 47 post-beta numbered stop). Sprint identities 24–40 remain historical.
 
 | Deferred item (Sprint 23 era) | Current owning sprint(s) |
 |-------------------------------|--------------------------|

@@ -8,7 +8,7 @@
 
 **API:** `/health`, `/ready`, `/live`, `/api/v1/health`, `/api/v1/ready`, `/api/v1/live`, `/api/v1/launch/*`
 
-**Global Public Beta roadmap:** [`roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (endpoint **Sprint 46**; Sprint 30 audit persisted as NOT READY)
+**Global Public Beta roadmap:** [`roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) (Sprint 45 launch target no later than 2026-09-30; Sprint 46 stabilize; Sprint 47 post-beta numbered stop; Sprint 30 audit persisted as NOT READY)
 
 ## Overview
 

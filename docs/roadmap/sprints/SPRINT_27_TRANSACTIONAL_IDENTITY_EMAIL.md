@@ -60,10 +60,26 @@ Make self-serve authentication production-safe with real transactional email, co
 
 ## Acceptance criteria
 
+Launch acceptance explicitly covers:
+
+- real transactional email
+- sender authentication (SPF/DKIM/DMARC)
+- account verification
+- password reset
+- secure token lifecycle (expiry, single-use invalidation, reuse rejected)
+- email-change behavior where planned
+- enumeration-safe errors
+- session rotation/revocation
+- staging E2E
+- production cutover readiness (credentials/secrets path recorded; full prod attach remains Sprint 41)
+
+Also:
+
 - Staging user can reset password via email without demo tokens
 - Verification flow completes
 - Tokens expire and invalidate after use
 - Production config cannot enable demo token leakage
+- Guest→account continuity preserves the active decision where safely possible (co-owned with Sprint 29/40)
 
 ### Additive PiqSavi brand criteria (not marked complete)
 

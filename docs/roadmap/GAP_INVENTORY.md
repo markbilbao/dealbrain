@@ -376,3 +376,26 @@ See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summar
 - Billing / subscriptions / payments (unless later required)
 - MFA/OAuth (unless risk acceptance changes)
 - Formal compliance certifications (SOC2, ISO, etc.)
+- **P2-OT-01** Offer timing, promotions, and Buying Action intelligence — now numbered **Sprint 47**; post-beta; not a Sprint 45 blocker
+
+---
+
+## 2026-08-24 roadmap reconciliation addendum
+
+This addendum does **not** rewrite the 2026-08-06 audit as if it never happened. It records later merged engineering and the owner public-launch lock.
+
+| Field | Value |
+|-------|-------|
+| Owner lock | Controlled Global Public Beta Launch no later than **September 30, 2026** |
+| Public launch gate | Sprint 45 |
+| Immediate post-launch | Sprint 46 |
+| Numbered stop | Sprint 47 (P2-OT-01; not a launch prerequisite) |
+| Current approved engineering baseline | `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` — 2819 passed / 0 failed / 0 skipped / 168 warnings |
+| Sprint 26 | Remains open. Packaged staging proof is still SHA `79bd03f`. Later SHA `ab23d29` is not Sprint 26 close evidence. |
+| Sprint 29 | Purpose updated to Production Consumer Decision Experience & Conversational Continuity. 29.0–29.4A, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. 29.4B is **in progress / not merged**. 29.4C is **planned**. Live research remains 31–38. |
+| Consumer UI class update | Section A “Production consumer web application = missing_from_roadmap / only demo.html” is **stale as of this addendum**. Product Foundation surfaces are merged. Staging/launch proof is still pending. |
+| Frontend architecture | FastAPI semantic HTML + shared CSS + vanilla-JS ES modules. Mandatory React/Next/Vite/TypeScript/SPA/Node production build is not required. |
+| SEO | Explicitly owned across 29 / 39 / 44 / 45 / 46. No separate pre-launch SEO sprint. Private UUID routes must remain non-indexable. |
+| Live decision creation | Launch-critical across 29 / 31 / 38. Fixture-created UUIDs are not sufficient for Sprint 45. |
+| Market scope | Sprint 45 does not require all five planned markets. ≥1 certified useful market is required for shopping launch. |
+| Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) |
