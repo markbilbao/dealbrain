@@ -9,7 +9,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | 28 | [Privacy, Legal, Consent & Account Deletion](SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) |
 | 29 | [Production Consumer Decision Experience & Conversational Continuity](SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md) |
 | 30 | [Public Beta Readiness Audit (Historical)](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_HISTORICAL.md) |
-| 31 | [Merchant Platform Unification](SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md) |
+| 31 | [Merchant Platform Unification](SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md) — closure evidence pending owner review; ADR: [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md) |
 | 32 | [Philippines Merchant Certification](SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) |
 | 33 | [United States Merchant Certification](SPRINT_33_UNITED_STATES_MERCHANT_CERTIFICATION.md) |
 | 34 | [Singapore Merchant Certification](SPRINT_34_SINGAPORE_MERCHANT_CERTIFICATION.md) |

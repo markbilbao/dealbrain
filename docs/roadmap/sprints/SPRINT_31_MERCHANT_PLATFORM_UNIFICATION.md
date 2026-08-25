@@ -1,8 +1,10 @@
 # Sprint 31 — Merchant Platform Unification
 
-**Status:** In progress — research execution router is planning-only; provider capability, trusted certification, and trusted routing policy are distinct authorities (production catalogs empty). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence. Sprint 4 / 18 connector unification is **not** closed by this increment. Sprint 31 is not complete.
+**Status:** Sprint 31 closure evidence implemented; pending owner close review. The research execution router / provider contract is merged (planning-only). Provider capability, trusted certification, and trusted routing policy remain distinct authorities (production catalogs empty). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence. Sprint 32 is **NOT STARTED**. This document does **not** mark Sprint 31 complete.
 
 **Architecture:** [`../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md)
+**Unification ADR / 4/18 review:** [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md)
+**Onboarding runbook:** [`../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md)
 **Primary owner / domain:** Marketplace platform (coordinates Sprint 4 + 18; no silent ownership theft)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-1A
@@ -128,10 +130,10 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 
 ## Documentation deliverables
 
-- CONNECTOR_ARCHITECTURE unification ADR (must distinguish technical capabilities from contractual/policy authorization)
-- Reliability contract reference for market sprints
-- Onboarding runbook including legal/terms evidence checklist (non-secret)
-- Architecture Lock additive note if required
+- CONNECTOR_ARCHITECTURE unification ADR (must distinguish technical capabilities from contractual/policy authorization) — recorded in [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). “4/18” means Sprint 4 search versus Sprint 18 sync, not “4 of 18 items.” Dual-run remains; disposition deadline **September 15, 2026**.
+- Reliability contract reference for market sprints — exported types plus router / ADR notes
+- Onboarding runbook including legal/terms evidence checklist (non-secret) — [`../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md)
+- Architecture Lock additive note if required — see Architecture Lock §15
 
 ## Required tests
 
@@ -178,7 +180,9 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 
 ## Go / no-go gate
 
-Go if unification merged, reliability contracts published, capability/policy model + fail-closed harness expectations published, and suite exists — else 32–36 blocked
+Go if unification merged, reliability contracts published, capability/policy model + fail-closed harness expectations published, and suite exists — else 32–36 blocked.
+
+Closure evidence for the remaining documentation P0 items is implemented and remains **pending owner close review**. Do not start Sprint 32 until that review.
 
 ## Rollback or contingency
 

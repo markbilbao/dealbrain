@@ -1,6 +1,6 @@
 # DealBrain Architecture Lock
 
-**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive); Sprint 25b.2 OIDC/deploy IAM ownership added (additive); Sprint 25b.3 staging deployment pipeline ownership added (additive); Global Public Beta roadmap ownership added (additive, documentation)
+**Status:** Locked as of Sprint 23; Sprint 24 API-contract ownership added (additive); Sprint 25 production infrastructure ownership added (additive); Sprint 25b.2 OIDC/deploy IAM ownership added (additive); Sprint 25b.3 staging deployment pipeline ownership added (additive); Global Public Beta roadmap ownership added (additive, documentation); Sprint 31 connector-family unification ADR added (additive, documentation — §15); Sprint 31 connector-family unification ADR recorded (additive, documentation)
 
 **Launch roadmap:** Sprint 45 is the public-launch gate (owner target no later than 2026-09-30); Sprint 46 is post-launch stabilization; numbered stop is Sprint 47 (post-beta, not a launch prerequisite) — see [`docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 
@@ -298,3 +298,19 @@ secrets, send SSM commands, or perform a live deploy. **25b.4b+** remains gated.
 - **Image publication (Sprint 25b.1):** digest authority and `build-image.yml` contract unchanged by 25b.2/25b.3 IAM/deploy work
 - **Sprint 25a networking / RDS secret ownership:** unchanged; 25b.3 only consumes ARNs/outputs for host assembly
 - **Sprint 25b.2 trust-policy boundaries:** staging custom SSM allowlist narrows SendCommand; production interim `AWS-RunShellScript` default retained until 25b.4
+
+---
+
+## 15. Sprint 31 — connector-family unification (additive)
+
+Sprint 31 does **not** take Sprint 4 search, Sprint 18 current-offer sync, or Sprint 8 historical collection ownership. Authorized-research planning is additive.
+
+Recorded architecture review: [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). “4/18” means Sprint 4 versus Sprint 18, not a completion fraction.
+
+Decision: keep separate implementations; unify through shared contracts (certification, routing policy, reliability types, exact market/source semantics). Do not collapse families into one mega-interface.
+
+Sprint 4 / Sprint 18 remain documented dual-run. Dual-path disposition review deadline: **September 15, 2026**. That date is an architecture decision deadline, not a rewrite-all-connectors deadline, and does not start Sprint 32 or live execution.
+
+Sprint 31 research routing remains additive planning/eligibility only. It does not take live execution from Sprint 38 or market certification from Sprints 32–36. Affiliate economics remain downstream.
+
+Sprint 31 closure evidence is implemented; Sprint 31 is not formally closed until owner review. Sprint 32 is not started.

@@ -4,7 +4,7 @@
 **Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Reconciled:** 2026-08-24 against current register evidence. Statuses below were **not guessed** and were not advanced by this lock.
 **Historical inventory HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
-**Current approved engineering baseline:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0`
+**Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0`
 **Owner target:** Controlled Global Public Beta Launch no later than September 30, 2026
 **Rule:** No external dependency is guaranteed. Fallbacks must be honest (delay market naming, disable self-serve feature, or delay launch).
 
