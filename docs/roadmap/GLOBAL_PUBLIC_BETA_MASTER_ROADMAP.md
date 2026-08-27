@@ -3,7 +3,7 @@
 **Status:** Authoritative master roadmap (documentation only)
 **Owner lock date:** 2026-08-24
 **Lock branch:** `docs/lock-public-launch-roadmap-sept-2026`
-**Current approved engineering baseline:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0`
+**Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0`
 **Supersedes:** Sprint 40 hard endpoint; Sprint 30 “public launch” target as launch achievement; prior Sprint 46 program-endpoint wording as the final numbered stop
 **Preserves:** Sprint identities 1–40 as historical; Architecture Lock domain ownership for Sprints 1–25; Sprint 30 closed-audit identity
 **Companion docs:** [`GAP_INVENTORY.md`](GAP_INVENTORY.md) · [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) · [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) · [`sprints/`](sprints/) · [`evidence/`](evidence/)
@@ -84,12 +84,12 @@ At least one truthful, genuinely useful supported market must exist for public s
 
 | Field | Value |
 |-------|-------|
-| SHA | `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` |
-| Meaning | Latest approved **merged** baseline on `main` before active Phase 29.4B work |
-| Merge | PR #91 — canonical decision presentation contract |
-| Verified suite | **2819 passed / 0 failed / 0 skipped / 168 warnings** |
+| SHA | `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` |
+| Meaning | Latest approved **merged** baseline on `main` after PR #96 (certified research execution router contract) |
+| Merge | PR #96 — Add certified research execution router contract |
+| Verified suite | **2977 passed / 0 failed / 0 skipped / 168 warnings** (approved pre-merge feature evidence; no newer full-suite run is claimed here) |
 
-This SHA is the current approved engineering baseline for the completed canonical presentation work.
+This SHA replaces the prior merged baseline `d40b153a5accfbf54b2d6a5c9bd62ee17cd127fc` (PR #95). Historical PR #91 presentation work landed on `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (suite 2819) and remains an ancestor.
 
 It is **not**:
 
@@ -97,9 +97,10 @@ It is **not**:
 - Sprint 26 close evidence
 - a replacement for the packaged Sprint 26 staging proof at SHA `79bd03f`
 - proof that live merchant research exists
-- permission to mark Phase 29.4B complete
+- permission to mark Sprint 31 formally closed
+- permission to start Sprint 32
 
-Active implementation branch `feat/phase-29.4b-refine-session-recommendation` is **in progress and not merged**. This documentation lock does not implement or merge that work.
+Phases 29.4B and 29.4C, the research authorization handoff (PR #95), and the Sprint 31 router contract (PR #96) are **merged**. Live research execution remains unimplemented. Production certified research providers remain **zero**. Sprint 31 closure evidence is documented separately and remains pending owner close review.
 
 ### 0.4 Status honesty
 
@@ -322,8 +323,8 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | Canonical UUID consumer presentation | **merged** | PR #90 |
 | Canonical decision presentation contract (schema 1.2) | **merged** | PR #91 on baseline `ab23d29` |
 | 29.4B `refine_session_recommendation` | **merged** | Session overlay only; PiqScore and canonical snapshot stay immutable |
-| 29.4C `propose_research` | **implemented** | Proposal + confirmation only; research execution remains unimplemented and owned by Sprints 31–38 |
-| Research Authorization / Execution Handoff Contract | **implemented** | Server-authoritative confirmation artifact; Sprint 31 planning is separate; live research execution remains unimplemented and owned by Sprints 31–38 |
+| 29.4C `propose_research` | **merged** | Proposal + confirmation only; research execution remains unimplemented and owned by Sprints 31–38 |
+| Research Authorization / Execution Handoff Contract | **merged** | Server-authoritative confirmation artifact; Sprint 31 planning is separate; live research execution remains unimplemented and owned by Sprints 31–38 |
 | Live research execution | **not owned here** | Sprints 31–38 |
 | Full CC-01 staging proof on frozen launch candidate | **pending** | Required for EC-02 / EC-22 |
 
@@ -337,15 +338,15 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 
 | Audit requirement | Existing coverage | New owning sprint | Acceptance evidence | Launch blocker? |
 |-------------------|-------------------|-------------------|---------------------|-----------------|
-| Current-main staging proof | Older SHA staging proven; **`79bd03f` staging_ok packaged**; later SHA `ab23d29` is engineering baseline only | 26 | Evidence JSON + `/ready` on evidenced digest — see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); EXT bootstrap still open; later SHAs need their own staging proof before launch | Yes |
+| Current-main staging proof | Older SHA staging proven; **`79bd03f` staging_ok packaged**; later SHAs including `d62a6fb` are not Sprint 26 close evidence | 26 | Evidence JSON + `/ready` on evidenced digest — see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); EXT bootstrap still open; later SHAs need their own staging proof before launch | Yes |
 | Real email + password recovery | NullEmailSender / demo tokens | 27 | Inbox delivery + confirm routes | Yes — NON-WAIVABLE |
 | Email verification | Partial request-only | 27 | Verify confirm E2E | Yes — NON-WAIVABLE |
 | ToS / Privacy / consent | Missing | 28 | Published URLs + consent records | Yes — NON-WAIVABLE |
 | Account deletion / export | Missing | 28 | Delete+export E2E; propagation checklist | Yes — NON-WAIVABLE |
 | Consumer production decision UI | Product Foundation merged; not launch-verified | 29 | Staging UI e2e on FastAPI HTML/CSS/vanilla-JS surfaces | Yes (public UX) |
-| Conversational Continuity | Partial: 29.0–29.4A merged; 29.4B in progress; 29.4C planned; live research later | 29, supported by 31/37/38/39/40/43/44/45 | CC-01 staging E2E on the immutable candidate | Yes — NON-WAIVABLE |
+| Conversational Continuity | Partial: 29.0–29.4C merged; live research later | 29, supported by 31/37/38/39/40/43/44/45 | CC-01 staging E2E on the immutable candidate | Yes — NON-WAIVABLE |
 | Live owner-bound decision creation | Fixture/UUID presentation exists; live pipeline missing | 29 / 31 / 38 | Real shopper request → live evidence → snapshot → UUID Results | Yes — NON-WAIVABLE |
-| Sprint 4/18 unification (P1-1A) | Parallel stacks | 31 | Single registry/router + tests + contractual capability/policy model (fail-closed) | Yes (P1) |
+| Sprint 4/18 unification (P1-1A) | Dual-run documented; research router merged; ADR recorded | 31 | Shared contracts + fail-closed capability/policy; 4/18 means Sprint 4 search vs Sprint 18 sync; disposition deadline 2026-09-15; Sprint 31 pending owner close | Yes (P1) |
 | Unsupported-market behavior (P1-1B) | Missing | 37 | Selector + disclosure + no unsupported invoke | Yes (P1) |
 | Shipping-cost honesty (P1-2) | Enrichment default risk | 37 | Shipping-known/unknown modeled + tests; 44 verifies wording | Yes (P1) |
 | Destination re-evaluation | Canonical pages show decision-time destination only | 37 | Server-side re-evaluation when destination could materially change shipping/effective cost | Yes when destination is user-changeable |
@@ -577,11 +578,11 @@ Mock remains non-production only.
 | Password reset / email verify | Partial | Partial | Pending (27) | Pending (41) | Pending (44) |
 | Privacy/deletion/legal | No | No | Pending (28) | Pending (45) | Pending (44) |
 | Consumer decision web UI (Product Foundation) | Yes (merged) | Yes (merged suite) | Pending (29 staging journey on later candidate) | Pending (45) | Pending (44) |
-| Conversational Continuity / Ask PiqSavi | Partial (29.0–29.4A merged; 29.4B in progress) | Partial | Pending (29; support 31/37/38/39/40/43) | Pending (44/45) | Pending (45 via CC-01) |
+| Conversational Continuity / Ask PiqSavi | Partial (29.0–29.4C merged) | Partial | Pending (29; support 31/37/38/39/40/43) | Pending (44/45) | Pending (45 via CC-01) |
 | Canonical snapshots / economics / presentation contract | Yes (merged through schema 1.2) | Yes | Pending on launch candidate | Pending (45) | Pending (44) |
 | Live owner-bound decision creation | No | No | Pending (29/31/38) | Pending (44/45) | Pending (45) |
 | DealScore / Recommendation | Yes | Yes | Yes (26 tech evidence; mocked-data disclosure observed) | Pending (45) | Certify (44) |
-| Merchant platform unified | No | Partial | Pending (31) | Pending (45) | Pending (44) |
+| Merchant platform unified | Partial (router/provider contract merged; 4/18 dual-run documented; pending owner close) | Partial | Pending (31 close review) | Pending (45) | Pending (44) |
 | PH/US/SG/UK/CA real paths | No | No | Pending (32–36) | Pending (45) | Per-market (44/45) |
 | MarketContext / FX / destination re-eval | No | Partial fail-closed | Pending (37) | Pending (45) | Pending (44) |
 | Connector reliability / live research | Partial | Partial | Pending (38) | Pending (45) | Pending (44) |
@@ -801,8 +802,8 @@ Intended to prevent any launch-critical area from falling between sprints.
 | 11 | Compare | 29 | Merged | Staging Compare on UUID | Yes — NON-WAIVABLE | None |
 | 12 | Why | 29 | Merged | Staging Why on UUID | Yes — NON-WAIVABLE | None |
 | 13 | Persistent Ask PiqSavi | 29 | Merged surfaces; 29.4A merged | Ask on Results/Compare/Why after Recommendation | Yes — NON-WAIVABLE | None |
-| 14 | Session Recommendation refinement | 29.4B | In progress, not merged | Overlay changes session Best Piq only | Soft Yes for CC-01 item 7 | Hold CC-01 if incomplete; do not fake it |
-| 15 | Research proposal/confirmation | 29.4C / 38 | Planned | Proposal UI + confirmation; no auto-exec | Yes — NON-WAIVABLE | Do not imply research runs automatically |
+| 14 | Session Recommendation refinement | 29.4B | Merged | Overlay changes session Best Piq only | Soft Yes for CC-01 item 7 | Hold CC-01 if incomplete; do not fake it |
+| 15 | Research proposal/confirmation | 29.4C / 38 | Merged proposal/confirmation; live execution not implemented | Proposal UI + confirmation; no auto-exec | Yes — NON-WAIVABLE | Do not imply research runs automatically |
 | 16 | Location/market context | 37 | Planned | Destination re-eval + unsupported-market honesty | Yes — NON-WAIVABLE | Fail closed; no client fake prices |
 | 17 | Merchant/source coverage | 32–36 / 44 | Externally blocked | Coverage matrix of certified sources only | Yes to name a market; ≥1 market NON-WAIVABLE | Remove uncertified markets/sources |
 | 18 | Account/auth | 17 / 27 / 29 | Partial | Register/login/session | Yes — NON-WAIVABLE | Invite-only demotes beta |
@@ -839,23 +840,24 @@ Intended to prevent any launch-critical area from falling between sprints.
 
 Shortest truthful path from current state to Sprint 45. Calendar durations are **not fabricated**; repository evidence does not support day-level estimates.
 
-### Current state (2026-08-24)
+### Current state (reconciled 2026-08-25)
 
-- `main == origin/main == ab23d29`
-- Suite on that baseline: 2819 passed / 0 failed / 0 skipped / 168 warnings
-- Sprint 29 Product Foundation + 29.0–29.4A + economics + UUID presentation + schema 1.2 **merged**
-- Phase 29.4B **in progress, not merged**
+- `main` engineering baseline after PR #96: `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0`
+- Approved merged suite evidence on that baseline: **2977 passed / 0 failed / 0 skipped / 168 warnings**
+- Sprint 29 Product Foundation + 29.0–29.4C + economics + UUID presentation + schema 1.2 + research authorization handoff **merged**
+- Sprint 31 research execution router / provider contract **merged**; closure evidence (unification ADR + onboarding runbook) implemented; **pending owner close review**. Sprint 31 is **not** formally closed.
+- Sprint 32 **NOT STARTED**. Production certified research providers remain **zero**. Live research execution remains unimplemented.
 - Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline)
 - EXT merchant applications **not started**
 - No production AWS apply; no live certified market
 
 ### Strict gates (cannot be skipped)
 
-1. **Finish Sprint 29 remaining conversational contract** — 29.4B merge + 29.4C proposal/confirmation; SEO technical foundation; persistent Ask lock.
+1. **Finish remaining Sprint 29 launch proof** — CC-01 staging E2E on the frozen candidate; SEO technical foundation; persistent Ask lock. 29.4B and 29.4C contracts are merged; live research remains later.
 2. **Sprint 26 external bootstrap remaining** — EXT-01…05 applications; Sprint 26 stays open until register evidence exists. Later SHAs still need their own staging proof before launch (EC-01).
 3. **Sprint 27** — real transactional email, sender auth, verify/reset/email-change, token lifecycle, enumeration-safe errors, session rotation, staging E2E, production cutover readiness.
 4. **Sprint 28** — ToS/Privacy/cookie/consent/deletion/export/retention/PII/vendor register/contacts/age notices; search-index privacy; counsel package. Final publication/approval in 44/45.
-5. **Sprint 31** — canonical registry/router/orchestrator, capability-policy, eligibility, fail-closed selection, research execution contracts, certification harness, kill-switch, provenance/trace contracts.
+5. **Sprint 31 owner close review** — router/provider contract is merged; unification ADR, dual-run disposition date (2026-09-15), and onboarding runbook are recorded. Do not start Sprint 32 until owner close.
 6. **Minimum viable market certification (32–36)** — at least one legally usable real source path with current-data + capability-policy + credential approval. Others may be omitted.
 7. **Sprint 37** — market/currency/FX/locale/destination honesty + server-side destination re-evaluation.
 8. **Sprint 38** — resilient live research + execution trace + live-mode gate + fixture-never-as-live.

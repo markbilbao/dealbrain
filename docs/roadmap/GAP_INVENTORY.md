@@ -121,22 +121,22 @@ This inventory records every material Global Public Beta requirement and its cov
 
 | Requirement | Class | Evidence / notes | Owning sprint |
 |-------------|-------|------------------|---------------|
-| One canonical MerchantConnector contract | `planned_underspecified` | Sprint 4 vs Sprint 18 parallel | 31 |
-| One MerchantRegistry | `planned_underspecified` | Separate registries | 31 |
-| One MarketRouter | `planned_underspecified` | Authorized-research execution router implemented (planning only); capability, certification, and routing-policy catalogs are separate; Sprint 4/18 marketplace unification remaining | 31 |
+| One canonical MerchantConnector contract | `planned_sufficient_ac` | ADR rejects one mega-interface; Sprint 4 search, Sprint 18 sync, Sprint 8 collection, and Sprint 31 research remain separate implementations with shared contracts | 31 |
+| One MerchantRegistry | `planned_sufficient_ac` | Family-local registries retained; research registry rejects duplicate `provider_id`; optional Sprint 18 duplicate-overwrite fix is P1, not a 31 closer | 31 |
+| One MarketRouter | `planned_sufficient_ac` | Authorized-research execution router merged (planning only); capability, certification, and routing-policy catalogs are separate; Sprint 4/18 remain dual-run | 31 |
 | MerchantCapability / supported-market metadata | `planned_sufficient_ac` | Sprint 31 research-provider technical capability/market metadata implemented; certification is a separate catalog; unsupported-market product policy still finalizes in 37; production providers uncertified | 31 |
 | Merchant contractual capability/policy (fail-closed; distinct from technical ConnectorCapability) | `planned_sufficient_ac` | Sprint 31 fail-closed trusted certification/policy catalog exported (empty in production); Sprints 32–36 still own provider/market evidence; affiliate ≠ data permission | 31 / 32–36 / 45 |
-| Merchant-country mapping | `missing_from_roadmap` | — | 31 |
-| Query-time + background sync routing | `planned_underspecified` | Split ownership 4/18 | 31 |
+| Merchant-country mapping | `planned_sufficient_ac` | Research certification/descriptors use exact ISO markets; search/sync remain family-local; product policy finalizes in 37 | 31 / 37 |
+| Query-time + background sync routing | `planned_sufficient_ac` | Documented Sprint 4 / Sprint 18 dual-run; disposition deadline 2026-09-15; not collapsed into one runtime | 31 |
 | Normalized listing/offer contracts | `implemented_verified` | Present; unify producers | 18 / 31 |
 | Provenance + freshness timestamp/policy | `implemented_verified` | Freshness model; keep | 18 |
-| Merchant/credential configuration authority | `planned_underspecified` | — | 31 |
-| Feature flags / duplicate registration prevention | `planned_underspecified` | Launch flags exist; merchant kill switch incomplete | 31 / 38 |
-| Sprint 4 and 18 path unification | `planned_underspecified` | Lock forbids silent merge; needs explicit sprint | 31 |
+| Merchant/credential configuration authority | `planned_underspecified` | Sprint 18 opaque refs exist; research planning has no credentials; live credentials remain later | 31 / 32–38 |
+| Feature flags / duplicate registration prevention | `planned_underspecified` | Launch flags exist; research uniqueness enforced; Sprint 18 overwrite is P1; merchant kill switch incomplete | 31 / 38 |
+| Sprint 4 and 18 path unification | `planned_sufficient_ac` | Recorded in [`../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). “4/18” means Sprint 4 search vs Sprint 18 sync, not “4 of 18 items.” Dual-run documented; hard disposition date **September 15, 2026** | 31 |
 | Connector certification suite | `planned_sufficient_ac` | Sprint 31 fail-closed harness/tests exist; real-path evidence remains 32–36 | 31 / 32–36 |
-| Merchant legal/terms documentation | `planned_sufficient_ac` | Non-secret terms/evidence checklist hooks in 31; provider evidence in 32–36; consumer ToS/Privacy remain 28 — not conflated; **implementation future** | 31 / 32–36 / 28 |
-| Merchant onboarding runbook | `planned_sufficient_ac` | Sprint 31 deliverable; **implementation future** | 31 |
-| Merchant deactivation / kill switch | `missing_from_roadmap` | Health disable partial | 38 |
+| Merchant legal/terms documentation | `planned_sufficient_ac` | Non-secret checklist in [`../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../runbooks/MERCHANT_PROVIDER_ONBOARDING.md); provider evidence in 32–36; consumer ToS/Privacy remain 28 — not conflated | 31 / 32–36 / 28 |
+| Merchant onboarding runbook | `planned_sufficient_ac` | [`../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../runbooks/MERCHANT_PROVIDER_ONBOARDING.md) — operational docs only; no production provider onboarded | 31 |
+| Merchant deactivation / kill switch | `missing_from_roadmap` | Research kill-switch hooks exist; marketplace deactivation remains 38 | 38 |
 | DealScore / Recommendation / affiliate neutrality boundaries | `implemented_verified` | Preserve; certify | 5 / 6 / 20 / 44 |
 | Shipping-cost / unknown-shipping honesty (P1-2) | `planned_underspecified` | Enrichment free-shipping default risk | 37 |
 
@@ -390,9 +390,10 @@ This addendum does **not** rewrite the 2026-08-06 audit as if it never happened.
 | Public launch gate | Sprint 45 |
 | Immediate post-launch | Sprint 46 |
 | Numbered stop | Sprint 47 (P2-OT-01; not a launch prerequisite) |
-| Current approved engineering baseline | `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` — 2819 passed / 0 failed / 0 skipped / 168 warnings |
-| Sprint 26 | Remains open. Packaged staging proof is still SHA `79bd03f`. Later SHA `ab23d29` is not Sprint 26 close evidence. |
-| Sprint 29 | Purpose updated to Production Consumer Decision Experience & Conversational Continuity. 29.0–29.4A, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. 29.4B is **in progress / not merged**. 29.4C is **planned**. Live research remains 31–38. |
+| Current approved engineering baseline | `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` — 2977 passed / 0 failed / 0 skipped / 168 warnings (approved merged suite evidence; no newer full-suite run claimed here) |
+| Sprint 26 | Remains open. Packaged staging proof is still SHA `79bd03f`. Later SHAs, including the current baseline, are not Sprint 26 close evidence. |
+| Sprint 29 | Purpose updated to Production Consumer Decision Experience & Conversational Continuity. 29.0–29.4C, Product Foundation, economics, UUID presentation, schema 1.2, and research authorization handoff are **merged**. Live research remains 31–38. |
+| Sprint 31 | Router/provider contract merged (PR #96). Unification ADR and onboarding runbook recorded. Closure evidence implemented; **pending owner close review**. Sprint 32 **NOT STARTED**. Production certified providers remain zero. |
 | Consumer UI class update | Section A “Production consumer web application = missing_from_roadmap / only demo.html” is **stale as of this addendum**. Product Foundation surfaces are merged. Staging/launch proof is still pending. |
 | Frontend architecture | FastAPI semantic HTML + shared CSS + vanilla-JS ES modules. Mandatory React/Next/Vite/TypeScript/SPA/Node production build is not required. |
 | SEO | Explicitly owned across 29 / 39 / 44 / 45 / 46. No separate pre-launch SEO sprint. Private UUID routes must remain non-indexable. |
