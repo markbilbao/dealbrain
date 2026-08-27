@@ -344,8 +344,8 @@ Reusable application-field template. Populate only non-sensitive, known values w
 | business contact | **OWNER DECISION REQUIRED** | Placeholder only in prep |
 | tax / bank / payment fields | **OWNER DECISION REQUIRED** / **NOT YET AVAILABLE** in git | **Do not store** in repository |
 | governing program terms / version | **PROVIDER-SPECIFIC** + **NOT YET AVAILABLE** until apply | Retain version ID after submit |
-| counsel review status | **LEGAL REVIEW REQUIRED** | Pending until real review |
-| application submission status | **NOT YET AVAILABLE** | Must remain unsubmitted until authorized |
+| counsel review status | **CLEARED TO APPLY** for Shopee, Lazada, TikTok Shop, Amazon, Temu (2026-08-25; application only). Consumer ToS/Privacy written approval still pending (EXT-19). |
+| application submission status | **NOT YET AVAILABLE** | Must remain unsubmitted until the owner submits |
 | evidence artifact path | **NOT YET AVAILABLE** | Create only after real evidence |
 | confirmation / reference ID | **NOT YET AVAILABLE** | Inventing IDs forbidden |
 | application date | **NOT YET AVAILABLE** | Real date only; never fabricated |
