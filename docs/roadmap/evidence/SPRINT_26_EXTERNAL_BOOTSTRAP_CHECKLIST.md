@@ -6,7 +6,7 @@
 **Related evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone.
 
-**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). EXT-17 is `provisioned` on retained sanitized support-inbox receipt evidence (2026-08-09). EXT-18 is `provisioned` on retained sanitized privacy-contact designation and receipt evidence (2026-08-09). EXT-19 is `applied` on retained sanitized counsel engagement + schedule confirmation evidence (2026-08-10) — consumer ToS/Privacy written approval still pending. Remaining listed bootstrap rows (EXT-01…EXT-05) remain `not_started`. Counsel-cleared to **apply** for Shopee, Lazada, TikTok Shop, Amazon, and Temu (signed record 2026-08-25; sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md)); applications **not** submitted.
+**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). EXT-17 is `provisioned` on retained sanitized support-inbox receipt evidence (2026-08-09). EXT-18 is `provisioned` on retained sanitized privacy-contact designation and receipt evidence (2026-08-09). EXT-19 is `applied` on retained sanitized counsel engagement + schedule confirmation evidence (2026-08-10) — consumer ToS/Privacy written approval still pending. Remaining listed bootstrap rows (EXT-01…EXT-05) remain `not_started`. Shopee, Lazada, TikTok Shop, Amazon, and Temu merchant/program applications are counsel-cleared to proceed (signed record 2026-08-25; sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md)); applications **not** submitted. Counsel-form row labels on that PDF are not register IDs.
 
 ---
 
@@ -28,10 +28,10 @@
 | Support inbox provisioned | EXT-17 (`support@piqsavi.com` alias → monitored Workspace Gmail; sanitized inbound receipt, 2026-08-09) |
 | Provider account established (applied; not approved/provisioned) | EXT-08 (Resend selected; sanitized account-establishment proof, 2026-08-08) |
 | Ownership evidence retained (approved; not provisioned) | EXT-10 (`piqsavi.com` sanitized Cloudflare registration/control proof, 2026-08-08) |
-| Requires provider selection | EXT-01…EXT-05 (merchant/API partner per market; counsel-cleared merchant programs are Shopee, Lazada, TikTok Shop, Amazon, Temu — owner still selects market mapping and submits) |
+| Requires provider selection | EXT-01…EXT-05 (merchant/API partner **per market**). Counsel-cleared merchant/program applications are Shopee, Lazada, TikTok Shop, Amazon, and Temu — owner still selects which merchant(s) map to which market(s) and submits. |
 | Sender-domain auth plan prepared (applied; DNS not applied/verified) | EXT-09 (Resend DKIM / Return-Path MX+SPF / DMARC `p=none` plan for `piqsavi.com`, 2026-08-08) |
 | Requires a purchased/configured domain | EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
-| Legal gate to submit merchant applications | EXT-01…EXT-05 — **cleared** 2026-08-25 for Shopee, Lazada, TikTok Shop, Amazon, Temu (application clearance only). Owner submission + submission evidence still required. EXT-18 privacy-contact bootstrap still coordinates with EXT-19 for consumer-legal advice. |
+| Legal gate to submit merchant/program applications | Shopee, Lazada, TikTok Shop, Amazon, and Temu — **cleared** 2026-08-25 (application clearance only). Owner submission + submission evidence still required. Register EXT-01…EXT-05 market rows stay `not_started` until submission evidence. EXT-18 privacy-contact bootstrap still coordinates with EXT-19 for consumer-legal advice. |
 | Market-specific dependencies | EXT-01 PH, EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA |
 
 ---
@@ -41,9 +41,9 @@
 | Field | Value |
 |-------|-------|
 | Current documented status | `not_started` |
-| Counsel-clearance status | Counsel-cleared to **apply** (Shopee among five merchant programs; signed record 2026-08-25). Does **not** select Shopee as the PH provider in this register row. |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (signed record 2026-08-25). This does **not** select any of those merchants as the PH provider. |
 | Responsible owner | Marketplace eng + legal |
-| Exact action the user must take | Identify official program/portal and intended PH merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. See [`SPRINT_26_EXT01_05_APPLICATION_PREPARATION.md`](SPRINT_26_EXT01_05_APPLICATION_PREPARATION.md). |
+| Exact action the user must take | Identify official program/portal and intended PH merchant mapping; submit access/application. Counsel legal gate to apply to Shopee, Lazada, TikTok Shop, Amazon, and Temu is satisfied; owner still submits. See [`SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md). |
 | Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope PH; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
 | Evidence that must be retained | Application confirmation (ticket/email/portal ID); submitted date; partner name; terms draft/version identifier (no secrets in git) |
 | Fallback | Delay PH as named supported market; site may still launch with other markets |
@@ -57,7 +57,7 @@
 | Field | Value |
 |-------|-------|
 | Current documented status | `not_started` |
-| Counsel-clearance status | Counsel-cleared to **apply** to the five merchant programs (2026-08-25). Does **not** map any merchant onto this US row by ID coincidence. |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this US market row. |
 | Responsible owner | Marketplace eng + legal |
 | Exact action the user must take | Identify official program/portal and intended US merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
 | Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope US; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
@@ -73,7 +73,7 @@
 | Field | Value |
 |-------|-------|
 | Current documented status | `not_started` |
-| Counsel-clearance status | Counsel-cleared to **apply** to the five merchant programs (2026-08-25). Does **not** map any merchant onto this SG row by ID coincidence. |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this SG market row. |
 | Responsible owner | Marketplace eng + legal |
 | Exact action the user must take | Identify official program/portal and intended SG merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
 | Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope SG; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
@@ -89,7 +89,7 @@
 | Field | Value |
 |-------|-------|
 | Current documented status | `not_started` |
-| Counsel-clearance status | Counsel-cleared to **apply** to the five merchant programs (2026-08-25). Does **not** map any merchant onto this UK row by ID coincidence. |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this UK market row. |
 | Responsible owner | Marketplace eng + legal |
 | Exact action the user must take | Identify official program/portal and intended UK merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
 | Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope UK; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
@@ -105,7 +105,7 @@
 | Field | Value |
 |-------|-------|
 | Current documented status | `not_started` |
-| Counsel-clearance status | Counsel-cleared to **apply** to the five merchant programs (2026-08-25). Does **not** map any merchant onto this CA row by ID coincidence. |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this CA market row. |
 | Responsible owner | Marketplace eng + legal |
 | Exact action the user must take | Identify official program/portal and intended CA merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
 | Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope CA; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
@@ -240,7 +240,7 @@
 | Evidence paths | [`external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png); [`external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png) |
 | What was retained | Engagement acceptance for PiqSavi legal consultation/review; scope covering ToS, Privacy/data-handling, affiliate/advertising disclosures, AI/recommendation disclosures/disclaimers, consumer-protection considerations, deletion/export/retention, cookie/tracking, country-specific considerations for intended markets; counsel confirmation of date/time with calendar-invite request; supporting-document request before consultation |
 | Merchant/affiliate terms review in consultation scope | Discussion expanded to focused review topics for research shortlist Shopee, Lazada, TikTok Shop, Amazon, Temu — **does not** select providers in the register and **does not** advance EXT-01…EXT-05 to `applied` |
-| Merchant-program application clearance | Signed record 2026-08-25: counsel-cleared to **apply** for those five merchants (conditions N/A; no hold). Sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md). Signed PDF outside Git. |
+| Merchant-program application clearance | Signed record 2026-08-25: Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed (conditions N/A; no hold). Sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md). Signed PDF outside Git. Counsel-form row labels on that PDF are not register IDs. |
 | Not yet | Written legal approval of consumer ToS/Privacy (EXT-19 `approved`); Terms/Privacy publication; merchant applications submitted; merchant approval; credentials; launch legally approved; privacy-regime compliance claims |
 | Fallback | Delay public launch |
 | Launch impact | Sprint 26 EXT-19 engagement bootstrap no longer pending; merchant **application** legal gate is cleared; Sprint 28 / 44 still require written approval before EXT-19 `approved`; EXT-01…EXT-05 still require real submission evidence before `applied` |

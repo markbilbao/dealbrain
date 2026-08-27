@@ -91,9 +91,9 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05 — counsel-cleared to apply 2026-08-25; real application submission evidence still required; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained; EXT-18 privacy-contact designation/receipt evidence retained; EXT-19 counsel engagement/schedule evidence retained) |
+| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05 — market rows still `not_started`; Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed 2026-08-25; real application submission evidence still required; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained; EXT-18 privacy-contact designation/receipt evidence retained; EXT-19 counsel engagement/schedule evidence retained) |
 | Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 and EXT-18 recorded as 2026-08-09; EXT-19 engagement recorded as 2026-08-10 with consultation 2026-08-19 10:00 Philippines local time) |
-| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (engagement/schedule only — not written approval); remaining Sprint 26 bootstrap rows (EXT-01…EXT-05) remain `not_started` (counsel-cleared to apply 2026-08-25; not submitted) |
+| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (engagement/schedule only — not written approval); remaining Sprint 26 bootstrap rows (EXT-01…EXT-05) remain `not_started` (Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed 2026-08-25; not submitted; no merchant-to-market assignment) |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
 | Sprint 26 final go/no-go close | Pending — Sprint remains open |
 
@@ -203,7 +203,7 @@ Go if staging smoke green; No-go blocks 27+ public-path work that assumes stagin
 
 Do not close Sprint 26 merely because later Sprint 29 work proceeded under an approved sequencing exception.
 
-**Sprint close gate:** still blocked on external bootstrap actions and register updates. EXT-01…EXT-05 remain `not_started` (counsel-cleared to apply; not submitted). EXT-08/09 remain `applied` (not provisioned). EXT-10 remains `approved` (not provisioned). EXT-17/18 remain `provisioned` for bootstrap reachability. EXT-19 remains `applied` (not written approval).
+**Sprint close gate:** still blocked on external bootstrap actions and register updates. EXT-01…EXT-05 remain `not_started` (Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed; not submitted; no merchant-to-market assignment). EXT-08/09 remain `applied` (not provisioned). EXT-10 remains `approved` (not provisioned). EXT-17/18 remain `provisioned` for bootstrap reachability. EXT-19 remains `applied` (not written approval).
 
 ## Rollback or contingency
 

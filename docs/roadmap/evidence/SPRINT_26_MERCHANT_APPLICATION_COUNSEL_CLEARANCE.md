@@ -1,13 +1,31 @@
-# Sprint 26 Merchant Application Counsel Clearance — EXT-01 to EXT-05
+# Sprint 26 Merchant Application Counsel Clearance
 
 **Document type:** Sanitized engineering / external-dependency evidence  
-**Purpose:** Record counsel application-clearance facts needed to prepare owner merchant applications  
+**Purpose:** Record counsel application-clearance facts needed to prepare owner merchant/program applications  
 **Date recorded:** 2026-08-27  
 **Counsel-review / signed-record date:** 2026-08-25  
 **Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)  
-**Related:** [`SPRINT_26_EXT01_05_APPLICATION_PREPARATION.md`](SPRINT_26_EXT01_05_APPLICATION_PREPARATION.md) · [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md) · [`SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md`](SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md)
+**Related:** [`SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md) · [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md) · [`SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md`](SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md)
 
-**Rule:** This record is application clearance only. It does **not** advance register EXT-01…EXT-05 from `not_started` to `applied`.
+**Rule:** This record is application clearance only. It does **not** advance register EXT-01…EXT-05 (Philippines / United States / Singapore / United Kingdom / Canada market rows) from `not_started` to `applied`.
+
+---
+
+## Identifier Namespace Warning
+
+The signed counsel form uses EXT-01 through EXT-05 as merchant-row labels for Shopee, Lazada, TikTok Shop, Amazon, and Temu. The authoritative PiqSavi External Dependency Register already uses EXT-01 through EXT-05 for market bootstrap rows PH, US, SG, UK, and CA. These identifiers are not equivalent and must not be mapped automatically.
+
+Repository operational documentation refers to merchant application work by merchant/program name. The counsel-form EXT labels are retained only when describing the signed legal record.
+
+Do **not** treat the following as engineering truth:
+
+- `EXT-01 = Shopee`
+- `EXT-02 = Lazada`
+- `EXT-03 = TikTok Shop`
+- `EXT-04 = Amazon`
+- `EXT-05 = Temu`
+
+Those equalities are **not** register meanings. Register EXT-01 remains the Philippines market row; EXT-02 the United States; EXT-03 Singapore; EXT-04 the United Kingdom; EXT-05 Canada.
 
 ---
 
@@ -30,19 +48,19 @@ Counsel identity is recorded only because the existing EXT-19 convention already
 
 ---
 
-## ID crosswalk (do not collapse)
+## Historical counsel-form row labels (signed record only)
 
-The signed counsel form labeled merchant programs as EXT-01…EXT-05. The authoritative register uses the same EXT-01…EXT-05 IDs for **markets**. Those are different numbering schemes.
+Quoted here solely so the signed PDF can be traced. Each label is **not** a register identifier.
 
-| Counsel-form merchant ID | Merchant / program reviewed | Register market ID (unchanged) | Register dependency |
-|--------------------------|-----------------------------|--------------------------------|---------------------|
-| Counsel-form EXT-01 | Shopee | Register EXT-01 | Philippines market merchant/API or affiliate access |
-| Counsel-form EXT-02 | Lazada | Register EXT-02 | United States market merchant/API or affiliate access |
-| Counsel-form EXT-03 | TikTok Shop | Register EXT-03 | Singapore market merchant/API or affiliate access |
-| Counsel-form EXT-04 | Amazon | Register EXT-04 | United Kingdom market merchant/API or affiliate access |
-| Counsel-form EXT-05 | Temu | Register EXT-05 | Canada market merchant/API or affiliate access |
+| Merchant / program | How the signed counsel form labels that row | Authoritative register meaning of the same EXT token |
+|--------------------|---------------------------------------------|-----------------------------------------------------|
+| Shopee | The signed counsel form labels the Shopee row as “EXT-01.” | This is a counsel-form label only and does **not** redefine External Dependency Register EXT-01 (Philippines market). |
+| Lazada | The signed counsel form labels the Lazada row as “EXT-02.” | This is a counsel-form label only and does **not** redefine External Dependency Register EXT-02 (United States market). |
+| TikTok Shop | The signed counsel form labels the TikTok Shop row as “EXT-03.” | This is a counsel-form label only and does **not** redefine External Dependency Register EXT-03 (Singapore market). |
+| Amazon | The signed counsel form labels the Amazon row as “EXT-04.” | This is a counsel-form label only and does **not** redefine External Dependency Register EXT-04 (United Kingdom market). |
+| Temu | The signed counsel form labels the Temu row as “EXT-05.” | This is a counsel-form label only and does **not** redefine External Dependency Register EXT-05 (Canada market). |
 
-Counsel clearance of a merchant program does **not** select that merchant as the provider for any register market row. Owner must still choose intended market(s) per merchant and submit a real application before any register row may move to `applied`.
+Counsel clearance of a merchant/program does **not** select that merchant as the provider for any register market row. Intended market(s) per merchant/program remain **OWNER INPUT REQUIRED**. Owner must still choose intended market(s) and submit a real application before any register market row may move to `applied`.
 
 ---
 
@@ -57,19 +75,19 @@ Counsel clearance of a merchant program does **not** select that merchant as the
 | Signed-record date | 2026-08-25 |
 | Signed record received | Yes — retained outside Git |
 | Record title | Merchant Program Legal Review & Application Authorization Record |
-| Scope | Sprint 26 merchant-program application clearance for the five programs below |
+| Scope | Sprint 26 application clearance for Shopee, Lazada, TikTok Shop, Amazon, and Temu merchant/program applications |
 | Consolidated conditions / exceptions | **N/A** |
-| Hold items | **None** — no EXT item marked on hold |
+| Hold items | **None** — no merchant/program row on the signed form was marked on hold |
 
 ### Merchant application-clearance status
 
-| Counsel-form ID | Merchant / program | Application-clearance status | Application submitted? | Merchant approved PiqSavi? |
-|-----------------|--------------------|------------------------------|------------------------|----------------------------|
-| EXT-01 | Shopee | Counsel-cleared to submit application | **No** | **No** |
-| EXT-02 | Lazada | Counsel-cleared to submit application | **No** | **No** |
-| EXT-03 | TikTok Shop | Counsel-cleared to submit application | **No** | **No** |
-| EXT-04 | Amazon | Counsel-cleared to submit application | **No** | **No** |
-| EXT-05 | Temu | Counsel-cleared to submit application | **No** | **No** |
+| Merchant / program | Application-clearance status | Application submitted? | Merchant approved PiqSavi? |
+|--------------------|------------------------------|------------------------|----------------------------|
+| Shopee | Counsel-cleared to proceed with application | **No** | **No** |
+| Lazada | Counsel-cleared to proceed with application | **No** | **No** |
+| TikTok Shop | Counsel-cleared to proceed with application | **No** | **No** |
+| Amazon | Counsel-cleared to proceed with application | **No** | **No** |
+| Temu | Counsel-cleared to proceed with application | **No** | **No** |
 
 ---
 
@@ -94,7 +112,7 @@ Engineering must keep these states separate:
 
 | Register row | Lifecycle status after this record | What changed |
 |--------------|------------------------------------|--------------|
-| EXT-01…EXT-05 | remain `not_started` | Legal gate to **submit** an application for the five counsel-cleared merchant programs is satisfied. No application date. No `applied` status. |
+| EXT-01…EXT-05 (PH / US / SG / UK / CA market rows) | remain `not_started` | Legal gate to **submit** Shopee, Lazada, TikTok Shop, Amazon, and Temu merchant/program applications is satisfied. No application date. No `applied` status. No merchant-to-market assignment. |
 | EXT-06 | `not_started` | Unchanged — credentials still not issued |
 | EXT-07 | `not_started` | Unchanged — tracking IDs still not issued |
 | EXT-19 | remains `applied` (not `approved`) | Merchant-program **application** clearance is recorded separately; consumer ToS/Privacy written approval is still required before EXT-19 `approved` |
@@ -107,6 +125,7 @@ Engineering must keep these states separate:
 - No merchant approved PiqSavi.
 - No affiliate permission, catalog/product-data permission, or other display/data right is inferred.
 - No credentials, tracking IDs, or production authorization exist because of this record.
+- No merchant was mapped to a market.
 - No `ResearchProviderCertification` is created.
 - No public “Shopee supported” / “Lazada live” / equivalent claim is authorized.
 - Sprint 32 is **not** started.

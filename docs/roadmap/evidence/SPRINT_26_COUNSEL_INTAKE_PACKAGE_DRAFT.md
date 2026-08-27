@@ -316,6 +316,8 @@ Creating this intake package did **not** itself advance EXT-19; later engagement
 
 ## J. EXT-01…05 application prep
 
+This template is for **register market rows** (PH / US / SG / UK / CA). It is not a merchant-ID template. Operational merchant/program application work is identified by merchant/program name in [`SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md).
+
 Reusable application-field template. Populate only non-sensitive, known values when preparing a future packet. Leave blanks for owner / provider / counsel.
 
 | Field | Classification | Prep notes |

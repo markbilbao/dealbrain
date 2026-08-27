@@ -325,7 +325,7 @@ Defaults: provider selected in register **NO** · application authorized by coun
 | Provider selected by owner? | **NO** in the authoritative register |
 | Application authorized? | **YES** by counsel to **submit** an application (2026-08-25) |
 | Application submitted? | **NO** |
-| EXT affected | Counsel-form EXT-01 (Shopee). Register market row TBD by owner. |
+| Merchant / program | Shopee. Authoritative register market row: **OWNER INPUT REQUIRED** — not assigned by counsel-form numbering. |
 | Restriction / clarification summary (non-privileged) | Consolidated conditions N/A. Affiliate ≠ product-data/API. No merchant approval claimed. |
 
 ### D.2 Lazada
@@ -336,7 +336,7 @@ Defaults: provider selected in register **NO** · application authorized by coun
 | Provider selected by owner? | **NO** in the authoritative register |
 | Application authorized? | **YES** by counsel to **submit** an application (2026-08-25) |
 | Application submitted? | **NO** |
-| EXT affected | Counsel-form EXT-02 (Lazada). Register market row TBD by owner. |
+| Merchant / program | Lazada. Authoritative register market row: **OWNER INPUT REQUIRED** — not assigned by counsel-form numbering. |
 | Restriction / clarification summary (non-privileged) | Consolidated conditions N/A. Affiliate ≠ product-data/API. No merchant approval claimed. |
 
 ### D.3 TikTok Shop
@@ -347,7 +347,7 @@ Defaults: provider selected in register **NO** · application authorized by coun
 | Provider selected by owner? | **NO** in the authoritative register |
 | Application authorized? | **YES** by counsel to **submit** an application (2026-08-25) |
 | Application submitted? | **NO** |
-| EXT affected | Counsel-form EXT-03 (TikTok Shop). Register market row TBD by owner. |
+| Merchant / program | TikTok Shop. Authoritative register market row: **OWNER INPUT REQUIRED** — not assigned by counsel-form numbering. |
 | Restriction / clarification summary (non-privileged) | Consolidated conditions N/A. Affiliate ≠ product-data/API. Creator affiliate ≠ Partner Center / API. No merchant approval claimed. |
 
 ### D.4 Amazon
@@ -358,7 +358,7 @@ Defaults: provider selected in register **NO** · application authorized by coun
 | Provider selected by owner? | **NO** in the authoritative register |
 | Application authorized? | **YES** by counsel to **submit** an application (2026-08-25) |
 | Application submitted? | **NO** |
-| EXT affected | Counsel-form EXT-04 (Amazon). Register market row TBD by owner. |
+| Merchant / program | Amazon. Authoritative register market row: **OWNER INPUT REQUIRED** — not assigned by counsel-form numbering. |
 | Restriction / clarification summary (non-privileged) | Consolidated conditions N/A. Associates / affiliate participation ≠ Product Advertising API or Creators API permission. No merchant approval claimed. |
 
 ### D.5 Temu
@@ -369,18 +369,18 @@ Defaults: provider selected in register **NO** · application authorized by coun
 | Provider selected by owner? | **NO** in the authoritative register |
 | Application authorized? | **YES** by counsel to **submit** an application (2026-08-25) |
 | Application submitted? | **NO** |
-| EXT affected | Counsel-form EXT-05 (Temu). Register market row TBD by owner. |
+| Merchant / program | Temu. Authoritative register market row: **OWNER INPUT REQUIRED** — not assigned by counsel-form numbering. |
 | Restriction / clarification summary (non-privileged) | Consolidated conditions N/A. Affiliate ≠ product-data/API/partner access. No merchant approval claimed. |
 
 ## E. Market decision table
 
 | Market | Candidate provider | Program | Counsel disposition | Applicable agreement/version | Legal review complete enough to apply? | Provider clarification required? | Owner provider selection made? | Application ready? | Application submitted? | Submission evidence captured? | Current EXT status | Next truthful EXT status | Blocker |
 |--------|--------------------|---------|---------------------|------------------------------|----------------------------------------|----------------------------------|--------------------------------|--------------------|------------------------|-------------------------------|--------------------|--------------------------|---------|
-| EXT-01 Philippines | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of the five merchant programs; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for PH | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
-| EXT-02 United States | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of the five merchant programs; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for US | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
-| EXT-03 Singapore | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of the five merchant programs; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for SG | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
-| EXT-04 United Kingdom | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of the five merchant programs; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for UK | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
-| EXT-05 Canada | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of the five merchant programs; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for CA | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
+| EXT-01 Philippines | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of Shopee, Lazada, TikTok Shop, Amazon, and Temu; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for PH | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
+| EXT-02 United States | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of Shopee, Lazada, TikTok Shop, Amazon, and Temu; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for US | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
+| EXT-03 Singapore | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of Shopee, Lazada, TikTok Shop, Amazon, and Temu; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for SG | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
+| EXT-04 United Kingdom | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of Shopee, Lazada, TikTok Shop, Amazon, and Temu; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for UK | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
+| EXT-05 Canada | PENDING OWNER DECISION | PENDING | GREEN for apply-clearance of Shopee, Lazada, TikTok Shop, Amazon, and Temu; market mapping still owner-owned | PENDING | **YES** to apply to a counsel-cleared merchant once owner selects one for CA | Not required for the apply decision (conditions N/A) | **NO** | NO until owner supplies application fields | **NO** | **NO** | `not_started` | `applied` only after real submission evidence | Owner selection + real apply pending |
 
 ---
 
