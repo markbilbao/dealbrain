@@ -316,6 +316,8 @@ Creating this intake package did **not** itself advance EXT-19; later engagement
 
 ## J. EXT-01…05 application prep
 
+This template is for **register market rows** (PH / US / SG / UK / CA). It is not a merchant-ID template. Operational merchant/program application work is identified by merchant/program name in [`SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md).
+
 Reusable application-field template. Populate only non-sensitive, known values when preparing a future packet. Leave blanks for owner / provider / counsel.
 
 | Field | Classification | Prep notes |
@@ -344,8 +346,8 @@ Reusable application-field template. Populate only non-sensitive, known values w
 | business contact | **OWNER DECISION REQUIRED** | Placeholder only in prep |
 | tax / bank / payment fields | **OWNER DECISION REQUIRED** / **NOT YET AVAILABLE** in git | **Do not store** in repository |
 | governing program terms / version | **PROVIDER-SPECIFIC** + **NOT YET AVAILABLE** until apply | Retain version ID after submit |
-| counsel review status | **LEGAL REVIEW REQUIRED** | Pending until real review |
-| application submission status | **NOT YET AVAILABLE** | Must remain unsubmitted until authorized |
+| counsel review status | **CLEARED TO APPLY** for Shopee, Lazada, TikTok Shop, Amazon, Temu (2026-08-25; application only). Consumer ToS/Privacy written approval still pending (EXT-19). |
+| application submission status | **NOT YET AVAILABLE** | Must remain unsubmitted until the owner submits |
 | evidence artifact path | **NOT YET AVAILABLE** | Create only after real evidence |
 | confirmation / reference ID | **NOT YET AVAILABLE** | Inventing IDs forbidden |
 | application date | **NOT YET AVAILABLE** | Real date only; never fabricated |
