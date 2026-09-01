@@ -10,6 +10,11 @@ from app.research.certification import (
     production_research_provider_certification_catalog,
     research_provider_certification_catalog_for_tests,
 )
+from app.research.certification_evidence import (
+    ResearchProviderCertificationEvidenceCatalog,
+    production_research_provider_certification_evidence_catalog,
+    research_provider_certification_evidence_catalog_for_tests,
+)
 from app.research.providers import StaticResearchProvider
 from app.research.registry import (
     ResearchProviderRegistry,
@@ -24,14 +29,17 @@ from app.research.routing import (
 
 __all__ = [
     "ResearchProviderCertificationCatalog",
+    "ResearchProviderCertificationEvidenceCatalog",
     "ResearchProviderRegistry",
     "ResearchProviderRoutingPolicyCatalog",
     "StaticResearchProvider",
     "derive_required_capabilities",
     "production_research_provider_certification_catalog",
+    "production_research_provider_certification_evidence_catalog",
     "production_research_provider_registry",
     "production_research_provider_routing_policy_catalog",
     "research_provider_certification_catalog_for_tests",
+    "research_provider_certification_evidence_catalog_for_tests",
     "research_provider_registry_for_tests",
     "research_provider_routing_policy_catalog_for_tests",
 ]

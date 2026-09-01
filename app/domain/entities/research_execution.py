@@ -8,7 +8,7 @@ a source was checked. Live execution remains unimplemented (Sprint 38).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Any, Literal
 
@@ -43,6 +43,7 @@ ProviderCertificationStatus = Literal[
 ]
 CapabilityPolicyState = Literal["allowed", "restricted", "prohibited", "unknown"]
 CertificationSourceScope = Literal["exact", "source_agnostic"]
+CertificationEvidenceCompleteness = Literal["incomplete", "recorded"]
 MarketContextSource = Literal["server_trusted"]
 EXECUTABLE_CERTIFICATION_STATUS: ProviderCertificationStatus = "certified"
 
@@ -184,6 +185,137 @@ class ResearchProviderCertification:
             "certification_version": self.certification_version,
             "test_fixture": self.test_fixture,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class ResearchProviderCertificationEvidence:
+    """Non-secret basis for a future certification decision.
+
+    Sibling of ``ResearchProviderCertification``. Evidence identifies an exact
+    provider/capability/market/source target and records why that target might
+    later be certified. It never grants certification, policy approval,
+    eligibility, or routing priority.
+    """
+
+    provider_id: str
+    capability: ResearchCapability
+    market: str
+    evidence_source: str
+    source: str | None = None
+    source_scope: CertificationSourceScope = "exact"
+    certification_version: str = ""
+    program_reference: str = ""
+    evidence_date: date | None = None
+    review_date: date | None = None
+    reviewer: str = ""
+    restrictions: tuple[str, ...] = ()
+    attribution_requirements: tuple[str, ...] = ()
+    review_after: date | None = None
+    completeness: CertificationEvidenceCompleteness = "incomplete"
+    notes: str = ""
+    test_fixture: bool = False
+    evidence_id: str = ""
+
+    def __post_init__(self) -> None:
+        if not self.provider_id:
+            raise ValueError("provider_id is required")
+        if not self.evidence_source.strip():
+            raise ValueError("evidence_source is required")
+        code = normalize_country_code(self.market)
+        if not code or not is_valid_country_code(code):
+            raise ValueError("evidence market must be a valid ISO country code")
+        if code != self.market:
+            object.__setattr__(self, "market", code)
+        if self.source_scope == "exact":
+            if not self.source:
+                raise ValueError("exact evidence requires an explicit source identity")
+        elif self.source_scope == "source_agnostic":
+            if self.source is not None:
+                raise ValueError("source-agnostic evidence must not name a source")
+        else:
+            raise ValueError("source_scope must be exact or source_agnostic")
+        if self.completeness not in {"incomplete", "recorded"}:
+            raise ValueError("evidence completeness is unknown and fails closed")
+        _require_calendar_date(self.evidence_date, "evidence_date")
+        _require_calendar_date(self.review_date, "review_date")
+        _require_calendar_date(self.review_after, "review_after")
+        if self.review_date is not None and not self.reviewer.strip():
+            raise ValueError("review_date requires a reviewer")
+        object.__setattr__(self, "restrictions", _require_text_items(self.restrictions))
+        object.__setattr__(
+            self,
+            "attribution_requirements",
+            _require_text_items(self.attribution_requirements),
+        )
+        object.__setattr__(self, "notes", self.notes.strip())
+        object.__setattr__(self, "program_reference", self.program_reference.strip())
+        object.__setattr__(self, "certification_version", self.certification_version.strip())
+        object.__setattr__(self, "reviewer", self.reviewer.strip())
+        object.__setattr__(self, "evidence_source", self.evidence_source.strip())
+
+    @property
+    def grants_certification(self) -> bool:
+        return False
+
+    @property
+    def grants_eligibility(self) -> bool:
+        return False
+
+    def lookup_key(self) -> tuple[str, str, str, str, str]:
+        return (
+            self.provider_id,
+            self.capability.value,
+            self.market,
+            self.source_scope,
+            self.source or "",
+        )
+
+    def binds_to(self, certification: ResearchProviderCertification) -> bool:
+        """True when this evidence names the same exact certification target."""
+
+        return self.lookup_key() == certification.lookup_key() and (
+            not self.certification_version
+            or self.certification_version == certification.certification_version
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "evidence_id": self.evidence_id,
+            "provider_id": self.provider_id,
+            "capability": self.capability.value,
+            "market": self.market,
+            "source": self.source,
+            "source_scope": self.source_scope,
+            "certification_version": self.certification_version,
+            "program_reference": self.program_reference,
+            "evidence_source": self.evidence_source,
+            "evidence_date": self.evidence_date.isoformat() if self.evidence_date else None,
+            "review_date": self.review_date.isoformat() if self.review_date else None,
+            "reviewer": self.reviewer,
+            "restrictions": list(self.restrictions),
+            "attribution_requirements": list(self.attribution_requirements),
+            "review_after": self.review_after.isoformat() if self.review_after else None,
+            "completeness": self.completeness,
+            "notes": self.notes,
+            "test_fixture": self.test_fixture,
+        }
+
+
+def _require_calendar_date(value: date | None, field_name: str) -> None:
+    if value is None:
+        return
+    if type(value) is not date:
+        raise ValueError(f"{field_name} must be a calendar date")
+
+
+def _require_text_items(items: tuple[str, ...]) -> tuple[str, ...]:
+    cleaned: list[str] = []
+    for item in items:
+        text = item.strip()
+        if not text:
+            raise ValueError("restriction and attribution items must be non-empty")
+        cleaned.append(text)
+    return tuple(cleaned)
 
 
 @dataclass(frozen=True, slots=True)

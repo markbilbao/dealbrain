@@ -1,8 +1,9 @@
 """Trusted PiqSavi research-provider certification catalog.
 
 Determines whether an exact provider/capability/market/source combination is
-approved for production planning. Distinct from the technical provider registry.
-Providers cannot author these records.
+approved for production planning. Distinct from the technical provider registry
+and from Sprint 32 certification evidence. Evidence records never authorize
+planning. Providers cannot author these records.
 """
 
 from __future__ import annotations
