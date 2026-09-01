@@ -57,6 +57,24 @@ class ResearchProviderCertificationCatalog:
         self._records[key] = stored
         return stored
 
+    def replace(self, record: ResearchProviderCertification) -> ResearchProviderCertification:
+        """Trusted update of an existing exact certification target."""
+
+        if record.test_fixture and not self._allow_test_certifications:
+            raise ValueError("test certifications cannot be registered in the production catalog")
+        stored = record
+        if not stored.certification_id:
+            stored = replace(stored, certification_id=_certification_id(stored))
+        key = stored.lookup_key()
+        if key not in self._records:
+            raise ValueError(
+                "no existing certification to replace for "
+                f"{stored.provider_id}/{stored.capability.value}/"
+                f"{stored.market}/{stored.source or 'source_agnostic'}"
+            )
+        self._records[key] = stored
+        return stored
+
     def list_records(self) -> tuple[ResearchProviderCertification, ...]:
         return tuple(self._records[key] for key in self._order)
 

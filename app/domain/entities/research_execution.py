@@ -278,6 +278,25 @@ class ResearchProviderCertificationEvidence:
             or self.certification_version == certification.certification_version
         )
 
+    def decision_readiness_reason(self, *, as_of: date) -> str | None:
+        """Return a refusal code if this evidence cannot support a trusted decision.
+
+        ``recorded`` means capture is finished, not that use is legally sufficient.
+        """
+
+        if self.completeness != "recorded":
+            return "evidence_incomplete"
+        if self.review_date is None or not self.reviewer:
+            return "reviewer_missing"
+        if type(as_of) is not date:
+            raise ValueError("as_of must be a calendar date")
+        if self.review_after is not None and self.review_after < as_of:
+            return "evidence_stale"
+        return None
+
+    def is_decision_ready(self, *, as_of: date) -> bool:
+        return self.decision_readiness_reason(as_of=as_of) is None
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "evidence_id": self.evidence_id,

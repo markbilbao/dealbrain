@@ -1,7 +1,7 @@
 # Sprint 32 — Philippines Source Certification Inventory
 
 **Document type:** Non-secret certification-evidence inventory  
-**Sprint slice:** 32.1 only  
+**Sprint slice:** 32.1 complete; 32.2 decision path added  
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
@@ -37,6 +37,16 @@ Invariant:
 > Evidence present + no trusted `certified` + `allowed` certification = **not eligible**.
 
 Production catalogs remain empty after 32.1.
+
+### 32.2 trusted decision path
+
+`ResearchProviderCertificationDecisionService` is the only supported way to create a certification from evidence.
+
+Flow: evidence → explicit trusted review → optional `ResearchProviderCertification`.
+
+Evidence registration is not a decision. Providers cannot self-certify. Routing is not written. `recorded` means capture finished, not legal sufficiency. `certified + allowed` is never inferred.
+
+Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**. 32.2 does not change merchant evidence states.
 
 ---
 
