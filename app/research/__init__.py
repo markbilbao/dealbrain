@@ -15,6 +15,10 @@ from app.research.certification_evidence import (
     production_research_provider_certification_evidence_catalog,
     research_provider_certification_evidence_catalog_for_tests,
 )
+from app.research.philippines_certification_evidence import (
+    philippines_merchant_certification_evidence_catalog,
+    philippines_merchant_certification_evidence_records,
+)
 from app.research.providers import StaticResearchProvider
 from app.research.registry import (
     ResearchProviderRegistry,
@@ -37,6 +41,8 @@ __all__ = [
     "production_research_provider_certification_catalog",
     "production_research_provider_certification_evidence_catalog",
     "production_research_provider_registry",
+    "philippines_merchant_certification_evidence_catalog",
+    "philippines_merchant_certification_evidence_records",
     "production_research_provider_routing_policy_catalog",
     "research_provider_certification_catalog_for_tests",
     "research_provider_certification_evidence_catalog_for_tests",

@@ -1,7 +1,7 @@
 # Sprint 32 — Philippines Source Certification Inventory
 
 **Document type:** Non-secret certification-evidence inventory  
-**Sprint slice:** 32.1 complete; 32.2 decision path added  
+**Sprint slice:** 32.1 complete; 32.2 complete; 32.3 documentary PH merchant evidence records added  
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
@@ -47,6 +47,12 @@ Flow: evidence → explicit trusted review → optional `ResearchProviderCertifi
 Evidence registration is not a decision. Providers cannot self-certify. Routing is not written. `recorded` means capture finished, not legal sufficiency. `certified + allowed` is never inferred.
 
 Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**. 32.2 does not change merchant evidence states.
+
+### 32.3 documentary merchant records
+
+Exact PH snapshots for `product_discovery`, `offer_discovery`, and `current_pricing` live in `app/research/philippines_certification_evidence.py`. They cite official `main` counsel/application evidence only.
+
+Those records are **incomplete** and are not loaded by `production_research_provider_certification_evidence_catalog()`. Counsel clearance to apply is cited; it does not make product-data evidence decision-ready. Merchant evidence states below are unchanged.
 
 ---
 
