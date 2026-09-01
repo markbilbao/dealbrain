@@ -1,9 +1,10 @@
 # Sprint 32 — Philippines Merchant Certification
 
-**Status:** Planned
+**Status:** In progress — 32.1 certification evidence contracts and PH inventory only. Sprint 32 is **not complete**.
 **Primary owner / domain:** Marketplace eng + legal
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes to name PH
+**32.1 inventory:** [`../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md`](../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md)
 
 ## Objective
 
@@ -71,6 +72,7 @@ Certification stages must remain distinct (do not collapse):
 - PH coverage row
 - Provider status notes
 - Certification report including capability-policy evidence map (non-secret)
+- 32.1 PH source certification inventory (foundational; does not close this sprint)
 
 ## Required tests
 
@@ -104,7 +106,7 @@ Certification stages must remain distinct (do not collapse):
 
 ## Predecessor sprints
 
-31 (unification + minimum reliability contracts + capability/policy model) — **strict**
+31 (unification + minimum reliability contracts + capability/policy model) — **strict**; owner-closed. 32.1 does not reopen Sprint 31 contracts.
 
 ## Parallelizable work
 
