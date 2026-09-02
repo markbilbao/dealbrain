@@ -101,7 +101,7 @@ It does not replace this Sprint 18 sync registry, Sprint 4 search connectors, or
 Sprint 8 collectors. Technical ``ConnectorCapability`` remains distinct from
 Sprint 31 contractual certification, and a provider descriptor cannot certify
 itself or choose its own routing preference. Live merchant execution is still
-not implemented. Sprint 31 closure evidence is implemented; Sprint 31 is not
-formally closed until owner review. Sprint 32 is not started.
+not implemented. Sprint 31 was formally owner-closed before Sprint 32
+implementation began. Sprint 32 is in progress and is **not complete**.
 
 """

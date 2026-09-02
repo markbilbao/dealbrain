@@ -1,6 +1,6 @@
 # Sprint 31 — Research Execution Router / Certified Provider Contract
 
-**Status:** Sprint 31 closure evidence implemented; pending owner close review. Planning-only router is merged; provider capability, PiqSavi certification, and routing policy are separate authorities. Live provider execution is **not implemented**. Production certified providers remain **zero**. This document does not mark Sprint 31 complete. Sprint 32 is **NOT STARTED**.
+**Status:** Sprint 31 formally owner-closed. Planning-only router is merged; provider capability, PiqSavi certification, and routing policy are separate authorities. Live provider execution is **not implemented**. Production certified providers remain **zero**. Sprint 32 is in progress and is **not complete**.
 
 **Depends on:** Research Authorization / Execution Handoff Contract.
 
@@ -336,4 +336,4 @@ Sprint 4 vs Sprint 18 dual-run is **not** retired by the router. The research ro
 | 46 | Post-launch stabilization |
 | 47 | Post-beta buying-action intelligence |
 
-Sprint 32 is **not started** by this document. The next bounded implementation step remains provider/market certification (Sprint 32 Philippines first, then 33–36 as needed) after Sprint 31 acceptance — not uncontrolled live research.
+This document does not implement Sprint 32. Historical gate: Sprint 31 was formally owner-closed before Sprint 32 began. The remaining bounded work is provider/market certification (Sprint 32 Philippines first, then 33–36 as needed) — not uncontrolled live research. Sprint 32 is in progress and is **not complete**.

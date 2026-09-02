@@ -1,8 +1,9 @@
 """Trusted PiqSavi research-provider certification catalog.
 
 Determines whether an exact provider/capability/market/source combination is
-approved for production planning. Distinct from the technical provider registry.
-Providers cannot author these records.
+approved for production planning. Distinct from the technical provider registry
+and from Sprint 32 certification evidence. Evidence records never authorize
+planning. Providers cannot author these records.
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ class ResearchProviderCertificationCatalog:
         return self._allow_test_certifications
 
     def register(self, record: ResearchProviderCertification) -> ResearchProviderCertification:
+        """Trusted infrastructure write. Not a certification policy decision."""
         if record.test_fixture and not self._allow_test_certifications:
             raise ValueError("test certifications cannot be registered in the production catalog")
         stored = record
@@ -53,6 +55,24 @@ class ResearchProviderCertificationCatalog:
                 f"{stored.market}/{stored.source or 'source_agnostic'}"
             )
         self._order.append(key)
+        self._records[key] = stored
+        return stored
+
+    def replace(self, record: ResearchProviderCertification) -> ResearchProviderCertification:
+        """Trusted infrastructure update. Not a certification policy decision."""
+
+        if record.test_fixture and not self._allow_test_certifications:
+            raise ValueError("test certifications cannot be registered in the production catalog")
+        stored = record
+        if not stored.certification_id:
+            stored = replace(stored, certification_id=_certification_id(stored))
+        key = stored.lookup_key()
+        if key not in self._records:
+            raise ValueError(
+                "no existing certification to replace for "
+                f"{stored.provider_id}/{stored.capability.value}/"
+                f"{stored.market}/{stored.source or 'source_agnostic'}"
+            )
         self._records[key] = stored
         return stored
 

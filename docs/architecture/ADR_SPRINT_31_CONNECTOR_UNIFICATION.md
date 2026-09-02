@@ -1,10 +1,10 @@
 # ADR — Sprint 31 connector unification (Sprint 4 / Sprint 18 dual-run)
 
-**Status:** Accepted for Sprint 31 closure evidence; pending owner Sprint 31 close review.
-**Date:** 2026-08-25
+**Status:** Accepted. Sprint 31 was formally owner-closed before Sprint 32 implementation began.
+**Date:** 2026-08-25 (architecture review recorded); owner-close status reconciled 2026-09-02
 **Baseline recorded:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` (PR #96 merge)
-**Sprint 31 status:** Closure evidence implemented; pending owner close review. This ADR does **not** mark Sprint 31 complete.
-**Sprint 32 status:** **NOT STARTED**
+**Sprint 31 status:** Formally owner-closed. This ADR remains the recorded 2026-08-25 architecture review.
+**Sprint 32 status:** In progress (foundation slices). Sprint 32 is **not complete**. Production certified providers remain zero.
 
 This document is the recorded Sprint 31 architecture review for the Sprint 4 / Sprint 18 connector boundary.
 
@@ -206,8 +206,9 @@ Search, sync, historical collection, and authorized-research planning have diffe
 
 ## What this ADR does not claim
 
-- Sprint 31 is formally closed (owner close review is still required)
-- Sprint 32 has started
+Recorded 2026-08-25 as closure evidence, not as the owner close itself. Formal owner close has since been recorded. This ADR still does not claim:
+
+- Sprint 32 is complete
 - Any production provider is certified (count remains **zero**)
 - Live research execution exists
 - Search and sync share one runtime path today
@@ -224,4 +225,4 @@ Merged engineering on the recorded baseline:
 - exported reliability contract types
 - fail-closed authorization-before-planning
 
-This ADR plus [`../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../runbooks/MERCHANT_PROVIDER_ONBOARDING.md) complete the two remaining Sprint 31 P0 documentation / evidence items. Formal close remains an owner decision.
+This ADR plus [`../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../runbooks/MERCHANT_PROVIDER_ONBOARDING.md) completed the two remaining Sprint 31 P0 documentation / evidence items. Formal owner close has since been recorded. Sprint 32 is now in progress and is **not complete**.

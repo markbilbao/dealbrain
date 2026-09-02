@@ -1,6 +1,6 @@
 # Sprint 31 — Merchant Platform Unification
 
-**Status:** Sprint 31 closure evidence implemented; pending owner close review. The research execution router / provider contract is merged (planning-only). Provider capability, trusted certification, and trusted routing policy remain distinct authorities (production catalogs empty). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence. Sprint 32 is **NOT STARTED**. This document does **not** mark Sprint 31 complete.
+**Status:** Formally owner-closed. Historical gate satisfied; Sprint 32 is now in progress and is **not complete**. The research execution router / provider contract remains merged (planning-only). Provider capability, trusted certification, and trusted routing policy remain distinct authorities (production catalogs empty). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence.
 
 **Architecture:** [`../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md)
 **Unification ADR / 4/18 review:** [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md)
@@ -182,7 +182,7 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 
 Go if unification merged, reliability contracts published, capability/policy model + fail-closed harness expectations published, and suite exists — else 32–36 blocked.
 
-Closure evidence for the remaining documentation P0 items is implemented and remains **pending owner close review**. Do not start Sprint 32 until that review.
+Closure evidence for the remaining documentation P0 items was implemented and later owner-closed. Sprint 32 is now in progress; it remains blocked on external merchant certification, not on Sprint 31.
 
 ## Rollback or contingency
 

@@ -1,9 +1,46 @@
 # Sprint 32 — Philippines Merchant Certification
 
-**Status:** Planned
+**Status:** In progress — blocked on external certification. Internal foundation slices 32.1–32.5 are complete. Sprint 32 is **not complete**.
 **Primary owner / domain:** Marketplace eng + legal
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes to name PH
+**Inventory:** [`../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md`](../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md)
+
+## Authoritative status
+
+Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1–32.5 build the trusted certification architecture. They do **not** close Sprint 32.
+
+| Area | Status |
+|------|--------|
+| Sprint 31 architecture | closed |
+| 32.1 evidence contracts | complete |
+| 32.2 trusted decision path | complete |
+| 32.3 PH documentary evidence | complete |
+| 32.4 hardening | complete |
+| 32.5 reconciliation / validation | complete |
+| Real PH product-data path | blocked |
+| Production provider | none |
+| Production certification | none |
+| Live current-data validation | none |
+| Sprint 32 closure | blocked |
+
+The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, or production-ready merchant integration.
+
+### Closure blockers (current)
+
+- No merchant has a real approved product-data / API path
+- No real production provider
+- No current-data operational validation
+- No trusted production certification
+- Staging certification incomplete
+- Monitoring / public coverage disclosure incomplete
+- Kill-switch closure evidence incomplete as required
+- EXT-01 / EXT-06 / EXT-07 remain unresolved on the authoritative register
+- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 evidence until separately reconciled into Sprint 26 on `main`
+
+### Production defaults
+
+Certification records = 0. Production evidence = 0. Providers = 0. Routing policies = 0. Documentary PH evidence records = 15 (incomplete; not loaded by production factories).
 
 ## Objective
 
@@ -71,6 +108,7 @@ Certification stages must remain distinct (do not collapse):
 - PH coverage row
 - Provider status notes
 - Certification report including capability-policy evidence map (non-secret)
+- 32.1 PH source certification inventory (foundational; does not close this sprint)
 
 ## Required tests
 
@@ -104,7 +142,7 @@ Certification stages must remain distinct (do not collapse):
 
 ## Predecessor sprints
 
-31 (unification + minimum reliability contracts + capability/policy model) — **strict**
+31 (unification + minimum reliability contracts + capability/policy model) — **strict**; formally owner-closed before this sprint began. 32.1–32.5 do not reopen Sprint 31 contracts.
 
 ## Parallelizable work
 
