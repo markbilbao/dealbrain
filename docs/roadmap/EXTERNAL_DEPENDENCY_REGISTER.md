@@ -97,7 +97,7 @@ Technical current-main staging proof does **not** advance any EXT row. Remaining
 
 **RED (unless resolved or scope-reduced):**
 
-- EXT-01…EXT-06 — no merchant applications or credentials evidenced. Counsel clearance has been obtained for merchant/program applications covering Shopee, Lazada, TikTok Shop, Amazon, and Temu (2026-08-25; see merchant-application notes under EXT-01…EXT-05). Those counsel-form merchant labels are separate from these market-row identifiers. Applications are **not** submitted. Naming any of PH/US/SG/UK/CA is blocked. Public shopping launch remains blocked until **at least one** market is certified. Individual markets may be omitted.
+- EXT-01…EXT-06 — no market-row merchant/API applications or credentials evidenced as `applied`/`approved`/`provisioned`. Counsel clearance has been obtained for merchant/program applications covering Shopee, Lazada, TikTok Shop, Amazon, and Temu (2026-08-25; see merchant-application notes under EXT-01…EXT-05). Those counsel-form merchant labels are separate from these market-row identifiers. Shopee Affiliate dashboard access and Payment & Tax pending are recorded in Sprint 26 Shopee evidence and do **not** move EXT-01. Affiliate Open API access is **not granted**. Naming any of PH/US/SG/UK/CA is blocked. Public shopping launch remains blocked until **at least one** market is certified. Individual markets may be omitted.
 
 **AMBER (schedule-sensitive / external):**
 
@@ -114,7 +114,7 @@ Technical current-main staging proof does **not** advance any EXT row. Remaining
 - EXT-17 / EXT-18 bootstrap reachability
 - EXT-26…28 out of beta scope
 
-Do not treat counsel’s scheduled 2026-08-19 consultation as written approval of consumer legal documents (EXT-19 remains `applied`, not `approved`). Merchant-program **application** clearance dated 2026-08-25 is recorded in EXT-01…EXT-05 notes and does **not** move those rows to `applied`.
+Do not treat counsel’s scheduled 2026-08-19 consultation as written approval of consumer legal documents (EXT-19 remains `applied`, not `approved`). Merchant-program **application** clearance dated 2026-08-25 is recorded in EXT-01…EXT-05 notes and does **not** move those rows to `applied`. Shopee Sprint 26 operational evidence likewise does **not** move EXT-01 / EXT-06 / EXT-07.
 
 ### EXT-08 notes (transactional email provider — applied)
 
@@ -245,8 +245,10 @@ Counsel clearance has been obtained for merchant/program applications covering S
 | Evidence path | [`evidence/SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md) |
 | Signed PDF | Received and retained **outside** the repository |
 | `applied` reserved for | Later — only after real application **submission** evidence for the affected **market** row. Do **not** use `applied` from counsel clearance alone |
-| Next action | Owner identifies merchant/program, official portal, and intended market(s); supplies missing application fields; submits; retains evidence using [`evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md) |
+| Next action | Owner identifies merchant/program, official portal, and intended market(s); supplies missing application fields; submits; retains evidence using [`evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md). Shopee current operational evidence (affiliate dashboard access; Payment & Tax submitted/pending; Affiliate Open API documented but **not granted**; Seller/ISV held) is recorded at [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). That Shopee record does **not** move these market rows to `applied`. |
 | Explicit non-claims | Does **not** select a provider on any market row; does **not** prove affiliate, catalog, display, cache, AI, or production permission; does **not** issue credentials or tracking IDs; does **not** start Sprint 32 or create a `ResearchProviderCertification` |
+
+**Shopee Sprint 26 operational evidence (lifecycle unchanged):** [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) records owner-verified Shopee Affiliate dashboard access, Payment & Tax onboarding submitted/pending review, and official Affiliate Open API documentation. Affiliate Open API access is **not granted**. AppID/Secret are **none**. Seller/ISV Open Platform remains **held**. Those facts do **not** make EXT-01 `applied`, EXT-06 `applied`/`approved`/`provisioned`, or EXT-07 complete. Payment & Tax pending is not a Philippines market-row access application and is not Affiliate Open API approval.
 
 ## Market naming rule
 

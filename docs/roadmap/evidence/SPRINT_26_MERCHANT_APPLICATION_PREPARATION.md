@@ -1,10 +1,11 @@
 # Sprint 26 — Merchant Application Preparation
 
 **Document type:** Owner execution checklist and evidence templates (preparation only)  
-**Status:** Counsel-cleared to apply; **no application submitted**  
+**Status:** Counsel-cleared to apply. Lazada, TikTok Shop, Amazon, and Temu remain **not submitted**. Shopee later operational evidence is recorded separately and is **not** a collapsed “Shopee merchant application submitted” claim.  
 **Authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)  
 **Counsel-clearance evidence:** [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md)  
-**Bootstrap checklist:** [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
+**Bootstrap checklist:** [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)  
+**Shopee current evidence:** [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) — affiliate onboarding active / Open API access pending; not a collapsed “application submitted” claim
 
 **This task:** PREPARE ONLY. The owner will submit or separately authorize each merchant application. Do not treat this file as submission evidence.
 
@@ -44,22 +45,28 @@ Known repository facts that may be reused (do not invent the rest):
 
 ## A. Shopee application
 
+Authoritative current Shopee evidence: [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md).
+
+**Shopee Affiliate Open API ≠ Shopee Seller/ISV Open Platform.** Do not collapse dashboard access, Payment & Tax, Affiliate Open API access, Seller/ISV, or production data rights into one application state.
+
 | Field | Value |
 |-------|-------|
-| Official program / application route to be identified | **OWNER INPUT REQUIRED.** Public candidate routes (confirm current portal for the chosen market before submit): Shopee Affiliate Program market portals such as [affiliate.shopee.ph](https://affiliate.shopee.ph/) (Philippines example); Shopee Open Platform / partner API at [open.shopee.com](https://open.shopee.com/). Affiliate portal ≠ Open Platform. |
-| Intended market(s) | **OWNER INPUT REQUIRED** per merchant/program. Do not derive market scope from the signed counsel form’s row labels. |
-| Affiliate application required? | **Likely yes** if PiqSavi will attach tracked Shopee links — owner must confirm the exact Affiliate Program for the chosen market. |
-| Partner / API / product-data application required? | **Separate, if product data is required.** Official Open Platform registration is a different path from affiliate. Open Platform eligibility publicly emphasizes registered-business / ISV-style criteria; whether that path fits PiqSavi’s comparison use is **OWNER INPUT REQUIRED** + later provider confirmation. Do not treat affiliate approval as catalog permission. |
+| Official program / application routes | **Shopee Affiliate Program** (dashboard access observed): previously identified PH web host [affiliate.shopee.ph](https://affiliate.shopee.ph/). **Shopee Affiliate Open API:** documented GraphQL program; PiqSavi access **not granted**. **Seller/ISV Open Platform:** [open.shopee.com](https://open.shopee.com/) — **separate; held**. |
+| Intended market(s) | Philippines remains the launch focus. Dashboard access does **not** by itself prove PH market coverage or assign register EXT-01. Do not derive market scope from the signed counsel form’s row labels. |
+| Affiliate dashboard access | **Yes** (owner-verified operational observation). Establishes dashboard/environment access only. |
+| Payment & Tax | **Submitted; review pending.** Not Affiliate Open API approval and not full affiliate-account approval. |
+| Affiliate Open API access | **Not granted.** AppID **none**. Secret **none**. Interface indicates access unavailable / requires access request or contact with Shopee. |
+| Seller / ISV Open Platform | **Hold — not submitted.** Requires business-registration information PiqSavi cannot truthfully provide today. |
 | Legal gate | **Cleared** to submit application |
-| Owner submission required | **Yes** |
-| Submission evidence required | **Yes** — Section H |
+| Owner submission required | **Still required** for Affiliate Open API access (not recorded as submitted). Do not treat Payment & Tax as that API-access application. |
+| Submission evidence required | **Yes** — Section H, per distinct track |
 | Merchant approval required later | **Yes** |
-| Product-data / API permission | Remain separate — currently **unknown** |
-| Credentials | Only after provider issuance — **no** |
+| Product-data / API permission | Remain separate — currently **unknown** / **not established**. Public Affiliate Open API documentation ≠ PiqSavi authorization. |
+| Credentials | **None** — no AppID/Secret issued |
 | Tracking IDs | Only after affiliate approval where applicable — **no** |
 | Production integration | Not before permission / Sprint 32–36 certification |
 
-Public eligibility notes (not a determination that PiqSavi qualifies): affiliate programs are market-specific and typically require a Shopee account plus promotional-platform details. Open Platform partner registration publicly requires business documents and a live product URL. **OWNER INPUT REQUIRED** for all eligibility facts not already in the repo.
+Public eligibility notes (not a determination that PiqSavi qualifies): Affiliate Open API documentation describes product-level offer query `productOfferV2` and item-feed APIs; that is technical-capability evidence only. Seller/ISV Open Platform partner registration publicly requires business documents and a live product URL and remains held. **OWNER INPUT REQUIRED** for eligibility facts not already in the repo.
 
 ---
 
@@ -217,7 +224,7 @@ Do **not** invent these. Do **not** commit secrets. Fill outside Git or as non-s
 
 | Merchant | Additional OWNER INPUT REQUIRED |
 |----------|----------------------------------|
-| Shopee | Market-specific affiliate portal; whether Open Platform will be applied now or later; existing Shopee account reference |
+| Shopee | Affiliate dashboard access exists; Payment & Tax pending; whether/when to request Affiliate Open API access; Seller/ISV remains held; market coverage of the accessed affiliate account |
 | Lazada | Market-specific adsense host; individual vs business track; whether Open Platform will be applied now or later |
 | TikTok Shop | Program choice (creator affiliate vs Partner Center vs other); region/Partner Center host |
 | Amazon | Associates marketplace (e.g. amazon.com vs others); whether catalog API (Creators API / remaining PA-API path) is in-scope for this submit |

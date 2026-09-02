@@ -848,7 +848,7 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 - Sprint 29 Product Foundation + 29.0–29.4C + economics + UUID presentation + schema 1.2 + research authorization handoff **merged**
 - Sprint 31 research execution router / provider contract **merged** and **formally owner-closed**. Historical gate satisfied.
 - Sprint 32 **in progress** (foundation slices 32.1–32.5). Sprint 32 is **not complete**. Production certified research providers remain **zero**. Live research execution remains unimplemented. No PH merchant is production-certified.
-- Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline). Owner-observed Shopee dashboard / Affiliate Open API facts are not official Sprint 32 evidence until separately reconciled on `main`.
+- Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline). Shopee Sprint 26 evidence is updated on this baseline: affiliate dashboard access observed; Payment & Tax submitted/pending; Affiliate Open API documented but **not granted**. See [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). That is **not** Sprint 32 certification and does **not** close Sprint 26.
 - EXT merchant applications **not started** (EXT-01 / EXT-06 / EXT-07 remain unresolved)
 - No production AWS apply; no live certified market
 
@@ -909,6 +909,7 @@ Do not scope-reduce: truthfulness, privacy, security, legal publication, product
 | [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) | Persisted Sprint 30 audit summary |
 | [`evidence/`](evidence/) | Packaged sprint evidence (Sprint 26 current-main staging proof + bootstrap checklist + completion draft) |
 | [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | Sprint 26 technical staging proof (Sprint 26 still open) |
+| [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) | Sprint 26 Shopee evidence (affiliate onboarding active / Open API access pending; not certification) |
 | [`evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md`](evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md) | Owner-approved Product Foundation artwork authority and immutable checksum manifest |
 | [`sprints/`](sprints/) | Per-sprint definitions 26–47 |
 | [`../architecture/ARCHITECTURE_LOCK.md`](../architecture/ARCHITECTURE_LOCK.md) | Domain ownership lock (updated cross-link) |
