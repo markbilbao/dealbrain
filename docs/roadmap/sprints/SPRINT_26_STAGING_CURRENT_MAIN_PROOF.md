@@ -6,6 +6,7 @@
 **Beta blocker classification:** Yes — P0-6; P1-7 (primary)
 **Technical evidence package:** [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
 **External bootstrap checklist:** [`../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
+**Shopee current evidence:** [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) — affiliate onboarding active / Open API access pending; Sprint 26 remains open
 **Completion draft (not a close):** [`../evidence/SPRINT_26_COMPLETION_DRAFT.md`](../evidence/SPRINT_26_COMPLETION_DRAFT.md)
 
 ## Objective
@@ -184,6 +185,18 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Does **not** prove written legal approval of Terms/Privacy, launch legal approval, or privacy-regime compliance
 
 **Sprint 26 remains OPEN.**
+
+## Shopee evidence clarification
+
+Additive clarification only — does **not** close Sprint 26, does **not** start or close Sprint 32, and does **not** move EXT-01 / EXT-06 / EXT-07 off `not_started`:
+
+- Authoritative Shopee Sprint 26 evidence: [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md)
+- Counsel-cleared to apply (2026-08-25) remains true
+- Affiliate dashboard access: observed
+- Payment & Tax: submitted / pending review
+- Affiliate Open API: documented; PiqSavi access **not granted**; AppID/Secret **none**
+- Seller/ISV Open Platform: held; not submitted
+- Do not collapse those tracks into one “Shopee application submitted” or “API-ready” claim
 
 ## Predecessor sprints
 

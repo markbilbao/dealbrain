@@ -5,7 +5,7 @@
 **Date recorded:** 2026-08-27  
 **Counsel-review / signed-record date:** 2026-08-25  
 **Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)  
-**Related:** [`SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md) · [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md) · [`SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md`](SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md)
+**Related:** [`SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md) · [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md) · [`SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md`](SPRINT_26_MERCHANT_COUNSEL_DECISION_WORKSHEET_DRAFT.md) · later Shopee operational evidence [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) (does not rewrite this 2026-08-25 snapshot)
 
 **Rule:** This record is application clearance only. It does **not** advance register EXT-01…EXT-05 (Philippines / United States / Singapore / United Kingdom / Canada market rows) from `not_started` to `applied`.
 
@@ -130,3 +130,5 @@ Engineering must keep these states separate:
 - No public “Shopee supported” / “Lazada live” / equivalent claim is authorized.
 - Sprint 32 is **not** started.
 - Sprint 26 remains **open** until real application-submission evidence exists for remaining bootstrap rows.
+
+Later Shopee operational observations (affiliate dashboard access; Payment & Tax submitted/pending; Affiliate Open API documented but not granted) are recorded in [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). They do **not** rewrite the 2026-08-25 counsel-clearance snapshot above.
