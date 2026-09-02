@@ -1,7 +1,7 @@
 # Sprint 32 — Philippines Source Certification Inventory
 
 **Document type:** Non-secret certification-evidence inventory  
-**Sprint slice:** 32.1 complete; 32.2 complete; 32.3 documentary PH merchant evidence records added  
+**Sprint slice:** 32.1 complete; 32.2 complete; 32.3 complete; 32.4 hardening validated. Sprint 32 is **not complete**.  
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
@@ -53,6 +53,12 @@ Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**. 32.2 does 
 Exact PH snapshots for `product_discovery`, `offer_discovery`, and `current_pricing` live in `app/research/philippines_certification_evidence.py`. They cite official `main` counsel/application evidence only.
 
 Those records are **incomplete** and are not loaded by `production_research_provider_certification_evidence_catalog()`. Counsel clearance to apply is cited; it does not make product-data evidence decision-ready. Merchant evidence states below are unchanged.
+
+### 32.4 provider-identity binding
+
+Production `certified` writes require an exact registered provider: same `provider_id`, capability, market, and source. Documentary IDs (`ph-shopee`, `ph-lazada`, `ph-tiktok-shop`, `ph-amazon`, `ph-temu`) are candidate identities only. They do not become production identities because evidence exists.
+
+Catalog `register` / `replace` remain trusted infrastructure primitives. `ResearchProviderCertificationDecisionService` is the policy path. Incomplete documentary records have no promotion helper. Official `main` still has no submitted Shopee application; unmerged Sprint 26 / owner-observed dashboard progress remains outside this branch.
 
 ---
 

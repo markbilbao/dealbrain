@@ -1,6 +1,6 @@
 # Sprint 32 — Philippines Merchant Certification
 
-**Status:** In progress — 32.1 complete; 32.2 complete; 32.3 PH merchant evidence records implemented. Sprint 32 is **not complete**.
+**Status:** In progress — 32.1 complete; 32.2 complete; 32.3 complete; 32.4 implemented / validated. Sprint 32 is **not complete**.
 **Primary owner / domain:** Marketplace eng + legal
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes to name PH
