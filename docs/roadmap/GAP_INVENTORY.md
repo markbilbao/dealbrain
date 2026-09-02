@@ -400,3 +400,19 @@ This addendum does **not** rewrite the 2026-08-06 audit as if it never happened.
 | Live decision creation | Launch-critical across 29 / 31 / 38. Fixture-created UUIDs are not sufficient for Sprint 45. |
 | Market scope | Sprint 45 does not require all five planned markets. ≥1 certified useful market is required for shopping launch. |
 | Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) |
+
+---
+
+## 2026-09-02 Sprint 31 / 32 status addendum
+
+This addendum does **not** rewrite the 2026-08-24 snapshot. It records later owner close and Sprint 32 foundation work.
+
+| Field | Value |
+|-------|-------|
+| Sprint 31 | Formally owner-closed. Historical 2026-08-24 row (“pending owner close”; “Sprint 32 NOT STARTED”) is no longer current operational status. |
+| Sprint 32 | In progress. Foundation slices 32.1–32.5 complete. Sprint 32 is **not complete**. |
+| Production catalogs | Certification 0; production evidence 0; providers 0; routing 0 |
+| PH documentary evidence | 15 incomplete records; not loaded by production factories |
+| PH gate | Still requires a real legally usable merchant-data path. Fixtures cannot close Sprint 32. |
+| EXT-01 / EXT-06 / EXT-07 | Unresolved |
+| Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md); [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) |

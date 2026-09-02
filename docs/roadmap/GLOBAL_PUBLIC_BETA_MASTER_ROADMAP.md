@@ -97,10 +97,10 @@ It is **not**:
 - Sprint 26 close evidence
 - a replacement for the packaged Sprint 26 staging proof at SHA `79bd03f`
 - proof that live merchant research exists
-- permission to mark Sprint 31 formally closed
-- permission to start Sprint 32
+- proof that any Philippines merchant path is production-certified
+- Sprint 32 closure evidence
 
-Phases 29.4B and 29.4C, the research authorization handoff (PR #95), and the Sprint 31 router contract (PR #96) are **merged**. Live research execution remains unimplemented. Production certified research providers remain **zero**. Sprint 31 closure evidence is documented separately and remains pending owner close review.
+Phases 29.4B and 29.4C, the research authorization handoff (PR #95), and the Sprint 31 router contract (PR #96) are **merged**. Sprint 31 was formally owner-closed after this baseline was recorded. Sprint 32 is now in progress and is **not complete**. Live research execution remains unimplemented. Production certified research providers remain **zero**.
 
 ### 0.4 Status honesty
 
@@ -346,7 +346,7 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | Consumer production decision UI | Product Foundation merged; not launch-verified | 29 | Staging UI e2e on FastAPI HTML/CSS/vanilla-JS surfaces | Yes (public UX) |
 | Conversational Continuity | Partial: 29.0–29.4C merged; live research later | 29, supported by 31/37/38/39/40/43/44/45 | CC-01 staging E2E on the immutable candidate | Yes — NON-WAIVABLE |
 | Live owner-bound decision creation | Fixture/UUID presentation exists; live pipeline missing | 29 / 31 / 38 | Real shopper request → live evidence → snapshot → UUID Results | Yes — NON-WAIVABLE |
-| Sprint 4/18 unification (P1-1A) | Dual-run documented; research router merged; ADR recorded | 31 | Shared contracts + fail-closed capability/policy; 4/18 means Sprint 4 search vs Sprint 18 sync; disposition deadline 2026-09-15; Sprint 31 pending owner close | Yes (P1) |
+| Sprint 4/18 unification (P1-1A) | Dual-run documented; research router merged; ADR recorded; Sprint 31 owner-closed | 31 | Shared contracts + fail-closed capability/policy; 4/18 means Sprint 4 search vs Sprint 18 sync; disposition deadline 2026-09-15 | Yes (P1) |
 | Unsupported-market behavior (P1-1B) | Missing | 37 | Selector + disclosure + no unsupported invoke | Yes (P1) |
 | Shipping-cost honesty (P1-2) | Enrichment default risk | 37 | Shipping-known/unknown modeled + tests; 44 verifies wording | Yes (P1) |
 | Destination re-evaluation | Canonical pages show decision-time destination only | 37 | Server-side re-evaluation when destination could materially change shipping/effective cost | Yes when destination is user-changeable |
@@ -582,7 +582,7 @@ Mock remains non-production only.
 | Canonical snapshots / economics / presentation contract | Yes (merged through schema 1.2) | Yes | Pending on launch candidate | Pending (45) | Pending (44) |
 | Live owner-bound decision creation | No | No | Pending (29/31/38) | Pending (44/45) | Pending (45) |
 | DealScore / Recommendation | Yes | Yes | Yes (26 tech evidence; mocked-data disclosure observed) | Pending (45) | Certify (44) |
-| Merchant platform unified | Partial (router/provider contract merged; 4/18 dual-run documented; pending owner close) | Partial | Pending (31 close review) | Pending (45) | Pending (44) |
+| Merchant platform unified | Partial (router/provider contract merged; 4/18 dual-run documented; Sprint 31 owner-closed) | Partial | Pending (32–36 real path) | Pending (45) | Pending (44) |
 | PH/US/SG/UK/CA real paths | No | No | Pending (32–36) | Pending (45) | Per-market (44/45) |
 | MarketContext / FX / destination re-eval | No | Partial fail-closed | Pending (37) | Pending (45) | Pending (44) |
 | Connector reliability / live research | Partial | Partial | Pending (38) | Pending (45) | Pending (44) |
@@ -840,15 +840,16 @@ Intended to prevent any launch-critical area from falling between sprints.
 
 Shortest truthful path from current state to Sprint 45. Calendar durations are **not fabricated**; repository evidence does not support day-level estimates.
 
-### Current state (reconciled 2026-08-25)
+### Current state (reconciled 2026-09-02)
 
-- `main` engineering baseline after PR #96: `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0`
-- Approved merged suite evidence on that baseline: **2977 passed / 0 failed / 0 skipped / 168 warnings**
+Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemented and pending owner close; Sprint 32 not started. That snapshot is not current operational status.
+
+- `main` engineering baseline: `d890df24559325bb8d1289b6c2a01b590c9e50ab` (includes later Sprint 26 counsel-clearance merge). Prior approved merged-suite SHA `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` remains ancestor evidence (**2977 passed / 0 failed / 0 skipped / 168 warnings** on that SHA).
 - Sprint 29 Product Foundation + 29.0–29.4C + economics + UUID presentation + schema 1.2 + research authorization handoff **merged**
-- Sprint 31 research execution router / provider contract **merged**; closure evidence (unification ADR + onboarding runbook) implemented; **pending owner close review**. Sprint 31 is **not** formally closed.
-- Sprint 32 **NOT STARTED**. Production certified research providers remain **zero**. Live research execution remains unimplemented.
-- Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline)
-- EXT merchant applications **not started**
+- Sprint 31 research execution router / provider contract **merged** and **formally owner-closed**. Historical gate satisfied.
+- Sprint 32 **in progress** (foundation slices 32.1–32.5). Sprint 32 is **not complete**. Production certified research providers remain **zero**. Live research execution remains unimplemented. No PH merchant is production-certified.
+- Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline). Owner-observed Shopee dashboard / Affiliate Open API facts are not official Sprint 32 evidence until separately reconciled on `main`.
+- EXT merchant applications **not started** (EXT-01 / EXT-06 / EXT-07 remain unresolved)
 - No production AWS apply; no live certified market
 
 ### Strict gates (cannot be skipped)
@@ -857,8 +858,8 @@ Shortest truthful path from current state to Sprint 45. Calendar durations are *
 2. **Sprint 26 external bootstrap remaining** — EXT-01…05 applications; Sprint 26 stays open until register evidence exists. Later SHAs still need their own staging proof before launch (EC-01).
 3. **Sprint 27** — real transactional email, sender auth, verify/reset/email-change, token lifecycle, enumeration-safe errors, session rotation, staging E2E, production cutover readiness.
 4. **Sprint 28** — ToS/Privacy/cookie/consent/deletion/export/retention/PII/vendor register/contacts/age notices; search-index privacy; counsel package. Final publication/approval in 44/45.
-5. **Sprint 31 owner close review** — router/provider contract is merged; unification ADR, dual-run disposition date (2026-09-15), and onboarding runbook are recorded. Do not start Sprint 32 until owner close.
-6. **Minimum viable market certification (32–36)** — at least one legally usable real source path with current-data + capability-policy + credential approval. Others may be omitted.
+5. **Sprint 31 owner close** — satisfied. Router/provider contract is merged; unification ADR, dual-run disposition date (2026-09-15), and onboarding runbook are recorded. Sprint 32 has started and remains blocked on external merchant certification, not on Sprint 31.
+6. **Minimum viable market certification (32–36)** — at least one legally usable real source path with current-data + capability-policy + credential approval. Others may be omitted. Sprint 32 foundation is implemented; the PH real path is still missing.
 7. **Sprint 37** — market/currency/FX/locale/destination honesty + server-side destination re-evaluation.
 8. **Sprint 38** — resilient live research + execution trace + live-mode gate + fixture-never-as-live.
 9. **Sprint 41** — isolated production AWS/DB/secrets/IAM/deploy/rollback/DNS/TLS/hostname. IaC is not proof.

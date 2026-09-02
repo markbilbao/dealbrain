@@ -313,4 +313,4 @@ Sprint 4 / Sprint 18 remain documented dual-run. Dual-path disposition review de
 
 Sprint 31 research routing remains additive planning/eligibility only. It does not take live execution from Sprint 38 or market certification from Sprints 32–36. Affiliate economics remain downstream.
 
-Sprint 31 closure evidence is implemented; Sprint 31 is not formally closed until owner review. Sprint 32 is not started.
+Sprint 31 was formally owner-closed before Sprint 32 implementation began. Sprint 32 is in progress and is **not complete**. Production certified providers remain zero.

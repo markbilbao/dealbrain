@@ -1,7 +1,7 @@
 # Sprint 32 — Philippines Source Certification Inventory
 
 **Document type:** Non-secret certification-evidence inventory  
-**Sprint slice:** 32.1 complete; 32.2 complete; 32.3 complete; 32.4 hardening validated. Sprint 32 is **not complete**.  
+**Sprint slice:** 32.1–32.5 foundation complete. Sprint 32 is **not complete** (blocked on external certification).  
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
@@ -59,6 +59,12 @@ Those records are **incomplete** and are not loaded by `production_research_prov
 Production `certified` writes require an exact registered provider: same `provider_id`, capability, market, and source. Documentary IDs (`ph-shopee`, `ph-lazada`, `ph-tiktok-shop`, `ph-amazon`, `ph-temu`) are candidate identities only. They do not become production identities because evidence exists.
 
 Catalog `register` / `replace` remain trusted infrastructure primitives. `ResearchProviderCertificationDecisionService` is the policy path. Incomplete documentary records have no promotion helper. Official `main` still has no submitted Shopee application; unmerged Sprint 26 / owner-observed dashboard progress remains outside this branch.
+
+### 32.5 reconciliation
+
+Sprint 31 is formally owner-closed. Sprint 32 remains in progress and blocked on external certification. Authoritative slice status lives in [`../sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](../sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md).
+
+Owner-observed Shopee facts outside official `main` (affiliate dashboard access, Payment & Tax pending, Affiliate Open API docs, `productOfferV2`, feeds, GraphQL auth, documented 8000/hour, absent AppID/Secret) are **not** Sprint 32 certification evidence. They require separate Sprint 26 reconciliation before they can become authoritative.
 
 ---
 

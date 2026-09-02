@@ -1,8 +1,8 @@
 # Merchant / provider onboarding runbook
 
 **Audience:** engineering and owner reviewers preparing a future merchant/provider for evidence-backed certification
-**Status:** Sprint 31 closure evidence implemented; pending owner close review. This runbook does **not** onboard any production provider.
-**Sprint 32 status:** **NOT STARTED**
+**Status:** Sprint 31 formally owner-closed. This runbook does **not** onboard any production provider.
+**Sprint 32 status:** In progress; **not complete**. Blocked on external merchant certification.
 **Production certified research providers:** **zero**
 
 This is operational documentation only. No application, credential, or certification record is created by this document.
@@ -71,7 +71,7 @@ Not every provider has the same API model. Skip inapplicable mechanism steps hon
 | 15 | Controlled staging validation | Fixture-as-live is forbidden |
 | 16 | Production approval | Empty catalog remains the production default until then |
 
-First planned market certification sprint is **Philippines in Sprint 32**. That sprint is not started by this runbook.
+First planned market certification sprint is **Philippines in Sprint 32**. This runbook does not start or close that sprint. Sprint 32 is in progress and remains blocked on external certification.
 
 ## Legal / terms evidence checklist (non-secret)
 
@@ -227,4 +227,4 @@ Affiliate permission is independent of product-data permission. Reduced modes re
 | 37 | MarketContext, currency, location / destination-sensitive behavior | Implement destination re-evaluation |
 | 38 | Live execution, runtime reliability, retries / circuit breakers, truthful degradation, populated execution traces | Execute research or add live HTTP |
 
-Sprint 32 remains **NOT STARTED**.
+Sprint 32 is in progress and is **not complete**. This runbook still creates no production certifications.
