@@ -41,6 +41,7 @@ class ResearchProviderCertificationCatalog:
         return self._allow_test_certifications
 
     def register(self, record: ResearchProviderCertification) -> ResearchProviderCertification:
+        """Trusted infrastructure write. Not a certification policy decision."""
         if record.test_fixture and not self._allow_test_certifications:
             raise ValueError("test certifications cannot be registered in the production catalog")
         stored = record
@@ -58,7 +59,7 @@ class ResearchProviderCertificationCatalog:
         return stored
 
     def replace(self, record: ResearchProviderCertification) -> ResearchProviderCertification:
-        """Trusted update of an existing exact certification target."""
+        """Trusted infrastructure update. Not a certification policy decision."""
 
         if record.test_fixture and not self._allow_test_certifications:
             raise ValueError("test certifications cannot be registered in the production catalog")

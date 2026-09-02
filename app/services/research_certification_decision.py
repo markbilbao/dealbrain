@@ -3,6 +3,11 @@
 Evidence → explicit trusted review → optional certification record.
 Never: evidence → automatic certification. Never: provider → self-certification.
 Does not consult routing, eligibility, commission, or live merchants.
+
+Catalog ``register`` / ``replace`` remain lower-level trusted infrastructure
+primitives. This service is the policy path. Production ``certified`` writes
+also require an exact registered provider identity; documentary ``ph-*``
+evidence IDs are not production identities by themselves.
 """
 
 from __future__ import annotations
@@ -22,18 +27,21 @@ from app.research.certification import (
     make_research_provider_certification,
 )
 from app.research.certification_evidence import ResearchProviderCertificationEvidenceCatalog
+from app.research.registry import ResearchProviderRegistry
 
 
 class ResearchProviderCertificationDecisionService:
-    """Server-owned decision path for exact certification targets."""
+    """Server-owned policy path for exact certification targets."""
 
     def __init__(
         self,
         evidence_catalog: ResearchProviderCertificationEvidenceCatalog,
         certification_catalog: ResearchProviderCertificationCatalog,
+        provider_registry: ResearchProviderRegistry | None = None,
     ) -> None:
         self._evidence = evidence_catalog
         self._certifications = certification_catalog
+        self._providers = provider_registry
 
     def decide(self, request: CertificationDecisionRequest) -> CertificationDecisionResult:
         evidence = self._evidence.lookup(
@@ -81,6 +89,10 @@ class ResearchProviderCertificationDecisionService:
                 "restrictions_unresolved",
                 evidence_ids=_ids(evidence),
             )
+
+        binding = self._production_provider_binding_reason(request)
+        if binding is not None:
+            return self._refuse(request, binding, evidence_ids=_ids(evidence))
 
         certification = make_research_provider_certification(
             provider_id=request.provider_id,
@@ -152,6 +164,34 @@ class ResearchProviderCertificationDecisionService:
             reviewer=request.reviewer,
             decided_at=request.decided_at,
         )
+
+    def _production_provider_binding_reason(
+        self,
+        request: CertificationDecisionRequest,
+    ) -> CertificationDecisionReason | None:
+        """Production certified writes require a real registered provider.
+
+        Test catalogs may omit a registry. Operational health, kill switch,
+        and circuit state are not certification inputs.
+        """
+
+        if self._certifications.allows_test_certifications:
+            return None
+        if self._providers is None:
+            return "provider_missing"
+        provider = self._providers.get(request.provider_id)
+        if provider is None:
+            return "provider_missing"
+        descriptor = provider.descriptor
+        if descriptor.test_fixture:
+            return "provider_fixture_forbidden"
+        if request.capability not in descriptor.supported_capabilities:
+            return "provider_capability_mismatch"
+        if request.market not in descriptor.supported_markets:
+            return "provider_market_mismatch"
+        if request.source is not None and request.source not in descriptor.supported_sources:
+            return "provider_source_mismatch"
+        return None
 
     def _write(self, record: ResearchProviderCertification) -> ResearchProviderCertification:
         existing = self._certifications.lookup(

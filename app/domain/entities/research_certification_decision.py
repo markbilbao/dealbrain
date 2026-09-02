@@ -35,6 +35,11 @@ CertificationDecisionReason = Literal[
     "restrictions_unresolved",
     "version_mismatch",
     "certification_missing",
+    "provider_missing",
+    "provider_capability_mismatch",
+    "provider_market_mismatch",
+    "provider_source_mismatch",
+    "provider_fixture_forbidden",
 ]
 
 _BLOCKING_STATUSES = frozenset({"revoked", "disabled", "expired"})

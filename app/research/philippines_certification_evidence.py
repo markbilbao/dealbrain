@@ -2,6 +2,11 @@
 
 Static snapshots of what official repository evidence can prove today.
 Not loaded by production runtime factories. Not certifications.
+
+Provider IDs such as ``ph-shopee`` are documentary / candidate identities
+only. They are not production ``provider_id`` values until a trusted
+registry registers an exact matching implementation and a trusted
+decision binds evidence to that provider.
 """
 
 from __future__ import annotations
