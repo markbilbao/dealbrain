@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock
+
 import pytest
 from app.consumer.canonical_presentation import page_view_from_snapshot
 from app.consumer.fixtures import DATA_CLASSIFICATION
@@ -20,17 +23,22 @@ from app.consumer.pricing import (
     shipping_display,
     tax_display,
 )
+from app.core.dependencies import get_db, get_shopping_decision_snapshot_repository
 from app.domain.entities.marketplace_listing import AvailabilityStatus, MarketplaceListing
 from app.domain.entities.research_execution import (
     DESTINATION_REEVALUATION_IMPLEMENTED,
 )
 from app.domain.exceptions import DealScoreValidationError
+from app.infrastructure.persistence.memory_decision_snapshot_repository import (
+    InMemoryDecisionSnapshotRepository,
+)
 from app.intelligence.dealscore import WeightedDealScoreEngine
 from app.intelligence.dealscore.enrichment import (
     MOCK_DEAL_ATTRIBUTES,
     mock_deal_enrichment_is_production_evidence,
     resolve_deal_attributes,
 )
+from app.main import create_app
 from app.market.completeness import mixed_currency_blocks_compare, select_dominant_price_state
 from app.market.context import (
     DEFAULT_DISPLAY_CURRENCY,
@@ -50,9 +58,39 @@ from app.market.support import (
     shopping_markets_for_tests,
 )
 from app.services.canonical_offer_economics import capture_money_line
+from httpx import ASGITransport, AsyncClient
 
 from tests.unit.intelligence.test_dealscore_engine import _listing as _score_listing
-from tests.unit.test_canonical_uuid_consumer_presentation import _economics_snapshot
+from tests.unit.test_canonical_uuid_consumer_presentation import (
+    DECISION_ID,
+    START,
+    _attrs,
+    _bind,
+    _economics_snapshot,
+)
+
+
+@pytest.fixture()
+def uuid_snapshots() -> InMemoryDecisionSnapshotRepository:
+    return InMemoryDecisionSnapshotRepository(clock=lambda: START)
+
+
+@pytest.fixture()
+async def uuid_client(
+    mock_db_session: AsyncMock,
+    uuid_snapshots: InMemoryDecisionSnapshotRepository,
+) -> AsyncGenerator[AsyncClient, None]:
+    app = create_app()
+
+    async def override_get_db() -> AsyncGenerator[AsyncMock, None]:
+        yield mock_db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_shopping_decision_snapshot_repository] = lambda: uuid_snapshots
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    app.dependency_overrides.clear()
 
 
 def _ship(status: str, amount: float | None, currency: str = "PHP") -> MoneyComponent:
@@ -251,9 +289,86 @@ def test_canonical_uuid_session_change_does_not_rewrite_economics() -> None:
     assert view.best_piq.product_id == reco
     assert view.session_location_differs is True
     assert view.destination_reevaluation_required is True
+    assert view.recalculating is False
     assert view.shopping_market_certified is False
     assert snapshot.content_sha256 == digest
     assert snapshot.recommendation.best_piq_product_id == reco
+
+
+@pytest.mark.asyncio
+async def test_canonical_uuid_destination_change_does_not_fake_recalculating(
+    uuid_client: AsyncClient,
+    uuid_snapshots: InMemoryDecisionSnapshotRepository,
+) -> None:
+    snapshot = _economics_snapshot()
+    uuid_snapshots.add(snapshot)
+    _bind(uuid_client, snapshot.owner)
+    first = await uuid_client.get(
+        "/consumer/location",
+        params={
+            "action": "save",
+            "city": "Taguig City",
+            "postal_code": "1630",
+            "decision_id": DECISION_ID,
+            "next": f"/results/{DECISION_ID}",
+        },
+        follow_redirects=False,
+    )
+    assert first.status_code == 303
+    changed = await uuid_client.get(
+        "/consumer/location",
+        params={
+            "action": "save",
+            "city": "Cebu City",
+            "postal_code": "6000",
+            "decision_id": DECISION_ID,
+            "next": f"/results/{DECISION_ID}",
+        },
+        follow_redirects=False,
+    )
+    assert changed.status_code == 303
+    location = changed.headers.get("location", "")
+    assert "recalculating=1" not in location
+    assert location.endswith(f"/results/{DECISION_ID}")
+    page = await uuid_client.get(f"/results/{DECISION_ID}")
+    assert page.status_code == 200
+    assert "Updating costs" not in page.text
+    assert "Rechecking shipping" not in page.text
+    assert _attrs(page.text, "presentation-mode") == "canonical"
+    assert _attrs(page.text, "destination-reevaluation-required") == "true"
+    assert _attrs(page.text, "shopping-market-certified") == "false"
+    assert "18,990" in page.text
+    assert "Final effective cost" in page.text
+
+
+@pytest.mark.asyncio
+async def test_fixture_catalog_destination_change_may_still_set_recalculating(
+    client: AsyncClient,
+) -> None:
+    await client.get(
+        "/consumer/location",
+        params={
+            "action": "save",
+            "city": "Taguig City",
+            "postal_code": "1630",
+            "decision_id": "headphones-standard",
+            "next": "/results/headphones-standard",
+        },
+        follow_redirects=False,
+    )
+    changed = await client.get(
+        "/consumer/location",
+        params={
+            "action": "save",
+            "city": "Davao City",
+            "postal_code": "8000",
+            "decision_id": "headphones-standard",
+            "next": "/results/headphones-standard",
+        },
+        follow_redirects=False,
+    )
+    assert changed.status_code == 303
+    assert "recalculating=1" in changed.headers.get("location", "")
 
 
 def test_mock_shipping_zero_is_not_live_ph_evidence() -> None:
