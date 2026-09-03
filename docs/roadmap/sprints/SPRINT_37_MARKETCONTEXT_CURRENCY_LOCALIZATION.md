@@ -1,9 +1,28 @@
 # Sprint 37 — MarketContext, Currency & Localization
 
-**Status:** Planned
+**Status:** In progress — 37.1 foundation implemented. Sprint 37 is **not complete**. P1-1B and P1-2 are **not** fully closed.
 **Primary owner / domain:** Product platform / marketplace
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-1B, P1-2; multinational honesty
+**Architecture:** [`../../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../../architecture/ADR_SPRINT_37_MARKETCONTEXT.md)
+
+## 37.1 record (owner slice; not a repository-defined sub-sprint before this work)
+
+| Area | Status |
+|------|--------|
+| Composed `MarketContext` (TrustedMarketContext + DeliveryContext) | implemented |
+| Intended PH / PHP / en-PH display defaults | implemented — **not** certified PH support |
+| Production certified shopping-market catalog | empty (0 markets) |
+| Destination known / skipped / absent; optional postal | implemented (reuses Sprint 29) |
+| Unknown shipping/tax/import ≠ 0 / FREE | implemented + hardened |
+| Destination-sensitive invalidation contract | implemented |
+| `DESTINATION_REEVALUATION_IMPLEMENTED` | **False** (unchanged) |
+| Live destination re-evaluation | not implemented |
+| FX adapter / EXT-23 | not started |
+| Five-market QA / FR-CA / US-SG-UK-CA selector | not started |
+| P1-1B / P1-2 closure | **not closed** — foundation only |
+
+37.1 is an owner-authorized first slice. It does not close Sprint 37.
 
 ## Objective
 

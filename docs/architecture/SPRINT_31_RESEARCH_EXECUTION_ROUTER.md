@@ -188,7 +188,7 @@ If any fail, the provider is ineligible. Technical support alone cannot produce 
 
 Market support is explicit at both layers. Technical US support is not PH support. A US certification record is not a PH certification record.
 
-Until Sprint 37, the only market input is optional `TrustedMarketContext` from server-trusted data. Missing market is not fabricated; planning returns `blocked_market_context`.
+Until Sprint 37 completes destination-sensitive economics, the only market input is optional `TrustedMarketContext` from server-trusted data. Sprint 37.1 composes `MarketContext` over that type plus session `DeliveryContext` but does **not** enable live re-evaluation (`DESTINATION_REEVALUATION_IMPLEMENTED` remains false). Missing market is not fabricated; planning returns `blocked_market_context`.
 
 If the frozen scope names Amazon, the router must not substitute Shopee. Alternative-source execution is not invented here.
 
