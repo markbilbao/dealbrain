@@ -69,21 +69,46 @@ class MoneyComponent:
         return self.kind in {"discount", "voucher"} and self.status == "verified" and self.applies
 
 
-def format_php(amount: float | None) -> str:
+def format_money(amount: float | None, currency: str | None = None) -> str:
+    """Format an already-known amount in its source currency.
+
+    Does not convert currencies. Missing amounts stay Unknown. PHP keeps the
+    existing peso glyph; other codes render as ``1,299 USD``.
+    """
+
     if amount is None:
         return "Unknown"
+    code = (currency or "").strip().upper()
     rounded = round(amount)
-    if abs(amount - rounded) < 0.005:
-        return f"₱{rounded:,.0f}"
-    return f"₱{amount:,.2f}"
+    formatted = f"{rounded:,.0f}" if abs(amount - rounded) < 0.005 else f"{amount:,.2f}"
+    if code == "PHP":
+        return f"₱{formatted}"
+    if code:
+        return f"{formatted} {code}"
+    return formatted
 
 
-def signed_php(amount: float | None, *, unknown_label: str = "Unknown") -> str:
+def format_php(amount: float | None) -> str:
+    """PHP display helper. Prefer ``format_money`` when the source currency is known."""
+
+    return format_money(amount, "PHP")
+
+
+def signed_money(
+    amount: float | None,
+    currency: str | None = None,
+    *,
+    unknown_label: str = "Unknown",
+) -> str:
     if amount is None:
         return unknown_label
     if amount < 0:
-        return f"-{format_php(abs(amount))}"
-    return format_php(amount)
+        return f"-{format_money(abs(amount), currency)}"
+    return format_money(amount, currency)
+
+
+def signed_php(amount: float | None, *, unknown_label: str = "Unknown") -> str:
+    return signed_money(amount, "PHP", unknown_label=unknown_label)
 
 
 def shipping_display(component: MoneyComponent) -> str:
@@ -93,11 +118,11 @@ def shipping_display(component: MoneyComponent) -> str:
         return "Not verified"
     if component.amount is None:
         return "Not verified"
-    if component.amount == 0:
+    if component.amount == 0 and component.status == "verified":
         return "FREE"
     prefix = "+" if component.kind in {"shipping", "tax", "import", "other"} else ""
     estimate = " est." if component.is_estimate else ""
-    return f"{prefix}{format_php(component.amount)}{estimate}"
+    return f"{prefix}{format_money(component.amount, component.currency)}{estimate}"
 
 
 def tax_display(component: MoneyComponent) -> str:
@@ -108,10 +133,10 @@ def tax_display(component: MoneyComponent) -> str:
     if component.amount is None:
         return "Not verified"
     if component.amount == 0 and component.status == "verified":
-        return format_php(0)
+        return format_money(0, component.currency)
     prefix = "+" if component.amount > 0 else ""
     estimate = " est." if component.is_estimate else ""
-    return f"{prefix}{format_php(component.amount)}{estimate}"
+    return f"{prefix}{format_money(component.amount, component.currency)}{estimate}"
 
 
 def applicable_adjustment(component: MoneyComponent) -> float:

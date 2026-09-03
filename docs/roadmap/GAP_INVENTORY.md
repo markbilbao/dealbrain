@@ -416,3 +416,19 @@ This addendum does **not** rewrite the 2026-08-24 snapshot. It records later own
 | PH gate | Still requires a real legally usable merchant-data path. Fixtures cannot close Sprint 32. |
 | EXT-01 / EXT-06 / EXT-07 | Unresolved |
 | Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md); [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) |
+
+---
+
+## 2026-09-03 Sprint 37.1 status addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-authorized PH MarketContext foundation slice.
+
+| Field | Value |
+|-------|-------|
+| Sprint 37 | In progress. 37.1 foundation implemented. Sprint 37 is **not complete**. |
+| P1-1B / P1-2 | Not fully closed. Empty certified-market catalog and shipping-unknown honesty exist; five-market selector, FX, and live re-evaluation do not. |
+| Certified shopping markets | 0. Default PH context is not PH certification. |
+| `DESTINATION_REEVALUATION_IMPLEMENTED` | False |
+| Sprint 32 | Unchanged: in progress, blocked on external certification |
+| Sprint 33–36 / 38 | Not started |
+| Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md); [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |

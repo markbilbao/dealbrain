@@ -21,11 +21,10 @@ from app.consumer.location import DeliveryContext
 from app.consumer.pricing import (
     MoneyComponent,
     evaluate_offer_total,
-    format_php,
+    format_money,
     price_state_label,
-    select_price_state,
     shipping_display,
-    signed_php,
+    signed_money,
     tax_display,
 )
 from app.consumer.uuid import is_canonical_uuid
@@ -41,6 +40,9 @@ from app.consumer.view_models import (
     SourceView,
     WhySectionView,
 )
+from app.market.completeness import select_dominant_price_state
+from app.market.context import intended_ph_product_defaults
+from app.market.support import production_certified_shopping_markets
 
 STATUS_LABELS = {
     "verified": "Verified",
@@ -192,6 +194,8 @@ def build_page_view(
         delivery_costs_verified=destination_snapshot_known,
         destination_snapshot_known=destination_snapshot_known,
         recommendation_qualified_message=qualified_message,
+        shopping_market_certified=production_certified_shopping_markets().is_certified("PH"),
+        destination_reevaluation_required=bool(overlay_unknown_shipping and location.is_known),
     )
 
 
@@ -267,6 +271,8 @@ def _unavailable_page_view(
         destination_snapshot_known=False,
         recommendation_qualified_message=None,
         presentation_mode="unavailable",
+        shopping_market_certified=False,
+        destination_reevaluation_required=False,
     )
 
 
@@ -395,16 +401,17 @@ def _product_card(
             status=shipping.status,
             applies=shipping.applies,
         )
-    location_known = location.is_known and not unknown_shipping
     savings = tuple(item for item in (offer.voucher,) if item is not None)
-    state = select_price_state(
+    market = intended_ph_product_defaults(delivery=location)
+    state = select_dominant_price_state(
+        market=market,
         shipping=shipping,
         taxes=taxes,
         import_charges=imports,
         savings=savings,
         international=offer.international,
-        location_known=location_known,
         shipping_material=offer.shipping_material,
+        destination_sensitive_stale=unknown_shipping,
     )
     adjustments: list[MoneyComponent] = []
     if offer.voucher is not None:
@@ -467,11 +474,13 @@ def _breakdown_lines(
 ) -> tuple[tuple[str, str, str], ...]:
     lines: list[tuple[str, str, str]] = []
     listing_label = offer.listing.label
-    lines.append((listing_label, format_php(offer.listing.amount), "neutral"))
+    lines.append(
+        (listing_label, format_money(offer.listing.amount, offer.listing.currency), "neutral")
+    )
     if offer.voucher is not None:
         tone = "positive" if offer.voucher.status == "verified" else "muted"
         if offer.voucher.status == "verified":
-            display = signed_php(offer.voucher.amount)
+            display = signed_money(offer.voucher.amount, offer.voucher.currency)
         else:
             display = offer.voucher.status.replace("_", " ")
         if offer.voucher.status == "unverified":
@@ -487,7 +496,13 @@ def _breakdown_lines(
         lines.append((imports.label, tax_display(imports), _tone_for_shipping(imports)))
     else:
         lines.append((taxes.label, tax_display(taxes), _tone_for_tax(taxes)))
-    lines.append((price_state_label(state), format_php(dominant_amount), _tone_for_state(state)))
+    lines.append(
+        (
+            price_state_label(state),
+            format_money(dominant_amount, offer.listing.currency),
+            _tone_for_state(state),
+        )
+    )
     return tuple(lines)
 
 
@@ -520,15 +535,15 @@ def _tone_for_tax(component: MoneyComponent) -> str:
 
 
 def _compact_breakdown(offer: FixtureOffer, shipping: MoneyComponent) -> str:
-    parts = [format_php(offer.listing.amount)]
+    parts = [format_money(offer.listing.amount, offer.listing.currency)]
     if offer.voucher is not None and offer.voucher.status == "verified" and offer.voucher.amount:
-        parts.append(f"{signed_php(offer.voucher.amount)} voucher")
+        parts.append(f"{signed_money(offer.voucher.amount, offer.voucher.currency)} voucher")
     if shipping.is_unknown:
         parts.append("shipping not verified")
-    elif shipping.amount == 0:
+    elif shipping.amount == 0 and shipping.status == "verified":
         parts.append("FREE shipping")
     elif shipping.amount is not None:
-        parts.append(f"{format_php(shipping.amount)} shipping")
+        parts.append(f"{format_money(shipping.amount, shipping.currency)} shipping")
     return " · ".join(parts) if len(parts) == 1 else f"{parts[0]} − " + " + ".join(parts[1:])
 
 
@@ -660,7 +675,10 @@ def _pay_rows(
     return (
         CompareFitRow(
             "Final cost",
-            tuple(format_php(card.economics.dominant_amount) for card in cards),
+            tuple(
+                format_money(card.economics.dominant_amount, card.economics.listing.currency)
+                for card in cards
+            ),
         ),
         CompareFitRow(
             "Price status",
@@ -682,10 +700,11 @@ def _pay_rows(
 
 
 def _listing_compare_cell(card: ProductCardView) -> str:
-    base = format_php(card.economics.listing.amount)
+    listing = card.economics.listing
+    base = format_money(listing.amount, listing.currency)
     voucher = card.economics.voucher
     if voucher is not None and voucher.status == "verified" and voucher.amount:
-        return f"{base} · {signed_php(voucher.amount)} voucher"
+        return f"{base} · {signed_money(voucher.amount, voucher.currency)} voucher"
     return base
 
 

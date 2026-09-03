@@ -23,7 +23,7 @@ from app.consumer.html import (
     piqscore_gauge,
     product_visual,
 )
-from app.consumer.pricing import format_php
+from app.consumer.pricing import format_money
 from app.consumer.view_models import DecisionPageView, ProductCardView
 
 
@@ -31,6 +31,10 @@ def _offer_link(url: str, css: str) -> str:
     if not url:
         return ""
     return f'<a class="{css}" href="{h(url)}" rel="nofollow noopener">View offer</a>'
+
+
+def _price_text(card: ProductCardView) -> str:
+    return format_money(card.economics.dominant_amount, card.economics.listing.currency)
 
 
 def _card_title(card: ProductCardView) -> str:
@@ -81,7 +85,9 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-unavailable="{unavailable}"
         data-classification="{h(view.data_classification)}"
         data-recommendation-qualified="{qualified}"
-        data-destination-snapshot="{snapshot}">
+        data-destination-snapshot="{snapshot}"
+        data-shopping-market-certified="{"true" if view.shopping_market_certified else "false"}"
+        data-destination-reevaluation-required="{"true" if view.destination_reevaluation_required else "false"}">
     <a class="skip-link" href="#main">Skip to content</a>
     {_site_header(view)}
     <main id="main">
@@ -287,7 +293,7 @@ def _hero_card(view: DecisionPageView) -> str:
           </div>
           <div class="price-block" data-price-state="{h(best.economics.dominant_state)}">
             <p class="price-label tone-{h(_tone(best))}">{h(best.economics.dominant_label)}</p>
-            <p class="price-value">{h(format_php(best.economics.dominant_amount))}</p>
+            <p class="price-value">{h(_price_text(best))}</p>
             <p class="merchant">{h(merchant)}</p>
             {fresh}
             {shipping_note}
@@ -358,7 +364,7 @@ def _alt_card(card: ProductCardView, view: DecisionPageView) -> str:
           <p>{h(int(round(card.piqscore.value)))} · {h(card.piqscore.descriptor)}</p>
         </div>
         <p class="price-label tone-{h(_tone(card))}">{h(card.economics.dominant_label)}</p>
-        <p class="price-value">{h(format_php(card.economics.dominant_amount))}</p>
+        <p class="price-value">{h(_price_text(card))}</p>
         <p class="compact-break">{h(card.compact_breakdown)}</p>
         <p class="merchant">from {h(card.merchant)}</p>
         <p class="alt-reason">{h(card.alternative_reason)}</p>
@@ -438,7 +444,7 @@ def _compare_product(card: ProductCardView, view: DecisionPageView) -> str:
       <ul class="tag-list">{tags}</ul>
       {piqscore_gauge(card.piqscore.value, "sm")}
       <p class="score-inline">PiqScore {h(int(round(card.piqscore.value)))}</p>
-      <p class="price-value">{h(format_php(card.economics.dominant_amount))}</p>
+      <p class="price-value">{h(_price_text(card))}</p>
       <p class="price-label tone-{h(_tone(card))}">{h(card.economics.dominant_label)}</p>
       <p class="merchant">from {h(card.merchant)}</p>
     </article>
@@ -516,7 +522,7 @@ def _why_main(view: DecisionPageView) -> str:
           <p class="category">{h(best.category)}</p>
           <p class="merchant">from {h(best.merchant)}</p>
           <p class="price-label tone-{h(_tone(best))}">{h(best.economics.dominant_label)}</p>
-          <p class="price-value">{h(format_php(best.economics.dominant_amount))}</p>
+          <p class="price-value">{h(_price_text(best))}</p>
           <div class="hero-actions">
             {_offer_link(best.offer_url, "btn btn-gradient")}
             <button type="button" class="icon-btn" aria-label="Save this Piq">{ICON_BOOKMARK}</button>

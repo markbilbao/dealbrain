@@ -1,8 +1,13 @@
 """Supplemental deal attributes for mocked marketplace listings.
 
+These values are **fixture / demo-only**. They are not live Philippines shipping
+evidence, not production certification, and must not be presented as verified
+free PH shipping.
+
 Marketplace connectors remain untouched. DealScore enriches known mock
 listings with shipping, official-store, warranty, and return-policy data so
 total purchase cost and component scores are demonstrable and testable.
+Unknown listings no longer default unknown shipping to 0.0 / FREE.
 """
 
 from __future__ import annotations
@@ -10,8 +15,8 @@ from __future__ import annotations
 from app.domain.entities.deal_score import DealListingAttributes, ScoreableListing
 from app.domain.entities.marketplace_listing import MarketplaceListing
 
-# Keyed by (marketplace, product_id). Values intentionally vary so demos and
-# tests can exercise free vs paid shipping, official stores, and missing fields.
+# Fixture-only map. Zero shipping here is mock scenario data, not live PH FREE.
+MOCK_DEAL_ENRICHMENT_IS_LIVE_EVIDENCE = False
 MOCK_DEAL_ATTRIBUTES: dict[tuple[str, str], DealListingAttributes] = {
     ("shopee", "1001001"): DealListingAttributes(
         shipping_cost=0.0,
@@ -84,6 +89,17 @@ _OFFICIAL_HINTS = (
 )
 
 
+def mock_deal_enrichment_is_production_evidence() -> bool:
+    """Mock shipping zeros cannot strengthen production PH truth claims."""
+
+    return MOCK_DEAL_ENRICHMENT_IS_LIVE_EVIDENCE
+
+
+def is_mock_fixture_enrichment(listing: MarketplaceListing) -> bool:
+    key = (listing.marketplace.lower(), listing.product_id)
+    return key in MOCK_DEAL_ATTRIBUTES
+
+
 def infer_official_store(seller: str) -> bool | None:
     """Heuristic official-store signal from seller name when enrichment is absent."""
     cleaned = seller.strip().lower()
@@ -93,13 +109,16 @@ def infer_official_store(seller: str) -> bool | None:
 
 
 def resolve_deal_attributes(listing: MarketplaceListing) -> DealListingAttributes:
-    """Resolve deal attributes for a listing without modifying connectors."""
+    """Resolve mock deal attributes. Unknown listings keep shipping unknown.
+
+    A missing mock row is not free shipping and is not live PH evidence.
+    """
     key = (listing.marketplace.lower(), listing.product_id)
     if key in MOCK_DEAL_ATTRIBUTES:
         return MOCK_DEAL_ATTRIBUTES[key]
 
     return DealListingAttributes(
-        shipping_cost=0.0,
+        shipping_cost=None,
         is_official_store=infer_official_store(listing.seller),
         warranty_months=None,
         return_policy_days=None,
