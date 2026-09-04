@@ -14,6 +14,7 @@ from app.domain.entities.user_platform import (
     FavoriteBrand,
     FavoriteMarketplace,
     PasswordResetRequest,
+    PolicyAcceptanceRecord,
     RecentlyViewed,
     RecommendationHistory,
     SavedComparison,
@@ -29,6 +30,7 @@ from app.domain.entities.user_platform import (
 )
 from app.domain.interfaces.user_platform_repository import (
     AuditLogRepository,
+    ConsentRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
@@ -56,6 +58,9 @@ class FutureSqlUserRepository(UserRepository):
     def list_users(self) -> list[User]:
         raise NotImplementedError("SQL user adapter is not implemented in Sprint 17.")
 
+    def delete(self, user_id: str) -> bool:
+        raise NotImplementedError("SQL user adapter is not implemented in Sprint 17.")
+
 
 class FutureSqlSessionRepository(SessionRepository):
     def __init__(self, session_factory: Any | None = None) -> None:
@@ -77,6 +82,9 @@ class FutureSqlSessionRepository(SessionRepository):
         raise NotImplementedError("SQL session adapter is not implemented in Sprint 17.")
 
     def list_for_user(self, user_id: str) -> list[UserSession]:
+        raise NotImplementedError("SQL session adapter is not implemented in Sprint 17.")
+
+    def delete_all_for_user(self, user_id: str) -> int:
         raise NotImplementedError("SQL session adapter is not implemented in Sprint 17.")
 
 
@@ -111,6 +119,9 @@ class FutureSqlProfileRepository(ProfileRepository):
     def set_favorite_marketplaces(
         self, user_id: str, marketplaces: list[FavoriteMarketplace]
     ) -> list[FavoriteMarketplace]:
+        raise NotImplementedError("SQL profile adapter is not implemented in Sprint 17.")
+
+    def delete_for_user(self, user_id: str) -> None:
         raise NotImplementedError("SQL profile adapter is not implemented in Sprint 17.")
 
 
@@ -156,6 +167,9 @@ class FutureNoSqlSavedItemsRepository(SavedItemsRepository):
     def save_recently_viewed(self, item: RecentlyViewed) -> RecentlyViewed:
         raise NotImplementedError("NoSQL saved-items adapter is not implemented in Sprint 17.")
 
+    def delete_all_for_user(self, user_id: str) -> None:
+        raise NotImplementedError("NoSQL saved-items adapter is not implemented in Sprint 17.")
+
 
 class FutureSqlPasswordResetRepository(PasswordResetRepository):
     def save(self, request: PasswordResetRequest) -> PasswordResetRequest:
@@ -165,6 +179,9 @@ class FutureSqlPasswordResetRepository(PasswordResetRepository):
         raise NotImplementedError("SQL password-reset adapter is not implemented in Sprint 17.")
 
     def mark_consumed(self, reset_id: str) -> None:
+        raise NotImplementedError("SQL password-reset adapter is not implemented in Sprint 17.")
+
+    def delete_for_user(self, user_id: str) -> int:
         raise NotImplementedError("SQL password-reset adapter is not implemented in Sprint 17.")
 
 
@@ -177,6 +194,23 @@ class FutureSqlEmailVerificationRepository(EmailVerificationRepository):
 
     def mark_consumed(self, verification_id: str) -> None:
         raise NotImplementedError("SQL email-verification adapter is not implemented in Sprint 17.")
+
+    def delete_for_user(self, user_id: str) -> int:
+        raise NotImplementedError("SQL email-verification adapter is not implemented in Sprint 17.")
+
+
+class FutureSqlConsentRepository(ConsentRepository):
+    def save(self, record: PolicyAcceptanceRecord) -> PolicyAcceptanceRecord:
+        raise NotImplementedError("SQL consent adapter is not implemented in Sprint 17.")
+
+    def list_for_user(self, user_id: str) -> list[PolicyAcceptanceRecord]:
+        raise NotImplementedError("SQL consent adapter is not implemented in Sprint 17.")
+
+    def get(self, user_id: str, policy_type: str, version_id: str) -> PolicyAcceptanceRecord | None:
+        raise NotImplementedError("SQL consent adapter is not implemented in Sprint 17.")
+
+    def delete_for_user(self, user_id: str) -> int:
+        raise NotImplementedError("SQL consent adapter is not implemented in Sprint 17.")
 
 
 class FutureSqlAuditLogRepository(AuditLogRepository):

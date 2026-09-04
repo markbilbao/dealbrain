@@ -27,6 +27,11 @@ SecurityEventType = Literal[
     "csrf_rejected",
     "mfa_challenge",
     "oauth_link_attempt",
+    "policy_accepted",
+    "account_deletion_requested",
+    "account_deleted",
+    "data_export_requested",
+    "data_export_completed",
 ]
 
 
@@ -484,3 +489,39 @@ class EmailVerificationRequest:
         if include_sensitive:
             payload["token_hash"] = self.token_hash
         return payload
+
+
+ConsentPolicyType = Literal["terms", "privacy"]
+ConsentSource = Literal["registration", "account", "test"]
+
+
+@dataclass(frozen=True, slots=True)
+class PolicyAcceptanceRecord:
+    """Server-owned acceptance of a *published* legal document version.
+
+    Unpublished drafts must never be stored. Version ids are assigned by the
+    server publication catalog, not by the client.
+    """
+
+    record_id: str
+    user_id: str
+    policy_type: ConsentPolicyType
+    version_id: str
+    accepted_at: datetime
+    source: ConsentSource = "registration"
+    actor: str | None = None
+
+    @property
+    def published_version_id(self) -> str:
+        return self.version_id
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "record_id": self.record_id,
+            "user_id": self.user_id,
+            "policy_type": self.policy_type,
+            "version_id": self.version_id,
+            "accepted_at": self.accepted_at.isoformat(),
+            "source": self.source,
+            "actor": self.actor,
+        }

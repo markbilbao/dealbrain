@@ -19,6 +19,7 @@ RECENTLY_VIEWED = "user_platform.recently_viewed"
 PASSWORD_RESETS = "user_platform.password_resets"
 EMAIL_VERIFICATIONS = "user_platform.email_verifications"
 AUDIT_EVENTS = "user_platform.audit_events"
+CONSENT_RECORDS = "user_platform.consent_records"
 
 # Sprint 18 — Marketplace Data
 MD_SOURCES = "marketplace_data.sources"
@@ -98,6 +99,7 @@ USER_PLATFORM_STORES = (
     PASSWORD_RESETS,
     EMAIL_VERIFICATIONS,
     AUDIT_EVENTS,
+    CONSENT_RECORDS,
 )
 
 MARKETPLACE_DATA_STORES = (

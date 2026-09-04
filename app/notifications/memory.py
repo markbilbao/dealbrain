@@ -159,6 +159,9 @@ class InMemoryNotificationCenterRepository(NotificationCenterRepository):
     def get_preferences(self, user_id: str) -> UserNotificationPreferences | None:
         return self._preferences.get(user_id)
 
+    def delete_preferences(self, user_id: str) -> bool:
+        return self._preferences.pop(user_id, None) is not None
+
     # --------------------------------------------------------------- unsubscribe
     def save_unsubscribe_token(self, token: UnsubscribeToken) -> UnsubscribeToken:
         self._unsubscribe_tokens[token.token_hash] = token

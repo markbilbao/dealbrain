@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter)
+**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 28.1 (consent hooks, delete/export)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -25,10 +25,17 @@ Validation:
 - `display_name` must not be blank.
 - Registration is rate-limited per normalized email (`RateLimiterHook`, 20 attempts / 60s window by default).
 - Duplicate emails raise `UserPlatformConflictError` (HTTP 409).
+- Optional `terms_accepted` / `privacy_acknowledged` are ignored unless a
+  **published** policy version exists and requires acceptance. Unpublished
+  catalogs never write fake Terms/Privacy acceptance rows.
 
 On success, a `User` is created, a starter `UserProfile` + `UserSettings` are
 bootstrapped (`AuthService._bootstrap_profile`), a `SecurityEvent` is recorded,
 and a session is issued — see [Session Management](SESSION_MANAGEMENT.md).
+
+Sprint 28.1 also adds authenticated `POST /api/v1/auth/account/delete`
+(password re-auth + `confirmation=DELETE`) and `GET /api/v1/auth/account/export`.
+See [`privacy/ACCOUNT_DELETION_PROPAGATION.md`](privacy/ACCOUNT_DELETION_PROPAGATION.md).
 
 ## Login
 

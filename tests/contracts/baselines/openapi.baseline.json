@@ -53,6 +53,78 @@
       }
     },
     "schemas": {
+      "AccountDeleteRequest": {
+        "properties": {
+          "confirmation": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Confirmation",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "password"
+        ],
+        "title": "AccountDeleteRequest",
+        "type": "object"
+      },
+      "AccountDeleteResponse": {
+        "properties": {
+          "consent_records_deleted": {
+            "title": "Consent Records Deleted",
+            "type": "integer"
+          },
+          "notification_preferences_removed": {
+            "title": "Notification Preferences Removed",
+            "type": "boolean"
+          },
+          "retained_limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Retained Limitations",
+            "type": "array"
+          },
+          "sessions_deleted": {
+            "title": "Sessions Deleted",
+            "type": "integer"
+          },
+          "sessions_revoked": {
+            "title": "Sessions Revoked",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "watchlists_deleted": {
+            "title": "Watchlists Deleted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "user_id",
+          "sessions_revoked",
+          "sessions_deleted",
+          "watchlists_deleted",
+          "notification_preferences_removed",
+          "consent_records_deleted"
+        ],
+        "title": "AccountDeleteResponse",
+        "type": "object"
+      },
       "AffiliateAttributeRequest": {
         "properties": {
           "estimated_commission": {
@@ -11305,6 +11377,138 @@
         "title": "PasswordResetRequestBody",
         "type": "object"
       },
+      "PersonalDataExportResponse": {
+        "properties": {
+          "account": {
+            "additionalProperties": true,
+            "title": "Account",
+            "type": "object"
+          },
+          "consent_records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Consent Records",
+            "type": "array"
+          },
+          "export_schema": {
+            "title": "Export Schema",
+            "type": "string"
+          },
+          "exported_at": {
+            "title": "Exported At",
+            "type": "string"
+          },
+          "notification_preferences": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notification Preferences"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile"
+          },
+          "recently_viewed": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recently Viewed"
+          },
+          "recommendation_history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Recommendation History",
+            "type": "array"
+          },
+          "saved_comparisons": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Saved Comparisons",
+            "type": "array"
+          },
+          "saved_products": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Saved Products",
+            "type": "array"
+          },
+          "saved_searches": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Saved Searches",
+            "type": "array"
+          },
+          "sessions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Sessions",
+            "type": "array"
+          },
+          "settings": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settings"
+          },
+          "wishlist": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wishlist"
+          }
+        },
+        "required": [
+          "export_schema",
+          "exported_at",
+          "account"
+        ],
+        "title": "PersonalDataExportResponse",
+        "type": "object"
+      },
       "PersonalDealsResponse": {
         "properties": {
           "data_status": {
@@ -13367,9 +13571,19 @@
             "title": "Password",
             "type": "string"
           },
+          "privacy_acknowledged": {
+            "default": false,
+            "title": "Privacy Acknowledged",
+            "type": "boolean"
+          },
           "remember_me": {
             "default": false,
             "title": "Remember Me",
+            "type": "boolean"
+          },
+          "terms_accepted": {
+            "default": false,
+            "title": "Terms Accepted",
             "type": "boolean"
           }
         },
@@ -19099,6 +19313,114 @@
         "summary": "Dismiss an alert",
         "tags": [
           "alerts"
+        ]
+      }
+    },
+    "/api/v1/auth/account/delete": {
+      "post": {
+        "operationId": "delete_account_api_v1_auth_account_delete_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete the authenticated consumer account",
+        "tags": [
+          "user-platform-auth"
+        ]
+      }
+    },
+    "/api/v1/auth/account/export": {
+      "get": {
+        "operationId": "export_account_api_v1_auth_account_export_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalDataExportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export personal data for the authenticated consumer account",
+        "tags": [
+          "user-platform-auth"
         ]
       }
     },

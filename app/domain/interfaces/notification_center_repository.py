@@ -110,6 +110,13 @@ class NotificationCenterRepository(ABC):
     def get_preferences(self, user_id: str) -> UserNotificationPreferences | None:
         """Return a user's notification preferences, or None if unset."""
 
+    def delete_preferences(self, user_id: str) -> bool:
+        """Remove stored notification preferences. Default is a no-op.
+
+        Sprint 28.1 account deletion overrides this in memory/SQL adapters.
+        """
+        return False
+
     # ------------------------------------------------------------- unsubscribe
     @abstractmethod
     def save_unsubscribe_token(self, token: UnsubscribeToken) -> UnsubscribeToken:

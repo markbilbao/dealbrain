@@ -11,6 +11,7 @@ from app.domain.entities.user_platform import (
     FavoriteBrand,
     FavoriteMarketplace,
     PasswordResetRequest,
+    PolicyAcceptanceRecord,
     RecentlyViewed,
     RecommendationHistory,
     SavedComparison,
@@ -27,6 +28,7 @@ from app.domain.entities.user_platform import (
 from app.domain.exceptions import UserPlatformNotFoundError, UserPlatformValidationError
 from app.domain.interfaces.user_platform_repository import (
     AuditLogRepository,
+    ConsentRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
@@ -63,6 +65,15 @@ class InMemoryUserRepository(UserRepository):
 
     def list_users(self) -> list[User]:
         return [self._by_id[key] for key in sorted(self._by_id)]
+
+    def delete(self, user_id: str) -> bool:
+        user = self._by_id.pop(user_id, None)
+        if user is None:
+            return False
+        email = user.email.strip().lower()
+        if self._by_email.get(email) == user_id:
+            del self._by_email[email]
+        return True
 
 
 class InMemorySessionRepository(SessionRepository):
@@ -119,6 +130,17 @@ class InMemorySessionRepository(SessionRepository):
 
     def list_for_user(self, user_id: str) -> list[UserSession]:
         return [s for s in self._by_id.values() if s.user_id == user_id]
+
+    def delete_all_for_user(self, user_id: str) -> int:
+        count = 0
+        for session in list(self._by_id.values()):
+            if session.user_id != user_id:
+                continue
+            if self._by_token.get(session.token_hash) == session.session_id:
+                del self._by_token[session.token_hash]
+            del self._by_id[session.session_id]
+            count += 1
+        return count
 
 
 class InMemoryProfileRepository(ProfileRepository):
@@ -198,6 +220,14 @@ class InMemoryProfileRepository(ProfileRepository):
         self._markets[user_id] = list(marketplaces)
         return list(marketplaces)
 
+    def delete_for_user(self, user_id: str) -> None:
+        self._profiles.pop(user_id, None)
+        self._preferences.pop(user_id, None)
+        self._settings.pop(user_id, None)
+        self._wishlists.pop(user_id, None)
+        self._brands.pop(user_id, None)
+        self._markets.pop(user_id, None)
+
 
 class InMemorySavedItemsRepository(SavedItemsRepository):
     def __init__(self) -> None:
@@ -262,6 +292,21 @@ class InMemorySavedItemsRepository(SavedItemsRepository):
         self._recent[item.user_id] = item
         return item
 
+    def delete_all_for_user(self, user_id: str) -> None:
+        for saved_id, item in list(self._products.items()):
+            if item.user_id == user_id:
+                del self._products[saved_id]
+        for item_id, item in list(self._comparisons.items()):
+            if item.user_id == user_id:
+                del self._comparisons[item_id]
+        for item_id, item in list(self._history.items()):
+            if item.user_id == user_id:
+                del self._history[item_id]
+        for item_id, item in list(self._searches.items()):
+            if item.user_id == user_id:
+                del self._searches[item_id]
+        self._recent.pop(user_id, None)
+
 
 class InMemoryPasswordResetRepository(PasswordResetRepository):
     def __init__(self) -> None:
@@ -289,6 +334,17 @@ class InMemoryPasswordResetRepository(PasswordResetRepository):
             expires_at=request.expires_at,
             consumed=True,
         )
+
+    def delete_for_user(self, user_id: str) -> int:
+        count = 0
+        for reset in list(self._by_id.values()):
+            if reset.user_id != user_id:
+                continue
+            del self._by_id[reset.reset_id]
+            if self._by_token.get(reset.token_hash) == reset.reset_id:
+                del self._by_token[reset.token_hash]
+            count += 1
+        return count
 
 
 class InMemoryEmailVerificationRepository(EmailVerificationRepository):
@@ -318,6 +374,17 @@ class InMemoryEmailVerificationRepository(EmailVerificationRepository):
             consumed=True,
         )
 
+    def delete_for_user(self, user_id: str) -> int:
+        count = 0
+        for item in list(self._by_id.values()):
+            if item.user_id != user_id:
+                continue
+            del self._by_id[item.verification_id]
+            if self._by_token.get(item.token_hash) == item.verification_id:
+                del self._by_token[item.token_hash]
+            count += 1
+        return count
+
 
 class InMemoryAuditLogRepository(AuditLogRepository):
     def __init__(self) -> None:
@@ -332,6 +399,42 @@ class InMemoryAuditLogRepository(AuditLogRepository):
         return items[-limit:]
 
 
+class InMemoryConsentRepository(ConsentRepository):
+    def __init__(self) -> None:
+        self._by_id: dict[str, PolicyAcceptanceRecord] = {}
+
+    def get(self, user_id: str, policy_type: str, version_id: str) -> PolicyAcceptanceRecord | None:
+        for record in self._by_id.values():
+            if (
+                record.user_id == user_id
+                and record.policy_type == policy_type
+                and record.version_id == version_id
+            ):
+                return record
+        return None
+
+    def save(self, record: PolicyAcceptanceRecord) -> PolicyAcceptanceRecord:
+        existing = self.get(record.user_id, record.policy_type, record.version_id)
+        if existing is not None:
+            return existing
+        self._by_id[record.record_id] = record
+        return record
+
+    def list_for_user(self, user_id: str) -> list[PolicyAcceptanceRecord]:
+        return sorted(
+            [item for item in self._by_id.values() if item.user_id == user_id],
+            key=lambda item: item.accepted_at.isoformat(),
+        )
+
+    def delete_for_user(self, user_id: str) -> int:
+        count = 0
+        for record_id, record in list(self._by_id.items()):
+            if record.user_id == user_id:
+                del self._by_id[record_id]
+                count += 1
+        return count
+
+
 class InMemoryUserPlatformStore:
     """Composite in-memory unit of work for wiring services and demo seeding."""
 
@@ -343,3 +446,4 @@ class InMemoryUserPlatformStore:
         self.password_resets = InMemoryPasswordResetRepository()
         self.email_verifications = InMemoryEmailVerificationRepository()
         self.audit = InMemoryAuditLogRepository()
+        self.consents = InMemoryConsentRepository()

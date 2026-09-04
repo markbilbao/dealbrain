@@ -32,6 +32,7 @@ from app.domain.entities.user_platform import (
     EmailVerificationRequest,
     NotificationPreference,
     PasswordResetRequest,
+    PolicyAcceptanceRecord,
     ProfileVersion,
     User,
     UserPreference,
@@ -48,11 +49,19 @@ from app.domain.exceptions import (
     UserPlatformValidationError,
 )
 from app.domain.interfaces.user_platform_repository import (
+    ConsentRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
     SessionRepository,
     UserRepository,
+)
+from app.legal.publication import (
+    POLICY_PRIVACY,
+    POLICY_TERMS,
+    LegalPublicationCatalog,
+    PolicyType,
+    unpublished_catalog,
 )
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -80,6 +89,8 @@ class AuthService:
         profiles: ProfileRepository,
         password_resets: PasswordResetRepository | None = None,
         email_verifications: EmailVerificationRepository | None = None,
+        consents: ConsentRepository | None = None,
+        legal_catalog: LegalPublicationCatalog | None = None,
         password_hasher: PasswordHasher | None = None,
         email_sender: EmailSender | None = None,
         rate_limiter: RateLimiterHook | None = None,
@@ -98,6 +109,8 @@ class AuthService:
         self._profiles = profiles
         self._password_resets = password_resets
         self._email_verifications = email_verifications
+        self._consents = consents
+        self._legal_catalog = legal_catalog or unpublished_catalog()
         self._hasher = password_hasher or PasswordHasher()
         self._email = email_sender or NullEmailSender()
         self._rate_limiter = rate_limiter or RateLimiterHook(max_attempts=20, window_seconds=60)
@@ -115,6 +128,83 @@ class AuthService:
         if not self._enabled:
             raise UserPlatformValidationError("User platform authentication is disabled.")
 
+    def verify_password(self, user: User, password: str) -> bool:
+        return self._hasher.verify(password, user.password_hash)
+
+    def has_accepted(self, user_id: str, policy_type: PolicyType, version_id: str) -> bool:
+        if self._consents is None:
+            return False
+        return self._consents.get(user_id, policy_type, version_id) is not None
+
+    def accept_published_policy(
+        self,
+        user_id: str,
+        policy_type: PolicyType,
+        *,
+        source: str = "account",
+        actor: str | None = None,
+    ) -> PolicyAcceptanceRecord:
+        """Record acceptance of the current published version only.
+
+        Unpublished or draft/approved-only versions cannot be accepted.
+        Duplicate (user, type, version) writes return the original record.
+        """
+        version = self._legal_catalog.published(policy_type)
+        if version is None:
+            raise UserPlatformValidationError("No published policy version can be accepted.")
+        if self._consents is None:
+            raise UserPlatformValidationError("Consent persistence is not configured.")
+        existing = self._consents.get(user_id, policy_type, version.version_id)
+        if existing is not None:
+            return existing
+        now = self._clock()
+        record = PolicyAcceptanceRecord(
+            record_id=self._id_factory(),
+            user_id=user_id,
+            policy_type=policy_type,  # type: ignore[arg-type]
+            version_id=version.version_id,
+            accepted_at=now,
+            source=source,  # type: ignore[arg-type]
+            actor=actor or user_id,
+        )
+        saved = self._consents.save(record)
+        if saved.record_id == record.record_id:
+            self._audit.record(
+                "policy_accepted",
+                user_id=user_id,
+                detail=policy_type,
+                metadata={"version_id": version.version_id, "source": source},
+            )
+        return saved
+
+    def _require_registration_consents(
+        self,
+        *,
+        terms_accepted: bool,
+        privacy_acknowledged: bool,
+    ) -> None:
+        """Enforce acceptance only when a published version requires it.
+
+        Unpublished production catalogs record nothing and do not invent a
+        checkbox contract.
+        """
+        if self._legal_catalog.requires_acceptance(POLICY_TERMS) and not terms_accepted:
+            raise UserPlatformValidationError("Terms of Service must be accepted.")
+        if self._legal_catalog.requires_acceptance(POLICY_PRIVACY) and not privacy_acknowledged:
+            raise UserPlatformValidationError("Privacy Policy must be acknowledged.")
+
+    def _persist_registration_consents(
+        self,
+        user_id: str,
+        *,
+        terms_accepted: bool,
+        privacy_acknowledged: bool,
+    ) -> None:
+        if terms_accepted and self._legal_catalog.published(POLICY_TERMS) is not None:
+            self.accept_published_policy(user_id, POLICY_TERMS, source="registration")
+        if privacy_acknowledged and self._legal_catalog.published(POLICY_PRIVACY) is not None:
+            self.accept_published_policy(user_id, POLICY_PRIVACY, source="registration")
+
     def register(
         self,
         *,
@@ -122,6 +212,8 @@ class AuthService:
         password: str,
         display_name: str,
         remember_me: bool = False,
+        terms_accepted: bool = False,
+        privacy_acknowledged: bool = False,
     ) -> AuthResult:
         self._require_enabled()
         cleaned_email = self._normalize_email(email)
@@ -129,6 +221,10 @@ class AuthService:
         self._validate_password(password)
         if not cleaned_name:
             raise UserPlatformValidationError("display_name must not be blank.")
+        self._require_registration_consents(
+            terms_accepted=terms_accepted,
+            privacy_acknowledged=privacy_acknowledged,
+        )
         if not self._rate_limiter.check(f"register:{cleaned_email}"):
             self._audit.record("rate_limited", detail="register", metadata={"email": cleaned_email})
             raise UserPlatformRateLimitError("Too many registration attempts. Try again later.")
@@ -148,6 +244,11 @@ class AuthService:
         )
         self._users.save(user)
         self._bootstrap_profile(user)
+        self._persist_registration_consents(
+            user.user_id,
+            terms_accepted=terms_accepted,
+            privacy_acknowledged=privacy_acknowledged,
+        )
         self._audit.record("register", user_id=user.user_id, detail="user_registered")
         self._issue_email_verification(user)
         return self._issue_session(user, remember_me=remember_me)

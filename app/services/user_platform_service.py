@@ -30,7 +30,8 @@ from app.domain.exceptions import (
     UserPlatformNotFoundError,
     UserPlatformValidationError,
 )
-from app.domain.interfaces.user_platform_repository import SavedItemsRepository
+from app.domain.interfaces.user_platform_repository import ConsentRepository, SavedItemsRepository
+from app.privacy.lifecycle import AccountLifecycleService, DeletionResult
 from app.profile.service import ProfileService
 from app.session.service import SessionService
 from app.user.fixtures import DEMO_PASSWORD, LIMITATIONS, list_demo_users
@@ -46,6 +47,8 @@ class UserPlatformService:
         profiles: ProfileService,
         sessions: SessionService,
         saved: SavedItemsRepository,
+        lifecycle: AccountLifecycleService | None = None,
+        consents: ConsentRepository | None = None,
         audit: AuditLogger | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
@@ -55,6 +58,8 @@ class UserPlatformService:
         self._profiles = profiles
         self._sessions = sessions
         self._saved = saved
+        self._lifecycle = lifecycle
+        self._consents = consents
         self._audit = audit or AuditLogger()
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
@@ -100,6 +105,36 @@ class UserPlatformService:
 
     def require_user(self, access_token: str | None) -> User:
         return self.me(access_token)
+
+    def delete_account(
+        self,
+        access_token: str | None,
+        *,
+        confirmation: str,
+        password: str,
+    ) -> DeletionResult:
+        self._require_enabled()
+        if self._lifecycle is None:
+            raise UserPlatformValidationError("Account deletion is not configured.")
+        user = self.require_user(access_token)
+        if not self._auth.verify_password(user, password):
+            raise UserPlatformAuthError("Invalid credentials.")
+        self._audit.record(
+            "account_deletion_requested",
+            user_id=user.user_id,
+            detail="confirmed",
+        )
+        return self._lifecycle.delete_account(user, confirmation=confirmation)
+
+    def export_personal_data(self, access_token: str | None) -> dict[str, Any]:
+        self._require_enabled()
+        if self._lifecycle is None:
+            raise UserPlatformValidationError("Personal data export is not configured.")
+        user = self.require_user(access_token)
+        self._audit.record("data_export_requested", user_id=user.user_id, detail="requested")
+        payload = self._lifecycle.export_personal_data(user)
+        self._audit.record("data_export_completed", user_id=user.user_id, detail="completed")
+        return payload
 
     def resolve_user_id(self, access_token: str | None) -> str | None:
         """Return user_id when authenticated, else None (anonymous fallback)."""
@@ -336,6 +371,8 @@ class UserPlatformService:
                 "POST /api/v1/auth/password-reset/confirm",
                 "POST /api/v1/auth/verify-email",
                 "POST /api/v1/auth/verify-email/confirm",
+                "POST /api/v1/auth/account/delete",
+                "GET /api/v1/auth/account/export",
                 "GET /api/v1/profile",
                 "PUT /api/v1/profile",
                 "GET /api/v1/profile/preferences",

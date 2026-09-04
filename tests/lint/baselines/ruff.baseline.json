@@ -1,10 +1,7 @@
 {
   "check": {
-    "app/api/v1/mappers/community_intelligence.py:I001": 1,
     "app/api/v1/mappers/intelligence.py:E501": 1,
-    "app/api/v1/mappers/personal_agent.py:I001": 1,
     "app/core/dependencies.py:E501": 1,
-    "app/core/dependencies.py:I001": 1,
     "app/domain/entities/__init__.py:I001": 1,
     "app/domain/entities/product_relation.py:UP035": 1,
     "app/domain/entities/registered_product.py:UP035": 1,
@@ -25,7 +22,6 @@
     "app/infrastructure/database/repositories/merchant_repository.py:SIM103": 7,
     "app/infrastructure/database/repositories/notification_repository.py:SIM103": 1,
     "app/infrastructure/persistence/__init__.py:I001": 1,
-    "app/infrastructure/persistence/operational_store.py:E501": 1,
     "app/intelligence/canonical_registry/registry.py:E501": 1,
     "app/intelligence/canonical_registry/registry.py:I001": 1,
     "app/intelligence/community/duplicates.py:I001": 1,
@@ -69,11 +65,9 @@
   "format_unformatted": [
     "app/api/v1/endpoints/notifications.py",
     "app/api/v1/endpoints/watchlists.py",
-    "app/api/v1/mappers/alerts_v2.py",
     "app/api/v1/mappers/collection_operations.py",
     "app/api/v1/mappers/intelligence.py",
     "app/api/v1/mappers/price_history.py",
-    "app/api/v1/mappers/shopping_assistant.py",
     "app/core/dependencies.py",
     "app/core/validation.py",
     "app/domain/entities/collection.py",
@@ -92,7 +86,6 @@
     "app/infrastructure/database/repositories/price_history_repository.py",
     "app/infrastructure/database/repositories/user_platform_repository.py",
     "app/infrastructure/persistence/codec.py",
-    "app/infrastructure/persistence/operational_store.py",
     "app/infrastructure/persistence/readiness.py",
     "app/infrastructure/persistence/session.py",
     "app/intelligence/canonical_registry/registry.py",
@@ -127,7 +120,6 @@
     "app/services/marketplace_collection_service.py",
     "app/services/personal_agent_service.py",
     "app/services/review_summary_service.py",
-    "app/services/shopping_assistant_service.py",
     "app/services/watchlist_service.py",
     "tests/integration/test_collection_flow.py",
     "tests/integration/test_dealscore_flow.py",
@@ -163,8 +155,8 @@
     "tests"
   ],
   "totals": {
-    "check": 95,
-    "format_unformatted": 90
+    "check": 91,
+    "format_unformatted": 86
   },
   "version": 1
 }

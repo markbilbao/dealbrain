@@ -270,6 +270,26 @@ class Settings(BaseSettings):
     # User Platform — demo/in-memory accounts, no OAuth / MFA / email delivery
     user_platform_enabled: bool = Field(default=True, alias="USER_PLATFORM_ENABLED")
 
+    # Legal publication gate (Sprint 28.1). Empty = unpublished. Do not set in
+    # production until EXT-20 / EXT-21 written approval exists. Counsel drafts
+    # under docs/legal/ are never public HTML.
+    legal_terms_published_version_id: str = Field(
+        default="",
+        alias="LEGAL_TERMS_PUBLISHED_VERSION_ID",
+    )
+    legal_privacy_published_version_id: str = Field(
+        default="",
+        alias="LEGAL_PRIVACY_PUBLISHED_VERSION_ID",
+    )
+    legal_terms_public_html_path: str = Field(
+        default="",
+        alias="LEGAL_TERMS_PUBLIC_HTML_PATH",
+    )
+    legal_privacy_public_html_path: str = Field(
+        default="",
+        alias="LEGAL_PRIVACY_PUBLIC_HTML_PATH",
+    )
+
     # Marketplace Data Synchronization — connectors/imports/sync (no real marketplace HTTP)
     marketplace_data_enabled: bool = Field(default=True, alias="MARKETPLACE_DATA_ENABLED")
     marketplace_data_require_auth: bool = Field(

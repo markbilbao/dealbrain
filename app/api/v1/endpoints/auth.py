@@ -24,6 +24,8 @@ from app.domain.exceptions import (
     UserPlatformValidationError,
 )
 from app.schemas.user_platform import (
+    AccountDeleteRequest,
+    AccountDeleteResponse,
     AuthResponse,
     EmailVerificationConfirmRequest,
     EmailVerificationConfirmResponse,
@@ -33,6 +35,7 @@ from app.schemas.user_platform import (
     PasswordResetConfirmRequest,
     PasswordResetConfirmResponse,
     PasswordResetRequestBody,
+    PersonalDataExportResponse,
     RegisterRequest,
     UserPayload,
     UserPlatformDemoResponse,
@@ -91,6 +94,8 @@ async def register(
             password=body.password,
             display_name=body.display_name,
             remember_me=body.remember_me,
+            terms_accepted=body.terms_accepted,
+            privacy_acknowledged=body.privacy_acknowledged,
         )
     except (
         UserPlatformValidationError,
@@ -239,6 +244,45 @@ async def me(
     except (UserPlatformAuthError, UserPlatformValidationError) as exc:
         raise map_user_platform_error(exc) from exc
     return to_user_payload(user)
+
+
+@router.post(
+    "/account/delete",
+    response_model=AccountDeleteResponse,
+    summary="Delete the authenticated consumer account",
+)
+async def delete_account(
+    body: AccountDeleteRequest,
+    authorization: str | None = Header(default=None),
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> AccountDeleteResponse:
+    token = extract_bearer_token(authorization)
+    try:
+        result = service.delete_account(
+            token,
+            confirmation=body.confirmation,
+            password=body.password,
+        )
+    except (UserPlatformAuthError, UserPlatformValidationError) as exc:
+        raise map_user_platform_error(exc) from exc
+    return AccountDeleteResponse.model_validate(result.to_dict())
+
+
+@router.get(
+    "/account/export",
+    response_model=PersonalDataExportResponse,
+    summary="Export personal data for the authenticated consumer account",
+)
+async def export_account(
+    authorization: str | None = Header(default=None),
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> PersonalDataExportResponse:
+    token = extract_bearer_token(authorization)
+    try:
+        payload = service.export_personal_data(token)
+    except (UserPlatformAuthError, UserPlatformValidationError) as exc:
+        raise map_user_platform_error(exc) from exc
+    return PersonalDataExportResponse.model_validate(payload)
 
 
 @router.get(

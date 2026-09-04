@@ -9,6 +9,7 @@ from app.domain.entities.user_platform import (
     FavoriteBrand,
     FavoriteMarketplace,
     PasswordResetRequest,
+    PolicyAcceptanceRecord,
     RecentlyViewed,
     RecommendationHistory,
     SavedComparison,
@@ -25,6 +26,7 @@ from app.domain.entities.user_platform import (
 from app.domain.exceptions import UserPlatformNotFoundError, UserPlatformValidationError
 from app.domain.interfaces.user_platform_repository import (
     AuditLogRepository,
+    ConsentRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
@@ -36,6 +38,7 @@ from app.infrastructure.persistence.errors import PersistenceConflictError
 from app.infrastructure.persistence.session_bound import SessionBound
 from app.infrastructure.persistence.stores import (
     AUDIT_EVENTS,
+    CONSENT_RECORDS,
     EMAIL_VERIFICATIONS,
     FAVORITE_BRANDS,
     FAVORITE_MARKETPLACES,
@@ -97,6 +100,12 @@ class SqlAlchemyUserRepository(UserRepository, SessionBound):
         with self._ops() as ops:
             users = ops.list(USERS, User)
             return sorted(users, key=lambda u: u.user_id)
+
+    def delete(self, user_id: str) -> bool:
+        with self._ops() as ops:
+            if ops.get(USERS, user_id, User) is None:
+                return False
+            return ops.delete(USERS, user_id)
 
 
 class SqlAlchemySessionRepository(SessionRepository, SessionBound):
@@ -176,6 +185,13 @@ class SqlAlchemySessionRepository(SessionRepository, SessionBound):
     def list_for_user(self, user_id: str) -> list[UserSession]:
         with self._ops() as ops:
             return ops.list(SESSIONS, UserSession, owner_id=user_id)
+
+    def delete_all_for_user(self, user_id: str) -> int:
+        with self._ops() as ops:
+            sessions = ops.list(SESSIONS, UserSession, owner_id=user_id)
+            for session in sessions:
+                ops.delete(SESSIONS, session.session_id)
+            return len(sessions)
 
 
 class SqlAlchemyProfileRepository(ProfileRepository, SessionBound):
@@ -305,6 +321,15 @@ class SqlAlchemyProfileRepository(ProfileRepository, SessionBound):
             )
             return list(marketplaces)
 
+    def delete_for_user(self, user_id: str) -> None:
+        with self._ops() as ops:
+            ops.delete(PROFILES, user_id)
+            ops.delete(PREFERENCES, user_id)
+            ops.delete(SETTINGS, user_id)
+            ops.delete(WISHLISTS, user_id)
+            ops.delete(FAVORITE_BRANDS, user_id)
+            ops.delete(FAVORITE_MARKETPLACES, user_id)
+
 
 class SqlAlchemySavedItemsRepository(SavedItemsRepository, SessionBound):
     def list_saved_products(self, user_id: str) -> list[SavedProduct]:
@@ -381,6 +406,18 @@ class SqlAlchemySavedItemsRepository(SavedItemsRepository, SessionBound):
                 owner_id=item.user_id,
             )
 
+    def delete_all_for_user(self, user_id: str) -> None:
+        with self._ops() as ops:
+            for item in ops.list(SAVED_PRODUCTS, SavedProduct, owner_id=user_id):
+                ops.delete(SAVED_PRODUCTS, item.id)
+            for item in ops.list(SAVED_COMPARISONS, SavedComparison, owner_id=user_id):
+                ops.delete(SAVED_COMPARISONS, item.id)
+            for item in ops.list(RECOMMENDATION_HISTORY, RecommendationHistory, owner_id=user_id):
+                ops.delete(RECOMMENDATION_HISTORY, item.id)
+            for item in ops.list(SAVED_SEARCHES, SavedSearch, owner_id=user_id):
+                ops.delete(SAVED_SEARCHES, item.id)
+            ops.delete(RECENTLY_VIEWED, user_id)
+
 
 class SqlAlchemyPasswordResetRepository(PasswordResetRepository, SessionBound):
     def save(self, request: PasswordResetRequest) -> PasswordResetRequest:
@@ -417,6 +454,13 @@ class SqlAlchemyPasswordResetRepository(PasswordResetRepository, SessionBound):
                 secondary_key=consumed.token_hash,
                 owner_id=consumed.user_id,
             )
+
+    def delete_for_user(self, user_id: str) -> int:
+        with self._ops() as ops:
+            items = ops.list(PASSWORD_RESETS, PasswordResetRequest, owner_id=user_id)
+            for item in items:
+                ops.delete(PASSWORD_RESETS, item.reset_id)
+            return len(items)
 
 
 class SqlAlchemyEmailVerificationRepository(EmailVerificationRepository, SessionBound):
@@ -457,6 +501,13 @@ class SqlAlchemyEmailVerificationRepository(EmailVerificationRepository, Session
                 owner_id=consumed.user_id,
             )
 
+    def delete_for_user(self, user_id: str) -> int:
+        with self._ops() as ops:
+            items = ops.list(EMAIL_VERIFICATIONS, EmailVerificationRequest, owner_id=user_id)
+            for item in items:
+                ops.delete(EMAIL_VERIFICATIONS, item.verification_id)
+            return len(items)
+
 
 class SqlAlchemyAuditLogRepository(AuditLogRepository, SessionBound):
     def append(self, event: SecurityEvent) -> SecurityEvent:
@@ -478,6 +529,41 @@ class SqlAlchemyAuditLogRepository(AuditLogRepository, SessionBound):
             return items[-max(0, limit) :]
 
 
+class SqlAlchemyConsentRepository(ConsentRepository, SessionBound):
+    def get(
+        self, user_id: str, policy_type: str, version_id: str
+    ) -> PolicyAcceptanceRecord | None:
+        with self._ops() as ops:
+            for record in ops.list(CONSENT_RECORDS, PolicyAcceptanceRecord, owner_id=user_id):
+                if record.policy_type == policy_type and record.version_id == version_id:
+                    return record
+            return None
+
+    def save(self, record: PolicyAcceptanceRecord) -> PolicyAcceptanceRecord:
+        existing = self.get(record.user_id, record.policy_type, record.version_id)
+        if existing is not None:
+            return existing
+        with self._ops() as ops:
+            return ops.upsert(
+                CONSENT_RECORDS,
+                record.record_id,
+                record,
+                owner_id=record.user_id,
+            )
+
+    def list_for_user(self, user_id: str) -> list[PolicyAcceptanceRecord]:
+        with self._ops() as ops:
+            items = ops.list(CONSENT_RECORDS, PolicyAcceptanceRecord, owner_id=user_id)
+            return sorted(items, key=lambda item: item.accepted_at.isoformat())
+
+    def delete_for_user(self, user_id: str) -> int:
+        with self._ops() as ops:
+            items = ops.list(CONSENT_RECORDS, PolicyAcceptanceRecord, owner_id=user_id)
+            for item in items:
+                ops.delete(CONSENT_RECORDS, item.record_id)
+            return len(items)
+
+
 class SqlAlchemyUserPlatformStore:
     """Composite SQLAlchemy unit of work mirroring InMemoryUserPlatformStore."""
 
@@ -494,3 +580,4 @@ class SqlAlchemyUserPlatformStore:
         self.password_resets = SqlAlchemyPasswordResetRepository(**kwargs)
         self.email_verifications = SqlAlchemyEmailVerificationRepository(**kwargs)
         self.audit = SqlAlchemyAuditLogRepository(**kwargs)
+        self.consents = SqlAlchemyConsentRepository(**kwargs)

@@ -194,6 +194,12 @@ class SqlAlchemyNotificationCenterRepository(NotificationCenterRepository, Sessi
         with self._ops() as ops:
             return ops.get(NC_PREFERENCES, user_id, UserNotificationPreferences)
 
+    def delete_preferences(self, user_id: str) -> bool:
+        with self._ops() as ops:
+            if ops.get(NC_PREFERENCES, user_id, UserNotificationPreferences) is None:
+                return False
+            return ops.delete(NC_PREFERENCES, user_id)
+
     # --------------------------------------------------------------- unsubscribe
     def save_unsubscribe_token(self, token: UnsubscribeToken) -> UnsubscribeToken:
         with self._ops() as ops:
