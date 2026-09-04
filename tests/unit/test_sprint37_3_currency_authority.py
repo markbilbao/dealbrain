@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import replace
 from datetime import UTC, datetime
 
@@ -399,3 +400,56 @@ def test_canonical_uuid_presentation_stays_php_same_currency() -> None:
     html = render_page(view)
     assert "conversion is not currently available" not in html
     assert view.destination_reevaluation_required is True
+
+
+def test_production_request_paths_cannot_obtain_test_quote() -> None:
+    """A test-only quote in-process must not become production presentation authority."""
+
+    from app.api import consumer as consumer_api
+    from app.consumer import canonical_presentation, presentation
+    from app.intelligence.dealscore import engine as dealscore_engine
+    from app.intelligence.recommendation import engine as reco_engine
+
+    production_modules = (
+        consumer_api,
+        presentation,
+        canonical_presentation,
+        dealscore_engine,
+        reco_engine,
+    )
+    for module in production_modules:
+        source = inspect.getsource(module)
+        assert "fx_quote_for_tests" not in source
+        assert "TEST_FX_PROVIDER" not in source
+
+    quote = fx_quote_for_tests(base_currency="USD", quote_currency="PHP", rate=56.0)
+    assert quote not in production_fx_quotes()
+    assert resolve_production_fx_quote("USD", "PHP") is None
+
+    php_view = build_page_view(
+        decision_id="headphones-standard",
+        page="results",
+        location=DeliveryContext(),
+        selected_market=intended_default_shopping_market(),
+    )
+    usd_card = _usd_card(php_view)
+    for page in ("results", "compare", "why"):
+        attached = attach_currency_presentation(
+            replace(php_view, page=page, best_piq=usd_card, alternatives=(), compared=(usd_card,))
+        )
+        assert attached.currency_conversion_state == "conversion_unavailable"
+        assert attached.currency_conversion_disclosure == CONVERSION_UNAVAILABLE_DISCLOSURE
+        assert attached.best_piq.economics.listing.currency == "USD"
+
+    canonical = page_view_from_snapshot(
+        _economics_snapshot(),
+        page="results",
+        session_location=DeliveryContext(),
+    )
+    assert canonical.currency_conversion_state != "conversion_available"
+    injected = attach_currency_presentation(
+        replace(php_view, best_piq=usd_card, alternatives=(), compared=(usd_card,)),
+        quote=quote,
+    )
+    assert injected.currency_conversion_state == "conversion_available"
+    assert injected.best_piq.economics.listing.currency == "USD"
