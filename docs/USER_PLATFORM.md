@@ -33,7 +33,7 @@ API (/api/v1/auth, /api/v1/profile, /api/v1/user)
       → SavedItemsRepository (app/user/memory.py)     — saved products, comparisons, history, searches
   → AuditLogger / RateLimiterHook / CsrfTokenService   (app/auth/security.py)
   → PasswordHasher                                     (app/auth/password.py)
-  → EmailSender (NullEmailSender)                       (app/auth/email.py)
+  → EmailSender (NullEmailSender / ResendEmailSender)   (app/auth/email.py)
 ```
 
 All persistence in Sprint 17 is process-scoped and in-memory

@@ -5,11 +5,19 @@ from __future__ import annotations
 import hashlib
 import re
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from app.auth.email import EmailMessage, EmailSender, NullEmailSender
+from app.auth.email import EmailDeliveryError, EmailSender, NullEmailSender
+from app.auth.email_factory import allows_inline_identity_tokens, build_trusted_action_url
+from app.auth.email_templates import (
+    RESET_PATH,
+    VERIFY_PATH,
+    build_email_verification_message,
+    build_password_reset_message,
+)
 from app.auth.password import PasswordHasher, hash_password, verify_password
 from app.auth.security import (
     AuditLogger,
@@ -49,6 +57,16 @@ from app.domain.interfaces.user_platform_repository import (
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MIN_PASSWORD_LENGTH = 8
+PASSWORD_RESET_TTL = timedelta(hours=1)
+EMAIL_VERIFICATION_TTL = timedelta(days=1)
+GENERIC_RESET_DETAIL = (
+    "If an account exists for this email, password reset instructions will be sent."
+)
+GENERIC_VERIFY_DETAIL = (
+    "If an account exists for this email, verification instructions will be sent."
+)
+INVALID_RESET_TOKEN = "Invalid or expired reset token."
+INVALID_VERIFY_TOKEN = "Invalid or expired verification token."
 
 
 class AuthService:
@@ -131,6 +149,7 @@ class AuthService:
         self._users.save(user)
         self._bootstrap_profile(user)
         self._audit.record("register", user_id=user.user_id, detail="user_registered")
+        self._issue_email_verification(user)
         return self._issue_session(user, remember_me=remember_me)
 
     def login(
@@ -232,42 +251,53 @@ class AuthService:
         return user
 
     def request_password_reset(self, email: str) -> dict[str, Any]:
-        """Architecture-only: creates a reset token record and queues a null email."""
+        """Enumeration-safe password-reset request. Never discloses membership."""
         self._require_enabled()
         cleaned = self._normalize_email(email)
-        user = self._users.get_by_email(cleaned)
-        # Always return generic response to avoid account enumeration.
+        if not self._rate_limiter.check(f"password_reset:{cleaned}"):
+            self._audit.record("rate_limited", detail="password_reset", metadata={"email": cleaned})
+            raise UserPlatformRateLimitError("Too many password reset attempts. Try again later.")
         response = {
             "status": "accepted",
             "email_delivery": False,
-            "detail": "If the account exists, a reset token was prepared (email not sent).",
+            "detail": GENERIC_RESET_DETAIL,
         }
+        user = self._users.get_by_email(cleaned)
         if user is None or self._password_resets is None:
             return response
-        raw = secrets_token()
-        now = self._clock()
-        record = PasswordResetRequest(
-            reset_id=self._id_factory(),
-            user_id=user.user_id,
-            token_hash=self.hash_token(raw),
-            created_at=now,
-            expires_at=now + timedelta(hours=1),
-        )
-        self._password_resets.save(record)
-        self._email.send(
-            EmailMessage(
-                to_address=user.email,
-                subject="PiqSavi password reset",
-                body_text=f"Reset token (demo only, not emailed): {raw}",
-                template_id="password_reset",
-            )
-        )
-        self._audit.record("password_reset_requested", user_id=user.user_id)
-        from app.core.config import settings as app_settings
-
-        if app_settings.allow_demo_reset_tokens and not app_settings.is_production:
+        raw = self._create_password_reset(user)
+        if allows_inline_identity_tokens():
             response["reset_token_demo_only"] = raw
         return response
+
+    def confirm_password_reset(self, token: str, new_password: str) -> dict[str, Any]:
+        """Validate a reset token, change the password, and revoke all sessions."""
+        self._require_enabled()
+        self._validate_password(new_password)
+        raw = (token or "").strip()
+        if not raw or self._password_resets is None:
+            raise UserPlatformAuthError(INVALID_RESET_TOKEN)
+        record = self._password_resets.get_by_token_hash(self.hash_token(raw))
+        now = self._clock()
+        if record is None or record.consumed or record.expires_at <= now:
+            raise UserPlatformAuthError(INVALID_RESET_TOKEN)
+        user = self._users.get_by_id(record.user_id)
+        if user is None or not user.is_active:
+            raise UserPlatformAuthError(INVALID_RESET_TOKEN)
+        updated = replace(
+            user,
+            password_hash=self._hasher.hash(new_password),
+            updated_at=now,
+        )
+        self._users.save(updated)
+        self._password_resets.mark_consumed(record.reset_id)
+        self._sessions.revoke_all_for_user(user.user_id)
+        self._audit.record(
+            "password_changed",
+            user_id=user.user_id,
+            detail="password_reset_confirmed",
+        )
+        return {"status": "password_changed"}
 
     def request_email_verification(self, user_id: str) -> dict[str, Any]:
         self._require_enabled()
@@ -276,34 +306,57 @@ class AuthService:
             raise UserPlatformNotFoundError(user_id)
         if self._email_verifications is None:
             return {"status": "accepted", "email_delivery": False}
-        raw = secrets_token()
-        now = self._clock()
-        record = EmailVerificationRequest(
-            verification_id=self._id_factory(),
-            user_id=user.user_id,
-            token_hash=self.hash_token(raw),
-            created_at=now,
-            expires_at=now + timedelta(days=1),
-        )
-        self._email_verifications.save(record)
-        self._email.send(
-            EmailMessage(
-                to_address=user.email,
-                subject="Verify your PiqSavi email",
-                body_text=f"Verification token (demo only, not emailed): {raw}",
-                template_id="email_verification",
-            )
-        )
-        self._audit.record("email_verification_requested", user_id=user.user_id)
+        raw = self._issue_email_verification(user)
         payload: dict[str, Any] = {
             "status": "accepted",
             "email_delivery": False,
         }
-        from app.core.config import settings as app_settings
-
-        if app_settings.allow_demo_reset_tokens and not app_settings.is_production:
+        if allows_inline_identity_tokens():
             payload["verification_token_demo_only"] = raw
         return payload
+
+    def request_email_verification_by_email(self, email: str) -> dict[str, Any]:
+        """Enumeration-safe public verification request."""
+        self._require_enabled()
+        cleaned = self._normalize_email(email)
+        if not self._rate_limiter.check(f"email_verification:{cleaned}"):
+            self._audit.record(
+                "rate_limited",
+                detail="email_verification",
+                metadata={"email": cleaned},
+            )
+            raise UserPlatformRateLimitError("Too many verification attempts. Try again later.")
+        response = {
+            "status": "accepted",
+            "email_delivery": False,
+            "detail": GENERIC_VERIFY_DETAIL,
+        }
+        user = self._users.get_by_email(cleaned)
+        if user is None or self._email_verifications is None:
+            return response
+        raw = self._issue_email_verification(user)
+        if allows_inline_identity_tokens():
+            response["verification_token_demo_only"] = raw
+        return response
+
+    def confirm_email_verification(self, token: str) -> dict[str, Any]:
+        """Validate a verification token and mark the bound account verified."""
+        self._require_enabled()
+        raw = (token or "").strip()
+        if not raw or self._email_verifications is None:
+            raise UserPlatformAuthError(INVALID_VERIFY_TOKEN)
+        record = self._email_verifications.get_by_token_hash(self.hash_token(raw))
+        now = self._clock()
+        if record is None or record.consumed or record.expires_at <= now:
+            raise UserPlatformAuthError(INVALID_VERIFY_TOKEN)
+        user = self._users.get_by_id(record.user_id)
+        if user is None or not user.is_active:
+            raise UserPlatformAuthError(INVALID_VERIFY_TOKEN)
+        updated = replace(user, email_verified=True, updated_at=now)
+        self._users.save(updated)
+        self._email_verifications.mark_consumed(record.verification_id)
+        self._audit.record("email_verified", user_id=user.user_id)
+        return {"status": "email_verified", "email_verified": True}
 
     def begin_oauth_link(self, provider: str, user_id: str) -> dict[str, Any]:
         self._audit.record("oauth_link_attempt", user_id=user_id, metadata={"provider": provider})
@@ -312,6 +365,76 @@ class AuthService:
     @staticmethod
     def hash_token(token: str) -> str:
         return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    def _create_password_reset(self, user: User) -> str:
+        assert self._password_resets is not None
+        raw = secrets_token()
+        now = self._clock()
+        record = PasswordResetRequest(
+            reset_id=self._id_factory(),
+            user_id=user.user_id,
+            token_hash=self.hash_token(raw),
+            created_at=now,
+            expires_at=now + PASSWORD_RESET_TTL,
+        )
+        self._password_resets.save(record)
+        try:
+            self._email.send(
+                build_password_reset_message(
+                    to_address=user.email,
+                    action_url=self._action_url(RESET_PATH, raw),
+                    expires_hours=1,
+                )
+            )
+            self._audit.record("password_reset_requested", user_id=user.user_id)
+        except EmailDeliveryError:
+            self._audit.record(
+                "password_reset_requested",
+                user_id=user.user_id,
+                detail="email_delivery_failed",
+            )
+        return raw
+
+    def _issue_email_verification(self, user: User) -> str:
+        if self._email_verifications is None:
+            return ""
+        raw = secrets_token()
+        now = self._clock()
+        record = EmailVerificationRequest(
+            verification_id=self._id_factory(),
+            user_id=user.user_id,
+            token_hash=self.hash_token(raw),
+            created_at=now,
+            expires_at=now + EMAIL_VERIFICATION_TTL,
+        )
+        self._email_verifications.save(record)
+        try:
+            self._email.send(
+                build_email_verification_message(
+                    to_address=user.email,
+                    action_url=self._action_url(VERIFY_PATH, raw),
+                    expires_hours=24,
+                )
+            )
+            self._audit.record("email_verification_requested", user_id=user.user_id)
+        except EmailDeliveryError:
+            self._audit.record(
+                "email_verification_requested",
+                user_id=user.user_id,
+                detail="email_delivery_failed",
+            )
+        return raw
+
+    def _action_url(self, path: str, token: str) -> str | None:
+        from app.core.config import settings as app_settings
+
+        base = (app_settings.public_app_base_url or "").strip()
+        if not base:
+            return None
+        try:
+            return build_trusted_action_url(base, path, token)
+        except UserPlatformValidationError:
+            return None
 
     def _issue_session(
         self,

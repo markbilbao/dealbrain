@@ -67,12 +67,27 @@ class Settings(BaseSettings):
         default=None,
         alias="MERCHANT_BACKEND",
     )
-    # When true (non-production only), password-reset responses may include
-    # reset_token_demo_only. Production validation forces this false.
+    # When true (development only), password-reset / verification responses
+    # may include *_token_demo_only. Staging and production must be false.
     allow_demo_reset_tokens: bool = Field(
         default=True,
         alias="ALLOW_DEMO_RESET_TOKENS",
     )
+    # Identity transactional email (Sprint 27). Staging/production must use resend.
+    transactional_email_provider: Literal["null", "resend"] = Field(
+        default="null",
+        alias="TRANSACTIONAL_EMAIL_PROVIDER",
+    )
+    resend_api_key: str = Field(default="", alias="RESEND_API_KEY")
+    transactional_email_from: str = Field(
+        default="",
+        alias="TRANSACTIONAL_EMAIL_FROM",
+    )
+    transactional_email_from_name: str = Field(
+        default="PiqSavi",
+        alias="TRANSACTIONAL_EMAIL_FROM_NAME",
+    )
+    public_app_base_url: str = Field(default="", alias="PUBLIC_APP_BASE_URL")
     # Seed demo users/merchants/affiliates when constructing stores.
     # Opt-in: development sets SEED_DEMO_DATA=true explicitly in .env.example.
     # Production validation rejects true.
@@ -349,6 +364,11 @@ class Settings(BaseSettings):
     rate_limit_registration_per_minute: int = Field(
         default=5,
         alias="RATE_LIMIT_REGISTRATION_PER_MINUTE",
+        ge=1,
+    )
+    rate_limit_auth_email_per_minute: int = Field(
+        default=5,
+        alias="RATE_LIMIT_AUTH_EMAIL_PER_MINUTE",
         ge=1,
     )
     # Unauthenticated Early Access UI events (CTA/form/section). Keep well below

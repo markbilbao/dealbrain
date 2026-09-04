@@ -261,6 +261,9 @@ _RATE_LIMITER = ConfigurableRateLimiter(
         "registration": RateLimitRule(
             "registration", settings.rate_limit_registration_per_minute, 60
         ),
+        "auth_email": RateLimitRule(
+            "auth_email", settings.rate_limit_auth_email_per_minute, 60
+        ),
         "early_access_events": RateLimitRule(
             "early_access_events",
             settings.rate_limit_early_access_events_per_minute,
@@ -1197,6 +1200,7 @@ def get_user_platform_service() -> UserPlatformService:
     """Provide the User Platform application facade (auth, profile, saved items)."""
     global _USER_PLATFORM_SERVICE
     if _USER_PLATFORM_SERVICE is None:
+        from app.auth.email_factory import build_identity_email_sender
         from app.auth.security import AuditLogger
         from app.auth.service import AuthService
         from app.profile.service import ProfileService
@@ -1210,6 +1214,7 @@ def get_user_platform_service() -> UserPlatformService:
             profiles=store.profiles,
             password_resets=store.password_resets,
             email_verifications=store.email_verifications,
+            email_sender=build_identity_email_sender(settings),
             audit=audit,
             enabled=settings.user_platform_enabled,
         )

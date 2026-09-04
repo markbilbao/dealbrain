@@ -18,6 +18,7 @@ services:
       APP_DEBUG: "false"
       LAUNCH_STRICT_STARTUP: "true"
       ALLOW_DEMO_RESET_TOKENS: "false"
+      TRANSACTIONAL_EMAIL_PROVIDER: "resend"
       SEED_DEMO_DATA: "false"
       DEMO_LAUNCHER_ENABLED: "false"
       PRICE_HISTORY_SEED_DEMO_MOCK: "false"

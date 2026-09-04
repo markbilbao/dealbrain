@@ -1,10 +1,10 @@
 # Authentication
 
-**Status:** Sprint 17
+**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
-**Email port:** `app/auth/email.py` (`NullEmailSender` — no delivery)
+**Email port:** `app/auth/email.py` (`EmailSender`); Resend adapter `app/auth/email_resend.py`; factory `app/auth/email_factory.py`
 
 ## Overview
 
@@ -59,16 +59,43 @@ so the algorithm can be migrated (e.g. to argon2 or bcrypt) later without
 breaking existing hashes. Verification uses `hmac.compare_digest` for
 constant-time comparison.
 
-## Password reset & email verification (architecture only)
+## Password reset & email verification (Sprint 27.1)
 
-`AuthService.request_password_reset(email)` and
-`AuthService.request_email_verification(user_id)` create hashed,
-time-bounded token records (`PasswordResetRequest`, `EmailVerificationRequest`)
-and route a message through `EmailSender`. In Sprint 17, the only
-implementation is `NullEmailSender`, which records the message in memory and
-sends nothing. Responses include the raw token under a
-`*_token_demo_only` key purely so the flow is testable without an inbox —
-**this must not ship in a real deployment**.
+HTTP:
+
+- `POST /api/v1/auth/password-reset` — enumeration-safe request
+- `POST /api/v1/auth/password-reset/confirm` — token + new password
+- `POST /api/v1/auth/verify-email` — enumeration-safe request by email
+- `POST /api/v1/auth/verify-email/confirm` — token
+
+Tokens are generated with `secrets.token_urlsafe`, stored as SHA-256 hashes
+only, bound to a user and to a purpose-specific repository, expire
+(reset: 1 hour; verification: 24 hours), and are marked consumed on first
+successful use. Expired, reused, unknown, and wrong-purpose tokens fail with
+the same generic auth error.
+
+Password-reset confirm changes the password and revokes all existing
+sessions via the existing `SessionRepository.revoke_all_for_user` path.
+Registration still issues a session and also queues a verification email
+when the verification repository is wired.
+
+Request responses never vary HTTP status or `email_delivery` by account
+membership. Provider failure on a request path is audited
+(`email_delivery_failed`) and still returns the generic accepted body.
+
+Inline `*_token_demo_only` values are allowed only in **development** when
+`ALLOW_DEMO_RESET_TOKENS=true`. Staging, production, and unknown
+environments never expose tokens in API responses.
+
+Action links are built only from `PUBLIC_APP_BASE_URL`. The request `Host`
+header is not used. Staging/production startup requires
+`TRANSACTIONAL_EMAIL_PROVIDER=resend` plus a non-placeholder
+`RESEND_API_KEY`, `TRANSACTIONAL_EMAIL_FROM`, and `https` public base URL.
+`NullEmailSender` is not permitted in those environments.
+
+EXT-09 sender-domain DNS verification is still a plan only. 27.1 does not
+claim production email readiness. Email-change confirmation is not
+implemented in 27.1.
 
 ## MFA and OAuth extension points
 
@@ -98,17 +125,16 @@ header is treated as an unauthenticated request.
 | Domain exception | HTTP status | Example |
 |--------------------|-------------|---------|
 | `UserPlatformValidationError` | 400 | Weak password, malformed email |
-| `UserPlatformAuthError` | 401 | Bad credentials, expired/revoked session |
+| `UserPlatformAuthError` | 401 | Bad credentials, expired/revoked session, invalid reset/verify token |
 | `UserPlatformConflictError` | 409 | Email already registered |
 | `UserPlatformRateLimitError` | 429 | Too many register/login attempts |
 
 ## Limitations
 
-- **Demo users only** — no production account provisioning flow.
-- **No email sending** — reset/verification tokens are returned inline for
-  demo purposes instead of being emailed.
 - **No MFA** implemented — extension point only.
 - **No OAuth / external identity providers** — extension point only.
-- **In-memory persistence only** — accounts and sessions reset on restart.
-- **No production database adapter** wired in Sprint 17.
+- **Email-change confirmation** is not implemented (remaining Sprint 27 work).
+- **EXT-09** sender-domain SPF/DKIM/DMARC is not verified. Do not claim
+  production sender authentication from 27.1 code alone.
+- **Staging inbox E2E** is still required to close Sprint 27.
 - **No payment integration.**

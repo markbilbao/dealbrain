@@ -31,7 +31,10 @@ sessions" or admin/session-hygiene tooling).
    refreshed on every use.
 3. **Revoked** — `AuthService.logout` or `SessionService.revoke` /
    `revoke_all` mark a session `revoked=True`. Revoked sessions fail
-   validation immediately regardless of `expires_at`.
+   validation immediately regardless of `expires_at`. Successful password-reset
+   confirmation calls `revoke_all_for_user` so every existing session dies
+   before the new password can be used (Sprint 27.1). This is revocation of
+   the existing session store, not a second session system.
 
 ## `SessionService` API
 

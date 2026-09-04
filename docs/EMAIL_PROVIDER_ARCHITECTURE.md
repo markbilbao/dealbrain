@@ -1,4 +1,43 @@
-# Email Provider Architecture (Sprint 19)
+# Email Provider Architecture
+
+This document covers two separate email ports. Do not merge them.
+
+## Identity transactional email (Sprint 27.1)
+
+**Port:** `EmailSender` in `app/auth/email.py`  
+**Adapters:** `NullEmailSender` (development/test) and `ResendEmailSender` (`app/auth/email_resend.py`)  
+**Factory:** `build_identity_email_sender()` in `app/auth/email_factory.py`  
+**Templates:** `app/auth/email_templates.py`  
+**Runbook:** [`runbooks/EMAIL_OUTAGE.md`](runbooks/EMAIL_OUTAGE.md)
+
+Auth/account code sends only through `EmailSender`. There are no direct Resend
+calls in `AuthService` or the auth HTTP layer.
+
+| Environment | Sender | Inline demo tokens |
+|-------------|--------|--------------------|
+| development | `NullEmailSender` unless `TRANSACTIONAL_EMAIL_PROVIDER=resend` | allowed only if `ALLOW_DEMO_RESET_TOKENS=true` |
+| staging | Resend when configured; `NullEmailSender` if provider is still `null` (validation records the gap) | never |
+| production | Resend required; factory/startup fail otherwise | never |
+| unknown | refuse sender | never |
+
+Configuration (no secrets in git):
+
+- `TRANSACTIONAL_EMAIL_PROVIDER` (`null` \| `resend`)
+- `RESEND_API_KEY` (Secrets Manager leaf `resend_api_key`)
+- `TRANSACTIONAL_EMAIL_FROM` / `TRANSACTIONAL_EMAIL_FROM_NAME`
+- `PUBLIC_APP_BASE_URL` (trusted link base; never request `Host`)
+
+EXT-08 remains `applied` (account establishment). EXT-09 remains `applied`
+(DNS plan only). 27.1 does **not** claim sender-domain verification or
+production email readiness. Health/config `identity_email_ready` stays
+`false` while that evidence is missing — including staging on
+`NullEmailSender`.
+
+Sprint 19 notification email below is unchanged and still mock-only.
+
+---
+
+# Notification email (Sprint 19)
 
 **Status:** Sprint 19
 **Interface & mock:** `app/notifications/email/provider.py`

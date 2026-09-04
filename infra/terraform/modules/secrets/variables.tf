@@ -34,6 +34,7 @@ variable "secret_names" {
     "cors_origins",
     "monitoring",
     "ghcr_pull",
+    "resend_api_key",
   ]
 }
 
