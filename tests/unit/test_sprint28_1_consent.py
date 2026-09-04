@@ -11,7 +11,7 @@ from app.auth.service import AuthService
 from app.core.dependencies import get_user_platform_service
 from app.domain.entities.user_platform import PolicyAcceptanceRecord
 from app.domain.exceptions import UserPlatformValidationError
-from app.legal.publication import LegalPublicationCatalog, published_policy
+from app.legal.publication import LegalPublicationCatalog, PolicyVersion, published_policy
 from app.main import create_app
 from app.profile.service import ProfileService
 from app.services.user_platform_service import UserPlatformService
@@ -30,19 +30,22 @@ def _approved_html(path: Path, title: str) -> Path:
 
 
 def _published_catalog(tmp_path: Path) -> LegalPublicationCatalog:
+    _approved_html(tmp_path / "terms.html", "Approved Terms")
+    _approved_html(tmp_path / "privacy.html", "Approved Privacy")
     return LegalPublicationCatalog(
         (
             published_policy(
                 policy_type="terms",
                 version_id=TEST_TERMS_VERSION,
-                html_path=str(_approved_html(tmp_path / "terms.html", "Approved Terms")),
+                html_path="terms.html",
             ),
             published_policy(
                 policy_type="privacy",
                 version_id=TEST_PRIVACY_VERSION,
-                html_path=str(_approved_html(tmp_path / "privacy.html", "Approved Privacy")),
+                html_path="privacy.html",
             ),
-        )
+        ),
+        publication_root=tmp_path,
     )
 
 
@@ -70,6 +73,42 @@ def test_unpublished_policy_cannot_be_accepted() -> None:
     with pytest.raises(UserPlatformValidationError, match="No published policy"):
         auth.accept_published_policy(result.user.user_id, "terms", source="account")
     assert store.consents.list_for_user(result.user.user_id) == []
+
+
+def test_approved_but_unpublished_cannot_satisfy_register(tmp_path: Path) -> None:
+    _approved_html(tmp_path / "terms.html", "Approved Terms")
+    _approved_html(tmp_path / "privacy.html", "Approved Privacy")
+    catalog = LegalPublicationCatalog(
+        (
+            PolicyVersion(
+                policy_type="terms",
+                version_id="terms-approved-only",
+                publication_status="approved",
+                acceptance_required=True,
+                html_path="terms.html",
+            ),
+            PolicyVersion(
+                policy_type="privacy",
+                version_id="privacy-approved-only",
+                publication_status="approved",
+                acceptance_required=True,
+                html_path="privacy.html",
+            ),
+        ),
+        publication_root=tmp_path,
+    )
+    store = InMemoryUserPlatformStore()
+    auth = _auth(store, catalog)
+    result = auth.register(
+        email="approved-only@example.com",
+        password="ValidPass123!",
+        display_name="ApprovedOnly",
+        terms_accepted=False,
+        privacy_acknowledged=False,
+    )
+    assert store.consents.list_for_user(result.user.user_id) == []
+    with pytest.raises(UserPlatformValidationError, match="No published policy"):
+        auth.accept_published_policy(result.user.user_id, "terms", source="account")
 
 
 def test_unpublished_policy_cannot_be_enforced() -> None:

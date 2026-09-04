@@ -82,6 +82,7 @@ class AccountDeleteResponse(BaseModel):
 
 class PersonalDataExportResponse(BaseModel):
     export_schema: str
+    export_kind: str
     exported_at: str
     account: dict[str, Any]
     profile: dict[str, Any] | None = None

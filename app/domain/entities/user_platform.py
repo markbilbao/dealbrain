@@ -495,6 +495,11 @@ ConsentPolicyType = Literal["terms", "privacy"]
 ConsentSource = Literal["registration", "account", "test"]
 
 
+def consent_identity_key(user_id: str, policy_type: str, version_id: str) -> str:
+    """Durable uniqueness key for user + policy type + version."""
+    return f"{user_id}:{policy_type}:{version_id}"
+
+
 @dataclass(frozen=True, slots=True)
 class PolicyAcceptanceRecord:
     """Server-owned acceptance of a *published* legal document version.
@@ -514,6 +519,10 @@ class PolicyAcceptanceRecord:
     @property
     def published_version_id(self) -> str:
         return self.version_id
+
+    @property
+    def identity_key(self) -> str:
+        return consent_identity_key(self.user_id, self.policy_type, self.version_id)
 
     def to_dict(self) -> dict[str, Any]:
         return {

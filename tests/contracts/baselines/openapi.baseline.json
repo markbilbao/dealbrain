@@ -11392,6 +11392,10 @@
             "title": "Consent Records",
             "type": "array"
           },
+          "export_kind": {
+            "title": "Export Kind",
+            "type": "string"
+          },
           "export_schema": {
             "title": "Export Schema",
             "type": "string"
@@ -11503,6 +11507,7 @@
         },
         "required": [
           "export_schema",
+          "export_kind",
           "exported_at",
           "account"
         ],
@@ -19369,7 +19374,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Delete the authenticated consumer account",
+        "summary": "Delete the authenticated consumer account and its account-owned engineering data",
         "tags": [
           "user-platform-auth"
         ]
@@ -19377,6 +19382,7 @@
     },
     "/api/v1/auth/account/export": {
       "get": {
+        "description": "Engineering account-data export of the current account-owned schema. Does not certify statutory portability completeness. Early Access waitlist rows are a separate relationship.",
         "operationId": "export_account_api_v1_auth_account_export_get",
         "parameters": [
           {
@@ -19418,7 +19424,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Export personal data for the authenticated consumer account",
+        "summary": "Export account-owned engineering data for the authenticated consumer account",
         "tags": [
           "user-platform-auth"
         ]

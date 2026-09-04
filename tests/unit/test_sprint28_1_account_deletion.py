@@ -120,6 +120,25 @@ def test_client_supplied_user_id_cannot_delete_another_user() -> None:
     assert store.users.get_by_id(attacker.user.user_id) is None
 
 
+def test_query_user_id_cannot_change_delete_target() -> None:
+    store, service = _platform()
+    other = service.register(email="query-victim@example.com", password=PASSWORD, display_name="QV")
+    attacker = service.register(
+        email="query-attacker@example.com",
+        password=PASSWORD,
+        display_name="QA",
+    )
+    client = _client(service)
+    response = client.post(
+        f"/api/v1/auth/account/delete?user_id={other.user.user_id}",
+        json=_delete_body(),
+        headers={"Authorization": f"Bearer {attacker.access_token}"},
+    )
+    assert response.status_code == 200
+    assert store.users.get_by_id(other.user.user_id) is not None
+    assert store.users.get_by_id(attacker.user.user_id) is None
+
+
 def test_valid_deletion_revokes_sessions_and_removes_pii() -> None:
     store, service = _platform()
     first = service.register(email="keep-me@example.com", password=PASSWORD, display_name="Keep")
@@ -185,6 +204,10 @@ def test_valid_deletion_revokes_sessions_and_removes_pii() -> None:
     assert "backup" in retained
     assert "early access" in retained
     assert "audit" in retained
+    dumped = str(body).lower()
+    assert "all piqsavi data deleted" not in dumped
+    assert "all personal data" not in dumped
+    assert "complete legal dsar" not in dumped
 
 
 def test_other_users_untouched_and_repeat_delete_is_unauthorized() -> None:

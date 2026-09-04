@@ -22,6 +22,7 @@ from app.domain.entities.user_platform import (
     UserSession,
     UserSettings,
     Wishlist,
+    consent_identity_key,
 )
 from app.domain.exceptions import UserPlatformNotFoundError, UserPlatformValidationError
 from app.domain.interfaces.user_platform_repository import (
@@ -534,22 +535,30 @@ class SqlAlchemyConsentRepository(ConsentRepository, SessionBound):
         self, user_id: str, policy_type: str, version_id: str
     ) -> PolicyAcceptanceRecord | None:
         with self._ops() as ops:
-            for record in ops.list(CONSENT_RECORDS, PolicyAcceptanceRecord, owner_id=user_id):
-                if record.policy_type == policy_type and record.version_id == version_id:
-                    return record
-            return None
+            return ops.get_by_secondary(
+                CONSENT_RECORDS,
+                consent_identity_key(user_id, policy_type, version_id),
+                PolicyAcceptanceRecord,
+            )
 
     def save(self, record: PolicyAcceptanceRecord) -> PolicyAcceptanceRecord:
         existing = self.get(record.user_id, record.policy_type, record.version_id)
         if existing is not None:
             return existing
-        with self._ops() as ops:
-            return ops.upsert(
-                CONSENT_RECORDS,
-                record.record_id,
-                record,
-                owner_id=record.user_id,
-            )
+        try:
+            with self._ops() as ops:
+                return ops.upsert(
+                    CONSENT_RECORDS,
+                    record.record_id,
+                    record,
+                    owner_id=record.user_id,
+                    secondary_key=record.identity_key,
+                )
+        except PersistenceConflictError:
+            existing = self.get(record.user_id, record.policy_type, record.version_id)
+            if existing is not None:
+                return existing
+            raise
 
     def list_for_user(self, user_id: str) -> list[PolicyAcceptanceRecord]:
         with self._ops() as ops:

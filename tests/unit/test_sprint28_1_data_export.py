@@ -13,6 +13,7 @@ from app.domain.entities.user_platform import PolicyAcceptanceRecord
 from app.legal.publication import LegalPublicationCatalog, published_policy
 from app.main import create_app
 from app.privacy.inventory import (
+    EXPORT_KIND,
     EXPORT_SCHEMA,
     PERSONAL_DATA_EXPORT_CATEGORIES,
     SECURITY_FIELDS_EXCLUDED_FROM_EXPORT,
@@ -103,6 +104,8 @@ def test_export_contains_own_data_and_inventory_categories() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["export_schema"] == EXPORT_SCHEMA
+    assert payload["export_kind"] == EXPORT_KIND
+    assert payload["export_schema"] == "piqsavi.account_owned_export.v1"
     for category in PERSONAL_DATA_EXPORT_CATEGORIES:
         assert category in payload, category
     assert payload["account"]["email"] == "mine-export@example.com"
@@ -127,10 +130,11 @@ def test_export_includes_consent_records(tmp_path: Path) -> None:
             published_policy(
                 policy_type="terms",
                 version_id="export-terms-v1",
-                html_path=str(html),
+                html_path="terms.html",
                 acceptance_required=False,
             ),
-        )
+        ),
+        publication_root=tmp_path,
     )
     store, service = _platform(catalog=catalog)
     mine = service.register(email="consent-export@example.com", password=PASSWORD, display_name="C")
@@ -183,3 +187,38 @@ def test_deleted_account_cannot_export() -> None:
     assert deleted.status_code == 200
     response = client.get("/api/v1/auth/account/export", headers=headers)
     assert response.status_code == 401
+
+
+OVERCLAIM_PHRASES = (
+    "all personal data",
+    "complete legal dsar",
+    "all piqsavi information",
+    "all piqsavi data",
+)
+
+
+def test_export_does_not_claim_complete_dsar_or_all_personal_data() -> None:
+    _store, service = _platform()
+    mine = service.register(
+        email="scope-export@example.com",
+        password=PASSWORD,
+        display_name="Scope",
+    )
+    client = _client(service)
+    response = client.get(
+        "/api/v1/auth/account/export",
+        headers={"Authorization": f"Bearer {mine.access_token}"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    dumped = json.dumps(payload).lower()
+    for phrase in OVERCLAIM_PHRASES:
+        assert phrase not in dumped
+    assert payload["export_kind"] == "account_owned_engineering_export"
+    export_op = create_app().openapi()["paths"]["/api/v1/auth/account/export"]["get"]
+    contract_text = json.dumps(
+        {"summary": export_op.get("summary"), "description": export_op.get("description")}
+    ).lower()
+    for phrase in OVERCLAIM_PHRASES:
+        assert phrase not in contract_text
+    assert "account-owned engineering data" in export_op["summary"].lower()

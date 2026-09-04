@@ -35,6 +35,8 @@ and a session is issued — see [Session Management](SESSION_MANAGEMENT.md).
 
 Sprint 28.1 also adds authenticated `POST /api/v1/auth/account/delete`
 (password re-auth + `confirmation=DELETE`) and `GET /api/v1/auth/account/export`.
+These cover defined account-owned engineering data only; Early Access is a
+separate relationship and this is not a complete legal DSAR.
 See [`privacy/ACCOUNT_DELETION_PROPAGATION.md`](privacy/ACCOUNT_DELETION_PROPAGATION.md).
 
 ## Login

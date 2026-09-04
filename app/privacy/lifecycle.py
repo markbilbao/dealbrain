@@ -27,6 +27,7 @@ from app.domain.interfaces.user_platform_repository import (
 )
 from app.domain.interfaces.watchlist_repository import WatchlistRepository
 from app.privacy.inventory import (
+    EXPORT_KIND,
     EXPORT_SCHEMA,
     PERSONAL_DATA_EXPORT_CATEGORIES,
     strip_security_fields,
@@ -179,6 +180,7 @@ class AccountLifecycleService:
         sessions = [session.to_dict() for session in self._sessions.list_for_user(user.user_id)]
         payload = {
             "export_schema": EXPORT_SCHEMA,
+            "export_kind": EXPORT_KIND,
             "exported_at": self._clock().isoformat(),
             "account": user.to_dict(),
             "profile": profile.to_dict() if profile is not None else None,

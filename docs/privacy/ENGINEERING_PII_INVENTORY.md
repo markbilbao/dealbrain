@@ -4,7 +4,7 @@
 **Baseline:** `origin/main` `68664c44d615fb28bb03b5a72868a977b2c5cb8f` plus Sprint 28.1 code on this branch.
 **Counsel-owned:** statutory categories, retention exceptions, DPA roles, age rules, public legal wording.
 
-This inventory records **repository-evidenced** personal and related data. Classifications such as “essential/functional” are product-architecture labels, not legal opinions.
+This inventory records **repository-evidenced** personal and related data. Classifications such as “essential/functional” are product-architecture labels, not legal opinions. Consumer export uses schema `piqsavi.account_owned_export.v1` and is an engineering account-owned export, not a complete legal DSAR.
 
 ## Account-attributable stores (export/delete in scope)
 
@@ -16,7 +16,7 @@ This inventory records **repository-evidenced** personal and related data. Class
 | Settings | theme, language, `privacy_settings`, `community_settings`, nested `NotificationPreference` including `newsletter` | `user_platform.settings` | No privacy retention policy | Deleted | Included | `newsletter` is **not** legal consent |
 | Wishlist | `product_ids` | `user_platform.wishlists` | No privacy retention policy | Deleted | Included | Distinct from Watchlists |
 | Saved products / comparisons / searches / history / recently viewed | query and product identifiers, notes | `user_platform.saved_*` | No privacy retention policy | Deleted | Included | Per-item saved-product delete already existed |
-| Consent records | `user_id`, `policy_type` (`terms`/`privacy`), server-owned `version_id`, `accepted_at`, `source`, `actor` | `user_platform.consent_records` | No privacy retention policy | Deleted with account | Included | Empty until a published policy version exists |
+| Consent records | `user_id`, `policy_type` (`terms`/`privacy`), server-owned `version_id`, `accepted_at`, `source`, `actor` | `user_platform.consent_records` in existing `operational_entities` (no new table). Unique `{user_id}:{policy_type}:{version_id}` via `uq_operational_store_secondary` | No privacy retention policy | Deleted with account | Included | Empty until a published policy version exists |
 | Password reset / email verify | hashed tokens, expiry, consumed | `user_platform.password_resets` / `email_verifications` | TTL 1h / 1d | Deleted | **Excluded** (security tokens) | |
 | Notification Center prefs | in-app/email/digest/marketing flags | `notifications.preferences` | No privacy retention policy | Removed when that store is wired | Merged under `notification_preferences` when present | Separate from legal consent |
 | Watchlists | name, owner_id, items | watchlist store | No privacy retention policy | Owner-scoped watchlists deleted | Not a dedicated export category; account-owned lists are deleted | Distinct from profile wishlist |
@@ -37,9 +37,9 @@ This inventory records **repository-evidenced** personal and related data. Class
 
 Auth uses `Authorization: Bearer`, not an auth cookie.
 
-## Early Access data
+## Early Access data (unresolved / separate)
 
-Early Access waitlist rows (`early_access.registrations`: full name, email, country, shopping interest, UTM/referrer) are **not** a consumer User account. There is no trusted `user_id` link. They are **not** deleted or exported by the account APIs. Operator CSV export remains a separate runbook.
+Early Access waitlist rows (`early_access.registrations`: full name, email, country, shopping interest, UTM/referrer) are a **separate data relationship**, not a consumer User account. There is no trusted `user_id` link. They are **not** deleted or exported by the account APIs, including when the waitlist email matches a deleted or exporting account. Whether email match should later imply erasure/export is **counsel-owned**. Operator CSV export remains a separate runbook.
 
 ## Intentionally excluded from consumer export
 

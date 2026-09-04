@@ -24,9 +24,9 @@ On a valid authenticated request:
 
 Repeat delete with the same bearer token returns **401** (session and account are gone).
 
-## Early Access waitlist
+## Early Access waitlist (unresolved / separate)
 
-Early Access registrations are **not** consumer User accounts. There is **no** `user_id` foreign key. Sprint 28.1 **does not** delete Early Access rows when an account is deleted. Operators continue to use the existing Early Access export runbook, which is not a consumer DSAR API.
+Early Access registrations are a **separate data relationship**, not consumer User accounts. There is **no** `user_id` foreign key. Sprint 28.1 **does not** delete Early Access rows when an account is deleted, including when the waitlist email matches the account email. Whether that email match should later imply erasure is **counsel-owned** and not implemented. Operators continue to use the existing Early Access export runbook, which is not a consumer DSAR API.
 
 ## Not claimed deleted
 
@@ -43,7 +43,11 @@ Early Access registrations are **not** consumer User accounts. There is **no** `
 
 ## Export
 
-`GET /api/v1/auth/account/export` returns JSON schema `piqsavi.personal_data.v1` for the authenticated user only. Completeness is checked against the engineering category list in [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) / `app/privacy/inventory.py`. This is **not** a legal portability-standard certification.
+`GET /api/v1/auth/account/export` returns JSON schema `piqsavi.account_owned_export.v1` (`export_kind`: `account_owned_engineering_export`) for the authenticated user only. Completeness is checked against the engineering category list in [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) / `app/privacy/inventory.py`. This is an engineering account-data export of the current account-owned schema. It is **not** a complete legal DSAR and does **not** claim all PiqSavi or personal data.
+
+## Persistence
+
+`PolicyAcceptanceRecord` uses the existing Sprint 23 `operational_entities` table (`user_platform.consent_records` store). No new Alembic revision is required. Uniqueness is `uq_operational_store_secondary` on `{user_id}:{policy_type}:{version_id}`. `accepted_at` is stored in the JSON payload. Rows are owner-scoped and deleted with the account. Production/staging already migrate `operational_entities` via `d4e5f6a7b8c9`.
 
 ## Legal questions left open
 

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
-EXPORT_SCHEMA = "piqsavi.personal_data.v1"
+EXPORT_SCHEMA = "piqsavi.account_owned_export.v1"
+EXPORT_KIND = "account_owned_engineering_export"
 
 # Categories attributable to the requesting consumer account.
 PERSONAL_DATA_EXPORT_CATEGORIES: tuple[str, ...] = (

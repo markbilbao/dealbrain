@@ -10,6 +10,9 @@ from app.legal.publication import (
     LegalPublicationCatalog,
     PolicyVersion,
     catalog_from_settings,
+    default_legal_publication_root,
+    is_usable_version_id,
+    load_approved_public_html,
     looks_like_counsel_draft,
     published_policy,
     unpublished_catalog,
@@ -85,10 +88,11 @@ def test_approved_but_not_published_is_not_served(tmp_path: Path) -> None:
                 version_id="privacy-approved-only",
                 publication_status="approved",
                 acceptance_required=True,
-                html_path=str(html),
+                html_path="privacy.html",
                 public_path="/privacy",
             ),
-        )
+        ),
+        publication_root=tmp_path,
     )
     assert catalog.published("privacy") is None
     app = create_app()
@@ -108,9 +112,10 @@ def test_published_test_catalog_serves_approved_html_only(tmp_path: Path) -> Non
             published_policy(
                 policy_type="privacy",
                 version_id="privacy-test-v1",
-                html_path=str(html),
+                html_path="privacy.html",
             ),
-        )
+        ),
+        publication_root=tmp_path,
     )
     app = create_app()
     app.dependency_overrides[get_legal_publication_catalog] = lambda: catalog
@@ -129,3 +134,107 @@ def test_no_public_approved_claim_on_unpublished_routes() -> None:
         body = client.get(path).text.lower()
         assert "approved privacy policy" not in body
         assert "approved terms of service" not in body
+
+
+class _MappedSettings:
+    def __init__(self, **values: str) -> None:
+        self.legal_terms_published_version_id = values.get("terms_version", "")
+        self.legal_privacy_published_version_id = values.get("privacy_version", "")
+        self.legal_terms_public_html_path = values.get("terms_html", "")
+        self.legal_privacy_public_html_path = values.get("privacy_html", "")
+
+
+def test_request_parameters_cannot_choose_document_path(tmp_path: Path) -> None:
+    (tmp_path / "privacy.html").write_text(
+        "<html><body><h1>Approved Privacy</h1></body></html>",
+        encoding="utf-8",
+    )
+    (tmp_path / "secret.html").write_text(
+        "<html><body><h1>Secret File</h1></body></html>",
+        encoding="utf-8",
+    )
+    catalog = LegalPublicationCatalog(
+        (
+            published_policy(
+                policy_type="privacy",
+                version_id="privacy-test-v1",
+                html_path="privacy.html",
+            ),
+        ),
+        publication_root=tmp_path,
+    )
+    app = create_app()
+    app.dependency_overrides[get_legal_publication_catalog] = lambda: catalog
+    client = TestClient(app)
+    for query in (
+        "?path=secret.html",
+        "?html_path=secret.html",
+        "?file=/etc/passwd",
+        "?document=../secret.html",
+    ):
+        response = client.get(f"/privacy{query}")
+        assert response.status_code == 200
+        assert "Approved Privacy" in response.text
+        assert "Secret File" not in response.text
+    app.dependency_overrides.clear()
+
+
+def test_version_id_path_traversal_is_rejected() -> None:
+    assert is_usable_version_id("../etc/passwd") is False
+    assert is_usable_version_id("/etc/passwd") is False
+    assert is_usable_version_id("terms/../privacy") is False
+    assert is_usable_version_id("privacy-2026-09-04") is True
+    catalog = catalog_from_settings(
+        _MappedSettings(privacy_version="../secret", privacy_html="privacy.html")
+    )
+    assert catalog.published("privacy") is None
+    assert catalog.configured_versions() == ()
+
+
+def test_configured_mapping_cannot_escape_publication_root(tmp_path: Path) -> None:
+    outside = tmp_path / "outside.html"
+    outside.write_text("<html><body><h1>Escaped</h1></body></html>", encoding="utf-8")
+    (tmp_path / "published").mkdir()
+    root = tmp_path / "published"
+
+    assert load_approved_public_html(str(outside), publication_root=root) is None
+    assert load_approved_public_html("/etc/passwd", publication_root=root) is None
+    assert load_approved_public_html("../outside.html", publication_root=root) is None
+    assert load_approved_public_html(str(ROOT / "README.md")) is None
+    assert load_approved_public_html("../../../README.md") is None
+    assert load_approved_public_html(str(PRIVACY_DRAFT)) is None
+    assert load_approved_public_html(PRIVACY_DRAFT.relative_to(ROOT).as_posix()) is None
+
+    catalog = catalog_from_settings(
+        _MappedSettings(
+            privacy_version="privacy-misconfig-v1",
+            privacy_html=str(outside),
+        )
+    )
+    assert catalog.published("privacy") is None
+
+
+def test_unrelated_repository_file_cannot_be_published() -> None:
+    readme = ROOT / "README.md"
+    assert readme.is_file()
+    catalog = LegalPublicationCatalog(
+        (
+            published_policy(
+                policy_type="privacy",
+                version_id="privacy-readme",
+                html_path="README.md",
+            ),
+        )
+    )
+    assert catalog.published("privacy") is None
+    assert default_legal_publication_root().as_posix().endswith("docs/legal/published")
+
+
+def test_only_relative_file_under_publication_root_is_served(tmp_path: Path) -> None:
+    (tmp_path / "privacy.html").write_text(
+        "<html><body><h1>Approved Privacy</h1></body></html>",
+        encoding="utf-8",
+    )
+    html = load_approved_public_html("privacy.html", publication_root=tmp_path)
+    assert html is not None
+    assert "Approved Privacy" in html

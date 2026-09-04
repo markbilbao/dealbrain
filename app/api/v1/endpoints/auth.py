@@ -249,7 +249,7 @@ async def me(
 @router.post(
     "/account/delete",
     response_model=AccountDeleteResponse,
-    summary="Delete the authenticated consumer account",
+    summary="Delete the authenticated consumer account and its account-owned engineering data",
 )
 async def delete_account(
     body: AccountDeleteRequest,
@@ -271,7 +271,12 @@ async def delete_account(
 @router.get(
     "/account/export",
     response_model=PersonalDataExportResponse,
-    summary="Export personal data for the authenticated consumer account",
+    summary="Export account-owned engineering data for the authenticated consumer account",
+    description=(
+        "Engineering account-data export of the current account-owned schema. "
+        "Does not certify statutory portability completeness. Early Access "
+        "waitlist rows are a separate relationship."
+    ),
 )
 async def export_account(
     authorization: str | None = Header(default=None),

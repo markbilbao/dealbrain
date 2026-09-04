@@ -11,7 +11,6 @@ from app.legal.publication import (
     POLICY_TERMS,
     LegalPublicationCatalog,
     PolicyType,
-    load_approved_public_html,
 )
 
 router = APIRouter(include_in_schema=False)
@@ -24,7 +23,7 @@ def _published_html(
     document = catalog.published(policy_type)
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
-    html = load_approved_public_html(document.html_path)
+    html = catalog.published_html(document)
     if html is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
     return html

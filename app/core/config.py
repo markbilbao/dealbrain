@@ -284,10 +284,12 @@ class Settings(BaseSettings):
     legal_terms_public_html_path: str = Field(
         default="",
         alias="LEGAL_TERMS_PUBLIC_HTML_PATH",
+        description="Relative filename under docs/legal/published/ only.",
     )
     legal_privacy_public_html_path: str = Field(
         default="",
         alias="LEGAL_PRIVACY_PUBLIC_HTML_PATH",
+        description="Relative filename under docs/legal/published/ only.",
     )
 
     # Marketplace Data Synchronization — connectors/imports/sync (no real marketplace HTTP)
