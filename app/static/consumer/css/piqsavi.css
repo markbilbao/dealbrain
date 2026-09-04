@@ -269,6 +269,20 @@ main {
   font-size: 0.9rem;
 }
 
+.currency-status {
+  text-align: center;
+  margin: 0 0 1rem;
+}
+
+.currency-label {
+  font-weight: 700;
+}
+
+.currency-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .location-unknown {
   background: var(--warn-bg);
   color: var(--warn);

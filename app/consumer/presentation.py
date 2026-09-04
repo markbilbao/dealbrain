@@ -7,6 +7,7 @@ explicit fixture snapshot or invalidate location-sensitive economics.
 from __future__ import annotations
 
 from app.consumer import mode as consumer_mode
+from app.consumer.currency_presentation import attach_currency_presentation
 from app.consumer.fixtures import (
     AFFILIATE_DISCLOSURE,
     DATA_CLASSIFICATION,
@@ -202,7 +203,7 @@ def build_page_view(
         shopping_market_certified=production_certified_shopping_markets().is_certified("PH"),
         destination_reevaluation_required=bool(overlay_unknown_shipping and location.is_known),
     )
-    return attach_shopping_coverage(view, selected_market)
+    return attach_currency_presentation(attach_shopping_coverage(view, selected_market))
 
 
 def list_catalog_ids() -> tuple[str, ...]:
@@ -281,7 +282,7 @@ def _unavailable_page_view(
         shopping_market_certified=False,
         destination_reevaluation_required=False,
     )
-    return attach_shopping_coverage(view, selected_market)
+    return attach_currency_presentation(attach_shopping_coverage(view, selected_market))
 
 
 def _unavailable_product() -> ProductCardView:

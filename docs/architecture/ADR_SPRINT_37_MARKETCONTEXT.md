@@ -38,6 +38,16 @@ Selected shopping market is a separate guest-session contract (`SelectedShopping
 - Uncertified selected markets cannot become connector-eligible. Research planning may name the selected market; it must not execute connectors or treat fixtures as live coverage.
 - Product-facing launch options remain PH-first. The typed contract accepts any valid ISO code so later markets do not require a second model.
 
+## 37.3 addendum — currency authority vs conversion
+
+Source offer currency is monetary truth. Preferred/display currency (PHP on PH MarketContext) is presentation context only. Selected market, locale, delivery destination, and account country are not FX rates.
+
+- Same-currency presentation (PHP → PHP) needs no quote and must not invent an FX layer.
+- Foreign source + preferred PHP with no trusted quote is an explicit `conversion_unavailable` state. No synthetic PHP amount, estimated rate, or rounded conversion may be shown.
+- `conversion_available` requires an authoritative `FxQuote`. Production has zero quotes and `PRODUCTION_FX_CONVERSION_ENABLED = False`.
+- Test-only quotes (`fx_quote_for_tests`) are deterministic, not live, and cannot enter the production provider catalog.
+- Mixed-currency DealScore and Recommendation remain fail-closed. A test quote must not rewrite ranking.
+
 ## Out of scope
 
-FX adapter (EXT-23), live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.
+Live FX provider / EXT-23 credentials and production quotes, live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.

@@ -166,3 +166,7 @@ class DecisionPageView:
     shopping_coverage_reason: str = "no_certified_shopping_market"
     shopping_coverage_disclosure: str | None = None
     connector_invocation_eligible: bool = False
+    preferred_display_currency: str = "PHP"
+    currency_conversion_state: str = "same_currency"
+    currency_conversion_disclosure: str | None = None
+    source_currencies: tuple[str, ...] = ()
