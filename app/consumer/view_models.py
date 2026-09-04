@@ -158,3 +158,5 @@ class DecisionPageView:
     session_location_label: str | None = None
     presentation_mode: Literal["canonical", "fixture", "unavailable"] = "fixture"
     qualification_state: str | None = None
+    shopping_market_certified: bool = False
+    destination_reevaluation_required: bool = False

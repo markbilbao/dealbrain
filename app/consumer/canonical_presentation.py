@@ -18,10 +18,10 @@ from app.consumer.presentation import (
 )
 from app.consumer.pricing import (
     MoneyComponent,
-    format_php,
+    format_money,
     price_state_label,
     shipping_display,
-    signed_php,
+    signed_money,
     tax_display,
 )
 from app.consumer.view_models import (
@@ -37,6 +37,7 @@ from app.consumer.view_models import (
     WhySectionView,
     WhyVariant,
 )
+from app.core.countries import is_valid_country_code, normalize_country_code
 from app.domain.entities.decision_presentation import CanonicalProductPresentation
 from app.domain.entities.decision_snapshot import (
     CanonicalDecisionSnapshot,
@@ -49,6 +50,10 @@ from app.domain.entities.offer_economics import (
     CanonicalOfferEconomics,
     minor_to_major,
 )
+from app.domain.entities.research_execution import TrustedMarketContext
+from app.market.context import compose_market_context
+from app.market.invalidation import invalidate_for_destination_change
+from app.market.support import production_certified_shopping_markets
 from app.services.canonical_offer_economics import money_component_from_canonical
 
 
@@ -66,6 +71,11 @@ def page_view_from_snapshot(
 
     historical = _delivery_from_snapshot(snapshot)
     session_differs = _session_differs(historical, session_location)
+    trusted = _trusted_from_snapshot(snapshot)
+    invalidation = invalidate_for_destination_change(
+        compose_market_context(trusted_market=trusted, delivery=historical),
+        compose_market_context(trusted_market=trusted, delivery=session_location),
+    )
     economics_by_id = {item.product_id: item for item in snapshot.offer_economics}
     highest = max(snapshot.evaluated_products, key=lambda item: item.canonical_piqscore.value)
     cards = tuple(
@@ -143,6 +153,10 @@ def page_view_from_snapshot(
         qualification_state=(
             snapshot.qualification.state if snapshot.qualification is not None else None
         ),
+        shopping_market_certified=production_certified_shopping_markets().is_certified(
+            trusted.country_code if trusted is not None else None
+        ),
+        destination_reevaluation_required=invalidation.reevaluation_required,
     )
 
 
@@ -158,6 +172,26 @@ def _delivery_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DeliveryCont
         postal_code=context.postal_code,
         source="manual",
     )
+
+
+def _trusted_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> TrustedMarketContext | None:
+    """Use captured country only. Do not invent PH when the snapshot omitted it."""
+
+    country = None
+    if snapshot.delivery_context is not None:
+        country = snapshot.delivery_context.country
+    if not country:
+        country = next(
+            (item.delivery.country for item in snapshot.offer_economics if item.delivery),
+            None,
+        )
+    code = normalize_country_code(country)
+    if not code or not is_valid_country_code(code):
+        return None
+    try:
+        return TrustedMarketContext(country_code=code)
+    except ValueError:
+        return None
 
 
 def _session_differs(historical: DeliveryContext, session: DeliveryContext) -> bool:
@@ -277,11 +311,13 @@ def _breakdown_from_components(
     dominant_amount: float | None,
 ) -> tuple[tuple[str, str, str], ...]:
     lines: list[tuple[str, str, str]] = [
-        (listing.label, format_php(listing.amount), "neutral"),
+        (listing.label, format_money(listing.amount, listing.currency), "neutral"),
     ]
     if voucher is not None:
         if voucher.status == "verified" and voucher.applies:
-            lines.append((voucher.label, signed_php(voucher.amount), "positive"))
+            lines.append(
+                (voucher.label, signed_money(voucher.amount, voucher.currency), "positive")
+            )
         else:
             lines.append((voucher.label, "Not applied", "warn"))
     lines.append((shipping.label, shipping_display(shipping), _tone_for_shipping(shipping)))
@@ -290,7 +326,7 @@ def _breakdown_from_components(
     else:
         lines.append((taxes.label, tax_display(taxes), _tone_for_tax(taxes)))
     label = CANONICAL_PRICE_LABELS.get(state, price_state_label(state))  # type: ignore[arg-type]
-    lines.append((label, format_php(dominant_amount), _tone_for_state(state)))
+    lines.append((label, format_money(dominant_amount, listing.currency), _tone_for_state(state)))
     return tuple(lines)
 
 
@@ -299,15 +335,15 @@ def _compact_from_components(
     voucher: MoneyComponent | None,
     shipping: MoneyComponent,
 ) -> str:
-    parts = [format_php(listing.amount)]
+    parts = [format_money(listing.amount, listing.currency)]
     if voucher is not None and voucher.status == "verified" and voucher.amount:
-        parts.append(f"{signed_php(voucher.amount)} voucher")
+        parts.append(f"{signed_money(voucher.amount, voucher.currency)} voucher")
     if shipping.is_unknown:
         parts.append("shipping not verified")
-    elif shipping.amount == 0:
+    elif shipping.amount == 0 and shipping.status == "verified":
         parts.append("FREE shipping")
     elif shipping.amount is not None:
-        parts.append(f"{format_php(shipping.amount)} shipping")
+        parts.append(f"{format_money(shipping.amount, shipping.currency)} shipping")
     return " · ".join(parts)
 
 
@@ -474,7 +510,7 @@ def _why_sections_from_snapshot(
             (
                 "check",
                 f"Price PiqSavi evaluated: {best.economics.dominant_label} "
-                f"{format_php(best.economics.dominant_amount)}",
+                f"{format_money(best.economics.dominant_amount, best.economics.listing.currency)}",
             )
         )
     else:
@@ -597,7 +633,10 @@ def _pay_rows_from_cards(
     return (
         CompareFitRow(
             "Final cost",
-            tuple(format_php(card.economics.dominant_amount) for card in cards),
+            tuple(
+                format_money(card.economics.dominant_amount, card.economics.listing.currency)
+                for card in cards
+            ),
         ),
         CompareFitRow(
             "Price status",
@@ -606,7 +645,7 @@ def _pay_rows_from_cards(
         CompareFitRow(
             "Listing price",
             tuple(
-                format_php(card.economics.listing.amount)
+                format_money(card.economics.listing.amount, card.economics.listing.currency)
                 if card.economics.listing.amount is not None
                 else "Unknown"
                 for card in cards

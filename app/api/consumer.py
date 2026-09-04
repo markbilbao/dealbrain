@@ -236,7 +236,10 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
         return _html(view)
     changed = previous.is_known and previous.destination_key != context.destination_key
     separator = "&" if "?" in destination else "?"
-    target = f"{destination}{separator}recalculating=1" if changed else destination
+    if changed and not is_canonical_uuid(decision_id):
+        target = f"{destination}{separator}recalculating=1"
+    else:
+        target = destination
     response = RedirectResponse(url=target, status_code=303)
     set_delivery_cookie(response, context)
     return response
