@@ -1,6 +1,6 @@
 # Sprint 37 — MarketContext, Currency & Localization
 
-**Status:** In progress — 37.1 foundation implemented. Sprint 37 is **not complete**. P1-1B and P1-2 are **not** fully closed.
+**Status:** In progress — 37.1 merged; 37.2 shopping-market selection and coverage disclosure implemented. Sprint 37 is **not complete**. P1-1B is partially progressed and **not** fully closed. P1-2 is **not** fully closed.
 **Primary owner / domain:** Product platform / marketplace
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-1B, P1-2; multinational honesty
@@ -23,6 +23,23 @@
 | P1-1B / P1-2 closure | **not closed** — foundation only |
 
 37.1 is an owner-authorized first slice. It does not close Sprint 37.
+
+## 37.2 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| Selected shopping-market contract (ISO, server-validated) | implemented |
+| Guest cookie persistence (`piqsavi_shopping_market`) | implemented |
+| Intended PH default when no selection exists | implemented — **not** certification |
+| Product-facing selectable markets | PH only (no US/SG/UK/CA launch picker) |
+| Coverage state (`certified` / `coverage_available` / reason) | implemented |
+| Consumer disclosure on Results / Compare / Why | implemented |
+| Unsupported-market research / connector gate | implemented (planning-only; no execution) |
+| Production certified shopping markets | **0** |
+| Five-market selector / FR-CA / FX | not started |
+| P1-1B closure | **not closed** — selection + disclosure foundation only |
+
+37.2 does not close Sprint 37. Default PH is not certified PH coverage.
 
 ## Objective
 

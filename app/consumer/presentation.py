@@ -18,6 +18,7 @@ from app.consumer.fixtures import (
     get_decision,
 )
 from app.consumer.location import DeliveryContext
+from app.consumer.market_coverage import attach_shopping_coverage
 from app.consumer.pricing import (
     MoneyComponent,
     evaluate_offer_total,
@@ -42,6 +43,7 @@ from app.consumer.view_models import (
 )
 from app.market.completeness import select_dominant_price_state
 from app.market.context import intended_ph_product_defaults
+from app.market.selection import SelectedShoppingMarket
 from app.market.support import production_certified_shopping_markets
 
 STATUS_LABELS = {
@@ -75,6 +77,7 @@ def build_page_view(
     location_error: str | None = None,
     geolocation_needs_city: bool = False,
     allow_fixtures: bool | None = None,
+    selected_market: SelectedShoppingMarket | None = None,
 ) -> DecisionPageView:
     permitted = (
         consumer_mode.fixture_catalogs_permitted() if allow_fixtures is None else allow_fixtures
@@ -89,6 +92,7 @@ def build_page_view(
             recalculating=recalculating,
             location_error=location_error,
             geolocation_needs_city=geolocation_needs_city,
+            selected_market=selected_market,
         )
     if not permitted:
         return _unavailable_page_view(
@@ -99,6 +103,7 @@ def build_page_view(
             recalculating=recalculating,
             location_error=location_error,
             geolocation_needs_city=geolocation_needs_city,
+            selected_market=selected_market,
         )
     catalog_id = _resolve_catalog(decision_id, location)
     decision = get_decision(catalog_id)
@@ -143,7 +148,7 @@ def build_page_view(
             f"Shipping to {location.display_place} is not yet verified and may change "
             "this recommendation. This is a qualified Best Piq for You."
         )
-    return DecisionPageView(
+    view = DecisionPageView(
         decision_id=decision.catalog_id,
         context_version=1,
         catalog_id=decision.catalog_id,
@@ -197,6 +202,7 @@ def build_page_view(
         shopping_market_certified=production_certified_shopping_markets().is_certified("PH"),
         destination_reevaluation_required=bool(overlay_unknown_shipping and location.is_known),
     )
+    return attach_shopping_coverage(view, selected_market)
 
 
 def list_catalog_ids() -> tuple[str, ...]:
@@ -214,10 +220,11 @@ def _unavailable_page_view(
     recalculating: bool,
     location_error: str | None,
     geolocation_needs_city: bool,
+    selected_market: SelectedShoppingMarket | None = None,
 ) -> DecisionPageView:
     """Honest production state when canonical offer economics are missing."""
     empty = _unavailable_product()
-    return DecisionPageView(
+    view = DecisionPageView(
         decision_id=decision_id,
         context_version=1,
         catalog_id="",
@@ -274,6 +281,7 @@ def _unavailable_page_view(
         shopping_market_certified=False,
         destination_reevaluation_required=False,
     )
+    return attach_shopping_coverage(view, selected_market)
 
 
 def _unavailable_product() -> ProductCardView:

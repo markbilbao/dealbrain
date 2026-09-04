@@ -26,6 +26,11 @@ from app.consumer.location import (
 from app.consumer.pages import render_page
 from app.consumer.presentation import build_page_view
 from app.consumer.session_overlay import apply_session_overlay_to_view
+from app.consumer.shopping_market import (
+    SHOPPING_MARKET_COOKIE,
+    set_shopping_market_cookie,
+    shopping_market_from_cookie,
+)
 from app.consumer.uuid import is_canonical_uuid
 from app.consumer.view_models import DecisionPageView, PageName
 from app.core.dependencies import (
@@ -34,6 +39,10 @@ from app.core.dependencies import (
 )
 from app.core.logging import get_logger, log_extra
 from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
+from app.market.selection import (
+    ShoppingMarketValidationError,
+    selected_shopping_market_from_code,
+)
 
 router = APIRouter(include_in_schema=False)
 logger = get_logger(__name__)
@@ -54,6 +63,10 @@ def _location_from_request(request: Request):
     return parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
 
 
+def _shopping_market_from_request(request: Request):
+    return shopping_market_from_cookie(request.cookies.get(SHOPPING_MARKET_COOKIE))
+
+
 def _owner_from_request(request: Request):
     return parse_owner_cookie(request.cookies.get(OWNER_COOKIE))
 
@@ -69,6 +82,7 @@ def _page_view(
     snapshots: DecisionSnapshotRepository | None = None,
 ) -> DecisionPageView:
     location = _location_from_request(request)
+    selected_market = _shopping_market_from_request(request)
     prompt = location.is_absent if location_prompt is None else location_prompt
     if is_canonical_uuid(decision_id):
         snapshot = resolve_canonical_snapshot(decision_id, _owner_from_request(request), snapshots)
@@ -80,6 +94,7 @@ def _page_view(
                 location_prompt=prompt,
                 recalculating=False,
                 location_error=location_error,
+                selected_market=selected_market,
             )
         view = page_view_from_snapshot(
             snapshot,
@@ -88,6 +103,7 @@ def _page_view(
             location_prompt=prompt,
             recalculating=False,
             location_error=location_error,
+            session_shopping_market=selected_market,
         )
         owner = _owner_from_request(request)
         if owner is not None:
@@ -105,6 +121,7 @@ def _page_view(
         location_prompt=prompt,
         recalculating=recalculating,
         location_error=location_error,
+        selected_market=selected_market,
     )
 
 
@@ -242,6 +259,22 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
         target = destination
     response = RedirectResponse(url=target, status_code=303)
     set_delivery_cookie(response, context)
+    return response
+
+
+@router.api_route("/consumer/shopping-market", methods=["GET", "POST"], response_model=None)
+async def save_shopping_market(request: Request) -> RedirectResponse:
+    payload = await _location_payload(request)
+    decision_id = str(payload.get("decision_id") or DEFAULT_CATALOG_ID)
+    if not consumer_mode.fixture_catalogs_permitted() and decision_id == DEFAULT_CATALOG_ID:
+        decision_id = "unavailable"
+    destination = _safe_next(str(payload.get("next") or ""), decision_id, "results")
+    try:
+        selected = selected_shopping_market_from_code(str(payload.get("country_code") or ""))
+    except ShoppingMarketValidationError:
+        return RedirectResponse(url=destination, status_code=303)
+    response = RedirectResponse(url=destination, status_code=303)
+    set_shopping_market_cookie(response, selected)
     return response
 
 

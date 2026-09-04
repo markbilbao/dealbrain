@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from app.consumer.fixtures import AFFILIATE_DISCLOSURE, FRESHNESS_DISCLAIMER
 from app.consumer.location import DeliveryContext
+from app.consumer.market_coverage import attach_shopping_coverage
 from app.consumer.presentation import (
     STATUS_LABELS,
     _ask_placeholder,
@@ -53,6 +54,7 @@ from app.domain.entities.offer_economics import (
 from app.domain.entities.research_execution import TrustedMarketContext
 from app.market.context import compose_market_context
 from app.market.invalidation import invalidate_for_destination_change
+from app.market.selection import SelectedShoppingMarket
 from app.market.support import production_certified_shopping_markets
 from app.services.canonical_offer_economics import money_component_from_canonical
 
@@ -66,6 +68,7 @@ def page_view_from_snapshot(
     recalculating: bool = False,
     location_error: str | None = None,
     geolocation_needs_city: bool = False,
+    session_shopping_market: SelectedShoppingMarket | None = None,
 ) -> DecisionPageView:
     """Build the existing consumer view model from one verified snapshot."""
 
@@ -106,7 +109,7 @@ def page_view_from_snapshot(
     sources = _sources_from_snapshot(snapshot)
     unknowns = _unknowns_from_snapshot(snapshot, session_differs, session_location)
     categories = _categories_from_snapshot(snapshot)
-    return DecisionPageView(
+    view = DecisionPageView(
         decision_id=snapshot.decision_id,
         context_version=snapshot.context_version,
         catalog_id="",
@@ -158,6 +161,7 @@ def page_view_from_snapshot(
         ),
         destination_reevaluation_required=invalidation.reevaluation_required,
     )
+    return attach_shopping_coverage(view, session_shopping_market)
 
 
 def _delivery_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DeliveryContext:

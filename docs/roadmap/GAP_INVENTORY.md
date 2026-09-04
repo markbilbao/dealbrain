@@ -432,3 +432,19 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 | Sprint 32 | Unchanged: in progress, blocked on external certification |
 | Sprint 33–36 / 38 | Not started |
 | Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md); [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |
+
+---
+
+## 2026-09-04 Sprint 37.2 status addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-authorized shopping-market selection and coverage-disclosure slice.
+
+| Field | Value |
+|-------|-------|
+| Sprint 37 | In progress. 37.1 merged. 37.2 selection + coverage disclosure implemented. Sprint 37 is **not complete**. |
+| P1-1B | Partially progressed. Selection persists; unsupported coverage is disclosed; connector invocation remains ineligible. Five-market selector is not implemented. **Not closed.** |
+| P1-2 | Unchanged: not fully closed |
+| Certified shopping markets | 0. Selected or default PH is not PH certification. |
+| Sprint 32 | Unchanged: in progress, blocked on external certification |
+| Sprint 33–36 / 38 | Not started |
+| Authority | [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |
