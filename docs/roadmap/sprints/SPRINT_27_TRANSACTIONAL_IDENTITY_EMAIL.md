@@ -1,9 +1,32 @@
 # Sprint 27 — Transactional Identity & Email
 
-**Status:** Planned
+**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented. Sprint 27 is **not complete**. Staging inbox E2E, EXT-09 DNS verification, email-change, and production cutover remain open.
 **Primary owner / domain:** Identity / user platform (Sprint 17 domain; adapter hardening)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-5
+
+## 27.1 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| `EmailSender` port + `NullEmailSender` test/dev sender | implemented |
+| Resend adapter (`ResendEmailSender`) | implemented — no live Resend calls in tests |
+| Staging/production fail-closed (no silent `NullEmailSender`) | implemented |
+| Password-reset request (enumeration-safe) | implemented |
+| Password-reset confirm + expiry + single-use | implemented |
+| Email-verification request (enumeration-safe by email) | implemented |
+| Email-verification confirm + expiry + single-use | implemented |
+| Demo/inline tokens blocked in staging/production | implemented |
+| PiqSavi sender/link identity (configurable) | implemented — uses `TRANSACTIONAL_EMAIL_FROM*` + `PUBLIC_APP_BASE_URL` |
+| Session revoke-all after password reset | implemented (existing session store) |
+| Email-change confirmation | **not started** (remaining Sprint 27 work) |
+| EXT-08 Resend account | `applied` / **AMBER** — account establishment only; not provisioned |
+| EXT-09 sender-domain DNS auth | `applied` / **AMBER** — DNS **plan** only; not verified |
+| Staging real-inbox E2E | **not done** |
+| Production email readiness / Secrets Manager cutover | **not claimed** (path recorded; attach remains Sprint 41) |
+| Sprint 27 / P0-5 closure | **not closed** |
+
+27.1 implements the production email boundary and reset/verify confirm routes. It does **not** complete Sprint 27. It does **not** claim EXT-09 domain verification or production sender readiness.
 
 ## Objective
 

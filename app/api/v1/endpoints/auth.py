@@ -1,8 +1,8 @@
 """User Platform authentication API endpoints.
 
-Demo/in-memory accounts only (Sprint 17). No OAuth, MFA, or email delivery.
 Sessions are opaque bearer tokens returned on register/login and must be sent
 as ``Authorization: Bearer <token>`` on subsequent authenticated requests.
+Password reset and email verification are Sprint 27.1 identity flows.
 """
 
 from __future__ import annotations
@@ -25,7 +25,14 @@ from app.domain.exceptions import (
 )
 from app.schemas.user_platform import (
     AuthResponse,
+    EmailVerificationConfirmRequest,
+    EmailVerificationConfirmResponse,
+    EmailVerificationRequestBody,
+    IdentityEmailAcceptedResponse,
     LoginRequest,
+    PasswordResetConfirmRequest,
+    PasswordResetConfirmResponse,
+    PasswordResetRequestBody,
     RegisterRequest,
     UserPayload,
     UserPlatformDemoResponse,
@@ -135,6 +142,86 @@ async def logout(
         raise map_user_platform_error(exc) from exc
     response.status_code = status.HTTP_204_NO_CONTENT
     return response
+
+
+@router.post(
+    "/password-reset",
+    response_model=IdentityEmailAcceptedResponse,
+    response_model_exclude_none=True,
+    summary="Request a password reset (enumeration-safe)",
+)
+async def request_password_reset(
+    body: PasswordResetRequestBody,
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> IdentityEmailAcceptedResponse:
+    try:
+        payload = service.request_password_reset(body.email)
+    except (
+        UserPlatformValidationError,
+        UserPlatformRateLimitError,
+    ) as exc:
+        raise map_user_platform_error(exc) from exc
+    return IdentityEmailAcceptedResponse.model_validate(payload)
+
+
+@router.post(
+    "/password-reset/confirm",
+    response_model=PasswordResetConfirmResponse,
+    summary="Confirm a password reset token and set a new password",
+)
+async def confirm_password_reset(
+    body: PasswordResetConfirmRequest,
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> PasswordResetConfirmResponse:
+    try:
+        payload = service.confirm_password_reset(body.token, body.new_password)
+    except (
+        UserPlatformValidationError,
+        UserPlatformAuthError,
+        UserPlatformRateLimitError,
+    ) as exc:
+        raise map_user_platform_error(exc) from exc
+    return PasswordResetConfirmResponse.model_validate(payload)
+
+
+@router.post(
+    "/verify-email",
+    response_model=IdentityEmailAcceptedResponse,
+    response_model_exclude_none=True,
+    summary="Request email verification (enumeration-safe)",
+)
+async def request_email_verification(
+    body: EmailVerificationRequestBody,
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> IdentityEmailAcceptedResponse:
+    try:
+        payload = service.request_email_verification(body.email)
+    except (
+        UserPlatformValidationError,
+        UserPlatformRateLimitError,
+    ) as exc:
+        raise map_user_platform_error(exc) from exc
+    return IdentityEmailAcceptedResponse.model_validate(payload)
+
+
+@router.post(
+    "/verify-email/confirm",
+    response_model=EmailVerificationConfirmResponse,
+    summary="Confirm an email verification token",
+)
+async def confirm_email_verification(
+    body: EmailVerificationConfirmRequest,
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> EmailVerificationConfirmResponse:
+    try:
+        payload = service.confirm_email_verification(body.token)
+    except (
+        UserPlatformValidationError,
+        UserPlatformAuthError,
+        UserPlatformRateLimitError,
+    ) as exc:
+        raise map_user_platform_error(exc) from exc
+    return EmailVerificationConfirmResponse.model_validate(payload)
 
 
 @router.get(

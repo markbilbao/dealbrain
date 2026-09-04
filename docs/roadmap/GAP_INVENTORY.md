@@ -57,8 +57,8 @@ This inventory records every material Global Public Beta requirement and its cov
 | Logout | `implemented_verified` | Session revoke; staging logout→401 re-verified in Sprint 26 smoke | 17 / 29 / 26 |
 | Durable sessions | `implemented_verified` | SQLAlchemy store staging-proven on current main (`79bd03f`); see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | 17 (impl); 26 (staging) |
 | Session expiry and revocation | `implemented_verified` | Expiry + logout revoke; revoke-all hardening → 27; logout revoke re-verified in Sprint 26 authenticated smoke | 17 / 27 / 26 |
-| Password recovery | `planned_underspecified` | Request-only + `NullEmailSender`; no confirm | 27 |
-| Email verification | `planned_underspecified` | Request-only | 27 |
+| Password recovery | `implemented_needs_staging_proof` | 27.1 request+confirm+hashed single-use tokens; inbox E2E still required | 27 |
+| Email verification | `implemented_needs_staging_proof` | 27.1 request+confirm; signup queues verify; inbox E2E still required | 27 |
 | Duplicate-account handling | `implemented_verified` | Email uniqueness | 17 |
 | Failed-login handling | `implemented_verified` | Errors + rate limit | 17 / 22 |
 | Account lockout | `missing_from_roadmap` | Rate limit only | 40 |
@@ -86,15 +86,15 @@ This inventory records every material Global Public Beta requirement and its cov
 
 | Requirement | Class | Evidence / notes | Owning sprint |
 |-------------|-------|------------------|---------------|
-| Transactional email provider | `missing_from_roadmap` | `NullEmailSender` | 27 |
-| Sender-domain verification | `externally_blocked` | Provider + DNS DKIM/SPF/DMARC | 27 |
-| Password-reset email | `missing_from_roadmap` | Demo tokens only | 27 |
-| Verification email | `missing_from_roadmap` | Same | 27 |
-| Reset-token expiry / invalidation | `planned_underspecified` | Partial model; confirm route missing | 27 |
-| Email-change verification | `missing_from_roadmap` | — | 27 |
+| Transactional email provider | `implemented_needs_staging_proof` | Resend adapter + fail-closed staging/prod factory; EXT-08 still `applied` not provisioned | 27 |
+| Sender-domain verification | `externally_blocked` | EXT-09 DNS **plan** only; not applied/verified | 27 |
+| Password-reset email | `implemented_needs_staging_proof` | Resend-backed send path; no staging inbox evidence yet | 27 |
+| Verification email | `implemented_needs_staging_proof` | Same | 27 |
+| Reset-token expiry / invalidation | `implemented_needs_staging_proof` | Confirm + expiry + consume; inbox E2E still required | 27 |
+| Email-change verification | `missing_from_roadmap` | Deferred — not in 27.1 | 27 |
 | Secure session cookies / documented session architecture | `implemented_verified` | Bearer sessions documented; cookies N/A unless introduced | 17 |
-| Session rotation | `planned_underspecified` | Not fully specified for public | 27 |
-| Session revocation | `implemented_verified` | Logout; broaden revoke-all | 27 |
+| Session rotation | `planned_underspecified` | Login still issues a new session; no refresh-token rotation | 27 |
+| Session revocation | `implemented_verified` | Logout + password-reset confirm revoke-all | 27 |
 | Auth rate limiting | `implemented_verified` | Per-process buckets | 22 |
 | Account enumeration protection | `planned_underspecified` | Needs hardening review | 40 |
 | Brute-force / credential-stuffing protection | `planned_underspecified` | Rate limit only; no lockout/bot | 40 |

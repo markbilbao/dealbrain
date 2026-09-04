@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # --- Auth ---
 
@@ -24,6 +24,42 @@ class LoginRequest(BaseModel):
     email: str = Field(..., min_length=3, max_length=254)
     password: str = Field(..., min_length=1, max_length=256)
     remember_me: bool = False
+
+
+class PasswordResetRequestBody(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    token: str = Field(..., min_length=1, max_length=512)
+    new_password: str = Field(..., min_length=8, max_length=256)
+
+
+class EmailVerificationRequestBody(BaseModel):
+    email: str = Field(..., min_length=3, max_length=254)
+
+
+class EmailVerificationConfirmRequest(BaseModel):
+    token: str = Field(..., min_length=1, max_length=512)
+
+
+class IdentityEmailAcceptedResponse(BaseModel):
+    model_config = ConfigDict(exclude_none=True)
+
+    status: str = "accepted"
+    email_delivery: bool = False
+    detail: str = ""
+    reset_token_demo_only: str | None = None
+    verification_token_demo_only: str | None = None
+
+
+class PasswordResetConfirmResponse(BaseModel):
+    status: str = "password_changed"
+
+
+class EmailVerificationConfirmResponse(BaseModel):
+    status: str = "email_verified"
+    email_verified: bool = True
 
 
 class UserPayload(BaseModel):

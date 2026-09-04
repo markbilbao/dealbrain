@@ -153,11 +153,15 @@ def test_affiliate_disclosure_fixture_uses_public_brand_and_score() -> None:
 
 
 def test_auth_email_subjects_use_public_brand() -> None:
-    text = (ROOT / "app/auth/service.py").read_text(encoding="utf-8")
-    assert 'subject="PiqSavi password reset"' in text
-    assert 'subject="Verify your PiqSavi email"' in text
+    text = (ROOT / "app/auth/email_templates.py").read_text(encoding="utf-8")
+    assert 'PASSWORD_RESET_SUBJECT = f"{PUBLIC_BRAND} password reset"' in text
+    assert 'EMAIL_VERIFICATION_SUBJECT = f"Verify your {PUBLIC_BRAND} email"' in text
     assert "DealBrain password reset" not in text
     assert "Verify your DealBrain email" not in text
+    from app.auth.email_templates import EMAIL_VERIFICATION_SUBJECT, PASSWORD_RESET_SUBJECT
+
+    assert PASSWORD_RESET_SUBJECT == "PiqSavi password reset"
+    assert EMAIL_VERIFICATION_SUBJECT == "Verify your PiqSavi email"
 
 
 def test_price_history_public_disclaimer_uses_piqsavi() -> None:

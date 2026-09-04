@@ -67,6 +67,10 @@ def test_performance_service_memoizes() -> None:
 def test_classify_path_buckets() -> None:
     assert classify_path("POST", "/api/v1/auth/login") == "login"
     assert classify_path("POST", "/api/v1/auth/register") == "registration"
+    assert classify_path("POST", "/api/v1/auth/password-reset") == "auth_email"
+    assert classify_path("POST", "/api/v1/auth/password-reset/confirm") == "auth_email"
+    assert classify_path("POST", "/api/v1/auth/verify-email") == "auth_email"
+    assert classify_path("POST", "/api/v1/auth/verify-email/confirm") == "auth_email"
     assert classify_path("POST", "/api/v1/early-access") == "registration"
     assert classify_path("POST", "/api/v1/early-access/events") == "early_access_events"
     assert classify_path("GET", "/api/v1/affiliate/report") == "affiliate"

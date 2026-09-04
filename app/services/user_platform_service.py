@@ -82,6 +82,22 @@ class UserPlatformService:
         self._require_enabled()
         return self._auth.current_user(access_token)
 
+    def request_password_reset(self, email: str) -> dict[str, Any]:
+        self._require_enabled()
+        return self._auth.request_password_reset(email)
+
+    def confirm_password_reset(self, token: str, new_password: str) -> dict[str, Any]:
+        self._require_enabled()
+        return self._auth.confirm_password_reset(token, new_password)
+
+    def request_email_verification(self, email: str) -> dict[str, Any]:
+        self._require_enabled()
+        return self._auth.request_email_verification_by_email(email)
+
+    def confirm_email_verification(self, token: str) -> dict[str, Any]:
+        self._require_enabled()
+        return self._auth.confirm_email_verification(token)
+
     def require_user(self, access_token: str | None) -> User:
         return self.me(access_token)
 
@@ -316,6 +332,10 @@ class UserPlatformService:
                 "POST /api/v1/auth/login",
                 "POST /api/v1/auth/logout",
                 "GET /api/v1/auth/me",
+                "POST /api/v1/auth/password-reset",
+                "POST /api/v1/auth/password-reset/confirm",
+                "POST /api/v1/auth/verify-email",
+                "POST /api/v1/auth/verify-email/confirm",
                 "GET /api/v1/profile",
                 "PUT /api/v1/profile",
                 "GET /api/v1/profile/preferences",

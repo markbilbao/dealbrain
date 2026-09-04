@@ -5,7 +5,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | Sprint | Document |
 |--------|----------|
 | 26 | [Staging Current-Main Proof & Roadmap Bootstrap](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — technical evidence: [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) (sprint still open) |
-| 27 | [Transactional Identity & Email](SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) |
+| 27 | [Transactional Identity & Email](SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) — in progress (27.1 implemented; sprint not complete) |
 | 28 | [Privacy, Legal, Consent & Account Deletion](SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) |
 | 29 | [Production Consumer Decision Experience & Conversational Continuity](SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md) |
 | 30 | [Public Beta Readiness Audit (Historical)](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_HISTORICAL.md) |

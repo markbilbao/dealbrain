@@ -415,10 +415,9 @@ class TestPasswordResetArchitecture:
         auth, _store = make_auth()
         response = auth.request_password_reset(DEMO_EMAIL)
         assert response["email_delivery"] is False
-        assert (
-            "not sent" in response["detail"]
-            or "not emailed" in response.get("reset_token_demo_only", "")
-            or "reset_token_demo_only" in response
+        assert response["status"] == "accepted"
+        assert response["detail"] == (
+            "If an account exists for this email, password reset instructions will be sent."
         )
 
 
