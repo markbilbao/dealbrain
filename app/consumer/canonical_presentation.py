@@ -6,6 +6,7 @@ recalculate PiqScore, Recommendation, discounts, shipping, taxes, or price state
 
 from __future__ import annotations
 
+from app.consumer.currency_presentation import attach_currency_presentation
 from app.consumer.fixtures import AFFILIATE_DISCLOSURE, FRESHNESS_DISCLAIMER
 from app.consumer.location import DeliveryContext
 from app.consumer.market_coverage import attach_shopping_coverage
@@ -161,7 +162,7 @@ def page_view_from_snapshot(
         ),
         destination_reevaluation_required=invalidation.reevaluation_required,
     )
-    return attach_shopping_coverage(view, session_shopping_market)
+    return attach_currency_presentation(attach_shopping_coverage(view, session_shopping_market))
 
 
 def _delivery_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DeliveryContext:

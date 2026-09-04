@@ -448,3 +448,21 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 | Sprint 32 | Unchanged: in progress, blocked on external certification |
 | Sprint 33–36 / 38 | Not started |
 | Authority | [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |
+
+---
+
+## 2026-09-04 Sprint 37.3 status addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-authorized currency-authority and conversion-unavailable foundation.
+
+| Field | Value |
+|-------|-------|
+| Sprint 37 | In progress. 37.1 and 37.2 merged. 37.3 currency authority implemented. Production FX conversion is **unavailable**. Sprint 37 is **not complete**. |
+| EXT-23 | Remains `not_started`. 37.3 adds domain conversion state, fail-closed mixed-currency behavior, and disclosure. It does **not** provide a live FX provider, production quotes, credentials, or operational rate evidence. |
+| P1-1B | Unchanged: not fully closed |
+| P1-2 | Unchanged: not fully closed |
+| Certified shopping markets | 0 |
+| Production FX quotes / providers | 0 |
+| Sprint 32 | Unchanged: in progress, blocked on external certification |
+| Sprint 33–36 / 38 | Not started |
+| Authority | [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |

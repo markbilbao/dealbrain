@@ -1,6 +1,6 @@
 # Sprint 37 — MarketContext, Currency & Localization
 
-**Status:** In progress — 37.1 merged; 37.2 shopping-market selection and coverage disclosure implemented. Sprint 37 is **not complete**. P1-1B is partially progressed and **not** fully closed. P1-2 is **not** fully closed.
+**Status:** In progress — 37.1 and 37.2 merged; 37.3 currency authority + conversion-unavailable foundation implemented. Sprint 37 is **not complete**. P1-1B is partially progressed and **not** fully closed. P1-2 is **not** fully closed.
 **Primary owner / domain:** Product platform / marketplace
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-1B, P1-2; multinational honesty
@@ -18,7 +18,7 @@
 | Destination-sensitive invalidation contract | implemented |
 | `DESTINATION_REEVALUATION_IMPLEMENTED` | **False** (unchanged) |
 | Live destination re-evaluation | not implemented |
-| FX adapter / EXT-23 | not started |
+| FX adapter / EXT-23 | domain + fail-closed conversion state in 37.3; live provider **not started** |
 | Five-market QA / FR-CA / US-SG-UK-CA selector | not started |
 | P1-1B / P1-2 closure | **not closed** — foundation only |
 
@@ -40,6 +40,24 @@
 | P1-1B closure | **not closed** — selection + disclosure foundation only |
 
 37.2 does not close Sprint 37. Default PH is not certified PH coverage.
+
+## 37.3 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| Source offer currency retained (PHP stays PHP; USD stays USD) | implemented |
+| Preferred/display currency distinguished from source currency | implemented |
+| Same-currency PHP → PHP (no FX quote) | implemented |
+| Conversion-unavailable when preferred ≠ source and no trusted quote | implemented |
+| Production FX provider / live quotes | **none** (count = 0) |
+| Test-only FX fixture | implemented — not live, not production-eligible |
+| Mixed-currency compare / DealScore / Recommendation | remain fail-closed without trusted FX |
+| Results / Compare / Why source-currency presentation + disclosure | implemented (no redesign) |
+| EXT-23 live FX provider, credentials, production quotes | **OPEN** (`not_started`) |
+| Five-market selector / FR-CA / live destination re-evaluation | not started |
+| P1-1B / P1-2 closure | **not closed** |
+
+37.3 satisfies domain currency authority, conversion-unavailable presentation, and fail-closed comparison. It does **not** complete EXT-23. Production currency conversion remains unavailable.
 
 ## Objective
 

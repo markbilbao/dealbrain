@@ -92,13 +92,17 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-shopping-market-origin="{h(view.shopping_market_origin)}"
         data-shopping-coverage-available="{"true" if view.shopping_coverage_available else "false"}"
         data-shopping-coverage-reason="{h(view.shopping_coverage_reason)}"
-        data-connector-invocation-eligible="{"true" if view.connector_invocation_eligible else "false"}">
+        data-connector-invocation-eligible="{"true" if view.connector_invocation_eligible else "false"}"
+        data-preferred-display-currency="{h(view.preferred_display_currency)}"
+        data-currency-conversion-state="{h(view.currency_conversion_state)}"
+        data-source-currencies="{h(",".join(view.source_currencies))}">
     <a class="skip-link" href="#main">Skip to content</a>
     {_site_header(view)}
     <main id="main">
       {_ask_top(view) if view.page != "why" else ""}
       {_location_status(view)}
       {_coverage_status(view)}
+      {_currency_status(view)}
       {main}
     </main>
     {_ask_dock(view)}
@@ -130,6 +134,20 @@ def _coverage_status(view: DecisionPageView) -> str:
          data-coverage-state="{"available" if view.shopping_coverage_available else "unavailable"}">
       <p class="coverage-label">Shopping market: {h(market)} ({h(origin)})</p>
       <p class="coverage-hint">{h(disclosure)}</p>
+    </div>
+    """
+
+
+def _currency_status(view: DecisionPageView) -> str:
+    disclosure = view.currency_conversion_disclosure
+    if not disclosure:
+        return ""
+    sources = ", ".join(view.source_currencies) or "unknown"
+    return f"""
+    <div class="currency-status" role="status"
+         data-currency-state="{h(view.currency_conversion_state)}">
+      <p class="currency-label">Offer currency: {h(sources)}</p>
+      <p class="currency-hint">{h(disclosure)}</p>
     </div>
     """
 
