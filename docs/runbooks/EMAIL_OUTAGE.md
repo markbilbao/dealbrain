@@ -13,11 +13,14 @@ not cover Sprint 19 notification digests.
 
 - Users do not receive reset or verification mail
 - Auth audit events show `email_delivery_failed`
-- Application startup fails in staging/production with missing Resend config
+- Production startup fails when Resend is missing; staging may still boot
+  with `NullEmailSender` when `LAUNCH_STRICT_STARTUP` is false
 
 ## Fail-closed rules
 
-- Staging/production must not start with `NullEmailSender`
+- Production must not start with `NullEmailSender`
+- Staging may remain operational with `NullEmailSender`, but health/config
+  must report `identity_email_ready=false` — that is not email readiness
 - API request routes stay enumeration-safe even when Resend fails
 - Do not enable `ALLOW_DEMO_RESET_TOKENS` outside development
 - Do not log `RESEND_API_KEY`, raw tokens, or passwords

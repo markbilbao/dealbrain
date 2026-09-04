@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from app import __version__
+from app.auth.email_factory import identity_email_status
 from app.core.config import Settings, settings
 from app.domain.entities.launch import DependencyCheck, SystemHealthReport
 from app.launch.cache import TtlCache
@@ -126,6 +127,7 @@ class LaunchHealthService:
             overall = ServiceStatus.DEGRADED
 
         started = get_startup_instant()
+        email_status = identity_email_status(self._cfg)
         return SystemHealthReport(
             status=overall.value,  # type: ignore[arg-type]
             service=self._cfg.app_name,
@@ -145,6 +147,8 @@ class LaunchHealthService:
                 "persistence_level": persistence.get("level"),
                 "persistence_schema_ok": persistence.get("schema_ok"),
                 "persistence_database_ok": persistence.get("database_ok"),
+                "identity_email_adapter": email_status["adapter"],
+                "identity_email_ready": email_status["ready"],
             },
         )
 

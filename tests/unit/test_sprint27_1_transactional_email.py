@@ -14,6 +14,7 @@ from app.auth.email_factory import (
     allows_inline_identity_tokens,
     build_identity_email_sender,
     build_trusted_action_url,
+    identity_email_status,
 )
 from app.auth.email_resend import RESEND_EMAILS_URL, ResendEmailSender
 from app.auth.email_templates import EMAIL_VERIFICATION_SUBJECT, PASSWORD_RESET_SUBJECT
@@ -29,6 +30,7 @@ from app.domain.exceptions import (
 )
 from app.main import create_app
 from app.profile.service import ProfileService
+from app.services.launch_health_service import LaunchHealthService
 from app.services.user_platform_service import UserPlatformService
 from app.session.service import SessionService
 from app.user.fixtures import DEMO_PASSWORD, seed_demo_users
@@ -335,6 +337,9 @@ class TestEnvironmentSafety:
         sender = build_identity_email_sender(cfg)
         assert isinstance(sender, ResendEmailSender)
         assert sender.from_header == "PiqSavi <no-reply@piqsavi.com>"
+        status = identity_email_status(cfg)
+        assert status["adapter"] == "resend"
+        assert status["ready"] is False
 
     def test_staging_uses_resend_when_configured(self) -> None:
         cfg = _settings(
@@ -366,6 +371,28 @@ class TestEnvironmentSafety:
         result = validate_settings(cfg)
         assert result.ok is False
         assert any("ALLOW_DEMO_RESET_TOKENS" in error for error in result.errors)
+
+    def test_staging_null_sender_is_not_email_ready(self) -> None:
+        cfg = _settings(
+            APP_ENV="staging",
+            ALLOW_DEMO_RESET_TOKENS="false",
+            TRANSACTIONAL_EMAIL_PROVIDER="null",
+            PUBLIC_APP_BASE_URL="https://piqsavi.com",
+        )
+        sender = build_identity_email_sender(cfg)
+        assert isinstance(sender, NullEmailSender)
+        status = identity_email_status(cfg)
+        assert status["adapter"] == "null"
+        assert status["ready"] is False
+        result = validate_settings(cfg)
+        assert result.ok is False
+        assert any("TRANSACTIONAL_EMAIL_PROVIDER" in error for error in result.errors)
+        assert exportable_settings(cfg)["transactional_email_provider"] == "null"
+        report = LaunchHealthService(cfg=cfg).health()
+        assert report.checks["identity_email_adapter"] == "null"
+        assert report.checks["identity_email_ready"] is False
+        ready = LaunchHealthService(cfg=cfg).ready()
+        assert ready["ready"] is True
 
 
 class TestSenderAndLinks:
@@ -530,6 +557,27 @@ class TestHttpRoutes:
         assert known.json().get("reset_token_demo_only") in {None, ""}
         assert unknown.json().get("reset_token_demo_only") in {None, ""}
         assert known.json()["detail"] == unknown.json()["detail"]
+
+    def test_public_http_bodies_identical_when_demo_tokens_off(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("app.auth.service.allows_inline_identity_tokens", lambda: False)
+        service, _sender = make_platform()
+        app = create_app()
+        app.dependency_overrides[get_user_platform_service] = lambda: service
+        with TestClient(app) as test_client:
+            for path in ("/api/v1/auth/password-reset", "/api/v1/auth/verify-email"):
+                known = test_client.post(path, json={"email": DEMO_EMAIL})
+                unknown = test_client.post(path, json={"email": "ghost@example.com"})
+                assert known.status_code == unknown.status_code == 200
+                assert known.json() == unknown.json()
+                body = known.json()
+                assert set(body) == {"status", "detail", "email_delivery"}
+                assert body["status"] == "accepted"
+                assert body["email_delivery"] is False
+                assert "reset_token_demo_only" not in body
+                assert "verification_token_demo_only" not in body
+        app.dependency_overrides.clear()
 
     def test_host_header_cannot_control_action_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("app.core.config.settings", _settings())

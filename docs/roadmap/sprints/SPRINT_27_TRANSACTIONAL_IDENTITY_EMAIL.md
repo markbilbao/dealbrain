@@ -11,7 +11,7 @@
 |------|--------|
 | `EmailSender` port + `NullEmailSender` test/dev sender | implemented |
 | Resend adapter (`ResendEmailSender`) | implemented — no live Resend calls in tests |
-| Staging/production fail-closed (no silent `NullEmailSender`) | implemented |
+| Production fail-closed (no `NullEmailSender`); staging Null allowed but not ready | implemented |
 | Password-reset request (enumeration-safe) | implemented |
 | Password-reset confirm + expiry + single-use | implemented |
 | Email-verification request (enumeration-safe by email) | implemented |

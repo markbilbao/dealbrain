@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from urllib.parse import urlencode, urlparse
 
 from app.auth.email import EmailSender, NullEmailSender
@@ -47,8 +48,34 @@ def build_trusted_action_url(base_url: str, path: str, token: str) -> str:
     return f"{cleaned}{normalized_path}?{urlencode({'token': token})}"
 
 
+def identity_email_status(cfg: Settings | None = None) -> dict[str, Any]:
+    """Report identity-email adapter truth without claiming inbox E2E.
+
+    Staging may operate with ``NullEmailSender`` during external setup.
+    That is not configured, verified, or ready transactional email.
+    ``ready`` stays False until Sprint 27 external evidence exists.
+    """
+    cfg = cfg or _current_settings()
+    if cfg.app_env not in KNOWN_APP_ENVS or (
+        cfg.is_production and cfg.transactional_email_provider != "resend"
+    ):
+        adapter = "unavailable"
+    elif cfg.transactional_email_provider == "resend":
+        adapter = "resend"
+    else:
+        adapter = "null"
+    return {
+        "adapter": adapter,
+        "ready": False,
+    }
+
+
 def build_identity_email_sender(cfg: Settings | None = None) -> EmailSender:
-    """Select the identity email sender. Staging/production never use NullEmailSender."""
+    """Select the identity email sender.
+
+    Production refuses ``NullEmailSender``. Staging may use it when the
+    provider is still ``null``, but that is not email readiness.
+    """
     cfg = cfg or _current_settings()
     if cfg.app_env not in KNOWN_APP_ENVS:
         raise ConfigurationValidationError(

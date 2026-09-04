@@ -29,7 +29,9 @@ Configuration (no secrets in git):
 
 EXT-08 remains `applied` (account establishment). EXT-09 remains `applied`
 (DNS plan only). 27.1 does **not** claim sender-domain verification or
-production email readiness.
+production email readiness. Health/config `identity_email_ready` stays
+`false` while that evidence is missing — including staging on
+`NullEmailSender`.
 
 Sprint 19 notification email below is unchanged and still mock-only.
 
