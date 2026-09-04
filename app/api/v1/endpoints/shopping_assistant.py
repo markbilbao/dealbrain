@@ -11,6 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from app.api.v1.mappers.shopping_assistant import to_assistant_response
 from app.consumer.decision_owner import OWNER_COOKIE, parse_owner_cookie
 from app.consumer.location import DELIVERY_COOKIE, parse_delivery_cookie
+from app.consumer.shopping_market import (
+    SHOPPING_MARKET_COOKIE,
+    shopping_market_from_cookie,
+)
 from app.core.config import settings
 from app.core.dependencies import get_shopping_assistant_service
 from app.domain.exceptions import (
@@ -98,8 +102,14 @@ async def query_shopping_assistant(
 ) -> ShoppingAssistantResponse:
     location = parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
     owner = parse_owner_cookie(request.cookies.get(OWNER_COOKIE))
+    selected_market = shopping_market_from_cookie(request.cookies.get(SHOPPING_MARKET_COOKIE))
     try:
-        result = service.query(body.model_dump(), location=location, owner=owner)
+        result = service.query(
+            body.model_dump(),
+            location=location,
+            owner=owner,
+            selected_market=selected_market,
+        )
     except (
         ShoppingAssistantValidationError,
         ShoppingAssistantNotFoundError,

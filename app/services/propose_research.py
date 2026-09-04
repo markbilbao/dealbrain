@@ -42,6 +42,8 @@ from app.domain.exceptions import (
 )
 from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 from app.domain.interfaces.shopping_assistant_repository import ConversationRepository
+from app.market.coverage import assess_shopping_coverage
+from app.market.selection import SelectedShoppingMarket, intended_default_shopping_market
 from app.services.answer_from_evidence import (
     _OUTSIDE_HINTS,
     _SOURCE_HINTS,
@@ -290,6 +292,7 @@ class ProposeResearchService:
         location: DeliveryContext | None = None,
         owner: ConversationOwner | None = None,
         snapshot: CanonicalDecisionSnapshot | None = None,
+        selected_market: SelectedShoppingMarket | None = None,
     ) -> ShoppingAssistantResponse | None:
         """Return a proposal response when 29.4C owns the turn; otherwise None."""
 
@@ -385,6 +388,7 @@ class ProposeResearchService:
             stored_result,
             conversation_id=bound_conversation_id or conversation_id,
             overlay=overlay,
+            selected_market=selected_market,
         )
 
     def _resolve_packet(
@@ -681,6 +685,7 @@ class ProposeResearchService:
         *,
         conversation_id: str | None,
         overlay: SessionRecommendationRefinement | None,
+        selected_market: SelectedShoppingMarket | None = None,
     ) -> ShoppingAssistantResponse:
         packet = result.packet
         proposal = result.proposal
@@ -699,6 +704,9 @@ class ProposeResearchService:
                     code="research_not_started",
                 ),
             )
+        coverage = assess_shopping_coverage(
+            selected_market if selected_market is not None else intended_default_shopping_market()
+        )
         if result.status == _CONFIRMED_STATUS:
             warnings = (
                 AssistantWarning(
@@ -708,6 +716,14 @@ class ProposeResearchService:
                     code="research_execution_unavailable",
                 ),
             )
+            if not coverage.connector_invocation_eligible:
+                warnings = (
+                    *warnings,
+                    AssistantWarning(
+                        message=(f"{coverage.disclosure} No merchant source was checked."),
+                        code="unsupported_shopping_market",
+                    ),
+                )
         if result.status == "no_pending_research_proposal":
             warnings = (
                 AssistantWarning(
@@ -752,6 +768,12 @@ class ProposeResearchService:
             "research_executed": False,
             "execution_available": False,
             "authorization_created": result.authorization_created,
+            "selected_shopping_market": coverage.selected.country_code,
+            "shopping_market_origin": coverage.selected.origin,
+            "shopping_coverage_available": coverage.coverage_available,
+            "shopping_coverage_reason": coverage.reason,
+            "shopping_market_certified": coverage.certified,
+            "connector_invocation_eligible": coverage.connector_invocation_eligible,
         }
         if overlay is not None:
             processing["session_best_piq_product_id"] = overlay.session_best_piq_product_id

@@ -133,12 +133,18 @@ class ShoppingAssistantService:
         *,
         location: Any | None = None,
         owner: Any | None = None,
+        selected_market: Any | None = None,
     ) -> ShoppingAssistantResponse:
         if isinstance(request, dict) and request.get("decision_id"):
             cleaned = self._require_query(str(request.get("query") or ""))
             payload = dict(request)
             payload["query"] = cleaned
-            proposed = self._research_proposals.handle(payload, location=location, owner=owner)
+            proposed = self._research_proposals.handle(
+                payload,
+                location=location,
+                owner=owner,
+                selected_market=selected_market,
+            )
             if proposed is not None:
                 return proposed
             if is_refinement_request(cleaned):
@@ -148,7 +154,12 @@ class ShoppingAssistantService:
             cleaned = self._require_query(request.query)
             payload = request.to_dict()
             payload["query"] = cleaned
-            proposed = self._research_proposals.handle(payload, location=location, owner=owner)
+            proposed = self._research_proposals.handle(
+                payload,
+                location=location,
+                owner=owner,
+                selected_market=selected_market,
+            )
             if proposed is not None:
                 return proposed
             if is_refinement_request(cleaned):
