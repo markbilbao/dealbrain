@@ -28,6 +28,16 @@ Add `app/market/` as a composition layer:
 - Display formatting uses the offer’s source currency. No FX. Mixed currencies remain fail-closed.
 - Mock DealScore enrichment `shipping_cost=0.0` values remain fixture-only and are not live PH evidence. Unknown mock SKUs no longer default shipping to `0.0`.
 
+## 37.2 addendum — selected market vs coverage
+
+Selected shopping market is a separate guest-session contract (`SelectedShoppingMarket`, cookie `piqsavi_shopping_market`). It stores only a validated ISO country code.
+
+- Missing selection uses the intended PH product default and must be labeled as a default, not as certified support.
+- Delivery destination remains `DeliveryContext` / `piqsavi_delivery`. Changing one must not rewrite the other.
+- Coverage is assessed only by `production_certified_shopping_markets()`. Account country, currency, locale, delivery, and affiliate availability cannot certify a market.
+- Uncertified selected markets cannot become connector-eligible. Research planning may name the selected market; it must not execute connectors or treat fixtures as live coverage.
+- Product-facing launch options remain PH-first. The typed contract accepts any valid ISO code so later markets do not require a second model.
+
 ## Out of scope
 
 FX adapter (EXT-23), live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.

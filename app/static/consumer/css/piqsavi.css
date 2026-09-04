@@ -255,6 +255,20 @@ main {
   font-size: 0.9rem;
 }
 
+.coverage-status {
+  text-align: center;
+  margin: 0 0 1rem;
+}
+
+.coverage-label {
+  font-weight: 700;
+}
+
+.coverage-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .location-unknown {
   background: var(--warn-bg);
   color: var(--warn);

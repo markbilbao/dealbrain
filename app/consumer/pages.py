@@ -87,12 +87,18 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-recommendation-qualified="{qualified}"
         data-destination-snapshot="{snapshot}"
         data-shopping-market-certified="{"true" if view.shopping_market_certified else "false"}"
-        data-destination-reevaluation-required="{"true" if view.destination_reevaluation_required else "false"}">
+        data-destination-reevaluation-required="{"true" if view.destination_reevaluation_required else "false"}"
+        data-selected-shopping-market="{h(view.selected_shopping_market)}"
+        data-shopping-market-origin="{h(view.shopping_market_origin)}"
+        data-shopping-coverage-available="{"true" if view.shopping_coverage_available else "false"}"
+        data-shopping-coverage-reason="{h(view.shopping_coverage_reason)}"
+        data-connector-invocation-eligible="{"true" if view.connector_invocation_eligible else "false"}">
     <a class="skip-link" href="#main">Skip to content</a>
     {_site_header(view)}
     <main id="main">
       {_ask_top(view) if view.page != "why" else ""}
       {_location_status(view)}
+      {_coverage_status(view)}
       {main}
     </main>
     {_ask_dock(view)}
@@ -111,6 +117,21 @@ def _document(view: DecisionPageView, main: str) -> str:
   </body>
 </html>
 """
+
+
+def _coverage_status(view: DecisionPageView) -> str:
+    origin = "default" if view.shopping_market_origin == "intended_default" else "selected"
+    market = view.selected_shopping_market
+    disclosure = view.shopping_coverage_disclosure or (
+        "Shopping coverage for this market is not yet available."
+    )
+    return f"""
+    <div class="coverage-status" role="status"
+         data-coverage-state="{"available" if view.shopping_coverage_available else "unavailable"}">
+      <p class="coverage-label">Shopping market: {h(market)} ({h(origin)})</p>
+      <p class="coverage-hint">{h(disclosure)}</p>
+    </div>
+    """
 
 
 def _location_state(view: DecisionPageView) -> str:
