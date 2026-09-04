@@ -39,7 +39,10 @@ def mixed_currency_blocks_compare(
     source_currency: str | None,
     display_currency: str | None,
 ) -> bool:
-    """True when currencies differ. No FX conversion is available in 37.1."""
+    """True when currencies differ.
+
+    Production has no FX quote in 37.3. Display preference is not a rate.
+    """
 
     source = (source_currency or "").strip().upper()
     display = (display_currency or "").strip().upper()
