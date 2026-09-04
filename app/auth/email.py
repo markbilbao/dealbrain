@@ -1,7 +1,10 @@
-"""Email delivery interfaces only — Sprint 17 does not send email.
+"""Identity transactional-email ports.
 
-Password reset and email verification architecture lives here as ports.
-Concrete SMTP / SES / SendGrid adapters are intentionally out of scope.
+`EmailSender` is the only outbound identity-email boundary. Auth/account
+code must not call Resend (or any provider) directly.
+
+Sprint 19 notification email (`EmailNotificationProvider`) is a separate
+subsystem and is not used here.
 """
 
 from __future__ import annotations
@@ -11,9 +14,17 @@ from dataclasses import dataclass
 from typing import Any
 
 
+class EmailDeliveryError(Exception):
+    """Raised when the configured email provider fails to accept a message."""
+
+    def __init__(self, message: str = "Transactional email delivery failed.") -> None:
+        self.message = message
+        super().__init__(message)
+
+
 @dataclass(frozen=True, slots=True)
 class EmailMessage:
-    """Outbound email payload for a future delivery adapter."""
+    """Outbound identity email payload."""
 
     to_address: str
     subject: str
@@ -24,7 +35,7 @@ class EmailMessage:
 
 
 class EmailSender(ABC):
-    """Port for outbound email. No implementation ships in Sprint 17."""
+    """Port for outbound identity email."""
 
     @abstractmethod
     def send(self, message: EmailMessage) -> None:
@@ -32,7 +43,7 @@ class EmailSender(ABC):
 
 
 class NullEmailSender(EmailSender):
-    """No-op sender used by default — records intent without delivery."""
+    """Records intent without delivery. Development/test only."""
 
     def __init__(self) -> None:
         self.sent: list[EmailMessage] = []

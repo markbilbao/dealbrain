@@ -166,6 +166,7 @@ def assemble(
         ("openai_api_key", "OPENAI_API_KEY"),
         ("anthropic_api_key", "ANTHROPIC_API_KEY"),
         ("gemini_api_key", "GEMINI_API_KEY"),
+        ("resend_api_key", "RESEND_API_KEY"),
     ):
         try:
             mapping[env_name] = _get_plain_secret(f"{secrets_prefix}/{leaf}", region)

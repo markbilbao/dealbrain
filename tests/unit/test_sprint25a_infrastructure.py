@@ -45,6 +45,11 @@ def _prod_settings(**overrides: object) -> Settings:
         "NOTIFICATIONS_BACKEND": "sqlalchemy",
         "AFFILIATE_BACKEND": "sqlalchemy",
         "MERCHANT_BACKEND": "sqlalchemy",
+        "TRANSACTIONAL_EMAIL_PROVIDER": "resend",
+        "RESEND_API_KEY": "re_sprint27_1_configured_key_not_real",
+        "TRANSACTIONAL_EMAIL_FROM": "no-reply@piqsavi.com",
+        "TRANSACTIONAL_EMAIL_FROM_NAME": "PiqSavi",
+        "PUBLIC_APP_BASE_URL": "https://piqsavi.com",
     }
     base.update(overrides)
     return Settings(**base)  # type: ignore[arg-type]
@@ -204,8 +209,16 @@ def test_export_redacts_app_secret() -> None:
     payload = exportable_settings(cfg)
     assert payload["app_secret_key"] == "***REDACTED***"
     assert payload["database_url"] == "***REDACTED***"
+    assert payload["resend_api_key"] == "***REDACTED***"
     assert STRONG_SECRET not in str(payload)
     assert "Str0ngProdPass" not in str(payload)
+    assert "re_sprint27_1_configured_key_not_real" not in str(payload)
+
+
+def test_production_requires_resend_identity_email() -> None:
+    result = validate_settings(_prod_settings(TRANSACTIONAL_EMAIL_PROVIDER="null"))
+    assert result.ok is False
+    assert any("TRANSACTIONAL_EMAIL_PROVIDER" in error for error in result.errors)
 
 
 def test_api_startup_does_not_run_alembic() -> None:

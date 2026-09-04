@@ -102,6 +102,7 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
         errors.append("DEMO_LAUNCHER_ENABLED must be false in production")
     if cfg.allow_demo_reset_tokens:
         errors.append("ALLOW_DEMO_RESET_TOKENS must be false in production")
+    _validate_identity_email_gate(cfg, errors, environment="production")
     if cfg.seed_demo_data:
         errors.append("SEED_DEMO_DATA must be false in production")
     if cfg.openapi_public_docs:
@@ -161,6 +162,35 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
         )
 
 
+def _validate_identity_email_gate(
+    cfg: Settings, errors: list[str], *, environment: str
+) -> None:
+    """Staging/production must use Resend — never a silent no-op sender."""
+    if cfg.transactional_email_provider != "resend":
+        errors.append(
+            f"TRANSACTIONAL_EMAIL_PROVIDER must be 'resend' in {environment} "
+            "(NullEmailSender is not permitted)"
+        )
+    key = cfg.resend_api_key or ""
+    if not key.strip() or _looks_like_placeholder(key):
+        errors.append(
+            f"RESEND_API_KEY must be present and non-placeholder in {environment} "
+            "(value redacted)"
+        )
+    sender = (cfg.transactional_email_from or "").strip()
+    if not sender or "@" not in sender or _looks_like_placeholder(sender):
+        errors.append(
+            f"TRANSACTIONAL_EMAIL_FROM must be a real sender address in {environment}"
+        )
+    base = (cfg.public_app_base_url or "").strip()
+    parsed = urlparse(base)
+    if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
+        errors.append(
+            f"PUBLIC_APP_BASE_URL must be an https origin in {environment} "
+            "(do not use request Host)"
+        )
+
+
 def validate_settings(cfg: Settings | None = None) -> ValidationResult:
     """Validate settings for the active environment.
 
@@ -179,6 +209,9 @@ def validate_settings(cfg: Settings | None = None) -> ValidationResult:
             warnings.append("APP_DEBUG=true in staging — prefer false for beta rehearsal")
         if not cfg.rate_limiting_enabled:
             warnings.append("Rate limiting disabled in staging")
+        if cfg.allow_demo_reset_tokens:
+            errors.append("ALLOW_DEMO_RESET_TOKENS must be false in staging")
+        _validate_identity_email_gate(cfg, errors, environment="staging")
 
     if cfg.app_port < 1 or cfg.app_port > 65535:
         errors.append(f"APP_PORT out of range: {cfg.app_port}")
@@ -234,6 +267,10 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
         "affiliate_backend": cfg.affiliate_backend,
         "merchant_backend": cfg.merchant_backend,
         "allow_demo_reset_tokens": cfg.allow_demo_reset_tokens,
+        "transactional_email_provider": cfg.transactional_email_provider,
+        "transactional_email_from": cfg.transactional_email_from,
+        "transactional_email_from_name": cfg.transactional_email_from_name,
+        "public_app_base_url": cfg.public_app_base_url,
         "seed_demo_data": cfg.seed_demo_data,
         "cors_origins": list(cfg.cors_origins),
         "trusted_hosts": list(cfg.trusted_hosts),
@@ -259,6 +296,7 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
             "default_per_minute": cfg.rate_limit_default_per_minute,
             "login_per_minute": cfg.rate_limit_login_per_minute,
             "registration_per_minute": cfg.rate_limit_registration_per_minute,
+            "auth_email_per_minute": cfg.rate_limit_auth_email_per_minute,
             "early_access_events_per_minute": cfg.rate_limit_early_access_events_per_minute,
             "affiliate_per_minute": cfg.rate_limit_affiliate_per_minute,
             "merchant_per_minute": cfg.rate_limit_merchant_per_minute,
@@ -278,6 +316,7 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
         "openai_api_key": "***REDACTED***",
         "anthropic_api_key": "***REDACTED***",
         "gemini_api_key": "***REDACTED***",
+        "resend_api_key": "***REDACTED***",
     }
     return redact_value(raw)
 
