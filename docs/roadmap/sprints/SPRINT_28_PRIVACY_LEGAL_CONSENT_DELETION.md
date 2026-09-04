@@ -1,9 +1,37 @@
 # Sprint 28 — Privacy, Legal, Consent & Account Deletion
 
-**Status:** Planned
+**Status:** In progress — 28.1 engineering foundations implemented. Sprint 28 is **not complete**. Counsel drafts remain unpublished. EXT-19 written approval is absent. EXT-20 / EXT-21 publication remains `not_started`. Staging delete/export E2E and Sprint 44/45 publication gates remain open.
 **Primary owner / domain:** Legal + privacy engineering
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-4
+
+## 28.1 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| Legal publication gate (`/privacy`, `/terms` fail closed) | implemented — no published production versions |
+| Counsel markdown never auto-served as public HTML | implemented |
+| Policy-version model (type, version, status, timestamps, acceptance-required) | implemented |
+| Consent / policy-version persistence | implemented — records only when a published version exists |
+| Registration does not fabricate unpublished acceptances | implemented |
+| Account deletion API + password re-auth + confirmation + session revoke | implemented (engineering foundation) |
+| Personal-data export API | implemented (engineering foundation) |
+| Deletion propagation checklist | implemented — [`../../privacy/ACCOUNT_DELETION_PROPAGATION.md`](../../privacy/ACCOUNT_DELETION_PROPAGATION.md) |
+| Engineering PII inventory | implemented — [`../../privacy/ENGINEERING_PII_INVENTORY.md`](../../privacy/ENGINEERING_PII_INVENTORY.md) |
+| Engineering vendor inventory | implemented — [`../../privacy/ENGINEERING_VENDOR_INVENTORY.md`](../../privacy/ENGINEERING_VENDOR_INVENTORY.md) |
+| Cookie factual refresh for counsel | implemented — [`../../privacy/COOKIE_STORAGE_FACTUAL_CHANGES.md`](../../privacy/COOKIE_STORAGE_FACTUAL_CHANGES.md); counsel draft **not** approved |
+| Private UUID Results/Compare/Why noindex | implemented (`X-Robots-Tag` + meta robots) |
+| Public landing indexability | unchanged (not noindex) |
+| EXT-19 legal review | `applied` — written approval **not** present |
+| EXT-20 Privacy Policy publication | `not_started` |
+| EXT-21 Terms publication | `not_started` |
+| EXT-22 cookie-consent / CMP | `not_started` — banner **not** implemented |
+| Analytics providers | **not** added |
+| Age gate / minimum age | **not** activated |
+| Staging delete/export E2E | **not done** |
+| Sprint 28 / P0-4 closure | **not closed** |
+
+28.1 implements the engineering privacy foundation that can be completed before legal publication approval. It does **not** complete Sprint 28. It does **not** publish counsel drafts. It does **not** record acceptance of an unpublished policy. Deletion/export are engineering APIs, not legal-compliance certification.
 
 ## Objective
 

@@ -282,7 +282,7 @@ Do **not** reopen Sprint 30.
 |--------|------|-----------------|-------------------------|-----------------------|-----------|
 | 26 | Staging Current-Main Proof & Roadmap Bootstrap | Historical launch-candidate staging-proven (`79bd03f`); EXT apps bootstrap pending | P0-6 | EXT-01…05,08,10,17,18 bootstrap | Technical: Staging `/ready` + smoke on evidenced digest ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); close still requires register updates. Later SHA `ab23d29` is **not** a Sprint 26 close. |
 | 27 | Transactional Identity & Email | Real email; reset/verify/email-change; token lifecycle; enumeration-safe errors; session rotation | P0-5; HIGH demo-auth | EXT-08, EXT-09 | **In progress — 27.1 implemented, sprint not complete.** Staging E2E reset+verify via real provider still required; EXT-09 not verified |
-| 28 | Privacy, Legal, Consent & Deletion | ToS/Privacy/consent/deletion/export + search-index privacy | P0-4; MEDIUM GDPR | EXT-17…22 | Legal draft published internally; deletion E2E staging; counsel review started; private decision URLs non-indexable by policy |
+| 28 | Privacy, Legal, Consent & Deletion | ToS/Privacy/consent/deletion/export + search-index privacy | P0-4; MEDIUM GDPR | EXT-17…22 | **In progress — 28.1 implemented, sprint not complete.** Engineering publication gate, consent records, delete/export APIs, inventories, and private-URL noindex exist. Counsel drafts remain unpublished. EXT-20/21 `not_started`. Staging E2E and 44/45 publication remain open |
 | 29 | Production Consumer Decision Experience & Conversational Continuity | Public decision surfaces + a11y + Ask PiqSavi + SEO technical foundation | P1-6; CC-01 | None critical | Staging UI journey and CC-01 green; FastAPI HTML/CSS/vanilla-JS validation; no fixture-as-live in UUID mode |
 | 30 | Public Beta Readiness Audit *(historical)* | Audit record only | — | — | Closed — NOT READY |
 | 31 | Merchant Platform Unification | One connector/registry/router + min reliability contracts + capability/policy model + research execution contracts | P1-1A | None | Certification suite exists; 4/18 dual-path retired or dual-run documented; reliability + capability/policy + provenance/trace contracts exported (fail-closed) |
@@ -809,8 +809,8 @@ Intended to prevent any launch-critical area from falling between sprints.
 | 18 | Account/auth | 17 / 27 / 29 | Partial | Register/login/session | Yes — NON-WAIVABLE | Invite-only demotes beta |
 | 19 | Transactional email | 27 | EXT applied, not provisioned | Real inbox reset/verify | Yes — NON-WAIVABLE for self-serve | Invite-only |
 | 20 | Guest→account continuity | 27 / 29 / 40 | Planned/partial | Preserve decision on signup when safe | Yes — NON-WAIVABLE | Do not silently drop the decision |
-| 21 | Privacy/consent | 28 / 39 | Planned | Consent persistence | Yes — NON-WAIVABLE | Delay launch |
-| 22 | Deletion/export | 28 | Planned | Staging E2E | Yes — NON-WAIVABLE | Delay launch |
+| 21 | Privacy/consent | 28 / 39 | 28.1 persistence implemented; unpublished so production records stay empty | Consent persistence + staging proof | Yes — NON-WAIVABLE | Delay launch |
+| 22 | Deletion/export | 28 | 28.1 APIs implemented; staging E2E not done | Staging E2E | Yes — NON-WAIVABLE | Delay launch |
 | 23 | Legal policies | 28 / 44 / 45 | Counsel applied; policies unpublished | Live ToS/Privacy/cookie policy | Yes — NON-WAIVABLE | Delay launch |
 | 24 | Save | 29 / 10 | Planned/partial | Preserve decision/context | Soft Yes | Ship Save without Watch promises |
 | 25 | Watch semantics | 10 / 19 / 47 | Primitives exist; monitoring uncertified | Honest Watch vs Save | Yes for honesty — NON-WAIVABLE | Hide/demote Watch until monitoring exists |
@@ -820,7 +820,7 @@ Intended to prevent any launch-critical area from falling between sprints.
 | 29 | Analytics | 39 | Planned | Consent-gated events listed in Sprint 39 | Soft Yes | Essential-only |
 | 30 | Feedback/support | 39 / 28 | Inbox provisioned; product path pending | Support contact + in-product path | Yes — NON-WAIVABLE | Delay if contact unpublished |
 | 31 | SEO foundation | 29 | Planned/partial | Semantic HTML, metadata, robots, sitemap, JSON-LD infra | Yes for technical honesty | No mass thin pages |
-| 32 | Private-route noindex protection | 29 / 40 / 44 / 45 | Planned | UUID Results/Compare/Why non-indexable | Yes — NON-WAIVABLE | Delay launch if leaked |
+| 32 | Private-route noindex protection | 28 / 29 / 40 / 44 / 45 | 28.1 `X-Robots-Tag` + meta robots on Results/Compare/Why; landing not noindexed | UUID Results/Compare/Why non-indexable | Yes — NON-WAIVABLE | Delay launch if leaked |
 | 33 | Search Console/indexing | 39 / 44 / 45 | Not started | GSC connected; intended pages crawlable | Soft Yes for GSC; noindex honesty NON-WAIVABLE | Launch without ranking claims |
 | 34 | Security | 40 | Planned/partial | HIGH + blocking MEDIUM closed | Yes — NON-WAIVABLE | Delay launch |
 | 35 | Production infrastructure | 41 | Partial TF | Isolated prod AWS/DB/secrets/IAM/DNS/TLS | Yes — NON-WAIVABLE | Delay launch |
