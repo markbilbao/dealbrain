@@ -38,8 +38,8 @@ async def test_login_and_register_forms_wire_existing_auth_apis(client: AsyncCli
     assert "I accept the Terms of Service" not in register.text
     assert "I acknowledge the Privacy Policy" not in register.text
     assert "not published yet" in register.text
-    assert "querySelector(\"[name=terms_accepted]\")" in ACCOUNT_JS
-    assert "querySelector(\"[name=privacy_acknowledged]\")" in ACCOUNT_JS
+    assert 'querySelector("[name=terms_accepted]")' in ACCOUNT_JS
+    assert 'querySelector("[name=privacy_acknowledged]")' in ACCOUNT_JS
     assert "/api/v1/auth/login" in ACCOUNT_JS
     assert "/api/v1/auth/register" in ACCOUNT_JS
     assert "/api/v1/auth/account/export" in ACCOUNT_JS

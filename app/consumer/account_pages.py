@@ -163,7 +163,9 @@ def _register_legal_fields(catalog: LegalPublicationCatalog) -> tuple[str, str]:
             "terms_accepted=false and privacy_acknowledged=false, and will not invent a consent record."
             "</p>"
         )
-    intro = "Registration stores your account and records acceptance of the published legal policies."
+    intro = (
+        "Registration stores your account and records acceptance of the published legal policies."
+    )
     return intro, "".join(fields)
 
 

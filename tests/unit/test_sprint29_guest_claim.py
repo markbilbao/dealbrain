@@ -31,11 +31,7 @@ from starlette.responses import Response
 
 from tests.unit.test_canonical_uuid_consumer_presentation import (
     DECISION_ID as CANONICAL_UUID,
-)
-from tests.unit.test_canonical_uuid_consumer_presentation import (
     START as CANONICAL_START,
-)
-from tests.unit.test_canonical_uuid_consumer_presentation import (
     _economics_snapshot,
     _owner as _uuid_owner,
 )
@@ -379,7 +375,9 @@ async def test_foreign_canonical_uuid_is_not_resolved_from_forged_cookie() -> No
     unsigned = json.dumps(owner_identity_payload(owner))
     forged = _uuid_owner("foreign-browser")
     assert parse_owner_cookie(unsigned) is None
-    assert resolve_canonical_snapshot(CANONICAL_UUID, parse_owner_cookie(unsigned), snapshots) is None
+    assert (
+        resolve_canonical_snapshot(CANONICAL_UUID, parse_owner_cookie(unsigned), snapshots) is None
+    )
     assert (
         resolve_canonical_snapshot(
             CANONICAL_UUID,

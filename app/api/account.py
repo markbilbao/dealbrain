@@ -28,10 +28,10 @@ from app.core.dependencies import (
     get_shopping_decision_snapshot_repository,
     get_user_platform_service,
 )
-from app.legal.publication import LegalPublicationCatalog
 from app.domain.exceptions import UserPlatformAuthError, UserPlatformValidationError
 from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 from app.domain.interfaces.shopping_assistant_repository import ConversationRepository
+from app.legal.publication import LegalPublicationCatalog
 from app.services.user_platform_service import UserPlatformService
 
 router = APIRouter(include_in_schema=False)
