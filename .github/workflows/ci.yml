@@ -173,3 +173,10 @@ jobs:
             echo "Unexpected alembic layer in image history" >&2
             exit 1
           fi
+
+      # Bounded production-image import smoke: the --no-dev venv must include
+      # modules imported by application startup (Resend adapter → httpx).
+      - name: Smoke-import production runtime modules
+        run: |
+          docker run --rm --entrypoint python "dealbrain:ci-${{ github.sha }}" -c \
+            "import httpx; import app.auth.email_resend"
