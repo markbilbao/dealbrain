@@ -189,7 +189,7 @@ Search, sync, historical collection, and authorized-research planning have diffe
 
 - Sprint 31 may close once owner review accepts this evidence plus the onboarding runbook. It must not close by pretending 4/18 are already one runtime.
 - Sprints 32–36 certify against the research planning contract. They do not need a mega-interface.
-- September 15, 2026 remains the dual-path disposition review. Missing that review is an architecture-control miss, not automatic permission to collapse implementations.
+- September 15, 2026 was the dual-path disposition review deadline. The recorded review below satisfies that obligation. Missing it would have been an architecture-control miss, not automatic permission to collapse implementations.
 
 ### Follow-up deadline
 
