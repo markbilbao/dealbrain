@@ -529,17 +529,19 @@ class AuthService:
         1. Validate token, purpose, expiry, newest-request, and account.
         2. Recheck destination uniqueness. Conflict does not consume the token
            and does not mutate email or verified state.
-        3. Persist the new email and ``email_verified=True``. Skip when this
-           identity is already applied (retry after a later-step failure).
-        4. Send the old-email notice only after a first-time identity mutation.
+        3. Determine whether this identity is already applied (retry state).
+        4. Revoke every session for the bound user, including the confirming
+           session. A revoke failure leaves email, verified state, and token
+           unchanged and does not send the old-email notice.
+        5. After successful revocation, persist the new email and
+           ``email_verified=True``. Skip when already applied. A save failure
+           leaves identity unchanged and the token unconsumed.
+        6. Send the old-email notice only after a first-time identity mutation.
            Notice failure is audited and never rolls back the change.
-        5. Revoke every session for the bound user, including the confirming
-           session. A revoke failure does not return success; the token stays
-           usable so a retry can finish revocation.
-        6. Consume the winning token and invalidate any sibling tokens. A
-           consume failure does not return success and cannot retarget another
-           account on retry.
-        7. Return success only after revoke and consume succeed.
+        7. Consume the winning token and invalidate sibling tokens. A consume
+           failure does not return success; prior sessions are already revoked.
+        8. Return success only after revoke, persist (or already-applied), and
+           consume succeed.
         """
         self._require_enabled()
         raw = (token or "").strip()
@@ -565,6 +567,10 @@ class AuthService:
             raise UserPlatformAuthError(INVALID_EMAIL_CHANGE_TOKEN)
         old_email = user.email
         already_applied = user.email == record.new_email and user.email_verified
+        try:
+            self._sessions.revoke_all_for_user(user.user_id)
+        except Exception as exc:  # noqa: BLE001 — fail closed; do not report success
+            raise UserPlatformValidationError(EMAIL_CHANGE_COMPLETION_ERROR) from exc
         if not already_applied:
             updated = replace(
                 user,
@@ -577,10 +583,6 @@ class AuthService:
             except UserPlatformValidationError as exc:
                 raise UserPlatformAuthError(INVALID_EMAIL_CHANGE_TOKEN) from exc
             self._send_email_changed_notice(old_email)
-        try:
-            self._sessions.revoke_all_for_user(user.user_id)
-        except Exception as exc:  # noqa: BLE001 — fail closed; do not report success
-            raise UserPlatformValidationError(EMAIL_CHANGE_COMPLETION_ERROR) from exc
         try:
             self._email_changes.mark_consumed(record.change_id)
             self._email_changes.invalidate_for_user(user.user_id)

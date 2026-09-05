@@ -151,15 +151,20 @@ transaction framework (each repository call still commits independently):
 1. Validate token / purpose / expiry / newest-request / account — no mutation.
 2. Recheck destination uniqueness — occupied destinations fail without
    consume or email mutation.
-3. Persist the new email and `email_verified=True`. A uniqueness conflict
-   leaves the old email and an unconsumed token.
-4. Old-email notice is a secondary notification after a first-time identity
+3. Determine whether the identity is already applied from a previous retry.
+4. Revoke every session for that user, including the confirming session.
+   Revoke failure leaves the old email, verified state, and token unchanged
+   and does not send the old-email notice.
+5. After successful revocation, persist the new email and
+   `email_verified=True`. A save failure leaves identity unchanged and the
+   token unconsumed (sessions may already be revoked).
+6. Old-email notice is a secondary notification after a first-time identity
    mutation. It is not authorization. Failure is audited and never rolls back.
-5. Revoke every session for that user, including the confirming session.
-   Revoke failure does not return success; the token stays usable for retry.
-6. Consume the winning token and invalidate sibling tokens. Consume failure
-   does not return success and cannot retarget another account.
-7. Success is returned only after revoke and consume succeed.
+   Retry after consume failure does not send a duplicate notice.
+7. Consume the winning token and invalidate sibling tokens. Consume failure
+   does not return success; prior sessions are already revoked.
+8. Success is returned only after revoke, persist (or already-applied), and
+   consume succeed.
 
 Password-reset and ordinary verification tokens cannot confirm email
 change. Email-change tokens cannot reset a password or satisfy ordinary

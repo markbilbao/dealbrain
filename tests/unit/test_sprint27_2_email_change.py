@@ -771,7 +771,7 @@ class TestEmailChangeFailClosedOrdering:
 
     def test_revoke_failure_does_not_return_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("app.core.config.settings", _settings())
-        auth, store, _sender = make_auth()
+        auth, store, sender = make_auth()
         owner = _register(auth)
         extra = auth.login(email="owner@example.com", password=PASSWORD)
         raw = auth.request_email_change(
@@ -779,6 +779,11 @@ class TestEmailChangeFailClosedOrdering:
             new_email=NEW_EMAIL,
             password=PASSWORD,
         )["email_change_token_demo_only"]
+        notices_before = 0
+        if isinstance(sender, NullEmailSender):
+            notices_before = len(
+                [item for item in sender.sent if item.template_id == "email_change_notice"]
+            )
 
         def boom(_user_id: str) -> int:
             raise RuntimeError("revoke-failed")
@@ -789,13 +794,24 @@ class TestEmailChangeFailClosedOrdering:
             auth.confirm_email_change(raw)
         user = store.users.get_by_id(owner.user.user_id)
         assert user is not None
-        assert user.email == NEW_EMAIL
+        assert user.email == "owner@example.com"
+        assert user.email_verified is False
         record = store.email_changes.get_by_token_hash(AuthService.hash_token(raw))
         assert record is not None
         assert record.consumed is False
+        if isinstance(sender, NullEmailSender):
+            notices = [item for item in sender.sent if item.template_id == "email_change_notice"]
+            assert len(notices) == notices_before
         auth._sessions.revoke_all_for_user = original_revoke
         confirmed = auth.confirm_email_change(raw)
         assert confirmed["status"] == "email_changed"
+        user = store.users.get_by_id(owner.user.user_id)
+        assert user is not None
+        assert user.email == NEW_EMAIL
+        assert user.email_verified is True
+        record = store.email_changes.get_by_token_hash(AuthService.hash_token(raw))
+        assert record is not None
+        assert record.consumed is True
         with pytest.raises(UserPlatformAuthError):
             auth.validate_session(owner.access_token)
         with pytest.raises(UserPlatformAuthError):
@@ -805,8 +821,9 @@ class TestEmailChangeFailClosedOrdering:
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr("app.core.config.settings", _settings())
-        auth, store, _sender = make_auth()
+        auth, store, sender = make_auth()
         owner = _register(auth)
+        extra = auth.login(email="owner@example.com", password=PASSWORD)
         other = _register(auth, email="other@example.com", display_name="Other")
         raw = auth.request_email_change(
             owner.access_token,
@@ -823,6 +840,17 @@ class TestEmailChangeFailClosedOrdering:
             auth.confirm_email_change(raw)
         assert store.users.get_by_id(owner.user.user_id).email == NEW_EMAIL
         assert store.users.get_by_id(other.user.user_id).email == "other@example.com"
+        with pytest.raises(UserPlatformAuthError):
+            auth.validate_session(owner.access_token)
+        with pytest.raises(UserPlatformAuthError):
+            auth.validate_session(extra.access_token)
+        auth.validate_session(other.access_token)
+        notices_after_first = 0
+        if isinstance(sender, NullEmailSender):
+            notices_after_first = len(
+                [item for item in sender.sent if item.template_id == "email_change_notice"]
+            )
+            assert notices_after_first == 1
         auth._email_changes.mark_consumed = original_consume
         auth.confirm_email_change(raw)
         assert store.users.get_by_id(owner.user.user_id).email == NEW_EMAIL
@@ -830,6 +858,11 @@ class TestEmailChangeFailClosedOrdering:
         record = store.email_changes.get_by_token_hash(AuthService.hash_token(raw))
         assert record is not None
         assert record.consumed is True
+        if isinstance(sender, NullEmailSender):
+            notices_after_retry = [
+                item for item in sender.sent if item.template_id == "email_change_notice"
+            ]
+            assert len(notices_after_retry) == notices_after_first
 
     def test_notice_failure_does_not_rollback_or_leak(
         self, monkeypatch: pytest.MonkeyPatch
