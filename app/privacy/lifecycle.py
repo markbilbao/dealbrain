@@ -18,6 +18,7 @@ from app.domain.exceptions import UserPlatformAuthError, UserPlatformValidationE
 from app.domain.interfaces.notification_center_repository import NotificationCenterRepository
 from app.domain.interfaces.user_platform_repository import (
     ConsentRepository,
+    EmailChangeRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
@@ -84,6 +85,7 @@ class AccountLifecycleService:
         saved: SavedItemsRepository,
         password_resets: PasswordResetRepository | None = None,
         email_verifications: EmailVerificationRepository | None = None,
+        email_changes: EmailChangeRepository | None = None,
         consents: ConsentRepository | None = None,
         audit: AuditLogger | None = None,
         watchlists: WatchlistRepository | None = None,
@@ -97,6 +99,7 @@ class AccountLifecycleService:
         self._saved = saved
         self._password_resets = password_resets
         self._email_verifications = email_verifications
+        self._email_changes = email_changes
         self._consents = consents
         self._audit = audit or AuditLogger()
         self._watchlists = watchlists
@@ -121,6 +124,8 @@ class AccountLifecycleService:
             self._password_resets.delete_for_user(user.user_id)
         if self._email_verifications is not None:
             self._email_verifications.delete_for_user(user.user_id)
+        if self._email_changes is not None:
+            self._email_changes.delete_for_user(user.user_id)
         consent_deleted = 0
         if self._consents is not None:
             consent_deleted = self._consents.delete_for_user(user.user_id)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.domain.entities.user_platform import (
+    EmailChangeRequest,
     EmailVerificationRequest,
     FavoriteBrand,
     FavoriteMarketplace,
@@ -28,6 +29,7 @@ from app.domain.exceptions import UserPlatformNotFoundError, UserPlatformValidat
 from app.domain.interfaces.user_platform_repository import (
     AuditLogRepository,
     ConsentRepository,
+    EmailChangeRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
@@ -40,6 +42,7 @@ from app.infrastructure.persistence.session_bound import SessionBound
 from app.infrastructure.persistence.stores import (
     AUDIT_EVENTS,
     CONSENT_RECORDS,
+    EMAIL_CHANGES,
     EMAIL_VERIFICATIONS,
     FAVORITE_BRANDS,
     FAVORITE_MARKETPLACES,
@@ -510,6 +513,66 @@ class SqlAlchemyEmailVerificationRepository(EmailVerificationRepository, Session
             return len(items)
 
 
+class SqlAlchemyEmailChangeRepository(EmailChangeRepository, SessionBound):
+    def save(self, request: EmailChangeRequest) -> EmailChangeRequest:
+        with self._ops() as ops:
+            return ops.upsert(
+                EMAIL_CHANGES,
+                request.change_id,
+                request,
+                secondary_key=request.token_hash,
+                owner_id=request.user_id,
+            )
+
+    def get_by_token_hash(self, token_hash: str) -> EmailChangeRequest | None:
+        with self._ops() as ops:
+            return ops.get_by_secondary(EMAIL_CHANGES, token_hash, EmailChangeRequest)
+
+    def mark_consumed(self, change_id: str) -> None:
+        with self._ops() as ops:
+            request = ops.get(EMAIL_CHANGES, change_id, EmailChangeRequest)
+            if request is None:
+                return
+            consumed = EmailChangeRequest(
+                change_id=request.change_id,
+                user_id=request.user_id,
+                token_hash=request.token_hash,
+                new_email=request.new_email,
+                created_at=request.created_at,
+                expires_at=request.expires_at,
+                purpose=request.purpose,
+                consumed=True,
+            )
+            ops.upsert(
+                EMAIL_CHANGES,
+                consumed.change_id,
+                consumed,
+                secondary_key=consumed.token_hash,
+                owner_id=consumed.user_id,
+            )
+
+    def list_for_user(self, user_id: str) -> list[EmailChangeRequest]:
+        with self._ops() as ops:
+            return ops.list(EMAIL_CHANGES, EmailChangeRequest, owner_id=user_id)
+
+    def invalidate_for_user(self, user_id: str) -> int:
+        items = self.list_for_user(user_id)
+        count = 0
+        for item in items:
+            if item.consumed:
+                continue
+            self.mark_consumed(item.change_id)
+            count += 1
+        return count
+
+    def delete_for_user(self, user_id: str) -> int:
+        with self._ops() as ops:
+            items = ops.list(EMAIL_CHANGES, EmailChangeRequest, owner_id=user_id)
+            for item in items:
+                ops.delete(EMAIL_CHANGES, item.change_id)
+            return len(items)
+
+
 class SqlAlchemyAuditLogRepository(AuditLogRepository, SessionBound):
     def append(self, event: SecurityEvent) -> SecurityEvent:
         with self._ops() as ops:
@@ -588,5 +651,6 @@ class SqlAlchemyUserPlatformStore:
         self.saved = SqlAlchemySavedItemsRepository(**kwargs)
         self.password_resets = SqlAlchemyPasswordResetRepository(**kwargs)
         self.email_verifications = SqlAlchemyEmailVerificationRepository(**kwargs)
+        self.email_changes = SqlAlchemyEmailChangeRepository(**kwargs)
         self.audit = SqlAlchemyAuditLogRepository(**kwargs)
         self.consents = SqlAlchemyConsentRepository(**kwargs)

@@ -129,6 +129,8 @@ def classify_path(method: str, path: str) -> RateLimitBucket:
         or normalized.endswith("/auth/password-reset/confirm")
         or normalized.endswith("/auth/verify-email")
         or normalized.endswith("/auth/verify-email/confirm")
+        or normalized.endswith("/auth/email-change")
+        or normalized.endswith("/auth/email-change/confirm")
     ) and upper == "POST":
         return "auth_email"
     # Tiny first-party landing-page event stream. 20/min/IP by default — not the

@@ -23,6 +23,9 @@ SecurityEventType = Literal[
     "password_changed",
     "email_verification_requested",
     "email_verified",
+    "email_change_requested",
+    "email_change_delivery_failed",
+    "email_change_confirmed",
     "rate_limited",
     "csrf_rejected",
     "mfa_challenge",
@@ -482,6 +485,37 @@ class EmailVerificationRequest:
         payload = {
             "verification_id": self.verification_id,
             "user_id": self.user_id,
+            "created_at": self.created_at.isoformat(),
+            "expires_at": self.expires_at.isoformat(),
+            "consumed": self.consumed,
+        }
+        if include_sensitive:
+            payload["token_hash"] = self.token_hash
+        return payload
+
+
+EMAIL_CHANGE_PURPOSE = "email_change"
+
+
+@dataclass(frozen=True, slots=True)
+class EmailChangeRequest:
+    """Purpose-bound email-change confirmation record. Raw token is never stored."""
+
+    change_id: str
+    user_id: str
+    token_hash: str
+    new_email: str
+    created_at: datetime
+    expires_at: datetime
+    purpose: str = EMAIL_CHANGE_PURPOSE
+    consumed: bool = False
+
+    def to_dict(self, *, include_sensitive: bool = False) -> dict[str, Any]:
+        payload = {
+            "change_id": self.change_id,
+            "user_id": self.user_id,
+            "new_email": self.new_email,
+            "purpose": self.purpose,
             "created_at": self.created_at.isoformat(),
             "expires_at": self.expires_at.isoformat(),
             "consumed": self.consumed,
