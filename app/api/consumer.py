@@ -14,7 +14,6 @@ from fastapi.staticfiles import StaticFiles
 from app.consumer import mode as consumer_mode
 from app.consumer.canonical_presentation import page_view_from_snapshot
 from app.consumer.canonical_resolve import resolve_canonical_snapshot
-from app.consumer.decision_owner import OWNER_COOKIE, parse_owner_cookie
 from app.consumer.fixtures import DEFAULT_CATALOG_ID, get_decision
 from app.consumer.guest_continuity import ensure_guest_owner_cookie
 from app.consumer.location import (
@@ -25,6 +24,7 @@ from app.consumer.location import (
     set_delivery_cookie,
     skipped_context,
 )
+from app.consumer.owner_authorization import authorized_owner_from_request
 from app.consumer.pages import render_page
 from app.consumer.presentation import build_page_view
 from app.consumer.seo import apply_staging_noindex_if_needed, robots_txt, sitemap_xml
@@ -71,7 +71,7 @@ def _shopping_market_from_request(request: Request):
 
 
 def _owner_from_request(request: Request):
-    return parse_owner_cookie(request.cookies.get(OWNER_COOKIE))
+    return authorized_owner_from_request(request)
 
 
 def _page_view(
@@ -87,8 +87,9 @@ def _page_view(
     location = _location_from_request(request)
     selected_market = _shopping_market_from_request(request)
     prompt = location.is_absent if location_prompt is None else location_prompt
+    owner = _owner_from_request(request)
     if is_canonical_uuid(decision_id):
-        snapshot = resolve_canonical_snapshot(decision_id, _owner_from_request(request), snapshots)
+        snapshot = resolve_canonical_snapshot(decision_id, owner, snapshots)
         if snapshot is None:
             return build_page_view(
                 decision_id=decision_id,
@@ -108,7 +109,6 @@ def _page_view(
             location_error=location_error,
             session_shopping_market=selected_market,
         )
-        owner = _owner_from_request(request)
         if owner is not None:
             conversation = get_shopping_conversation_repository().find_bound_for_owner(
                 owner,
