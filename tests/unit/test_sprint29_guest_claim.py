@@ -31,8 +31,14 @@ from starlette.responses import Response
 
 from tests.unit.test_canonical_uuid_consumer_presentation import (
     DECISION_ID as CANONICAL_UUID,
+)
+from tests.unit.test_canonical_uuid_consumer_presentation import (
     START as CANONICAL_START,
+)
+from tests.unit.test_canonical_uuid_consumer_presentation import (
     _economics_snapshot,
+)
+from tests.unit.test_canonical_uuid_consumer_presentation import (
     _owner as _uuid_owner,
 )
 
