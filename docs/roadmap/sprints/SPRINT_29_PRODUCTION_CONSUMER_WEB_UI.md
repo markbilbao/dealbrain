@@ -2,7 +2,7 @@
 
 **Filename retained** for link stability: `SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`
 
-**Status:** In progress — 29.0–29.4B, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. Phase 29.4C `propose_research` is **implemented**. The Research Authorization / Execution Handoff Contract is **implemented**; research execution remains unimplemented and owned by Sprints 31–38. Sprint 29 is **not closed**.
+**Status:** In progress — 29.0–29.4B, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. Phase 29.4C `propose_research` is **implemented**. The Research Authorization / Execution Handoff Contract is **implemented**; research execution remains unimplemented and owned by Sprints 31–38. Staging E2E on Deploy Staging #27 (`a8bd001`) is **partial** — live research remains later. Sprint 29 is **not closed**.
 **Primary owner / domain:** Frontend / product / conversational continuity
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-6 (public UX); CC-01; persistent Ask; SEO technical foundation
@@ -32,11 +32,11 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | 29.4B `refine_session_recommendation` | merged | Shopper may clarify preferences after Recommendation. Session Best Piq may change using already-evaluated products/evidence. PiqScore does not change. Canonical snapshot does not mutate. Original Recommendation remains historical. Evaluated set cannot expand. No new research. No affiliate influence. |
 | 29.4C `propose_research` | implemented | Detect when the shopper asks for evidence/product outside currently evaluated evidence. PiqSavi may propose additional research. Research does **not** automatically execute. User confirmation remains required. Research execution remains unimplemented and owned by Sprints 31–38. |
 | Research Authorization / Execution Handoff Contract | implemented | Explicit confirmation of the exact active proposal creates a server-authoritative authorization. Sprint 31 planning is separate; live execution remains unavailable and owned by Sprints 31–38. |
-| Account / auth / export / delete UI | implemented | Document routes `/login`, `/register`, `/reset-password`, `/verify-email`, `/account`, `/support` wired to Sprint 27/28 APIs. Not staging-proven on current-main. |
-| Market-selection UI shell | implemented | Interactive PH selector posts to `/consumer/shopping-market`. Domain/policy remains Sprint 37. |
-| SEO technical foundation | implemented | `robots.txt`, `sitemap.xml`, canonical/JSON-LD on public landing, staging noindex, UUID/account noindex. Search Console remains Sprint 39/45. |
-| Consumer a11y closeout slice | implemented | Escape/close, focus trap/restore, `aria-live`, safe-area, keyboard-open dock. Browser matrix recorded; not a signed a11y audit. |
-| Full CC-01 staging E2E on current-main | pending | Requires owner merge + immutable current-main staging deploy. Last staging SHA `ec7dd1dc` is not this baseline. |
+| Account / auth / export / delete UI | implemented | Document routes `/login`, `/register`, `/reset-password`, `/verify-email`, `/account`, `/support` wired to Sprint 27/28 APIs. Synthetic staging HTTP proven on Deploy Staging #27 (`a8bd001`). |
+| Market-selection UI shell | implemented | Interactive PH selector posts to `/consumer/shopping-market`. Domain/policy remains Sprint 37. Staging PH cookie + uncertified disclosure proven. |
+| SEO technical foundation | implemented | `robots.txt`, `sitemap.xml`, canonical/JSON-LD on public landing, staging noindex, UUID/account noindex. Search Console remains Sprint 39/45. Staging noindex re-proven on Deploy #27. |
+| Consumer a11y closeout slice | implemented | Escape/close, focus trap/restore, `aria-live`, safe-area, keyboard-open dock. Browser matrix recorded; not a signed a11y audit. Live HTML/CSS/JS locks verified on staging; not a third-party cert. |
+| Full CC-01 staging E2E on current-main | partial | Deploy Staging #27 proved SHA `a8bd001`. Package: `docs/roadmap/evidence/SPRINT_29_STAGING_CC01_EVIDENCE.md`. Live research / canonical UUID creation remain Sprint 38. |
 
 **Truthfulness rules already locked for presentation:**
 

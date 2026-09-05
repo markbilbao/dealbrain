@@ -7,18 +7,20 @@
 
 | Field | Value |
 |---|---|
-| Last proven staging SHA | `ec7dd1dc3ecf788c191f3fa4d406962f1d7aa977` (Deploy Staging #26) |
+| Last proven staging SHA | `a8bd00190bb0b6baf256eb235043804f44858a70` (Deploy Staging #27, run `33996684250`) |
+| Build Image | #92 / run `33978081429` (same SHA, SUCCESS) |
 | Closeout audit start SHA | `4da3947d63f2c325996e2974070d57db8175dc6d` |
-| Sprint 28.2 export/delete HTTP | recorded; APIs present on that host |
-| This closeout UI | **not** on `ec7dd1dc` |
-| Identity email adapter on that host | `null` / not ready |
+| Sprint 29 merged closeout | PR #111 merged to `main` at `a8bd001` |
+| Sprint 29 staging E2E package | [`SPRINT_29_STAGING_CC01_EVIDENCE.md`](SPRINT_29_STAGING_CC01_EVIDENCE.md) — **partial**; live research still Sprint 38 |
+| Sprint 28.2 export/delete HTTP | re-proven on Deploy #27 with synthetic `@example.invalid` accounts |
+| Identity email adapter on that host | not claimed ready; reset/verify pages do not display demo tokens |
 | `/privacy` `/terms` | 404 |
 
 ## Preconditions
 
-1. Owner merges this PR (or a successor) to `main`.
-2. Build Image + Deploy Staging succeed on that exact `main` SHA.
-3. Record workflow run id, image digest, `/ready`, and `/health`.
+1. Owner merges this PR (or a successor) to `main`. **Done — PR #111 → `a8bd001`.**
+2. Build Image + Deploy Staging succeed on that exact `main` SHA. **Done — Build Image #92, Deploy Staging #27.**
+3. Record workflow run id, image digest, `/ready`, and `/health`. **Recorded in the CC-01 evidence package.**
 4. Use only synthetic `@example.invalid` accounts.
 
 ## Synthetic journey

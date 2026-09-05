@@ -1,8 +1,8 @@
 # Sprint 29 UI Journey Map
 
 **Owner:** Sprint 29  
-**Baseline:** closeout audit on `4da3947` plus this branch  
-**Not a close:** staging E2E is still required on an immutable current-main deploy.
+**Baseline:** closeout audit on `4da3947`; merged SHA `a8bd001` (PR #111)  
+**Staging E2E:** recorded on Deploy Staging #27 — [`SPRINT_29_STAGING_CC01_EVIDENCE.md`](SPRINT_29_STAGING_CC01_EVIDENCE.md). Partial: live research journey remains Sprint 38.
 
 ## Public entry
 
