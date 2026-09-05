@@ -4,7 +4,7 @@
 **Baseline:** `origin/main` `68664c44d615fb28bb03b5a72868a977b2c5cb8f` plus Sprint 28.1 code on this branch.
 **Counsel-owned:** statutory categories, retention exceptions, DPA roles, age rules, public legal wording.
 
-This inventory records **repository-evidenced** personal and related data. Classifications such as “essential/functional” are product-architecture labels, not legal opinions. Consumer export uses schema `piqsavi.account_owned_export.v1` and is an engineering account-owned export, not a complete legal DSAR.
+This inventory records **repository-evidenced** personal and related data. Classifications such as “essential/functional” are product-architecture labels, not legal opinions. Consumer export uses schema `piqsavi.account_owned_export.v1` and is an engineering account-owned export, not a complete legal DSAR. Staging HTTP evidence for that export/delete behavior is recorded in [`../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md`](../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md) and does not change the classifications below.
 
 ## Account-attributable stores (export/delete in scope)
 

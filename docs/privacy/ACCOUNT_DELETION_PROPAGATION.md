@@ -52,3 +52,9 @@ Early Access registrations are a **separate data relationship**, not consumer Us
 ## Legal questions left open
 
 Exact response deadlines, statutory retention exceptions, whether `privacy@piqsavi.com` alone satisfies law, and age-related delete/export rules remain counsel-owned.
+
+## Staging evidence (Sprint 28.2)
+
+Sanitized HTTP evidence against deployed SHA `ec7dd1dc3ecf788c191f3fa4d406962f1d7aa977` (Deploy Staging #26): [`../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md`](../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md).
+
+That run confirmed export schema `piqsavi.account_owned_export.v1`, password + `DELETE` re-auth, server-derived target identity, two-session revocation, other-user isolation, and Early Access non-deletion for a matching synthetic email. It does **not** upgrade the retained/unresolved rows above. Reset / verify / email-change **row** deletion was not independently inspected in staging RDS.
