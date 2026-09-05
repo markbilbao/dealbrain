@@ -237,7 +237,18 @@ Not a third-party accessibility certification.
 | Ask dock height | Live `/static/consumer/css/piqsavi.css` `--ask-h: 80px` desktop and `--ask-h: 72px` mobile |
 | Register required fields | Display name / email / password only; legal boxes absent |
 
-Interactive keyboard/focus/Escape in a real browser on this ALB is limited by `http://` + `Secure` owner cookies and by the lack of a live UUID snapshot. HTML/CSS/JS locks above were verified on the deployed host. The browser-matrix lab pass is still not a signed a11y audit.
+Interactive keyboard/focus/Escape in a real browser on this ALB is limited by `http://` + `Secure` owner cookies and by the lack of a live UUID snapshot. HTML/CSS/JS locks above were verified on the deployed host.
+
+A public-page browser smoke (no login, no synthetic form submit) on the same ALB confirmed:
+
+- `/register` has no Terms/Privacy checkboxes and shows unpublished-policy copy
+- `/reset-password` does not display a demo token
+- `/privacy` and `/terms` render unpublished 404
+- fixture Results shows the PH market shell, labeled demo-catalog disclosure, PiqScore, and Ask dock
+- Ask dock remains visible at ~390px width
+- clicking Ask did not open a separate modal in that pass (Ask is also inlined on Results); Escape therefore had nothing overlay-specific to close
+
+The browser-matrix lab pass is still not a signed a11y audit.
 
 ---
 
