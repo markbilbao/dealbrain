@@ -33,6 +33,9 @@ from tests.unit.test_canonical_uuid_consumer_presentation import (
     DECISION_ID as CANONICAL_UUID,
 )
 from tests.unit.test_canonical_uuid_consumer_presentation import (
+    START as CANONICAL_START,
+)
+from tests.unit.test_canonical_uuid_consumer_presentation import (
     _economics_snapshot,
     _owner as _uuid_owner,
 )
@@ -369,7 +372,7 @@ async def test_client_supplied_ids_are_not_sole_authorization(client: AsyncClien
 
 @pytest.mark.asyncio
 async def test_foreign_canonical_uuid_is_not_resolved_from_forged_cookie() -> None:
-    snapshots = InMemoryDecisionSnapshotRepository(clock=lambda: START)
+    snapshots = InMemoryDecisionSnapshotRepository(clock=lambda: CANONICAL_START)
     snapshot = _economics_snapshot()
     snapshots.add(snapshot)
     owner = snapshot.owner
