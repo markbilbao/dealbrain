@@ -309,7 +309,7 @@ Recorded architecture review: [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPR
 
 Decision: keep separate implementations; unify through shared contracts (certification, routing policy, reliability types, exact market/source semantics). Do not collapse families into one mega-interface.
 
-Sprint 4 / Sprint 18 remain documented dual-run. Dual-path disposition review deadline: **September 15, 2026**. That date is an architecture decision deadline, not a rewrite-all-connectors deadline, and does not start Sprint 32 or live execution.
+Sprint 4 / Sprint 18 remain documented dual-run. Dual-path disposition review deadline: **September 15, 2026**. Recorded 2026-09-05 in [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md): **retain intentional dual implementations**. That date is an architecture decision deadline, not a rewrite-all-connectors deadline, and does not start Sprint 32 or live execution. Sprint 31 remains formally closed.
 
 Sprint 31 research routing remains additive planning/eligibility only. It does not take live execution from Sprint 38 or market certification from Sprints 32–36. Affiliate economics remain downstream.
 

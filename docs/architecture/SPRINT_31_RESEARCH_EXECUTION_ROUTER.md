@@ -8,7 +8,7 @@
 
 **Related roadmap:** [`../roadmap/sprints/SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md`](../roadmap/sprints/SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md). This document is the architecture for the authorized-research routing boundary.
 
-**4/18 unification ADR / architecture review:** [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md) — Sprint 4 search and Sprint 18 sync remain documented dual-run, with hard disposition date **September 15, 2026**. “4/18” means those two families, not “4 of 18 items.”
+**4/18 unification ADR / architecture review:** [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md) — Sprint 4 search and Sprint 18 sync remain documented dual-run. The September 15, 2026 disposition is recorded (2026-09-05): retain intentional dual implementations. Sprint 31 remains formally closed. “4/18” means those two families, not “4 of 18 items.”
 
 **Onboarding:** [`../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../runbooks/MERCHANT_PROVIDER_ONBOARDING.md)
 
@@ -323,7 +323,7 @@ Future market certification (32–36) should record, per provider/market:
 
 Do not store privileged legal advice or credentials in Git. Affiliate permission remains independent of product-data permission.
 
-Sprint 4 vs Sprint 18 dual-run is **not** retired by the router. The research router is the fail-closed selection authority for **authorized research planning**. Marketplace search/sync connectors remain in place under the recorded dual-run decision in [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). The dual-path disposition review deadline is **September 15, 2026**. That date is an architecture decision deadline, not a claim that connectors, live research, or Sprints 32–38 are finished.
+Sprint 4 vs Sprint 18 dual-run is **not** retired by the router. The research router is the fail-closed selection authority for **authorized research planning**. Marketplace search/sync connectors remain in place under the recorded dual-run decision in [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). The September 15, 2026 dual-path disposition is recorded: retain intentional dual implementations. That date was an architecture decision deadline, not a claim that connectors, live research, or Sprints 32–38 are finished. Sprint 31 remains formally closed.
 
 ## Relationship to Sprints 32–38
 
