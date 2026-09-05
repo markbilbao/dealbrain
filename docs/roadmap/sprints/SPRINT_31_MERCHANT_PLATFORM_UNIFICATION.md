@@ -130,7 +130,7 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 
 ## Documentation deliverables
 
-- CONNECTOR_ARCHITECTURE unification ADR (must distinguish technical capabilities from contractual/policy authorization) — recorded in [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). “4/18” means Sprint 4 search versus Sprint 18 sync, not “4 of 18 items.” Dual-run remains; disposition deadline **September 15, 2026**.
+- CONNECTOR_ARCHITECTURE unification ADR (must distinguish technical capabilities from contractual/policy authorization) — recorded in [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md). “4/18” means Sprint 4 search versus Sprint 18 sync, not “4 of 18 items.” Dual-run remains. September 15, 2026 disposition recorded 2026-09-05: retain intentional dual implementations. Sprint 31 remains formally closed.
 - Reliability contract reference for market sprints — exported types plus router / ADR notes
 - Onboarding runbook including legal/terms evidence checklist (non-secret) — [`../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md)
 - Architecture Lock additive note if required — see Architecture Lock §15

@@ -346,7 +346,7 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | Consumer production decision UI | Product Foundation merged; not launch-verified | 29 | Staging UI e2e on FastAPI HTML/CSS/vanilla-JS surfaces | Yes (public UX) |
 | Conversational Continuity | Partial: 29.0–29.4C merged; live research later | 29, supported by 31/37/38/39/40/43/44/45 | CC-01 staging E2E on the immutable candidate | Yes — NON-WAIVABLE |
 | Live owner-bound decision creation | Fixture/UUID presentation exists; live pipeline missing | 29 / 31 / 38 | Real shopper request → live evidence → snapshot → UUID Results | Yes — NON-WAIVABLE |
-| Sprint 4/18 unification (P1-1A) | Dual-run documented; research router merged; ADR recorded; Sprint 31 owner-closed | 31 | Shared contracts + fail-closed capability/policy; 4/18 means Sprint 4 search vs Sprint 18 sync; disposition deadline 2026-09-15 | Yes (P1) |
+| Sprint 4/18 unification (P1-1A) | Dual-run documented; research router merged; ADR recorded; Sprint 31 owner-closed; September 15 disposition recorded 2026-09-05 | 31 | Shared contracts + fail-closed capability/policy; 4/18 means Sprint 4 search vs Sprint 18 sync; retain intentional dual implementations | Yes (P1) |
 | Unsupported-market behavior (P1-1B) | Missing | 37 | Selector + disclosure + no unsupported invoke | Yes (P1) |
 | Shipping-cost honesty (P1-2) | Enrichment default risk | 37 | Shipping-known/unknown modeled + tests; 44 verifies wording | Yes (P1) |
 | Destination re-evaluation | Canonical pages show decision-time destination only | 37 | Server-side re-evaluation when destination could materially change shipping/effective cost | Yes when destination is user-changeable |
@@ -626,7 +626,7 @@ Mock remains non-production only.
 | Real email | EXT-08/09 | 27 | Provider/DNS delay | Invite-only demotion |
 | Legal package | Counsel | 28 → 44 | Review latency | Delay launch |
 | Consumer decision experience + Conversational Continuity | API stable (24); approved Product Foundation manifest | 29 | Scope creep or parallel Results authority | Preserve canonical Results authority; hold launch if CC-01 is incomplete |
-| Platform unify + min reliability contracts | Lock review | 31 | Dual-run complexity | Documented dual-run with hard deadline |
+| Platform unify + min reliability contracts | Lock review | 31 | Dual-run complexity | Documented dual-run; September 15 disposition recorded (retain intentional dual implementations) |
 | First real market | EXT-01…05 + **31 contracts** | 32–36 | Provider denial | Remove failed markets; require ≥1 certified market |
 | Remaining markets | EXT-02…05 + 31 | 33–36 (parallel OK) | Staggered denials | Launch with subset |
 | MarketContext/FX + destination re-eval | 31 + 29 UI shell | 37 | FX vendor | Fail-closed no compare; no client-side fake prices |
@@ -858,7 +858,7 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 2. **Sprint 26 external bootstrap remaining** — EXT-01…05 applications; Sprint 26 stays open until register evidence exists. Later SHAs still need their own staging proof before launch (EC-01).
 3. **Sprint 27** — real transactional email, sender auth, verify/reset/email-change, token lifecycle, enumeration-safe errors, session rotation, staging E2E, production cutover readiness.
 4. **Sprint 28** — ToS/Privacy/cookie/consent/deletion/export/retention/PII/vendor register/contacts/age notices; search-index privacy; counsel package. Final publication/approval in 44/45.
-5. **Sprint 31 owner close** — satisfied. Router/provider contract is merged; unification ADR, dual-run disposition date (2026-09-15), and onboarding runbook are recorded. Sprint 32 has started and remains blocked on external merchant certification, not on Sprint 31.
+5. **Sprint 31 owner close** — satisfied. Router/provider contract is merged; unification ADR, September 15 dual-path disposition (recorded 2026-09-05: retain intentional dual implementations), and onboarding runbook are recorded. Sprint 31 remains formally closed. Sprint 32 has started and remains blocked on external merchant certification, not on Sprint 31.
 6. **Minimum viable market certification (32–36)** — at least one legally usable real source path with current-data + capability-policy + credential approval. Others may be omitted. Sprint 32 foundation is implemented; the PH real path is still missing.
 7. **Sprint 37** — market/currency/FX/locale/destination honesty + server-side destination re-evaluation.
 8. **Sprint 38** — resilient live research + execution trace + live-mode gate + fixture-never-as-live.

@@ -4,8 +4,9 @@ Status: implemented (fixture / imported / simulated-live + future stubs)
 Date: 2026-07-29
 
 Sprint 31 unification ADR (search / sync / collection / research remain
-separate implementations; documented 4/18 dual-run; disposition deadline
-2026-09-15): docs/architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md
+separate implementations; documented 4/18 dual-run; September 15, 2026
+disposition recorded 2026-09-05 — retain intentional dual implementations):
+docs/architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md
 Onboarding runbook: docs/runbooks/MERCHANT_PROVIDER_ONBOARDING.md
 
 Scope
