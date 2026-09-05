@@ -126,7 +126,9 @@ def _page_view(
 
 
 def _html(view) -> HTMLResponse:
-    return HTMLResponse(render_page(view))
+    from app.consumer.robots import apply_private_decision_noindex
+
+    return apply_private_decision_noindex(HTMLResponse(render_page(view)))
 
 
 def _safe_next(next_path: str, decision_id: str, fallback: PageName) -> str:

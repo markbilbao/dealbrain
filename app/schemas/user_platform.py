@@ -18,6 +18,8 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=256)
     display_name: str = Field(..., min_length=1, max_length=128)
     remember_me: bool = False
+    terms_accepted: bool = False
+    privacy_acknowledged: bool = False
 
 
 class LoginRequest(BaseModel):
@@ -60,6 +62,40 @@ class PasswordResetConfirmResponse(BaseModel):
 class EmailVerificationConfirmResponse(BaseModel):
     status: str = "email_verified"
     email_verified: bool = True
+
+
+class AccountDeleteRequest(BaseModel):
+    confirmation: str = Field(..., min_length=1, max_length=32)
+    password: str = Field(..., min_length=1, max_length=256)
+
+
+class AccountDeleteResponse(BaseModel):
+    status: str
+    user_id: str
+    sessions_revoked: int
+    sessions_deleted: int
+    watchlists_deleted: int
+    notification_preferences_removed: bool
+    consent_records_deleted: int
+    retained_limitations: list[str] = Field(default_factory=list)
+
+
+class PersonalDataExportResponse(BaseModel):
+    export_schema: str
+    export_kind: str
+    exported_at: str
+    account: dict[str, Any]
+    profile: dict[str, Any] | None = None
+    settings: dict[str, Any] | None = None
+    wishlist: dict[str, Any] | None = None
+    saved_products: list[dict[str, Any]] = Field(default_factory=list)
+    saved_comparisons: list[dict[str, Any]] = Field(default_factory=list)
+    recommendation_history: list[dict[str, Any]] = Field(default_factory=list)
+    saved_searches: list[dict[str, Any]] = Field(default_factory=list)
+    recently_viewed: dict[str, Any] | None = None
+    consent_records: list[dict[str, Any]] = Field(default_factory=list)
+    sessions: list[dict[str, Any]] = Field(default_factory=list)
+    notification_preferences: dict[str, Any] | None = None
 
 
 class UserPayload(BaseModel):

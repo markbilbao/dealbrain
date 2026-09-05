@@ -67,6 +67,7 @@ def _document(view: DecisionPageView, main: str) -> str:
     <meta name="theme-color" content="#0B1B33">
     <title>{h(title)}</title>
     <meta name="description" content="PiqSavi is Your AI Personal Shopper.">
+    <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="/static/consumer/css/piqsavi.css">
   </head>
   <body class="page-{h(view.page)} why-{h(view.why_variant)}"

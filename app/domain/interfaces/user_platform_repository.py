@@ -13,6 +13,7 @@ from app.domain.entities.user_platform import (
     FavoriteBrand,
     FavoriteMarketplace,
     PasswordResetRequest,
+    PolicyAcceptanceRecord,
     RecentlyViewed,
     RecommendationHistory,
     SavedComparison,
@@ -45,6 +46,11 @@ class UserRepository(ABC):
     def list_users(self) -> list[User]:
         raise NotImplementedError
 
+    @abstractmethod
+    def delete(self, user_id: str) -> bool:
+        """Remove the user record. Returns False if the user was already absent."""
+        raise NotImplementedError
+
 
 class SessionRepository(ABC):
     @abstractmethod
@@ -69,6 +75,11 @@ class SessionRepository(ABC):
 
     @abstractmethod
     def list_for_user(self, user_id: str) -> list[UserSession]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_all_for_user(self, user_id: str) -> int:
+        """Physically remove session records for the user. Returns count removed."""
         raise NotImplementedError
 
 
@@ -109,6 +120,11 @@ class ProfileRepository(ABC):
     def set_favorite_marketplaces(
         self, user_id: str, marketplaces: list[FavoriteMarketplace]
     ) -> list[FavoriteMarketplace]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_for_user(self, user_id: str) -> None:
+        """Remove profile, preferences, settings, wishlist, and favorites."""
         raise NotImplementedError
 
 
@@ -161,6 +177,11 @@ class SavedItemsRepository(ABC):
     def save_recently_viewed(self, item: RecentlyViewed) -> RecentlyViewed:
         raise NotImplementedError
 
+    @abstractmethod
+    def delete_all_for_user(self, user_id: str) -> None:
+        """Remove saved products, comparisons, history, searches, and recently viewed."""
+        raise NotImplementedError
+
 
 class PasswordResetRepository(ABC):
     @abstractmethod
@@ -175,6 +196,10 @@ class PasswordResetRepository(ABC):
     def mark_consumed(self, reset_id: str) -> None:
         raise NotImplementedError
 
+    @abstractmethod
+    def delete_for_user(self, user_id: str) -> int:
+        raise NotImplementedError
+
 
 class EmailVerificationRepository(ABC):
     @abstractmethod
@@ -187,6 +212,30 @@ class EmailVerificationRepository(ABC):
 
     @abstractmethod
     def mark_consumed(self, verification_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_for_user(self, user_id: str) -> int:
+        raise NotImplementedError
+
+
+class ConsentRepository(ABC):
+    """Persistence for published-policy acceptance records."""
+
+    @abstractmethod
+    def save(self, record: PolicyAcceptanceRecord) -> PolicyAcceptanceRecord:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_for_user(self, user_id: str) -> list[PolicyAcceptanceRecord]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get(self, user_id: str, policy_type: str, version_id: str) -> PolicyAcceptanceRecord | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_for_user(self, user_id: str) -> int:
         raise NotImplementedError
 
 

@@ -98,16 +98,16 @@ This inventory records every material Global Public Beta requirement and its cov
 | Auth rate limiting | `implemented_verified` | Per-process buckets | 22 |
 | Account enumeration protection | `planned_underspecified` | Needs hardening review | 40 |
 | Brute-force / credential-stuffing protection | `planned_underspecified` | Rate limit only; no lockout/bot | 40 |
-| Terms of Service | `missing_from_roadmap` | — | 28 |
-| Privacy Policy | `missing_from_roadmap` | — | 28 |
-| Cookie/tracking disclosure | `missing_from_roadmap` | — | 28 |
+| Terms of Service | `implemented_needs_staging_proof` | Publication gate exists; production unpublished; counsel draft not served | 28 |
+| Privacy Policy | `implemented_needs_staging_proof` | Publication gate exists; production unpublished; counsel draft not served | 28 |
+| Cookie/tracking disclosure | `missing_from_roadmap` | Factual cookie inventory refreshed; counsel draft still unpublished; no CMP | 28 |
 | Analytics consent | `missing_from_roadmap` | — | 28 / 39 |
-| Registration consent records | `missing_from_roadmap` | — | 28 |
-| Policy-version acceptance records | `missing_from_roadmap` | — | 28 |
-| Account deletion + confirmation + propagation | `missing_from_roadmap` | — | 28 |
-| Data export | `missing_from_roadmap` | — | 28 |
-| Data retention policy | `missing_from_roadmap` | — | 28 |
-| PII inventory | `missing_from_roadmap` | — | 28 |
+| Registration consent records | `implemented_needs_staging_proof` | Persist only when a published version exists; unpublished register stores none | 28 |
+| Policy-version acceptance records | `implemented_needs_staging_proof` | Server-owned version + timestamp; production catalog empty | 28 |
+| Account deletion + confirmation + propagation | `implemented_needs_staging_proof` | Authenticated delete + password re-auth; staging E2E not done | 28 |
+| Data export | `implemented_needs_staging_proof` | Authenticated JSON export; staging E2E not done | 28 |
+| Data retention policy | `missing_from_roadmap` | Engineering checklist only; retention periods counsel-owned | 28 |
+| PII inventory | `implemented_needs_staging_proof` | Engineering inventory for current main; not a legal DPA | 28 |
 | Privacy / support contact | `missing_from_roadmap` | — | 28 / 39 |
 | Minimum age policy | `missing_from_roadmap` | — | 28 |
 | Country-specific notices | `missing_from_roadmap` | — | 28 / 37 |
@@ -466,3 +466,20 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 | Sprint 32 | Unchanged: in progress, blocked on external certification |
 | Sprint 33–36 / 38 | Not started |
 | Authority | [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |
+
+---
+
+## 2026-09-04 Sprint 28.1 status addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-authorized consent/deletion/export/publication-gate slice.
+
+| Field | Value |
+|-------|-------|
+| Sprint 28 | In progress. 28.1 legal publication gate, consent records, delete/export APIs, inventories, and private-URL noindex implemented. Sprint 28 is **not complete**. |
+| Sprint 27 | Unchanged: in progress, not complete |
+| Sprint 37 | Unchanged: in progress, not complete |
+| Sprint 32 | Unchanged: in progress, blocked on external certification |
+| EXT-19 | Unchanged: `applied` — written approval not present |
+| EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty |
+| EXT-22 | Unchanged: `not_started` — no CMP/banner |
+| Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) |

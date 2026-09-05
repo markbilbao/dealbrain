@@ -26,6 +26,7 @@ from app.core.middleware import (
 from app.core.validation import run_startup_validation
 from app.infrastructure.database.session import close_db, init_db
 from app.launch.runtime import mark_startup
+from app.legal.routes import router as legal_page_router
 from app.schemas.api_common import PaginationMeta
 
 logger = get_logger(__name__)
@@ -326,6 +327,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(early_access_page_router)
+    app.include_router(legal_page_router)
     app.include_router(consumer_router)
     app.include_router(probes_router)
     app.include_router(api_router)

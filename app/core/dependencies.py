@@ -1196,6 +1196,13 @@ def get_user_platform_store():
     return _USER_PLATFORM_STORE
 
 
+def get_legal_publication_catalog():
+    """Server-owned legal publication catalog. Production is unpublished."""
+    from app.legal.publication import catalog_from_settings
+
+    return catalog_from_settings(settings)
+
+
 def get_user_platform_service() -> UserPlatformService:
     """Provide the User Platform application facade (auth, profile, saved items)."""
     global _USER_PLATFORM_SERVICE
@@ -1208,23 +1215,43 @@ def get_user_platform_service() -> UserPlatformService:
 
         store = get_user_platform_store()
         audit = AuditLogger(store.audit)
+        from app.legal.publication import catalog_from_settings
+        from app.privacy.lifecycle import AccountLifecycleService
+
+        legal_catalog = catalog_from_settings(settings)
         auth = AuthService(
             users=store.users,
             sessions=store.sessions,
             profiles=store.profiles,
             password_resets=store.password_resets,
             email_verifications=store.email_verifications,
+            consents=store.consents,
+            legal_catalog=legal_catalog,
             email_sender=build_identity_email_sender(settings),
             audit=audit,
             enabled=settings.user_platform_enabled,
         )
         profiles = ProfileService(users=store.users, profiles=store.profiles)
         sessions = SessionService(sessions=store.sessions, auth=auth)
+        lifecycle = AccountLifecycleService(
+            users=store.users,
+            sessions=store.sessions,
+            profiles=store.profiles,
+            saved=store.saved,
+            password_resets=store.password_resets,
+            email_verifications=store.email_verifications,
+            consents=store.consents,
+            audit=audit,
+            watchlists=get_watchlist_repository(),
+            notification_center=get_notification_center_repository(),
+        )
         _USER_PLATFORM_SERVICE = UserPlatformService(
             auth=auth,
             profiles=profiles,
             sessions=sessions,
             saved=store.saved,
+            lifecycle=lifecycle,
+            consents=store.consents,
             audit=audit,
             enabled=settings.user_platform_enabled,
         )
