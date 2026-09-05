@@ -46,6 +46,7 @@ Early Access waitlist rows (`early_access.registrations`: full name, email, coun
 - `password_hash`
 - session `token_hash`, `csrf_token`, raw access tokens
 - password-reset / email-verification / email-change token hashes
+- pending email-change records, including intended `new_email` (unconfirmed destination; not an export category)
 - other users’ data
 - Early Access waitlist rows (not a User account; no trusted `user_id` link)
 - internal credentials / secrets

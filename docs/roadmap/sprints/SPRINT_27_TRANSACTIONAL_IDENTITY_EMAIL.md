@@ -41,7 +41,7 @@
 | Session revoke-all after confirm | implemented (existing session store) |
 | Newest-request-wins | implemented — later request invalidates prior unconsumed tokens |
 | Occupied destination | request is enumeration-safe (accepted, no token); confirm fails closed |
-| Old-email security notice | implemented after successful confirm; no token in the notice |
+| Old-email security notice | implemented after first-time identity mutation; secondary notification; no token; failure does not roll back |
 | Client-supplied user/profile/account IDs | ignored — cannot retarget another account |
 | EXT-08 / EXT-09 / staging inbox E2E / production readiness | **unchanged** — not claimed |
 
@@ -51,7 +51,9 @@
 
 **Verified-state semantics.** Successful confirmation sets `email_verified=True` for the new email. Prior verification state is not carried over.
 
-**Session security.** Successful confirmation calls `SessionRepository.revoke_all_for_user`. The user must sign in again with the new email. Other users' sessions are untouched.
+**Session security.** Successful confirmation calls `SessionRepository.revoke_all_for_user` after the email mutation and before success is returned. The confirming session and every other session for that user are revoked. Other users' sessions are untouched. Revoke or consume failure does not return success; the token remains usable until consume succeeds so a retry can finish the security steps. Repositories still commit independently — this is fail-closed ordering, not a new transaction framework.
+
+**Old-email notice.** The notice is a secondary notification, not authorization. It is sent only after a first-time identity mutation, contains no confirmation token, and never rolls back a completed or in-progress identity change.
 
 **External blockers (still open).** EXT-08 is account-establishment only. EXT-09 is a DNS plan only. There is no real staging inbox E2E. Production email readiness is not claimed.
 

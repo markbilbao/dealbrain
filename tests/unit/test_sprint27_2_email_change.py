@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -180,8 +181,9 @@ class TestEmailChangeRequest:
             auth.request_email_change(result.access_token, new_email=NEW_EMAIL, password="")
 
     def test_wrong_password_rejected(self) -> None:
-        auth, store, _sender = make_auth()
+        auth, store, sender = make_auth()
         result = _register(auth)
+        sent_before = len(sender.sent) if isinstance(sender, NullEmailSender) else 0
         with pytest.raises(UserPlatformAuthError, match="Invalid credentials"):
             auth.request_email_change(
                 result.access_token,
@@ -191,6 +193,12 @@ class TestEmailChangeRequest:
         user = store.users.get_by_id(result.user.user_id)
         assert user is not None
         assert user.email == "owner@example.com"
+        assert store.email_changes.list_for_user(result.user.user_id) == []
+        if isinstance(sender, NullEmailSender):
+            change_mail = [
+                item for item in sender.sent[sent_before:] if item.template_id == "email_change"
+            ]
+            assert change_mail == []
 
     def test_browser_supplied_user_id_cannot_retarget_account(
         self, monkeypatch: pytest.MonkeyPatch
@@ -519,6 +527,51 @@ class TestEmailChangeConfirmation:
         user = store.users.get_by_id(owner.user.user_id)
         assert user is not None
         assert user.email == "second@example.com"
+        remaining = [
+            item
+            for item in store.email_changes.list_for_user(owner.user.user_id)
+            if not item.consumed
+        ]
+        assert remaining == []
+
+    def test_failed_delivery_of_newer_request_does_not_reactivate_prior(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        clock = _Clock()
+        monkeypatch.setattr("app.core.config.settings", _settings())
+
+        class _FlakySender(NullEmailSender):
+            def send(self, message: object) -> None:
+                template_id = getattr(message, "template_id", None)
+                to_address = getattr(message, "to_address", "")
+                if template_id == "email_change" and to_address == "second@example.com":
+                    raise EmailDeliveryError("provider-secret-body")
+                super().send(message)
+
+        sender = _FlakySender()
+        auth, store, _sender = make_auth(clock=clock, email_sender=sender)
+        owner = _register(auth)
+        first = auth.request_email_change(
+            owner.access_token,
+            new_email="first@example.com",
+            password=PASSWORD,
+        )["email_change_token_demo_only"]
+        clock.advance(minutes=1)
+        second = auth.request_email_change(
+            owner.access_token,
+            new_email="second@example.com",
+            password=PASSWORD,
+        )
+        assert second["status"] == "accepted"
+        assert "provider-secret-body" not in str(second)
+        raw_second = second["email_change_token_demo_only"]
+        first_record = store.email_changes.get_by_token_hash(AuthService.hash_token(first))
+        assert first_record is not None
+        assert first_record.consumed is True
+        with pytest.raises(UserPlatformAuthError, match="Invalid or expired"):
+            auth.confirm_email_change(first)
+        auth.confirm_email_change(raw_second)
+        assert store.users.get_by_id(owner.user.user_id).email == "second@example.com"
 
 
 class TestEmailChangeTokenIsolation:
@@ -690,3 +743,150 @@ class TestEmailChangeBrandAndLinks:
         public = record.to_dict()
         assert raw not in str(public)
         assert "token_hash" not in public
+
+
+class TestEmailChangeFailClosedOrdering:
+    def test_uniqueness_conflict_does_not_consume_or_mutate(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("app.core.config.settings", _settings())
+        auth, store, _sender = make_auth()
+        owner = _register(auth)
+        raw = auth.request_email_change(
+            owner.access_token,
+            new_email=NEW_EMAIL,
+            password=PASSWORD,
+        )["email_change_token_demo_only"]
+        occupant = _register(auth, email=NEW_EMAIL, display_name="Occupant")
+        with pytest.raises(UserPlatformAuthError, match="Invalid or expired"):
+            auth.confirm_email_change(raw)
+        owner_user = store.users.get_by_id(owner.user.user_id)
+        assert owner_user is not None
+        assert owner_user.email == "owner@example.com"
+        assert owner_user.email_verified is False
+        record = store.email_changes.get_by_token_hash(AuthService.hash_token(raw))
+        assert record is not None
+        assert record.consumed is False
+        assert store.users.get_by_id(occupant.user.user_id).email == NEW_EMAIL
+
+    def test_revoke_failure_does_not_return_success(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("app.core.config.settings", _settings())
+        auth, store, _sender = make_auth()
+        owner = _register(auth)
+        extra = auth.login(email="owner@example.com", password=PASSWORD)
+        raw = auth.request_email_change(
+            owner.access_token,
+            new_email=NEW_EMAIL,
+            password=PASSWORD,
+        )["email_change_token_demo_only"]
+
+        def boom(_user_id: str) -> int:
+            raise RuntimeError("revoke-failed")
+
+        original_revoke = auth._sessions.revoke_all_for_user
+        auth._sessions.revoke_all_for_user = boom  # type: ignore[method-assign]
+        with pytest.raises(UserPlatformValidationError, match="Unable to complete email change"):
+            auth.confirm_email_change(raw)
+        user = store.users.get_by_id(owner.user.user_id)
+        assert user is not None
+        assert user.email == NEW_EMAIL
+        record = store.email_changes.get_by_token_hash(AuthService.hash_token(raw))
+        assert record is not None
+        assert record.consumed is False
+        auth._sessions.revoke_all_for_user = original_revoke
+        confirmed = auth.confirm_email_change(raw)
+        assert confirmed["status"] == "email_changed"
+        with pytest.raises(UserPlatformAuthError):
+            auth.validate_session(owner.access_token)
+        with pytest.raises(UserPlatformAuthError):
+            auth.validate_session(extra.access_token)
+
+    def test_consume_failure_cannot_retarget_another_account(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("app.core.config.settings", _settings())
+        auth, store, _sender = make_auth()
+        owner = _register(auth)
+        other = _register(auth, email="other@example.com", display_name="Other")
+        raw = auth.request_email_change(
+            owner.access_token,
+            new_email=NEW_EMAIL,
+            password=PASSWORD,
+        )["email_change_token_demo_only"]
+
+        def boom(_change_id: str) -> None:
+            raise RuntimeError("consume-failed")
+
+        original_consume = auth._email_changes.mark_consumed
+        auth._email_changes.mark_consumed = boom  # type: ignore[method-assign]
+        with pytest.raises(UserPlatformValidationError, match="Unable to complete email change"):
+            auth.confirm_email_change(raw)
+        assert store.users.get_by_id(owner.user.user_id).email == NEW_EMAIL
+        assert store.users.get_by_id(other.user.user_id).email == "other@example.com"
+        auth._email_changes.mark_consumed = original_consume
+        auth.confirm_email_change(raw)
+        assert store.users.get_by_id(owner.user.user_id).email == NEW_EMAIL
+        assert store.users.get_by_id(other.user.user_id).email == "other@example.com"
+        record = store.email_changes.get_by_token_hash(AuthService.hash_token(raw))
+        assert record is not None
+        assert record.consumed is True
+
+    def test_notice_failure_does_not_rollback_or_leak(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("app.core.config.settings", _settings())
+
+        class _NoticeFailSender(NullEmailSender):
+            def send(self, message: object) -> None:
+                if getattr(message, "template_id", None) == "email_change_notice":
+                    raise EmailDeliveryError("provider-secret-body")
+                super().send(message)
+
+        sender = _NoticeFailSender()
+        auth, store, _sender = make_auth(email_sender=sender)
+        owner = _register(auth)
+        raw = auth.request_email_change(
+            owner.access_token,
+            new_email=NEW_EMAIL,
+            password=PASSWORD,
+        )["email_change_token_demo_only"]
+        result = auth.confirm_email_change(raw)
+        assert result["status"] == "email_changed"
+        assert "provider-secret-body" not in str(result)
+        user = store.users.get_by_id(owner.user.user_id)
+        assert user is not None
+        assert user.email == NEW_EMAIL
+        assert user.email_verified is True
+        events = store.audit.list_events()
+        assert any(
+            event.event_type == "email_change_delivery_failed"
+            and event.detail == "old_email_notice"
+            for event in events
+        )
+
+    def test_export_excludes_pending_email_change_records(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr("app.core.config.settings", _settings())
+        service, store, _sender = make_platform()
+        owner = service.register(email="owner@example.com", password=PASSWORD, display_name="Owner")
+        raw = service.request_email_change(
+            owner.access_token,
+            new_email=NEW_EMAIL,
+            password=PASSWORD,
+        )["email_change_token_demo_only"]
+        payload = service.export_personal_data(owner.access_token)
+        dumped = json.dumps(payload)
+        assert "email_changes" not in payload
+        assert NEW_EMAIL not in dumped
+        assert raw not in dumped
+        assert "token_hash" not in dumped
+        assert "email_change_token" not in dumped
+        pending = store.email_changes.list_for_user(owner.user.user_id)
+        assert pending
+        service.delete_account(
+            owner.access_token,
+            confirmation=ACCOUNT_DELETE_CONFIRMATION,
+            password=PASSWORD,
+        )
+        assert store.email_changes.list_for_user(owner.user.user_id) == []

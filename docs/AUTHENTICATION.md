@@ -145,6 +145,22 @@ sessions for that user are revoked, and a token-free notice is sent to the
 old address: “Your PiqSavi account email was changed.” Notice-delivery
 failure does not roll back the change.
 
+Confirmation ordering is fail-closed and does not introduce a new
+transaction framework (each repository call still commits independently):
+
+1. Validate token / purpose / expiry / newest-request / account — no mutation.
+2. Recheck destination uniqueness — occupied destinations fail without
+   consume or email mutation.
+3. Persist the new email and `email_verified=True`. A uniqueness conflict
+   leaves the old email and an unconsumed token.
+4. Old-email notice is a secondary notification after a first-time identity
+   mutation. It is not authorization. Failure is audited and never rolls back.
+5. Revoke every session for that user, including the confirming session.
+   Revoke failure does not return success; the token stays usable for retry.
+6. Consume the winning token and invalidate sibling tokens. Consume failure
+   does not return success and cannot retarget another account.
+7. Success is returned only after revoke and consume succeed.
+
 Password-reset and ordinary verification tokens cannot confirm email
 change. Email-change tokens cannot reset a password or satisfy ordinary
 verify-email confirmation.

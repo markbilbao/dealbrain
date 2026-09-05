@@ -117,7 +117,7 @@ class ConfigurableRateLimiter:
 
 def classify_path(method: str, path: str) -> RateLimitBucket:
     """Map an HTTP path to a rate-limit bucket."""
-    normalized = path.rstrip("/") or "/"
+    normalized = path.split("?", 1)[0].split("#", 1)[0].rstrip("/") or "/"
     upper = method.upper()
 
     if normalized.endswith("/auth/login") and upper == "POST":

@@ -87,6 +87,7 @@ GENERIC_EMAIL_CHANGE_DETAIL = (
 INVALID_RESET_TOKEN = "Invalid or expired reset token."
 INVALID_VERIFY_TOKEN = "Invalid or expired verification token."
 INVALID_EMAIL_CHANGE_TOKEN = "Invalid or expired email-change token."
+EMAIL_CHANGE_COMPLETION_ERROR = "Unable to complete email change."
 
 
 class AuthService:
@@ -520,7 +521,26 @@ class AuthService:
         return response
 
     def confirm_email_change(self, token: str) -> dict[str, Any]:
-        """Confirm a purpose-bound email-change token and revoke sessions."""
+        """Confirm a purpose-bound email-change token and revoke sessions.
+
+        Repository calls commit independently (no new transaction framework).
+        Fail-closed ordering:
+
+        1. Validate token, purpose, expiry, newest-request, and account.
+        2. Recheck destination uniqueness. Conflict does not consume the token
+           and does not mutate email or verified state.
+        3. Persist the new email and ``email_verified=True``. Skip when this
+           identity is already applied (retry after a later-step failure).
+        4. Send the old-email notice only after a first-time identity mutation.
+           Notice failure is audited and never rolls back the change.
+        5. Revoke every session for the bound user, including the confirming
+           session. A revoke failure does not return success; the token stays
+           usable so a retry can finish revocation.
+        6. Consume the winning token and invalidate any sibling tokens. A
+           consume failure does not return success and cannot retarget another
+           account on retry.
+        7. Return success only after revoke and consume succeed.
+        """
         self._require_enabled()
         raw = (token or "").strip()
         if not raw or self._email_changes is None:
@@ -544,19 +564,28 @@ class AuthService:
         if occupant is not None and occupant.user_id != user.user_id:
             raise UserPlatformAuthError(INVALID_EMAIL_CHANGE_TOKEN)
         old_email = user.email
-        updated = replace(
-            user,
-            email=record.new_email,
-            email_verified=True,
-            updated_at=now,
-        )
+        already_applied = user.email == record.new_email and user.email_verified
+        if not already_applied:
+            updated = replace(
+                user,
+                email=record.new_email,
+                email_verified=True,
+                updated_at=now,
+            )
+            try:
+                self._users.save(updated)
+            except UserPlatformValidationError as exc:
+                raise UserPlatformAuthError(INVALID_EMAIL_CHANGE_TOKEN) from exc
+            self._send_email_changed_notice(old_email)
         try:
-            self._users.save(updated)
-        except UserPlatformValidationError as exc:
-            raise UserPlatformAuthError(INVALID_EMAIL_CHANGE_TOKEN) from exc
-        self._email_changes.mark_consumed(record.change_id)
-        self._sessions.revoke_all_for_user(user.user_id)
-        self._send_email_changed_notice(old_email)
+            self._sessions.revoke_all_for_user(user.user_id)
+        except Exception as exc:  # noqa: BLE001 — fail closed; do not report success
+            raise UserPlatformValidationError(EMAIL_CHANGE_COMPLETION_ERROR) from exc
+        try:
+            self._email_changes.mark_consumed(record.change_id)
+            self._email_changes.invalidate_for_user(user.user_id)
+        except Exception as exc:  # noqa: BLE001 — fail closed; do not report success
+            raise UserPlatformValidationError(EMAIL_CHANGE_COMPLETION_ERROR) from exc
         self._audit.record("email_change_confirmed", user_id=user.user_id)
         return {"status": "email_changed", "email_verified": True}
 
