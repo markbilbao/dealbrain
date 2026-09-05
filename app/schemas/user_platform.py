@@ -45,6 +45,15 @@ class EmailVerificationConfirmRequest(BaseModel):
     token: str = Field(..., min_length=1, max_length=512)
 
 
+class EmailChangeRequestBody(BaseModel):
+    new_email: str = Field(..., min_length=3, max_length=254)
+    password: str = Field(..., min_length=1, max_length=256)
+
+
+class EmailChangeConfirmRequest(BaseModel):
+    token: str = Field(..., min_length=1, max_length=512)
+
+
 class IdentityEmailAcceptedResponse(BaseModel):
     model_config = ConfigDict(exclude_none=True)
 
@@ -53,6 +62,7 @@ class IdentityEmailAcceptedResponse(BaseModel):
     detail: str = ""
     reset_token_demo_only: str | None = None
     verification_token_demo_only: str | None = None
+    email_change_token_demo_only: str | None = None
 
 
 class PasswordResetConfirmResponse(BaseModel):
@@ -61,6 +71,11 @@ class PasswordResetConfirmResponse(BaseModel):
 
 class EmailVerificationConfirmResponse(BaseModel):
     status: str = "email_verified"
+    email_verified: bool = True
+
+
+class EmailChangeConfirmResponse(BaseModel):
+    status: str = "email_changed"
     email_verified: bool = True
 
 

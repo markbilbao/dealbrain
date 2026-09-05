@@ -31,7 +31,7 @@ uvicorn app.main:app --reload
 
 ## What persists
 
-Users, sessions, profiles/preferences/settings, saved items, password-reset/verification records, marketplace offers/checkpoints/sync jobs, alert rules/events, notifications, affiliate merchants/links/clicks/attributions, merchant orgs/accounts/submissions/campaigns.
+Users, sessions, profiles/preferences/settings, saved items, password-reset/verification/email-change records, marketplace offers/checkpoints/sync jobs, alert rules/events, notifications, affiliate merchants/links/clicks/attributions, merchant orgs/accounts/submissions/campaigns.
 
 ## What does not (yet)
 

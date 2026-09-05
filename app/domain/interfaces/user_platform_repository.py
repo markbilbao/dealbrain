@@ -9,6 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from app.domain.entities.user_platform import (
+    EmailChangeRequest,
     EmailVerificationRequest,
     FavoriteBrand,
     FavoriteMarketplace,
@@ -212,6 +213,32 @@ class EmailVerificationRepository(ABC):
 
     @abstractmethod
     def mark_consumed(self, verification_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete_for_user(self, user_id: str) -> int:
+        raise NotImplementedError
+
+
+class EmailChangeRepository(ABC):
+    @abstractmethod
+    def save(self, request: EmailChangeRequest) -> EmailChangeRequest:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_by_token_hash(self, token_hash: str) -> EmailChangeRequest | None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def mark_consumed(self, change_id: str) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def list_for_user(self, user_id: str) -> list[EmailChangeRequest]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def invalidate_for_user(self, user_id: str) -> int:
         raise NotImplementedError
 
     @abstractmethod

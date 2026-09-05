@@ -2,7 +2,7 @@
 
 This document covers two separate email ports. Do not merge them.
 
-## Identity transactional email (Sprint 27.1)
+## Identity transactional email (Sprint 27.1 + 27.2)
 
 **Port:** `EmailSender` in `app/auth/email.py`  
 **Adapters:** `NullEmailSender` (development/test) and `ResendEmailSender` (`app/auth/email_resend.py`)  
@@ -28,10 +28,11 @@ Configuration (no secrets in git):
 - `PUBLIC_APP_BASE_URL` (trusted link base; never request `Host`)
 
 EXT-08 remains `applied` (account establishment). EXT-09 remains `applied`
-(DNS plan only). 27.1 does **not** claim sender-domain verification or
+(DNS plan only). 27.1/27.2 do **not** claim sender-domain verification or
 production email readiness. Health/config `identity_email_ready` stays
 `false` while that evidence is missing — including staging on
-`NullEmailSender`.
+`NullEmailSender`. Email-change confirmation uses the same `EmailSender`
+port and PiqSavi templates; it does not call Resend from auth service code.
 
 Sprint 19 notification email below is unchanged and still mock-only.
 

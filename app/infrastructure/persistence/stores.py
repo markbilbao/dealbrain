@@ -18,6 +18,7 @@ SAVED_SEARCHES = "user_platform.saved_searches"
 RECENTLY_VIEWED = "user_platform.recently_viewed"
 PASSWORD_RESETS = "user_platform.password_resets"
 EMAIL_VERIFICATIONS = "user_platform.email_verifications"
+EMAIL_CHANGES = "user_platform.email_changes"
 AUDIT_EVENTS = "user_platform.audit_events"
 CONSENT_RECORDS = "user_platform.consent_records"
 
@@ -98,6 +99,7 @@ USER_PLATFORM_STORES = (
     RECENTLY_VIEWED,
     PASSWORD_RESETS,
     EMAIL_VERIFICATIONS,
+    EMAIL_CHANGES,
     AUDIT_EVENTS,
     CONSENT_RECORDS,
 )

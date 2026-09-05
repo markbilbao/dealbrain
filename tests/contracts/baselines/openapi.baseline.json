@@ -6061,6 +6061,59 @@
         "title": "EarlyAccessRegisterResponse",
         "type": "object"
       },
+      "EmailChangeConfirmRequest": {
+        "properties": {
+          "token": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "title": "EmailChangeConfirmRequest",
+        "type": "object"
+      },
+      "EmailChangeConfirmResponse": {
+        "properties": {
+          "email_verified": {
+            "default": true,
+            "title": "Email Verified",
+            "type": "boolean"
+          },
+          "status": {
+            "default": "email_changed",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "EmailChangeConfirmResponse",
+        "type": "object"
+      },
+      "EmailChangeRequestBody": {
+        "properties": {
+          "new_email": {
+            "maxLength": 254,
+            "minLength": 3,
+            "title": "New Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "new_email",
+          "password"
+        ],
+        "title": "EmailChangeRequestBody",
+        "type": "object"
+      },
       "EmailVerificationConfirmRequest": {
         "properties": {
           "token": {
@@ -6907,6 +6960,17 @@
             "default": "",
             "title": "Detail",
             "type": "string"
+          },
+          "email_change_token_demo_only": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Change Token Demo Only"
           },
           "email_delivery": {
             "default": false,
@@ -19446,6 +19510,106 @@
           }
         },
         "summary": "List demo accounts available for login (Sprint 17)",
+        "tags": [
+          "user-platform-auth"
+        ]
+      }
+    },
+    "/api/v1/auth/email-change": {
+      "post": {
+        "operationId": "request_email_change_api_v1_auth_email_change_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailChangeRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityEmailAcceptedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Request an email change for the authenticated account",
+        "tags": [
+          "user-platform-auth"
+        ]
+      }
+    },
+    "/api/v1/auth/email-change/confirm": {
+      "post": {
+        "operationId": "confirm_email_change_api_v1_auth_email_change_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailChangeConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailChangeConfirmResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm an email-change token and update the bound account",
         "tags": [
           "user-platform-auth"
         ]

@@ -17,7 +17,7 @@ This inventory records **repository-evidenced** personal and related data. Class
 | Wishlist | `product_ids` | `user_platform.wishlists` | No privacy retention policy | Deleted | Included | Distinct from Watchlists |
 | Saved products / comparisons / searches / history / recently viewed | query and product identifiers, notes | `user_platform.saved_*` | No privacy retention policy | Deleted | Included | Per-item saved-product delete already existed |
 | Consent records | `user_id`, `policy_type` (`terms`/`privacy`), server-owned `version_id`, `accepted_at`, `source`, `actor` | `user_platform.consent_records` in existing `operational_entities` (no new table). Unique `{user_id}:{policy_type}:{version_id}` via `uq_operational_store_secondary` | No privacy retention policy | Deleted with account | Included | Empty until a published policy version exists |
-| Password reset / email verify | hashed tokens, expiry, consumed | `user_platform.password_resets` / `email_verifications` | TTL 1h / 1d | Deleted | **Excluded** (security tokens) | |
+| Password reset / email verify / email change | hashed tokens, expiry, consumed; email-change also stores intended `new_email` + `purpose` | `user_platform.password_resets` / `email_verifications` / `email_changes` | TTL 1h / 1d / 1d | Deleted | **Excluded** (security tokens) | Email-change uses the existing `operational_entities` store |
 | Notification Center prefs | in-app/email/digest/marketing flags | `notifications.preferences` | No privacy retention policy | Removed when that store is wired | Merged under `notification_preferences` when present | Separate from legal consent |
 | Watchlists | name, owner_id, items | watchlist store | No privacy retention policy | Owner-scoped watchlists deleted | Not a dedicated export category; account-owned lists are deleted | Distinct from profile wishlist |
 
@@ -45,7 +45,8 @@ Early Access waitlist rows (`early_access.registrations`: full name, email, coun
 
 - `password_hash`
 - session `token_hash`, `csrf_token`, raw access tokens
-- password-reset / email-verification token hashes
+- password-reset / email-verification / email-change token hashes
+- pending email-change records, including intended `new_email` (unconfirmed destination; not an export category)
 - other users’ data
 - Early Access waitlist rows (not a User account; no trusted `user_id` link)
 - internal credentials / secrets

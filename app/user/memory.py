@@ -7,6 +7,7 @@ adapters can replace these without changing services or API layers.
 from __future__ import annotations
 
 from app.domain.entities.user_platform import (
+    EmailChangeRequest,
     EmailVerificationRequest,
     FavoriteBrand,
     FavoriteMarketplace,
@@ -29,6 +30,7 @@ from app.domain.exceptions import UserPlatformNotFoundError, UserPlatformValidat
 from app.domain.interfaces.user_platform_repository import (
     AuditLogRepository,
     ConsentRepository,
+    EmailChangeRepository,
     EmailVerificationRepository,
     PasswordResetRepository,
     ProfileRepository,
@@ -386,6 +388,59 @@ class InMemoryEmailVerificationRepository(EmailVerificationRepository):
         return count
 
 
+class InMemoryEmailChangeRepository(EmailChangeRepository):
+    def __init__(self) -> None:
+        self._by_id: dict[str, EmailChangeRequest] = {}
+        self._by_token: dict[str, str] = {}
+
+    def save(self, request: EmailChangeRequest) -> EmailChangeRequest:
+        self._by_id[request.change_id] = request
+        self._by_token[request.token_hash] = request.change_id
+        return request
+
+    def get_by_token_hash(self, token_hash: str) -> EmailChangeRequest | None:
+        change_id = self._by_token.get(token_hash)
+        return self._by_id.get(change_id) if change_id else None
+
+    def mark_consumed(self, change_id: str) -> None:
+        request = self._by_id.get(change_id)
+        if request is None:
+            return
+        self._by_id[change_id] = EmailChangeRequest(
+            change_id=request.change_id,
+            user_id=request.user_id,
+            token_hash=request.token_hash,
+            new_email=request.new_email,
+            created_at=request.created_at,
+            expires_at=request.expires_at,
+            purpose=request.purpose,
+            consumed=True,
+        )
+
+    def list_for_user(self, user_id: str) -> list[EmailChangeRequest]:
+        return [item for item in self._by_id.values() if item.user_id == user_id]
+
+    def invalidate_for_user(self, user_id: str) -> int:
+        count = 0
+        for item in list(self._by_id.values()):
+            if item.user_id != user_id or item.consumed:
+                continue
+            self.mark_consumed(item.change_id)
+            count += 1
+        return count
+
+    def delete_for_user(self, user_id: str) -> int:
+        count = 0
+        for item in list(self._by_id.values()):
+            if item.user_id != user_id:
+                continue
+            del self._by_id[item.change_id]
+            if self._by_token.get(item.token_hash) == item.change_id:
+                del self._by_token[item.token_hash]
+            count += 1
+        return count
+
+
 class InMemoryAuditLogRepository(AuditLogRepository):
     def __init__(self) -> None:
         self._events: list[SecurityEvent] = []
@@ -445,5 +500,6 @@ class InMemoryUserPlatformStore:
         self.saved = InMemorySavedItemsRepository()
         self.password_resets = InMemoryPasswordResetRepository()
         self.email_verifications = InMemoryEmailVerificationRepository()
+        self.email_changes = InMemoryEmailChangeRepository()
         self.audit = InMemoryAuditLogRepository()
         self.consents = InMemoryConsentRepository()

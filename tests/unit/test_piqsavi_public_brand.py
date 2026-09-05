@@ -156,12 +156,21 @@ def test_auth_email_subjects_use_public_brand() -> None:
     text = (ROOT / "app/auth/email_templates.py").read_text(encoding="utf-8")
     assert 'PASSWORD_RESET_SUBJECT = f"{PUBLIC_BRAND} password reset"' in text
     assert 'EMAIL_VERIFICATION_SUBJECT = f"Verify your {PUBLIC_BRAND} email"' in text
+    assert 'EMAIL_CHANGE_SUBJECT = f"Confirm your new {PUBLIC_BRAND} email"' in text
+    assert 'EMAIL_CHANGE_NOTICE_SUBJECT = f"Your {PUBLIC_BRAND} account email was changed"' in text
     assert "DealBrain password reset" not in text
     assert "Verify your DealBrain email" not in text
-    from app.auth.email_templates import EMAIL_VERIFICATION_SUBJECT, PASSWORD_RESET_SUBJECT
+    from app.auth.email_templates import (
+        EMAIL_CHANGE_NOTICE_SUBJECT,
+        EMAIL_CHANGE_SUBJECT,
+        EMAIL_VERIFICATION_SUBJECT,
+        PASSWORD_RESET_SUBJECT,
+    )
 
     assert PASSWORD_RESET_SUBJECT == "PiqSavi password reset"
     assert EMAIL_VERIFICATION_SUBJECT == "Verify your PiqSavi email"
+    assert EMAIL_CHANGE_SUBJECT == "Confirm your new PiqSavi email"
+    assert EMAIL_CHANGE_NOTICE_SUBJECT == "Your PiqSavi account email was changed"
 
 
 def test_price_history_public_disclaimer_uses_piqsavi() -> None:

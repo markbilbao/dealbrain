@@ -66,3 +66,11 @@ class EmailVerificationTokenService(ABC):
     @abstractmethod
     def issue(self, user_id: str, email: str) -> dict[str, Any]:
         raise NotImplementedError
+
+
+class EmailChangeTokenService(ABC):
+    """Architecture interface for issuing email-change confirmation tokens."""
+
+    @abstractmethod
+    def issue(self, user_id: str, new_email: str) -> dict[str, Any]:
+        raise NotImplementedError

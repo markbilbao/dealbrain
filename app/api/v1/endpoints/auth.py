@@ -2,7 +2,7 @@
 
 Sessions are opaque bearer tokens returned on register/login and must be sent
 as ``Authorization: Bearer <token>`` on subsequent authenticated requests.
-Password reset and email verification are Sprint 27.1 identity flows.
+Password reset, email verification, and email change are Sprint 27 identity flows.
 """
 
 from __future__ import annotations
@@ -27,6 +27,9 @@ from app.schemas.user_platform import (
     AccountDeleteRequest,
     AccountDeleteResponse,
     AuthResponse,
+    EmailChangeConfirmRequest,
+    EmailChangeConfirmResponse,
+    EmailChangeRequestBody,
     EmailVerificationConfirmRequest,
     EmailVerificationConfirmResponse,
     EmailVerificationRequestBody,
@@ -227,6 +230,53 @@ async def confirm_email_verification(
     ) as exc:
         raise map_user_platform_error(exc) from exc
     return EmailVerificationConfirmResponse.model_validate(payload)
+
+
+@router.post(
+    "/email-change",
+    response_model=IdentityEmailAcceptedResponse,
+    response_model_exclude_none=True,
+    summary="Request an email change for the authenticated account",
+)
+async def request_email_change(
+    body: EmailChangeRequestBody,
+    authorization: str | None = Header(default=None),
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> IdentityEmailAcceptedResponse:
+    token = extract_bearer_token(authorization)
+    try:
+        payload = service.request_email_change(
+            token,
+            new_email=body.new_email,
+            password=body.password,
+        )
+    except (
+        UserPlatformValidationError,
+        UserPlatformAuthError,
+        UserPlatformRateLimitError,
+    ) as exc:
+        raise map_user_platform_error(exc) from exc
+    return IdentityEmailAcceptedResponse.model_validate(payload)
+
+
+@router.post(
+    "/email-change/confirm",
+    response_model=EmailChangeConfirmResponse,
+    summary="Confirm an email-change token and update the bound account",
+)
+async def confirm_email_change(
+    body: EmailChangeConfirmRequest,
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> EmailChangeConfirmResponse:
+    try:
+        payload = service.confirm_email_change(body.token)
+    except (
+        UserPlatformValidationError,
+        UserPlatformAuthError,
+        UserPlatformRateLimitError,
+    ) as exc:
+        raise map_user_platform_error(exc) from exc
+    return EmailChangeConfirmResponse.model_validate(payload)
 
 
 @router.get(

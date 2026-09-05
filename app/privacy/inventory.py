@@ -34,6 +34,7 @@ SECURITY_FIELDS_EXCLUDED_FROM_EXPORT: tuple[str, ...] = (
     "access_token",
     "reset_token",
     "verification_token",
+    "email_change_token",
 )
 
 # Browser/server stores that are not account-exportable (guest/session device).
@@ -49,6 +50,9 @@ EXPORT_EXCLUSIONS: dict[str, str] = {
     "password_hash": "credential secret; never exported",
     "session token_hash / csrf_token / raw access_token": "internal security material",
     "password-reset / email-verification tokens": "raw and hashed security tokens",
+    "email-change pending records / token hashes / intended new_email": (
+        "security tokens and unconfirmed destination; not an export category"
+    ),
     "other users' data": "ownership isolation",
     "Early Access waitlist": "not a User account; no trusted user_id link",
     "application / request logs": "operational, not account-owned export",

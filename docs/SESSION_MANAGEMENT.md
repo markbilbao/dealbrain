@@ -33,8 +33,10 @@ sessions" or admin/session-hygiene tooling).
    `revoke_all` mark a session `revoked=True`. Revoked sessions fail
    validation immediately regardless of `expires_at`. Successful password-reset
    confirmation calls `revoke_all_for_user` so every existing session dies
-   before the new password can be used (Sprint 27.1). This is revocation of
-   the existing session store, not a second session system.
+   before the new password can be used (Sprint 27.1). Successful email-change
+   confirmation does the same after the new email is applied (Sprint 27.2).
+   This is revocation of the existing session store, not a second session
+   system.
 
 ## `SessionService` API
 
