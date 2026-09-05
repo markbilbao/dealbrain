@@ -1,6 +1,6 @@
 # Sprint 28 — Privacy, Legal, Consent & Account Deletion
 
-**Status:** In progress — 28.1 engineering foundations implemented. Sprint 28 is **not complete**. Counsel drafts remain unpublished. EXT-19 written approval is absent. EXT-20 / EXT-21 publication remains `not_started`. Staging delete/export E2E and Sprint 44/45 publication gates remain open.
+**Status:** In progress — 28.1 engineering foundations implemented; 28.2 staging export/delete HTTP evidence recorded. Sprint 28 is **not complete**. Counsel drafts remain unpublished. EXT-19 written approval is absent. EXT-20 / EXT-21 publication remains `not_started`. Sprint 44/45 publication gates remain open.
 **Primary owner / domain:** Legal + privacy engineering
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-4
@@ -28,7 +28,7 @@
 | EXT-22 cookie-consent / CMP | `not_started` — banner **not** implemented |
 | Analytics providers | **not** added |
 | Age gate / minimum age | **not** activated |
-| Staging delete/export E2E | **not done** |
+| Staging delete/export E2E | recorded — [`../evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md`](../evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md); HTTP evidence only, not legal certification |
 | Sprint 28 / P0-4 closure | **not closed** |
 
 28.1 implements the engineering privacy foundation that can be completed before legal publication approval. It does **not** complete Sprint 28. It does **not** publish counsel drafts. It does **not** record acceptance of an unpublished policy. Deletion/export are engineering APIs, not legal-compliance certification.
@@ -87,9 +87,9 @@ Ship the consumer legal and privacy minimum: policies, consent records, deletion
 
 ## Required staging evidence
 
-- Delete account E2E
-- Export download E2E
-- Consent records visible to admin/audit
+- Delete account E2E — recorded in [`../evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md`](../evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md)
+- Export download E2E — recorded in the same package (`piqsavi.account_owned_export.v1`)
+- Consent records visible to admin/audit — **not done** (no published policy version in staging; `/privacy` and `/terms` are 404)
 
 ## Required production evidence
 
@@ -115,8 +115,8 @@ Launch acceptance explicitly covers:
 
 Also:
 
-- Staging deletion and export pass
-- Consent and policy-version records persisted
+- Staging deletion and export pass — 28.2 HTTP evidence recorded; not legal certification
+- Consent and policy-version records persisted — still empty until a published version exists
 - Legal review engaged with dated packet
 - Support and privacy contacts assigned
 
