@@ -33,9 +33,13 @@ async def test_login_and_register_forms_wire_existing_auth_apis(client: AsyncCli
     assert 'data-account-form="register"' in register.text
     assert "Forgot password" in login.text
     assert "/reset-password" in login.text
-    assert "terms_accepted" in register.text
-    assert "privacy_acknowledged" in register.text
+    assert 'name="terms_accepted"' not in register.text
+    assert 'name="privacy_acknowledged"' not in register.text
+    assert "I accept the Terms of Service" not in register.text
+    assert "I acknowledge the Privacy Policy" not in register.text
     assert "not published yet" in register.text
+    assert "querySelector(\"[name=terms_accepted]\")" in ACCOUNT_JS
+    assert "querySelector(\"[name=privacy_acknowledged]\")" in ACCOUNT_JS
     assert "/api/v1/auth/login" in ACCOUNT_JS
     assert "/api/v1/auth/register" in ACCOUNT_JS
     assert "/api/v1/auth/account/export" in ACCOUNT_JS
@@ -103,8 +107,8 @@ async def test_register_login_roundtrip_and_export_delete_ui_path(client: AsyncC
             "email": email,
             "password": "Password123",
             "display_name": "Sprint 29 UI",
-            "terms_accepted": True,
-            "privacy_acknowledged": True,
+            "terms_accepted": False,
+            "privacy_acknowledged": False,
         },
     )
     assert created.status_code == 201

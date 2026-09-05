@@ -78,12 +78,6 @@ def claim_guest_conversation(
     do not rebind.
     """
 
-    if not conversation_id:
-        return {
-            "claimed": False,
-            "reason": "missing_conversation",
-            "decision_preserved": False,
-        }
     if guest_owner is None:
         return {
             "claimed": False,
@@ -96,13 +90,39 @@ def claim_guest_conversation(
             "reason": "not_a_guest_owner",
             "decision_preserved": True,
         }
-    bound = conversations.get_for_owner(conversation_id, guest_owner)
+
+    bound = None
+    if conversation_id:
+        bound = conversations.get_for_owner(conversation_id, guest_owner)
+        if bound is None:
+            return {
+                "claimed": False,
+                "reason": "conversation_not_found",
+                "decision_preserved": False,
+            }
+    elif decision_id:
+        bound = conversations.find_bound_for_owner(guest_owner, decision_id)
+        if bound is None:
+            return {
+                "claimed": False,
+                "reason": "conversation_not_found",
+                "decision_preserved": False,
+            }
+    else:
+        return {
+            "claimed": False,
+            "reason": "missing_conversation",
+            "decision_preserved": False,
+        }
+
     if bound is None:
         return {
             "claimed": False,
             "reason": "conversation_not_found",
             "decision_preserved": False,
         }
+
+    conversation_id = bound.conversation_id
 
     target_decision = decision_id or (
         bound.decision_context.decision_id if bound.decision_context is not None else ""

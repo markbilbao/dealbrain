@@ -23,10 +23,12 @@ from app.consumer.guest_continuity import (
 from app.consumer.robots import apply_private_decision_noindex
 from app.consumer.seo import apply_noindex
 from app.core.dependencies import (
+    get_legal_publication_catalog,
     get_shopping_conversation_repository,
     get_shopping_decision_snapshot_repository,
     get_user_platform_service,
 )
+from app.legal.publication import LegalPublicationCatalog
 from app.domain.exceptions import UserPlatformAuthError, UserPlatformValidationError
 from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 from app.domain.interfaces.shopping_assistant_repository import ConversationRepository
@@ -60,8 +62,11 @@ async def login_page(next: str | None = Query(default="/account")) -> HTMLRespon
 
 
 @router.get("/register", response_class=HTMLResponse)
-async def register_page(next: str | None = Query(default="/account")) -> HTMLResponse:
-    return _page(render_register_page(next_path=_safe_next(next)))
+async def register_page(
+    next: str | None = Query(default="/account"),
+    catalog: LegalPublicationCatalog = Depends(get_legal_publication_catalog),
+) -> HTMLResponse:
+    return _page(render_register_page(next_path=_safe_next(next), catalog=catalog))
 
 
 @router.get("/reset-password", response_class=HTMLResponse)

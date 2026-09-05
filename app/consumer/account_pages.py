@@ -9,6 +9,7 @@ from html import escape
 from app.consumer.html import ICON_USER, h, logo_markup
 from app.consumer.seo import CANONICAL_ORIGIN, organization_json_ld, website_json_ld
 from app.core.public_brand import PUBLIC_BRAND, PUBLIC_TAGLINE
+from app.legal.publication import LegalPublicationCatalog, unpublished_catalog
 
 
 def _esc(value: object) -> str:
@@ -125,8 +126,55 @@ def render_login_page(*, next_path: str, message: str = "") -> str:
     )
 
 
-def render_register_page(*, next_path: str, message: str = "") -> str:
+def _register_legal_fields(catalog: LegalPublicationCatalog) -> tuple[str, str]:
+    """Render acceptance controls from the Sprint 28 publication catalog only."""
+
+    terms = catalog.published("terms")
+    privacy = catalog.published("privacy")
+    terms_required = catalog.requires_acceptance("terms")
+    privacy_required = catalog.requires_acceptance("privacy")
+    fields: list[str] = []
+    if terms_required and terms is not None:
+        fields.append(
+            f"""
+            <label class="check">
+              <input name="terms_accepted" type="checkbox" required>
+              <span>I accept the <a href="/terms">Terms of Service</a> (version {_esc(terms.version_id)}).</span>
+            </label>
+            """
+        )
+    if privacy_required and privacy is not None:
+        fields.append(
+            f"""
+            <label class="check">
+              <input name="privacy_acknowledged" type="checkbox" required>
+              <span>I acknowledge the <a href="/privacy">Privacy Policy</a> (version {_esc(privacy.version_id)}).</span>
+            </label>
+            """
+        )
+    if not fields:
+        intro = (
+            "Registration stores your account. Terms of Service and Privacy Policy "
+            "are not published yet. This form does not record acceptance of unpublished policies."
+        )
+        return intro, (
+            '<p class="form-hint" data-legal-unpublished="true">'
+            "Policies are not yet published. Registration will submit "
+            "terms_accepted=false and privacy_acknowledged=false, and will not invent a consent record."
+            "</p>"
+        )
+    intro = "Registration stores your account and records acceptance of the published legal policies."
+    return intro, "".join(fields)
+
+
+def render_register_page(
+    *,
+    next_path: str,
+    message: str = "",
+    catalog: LegalPublicationCatalog | None = None,
+) -> str:
     notice = f'<p class="form-status" role="status">{h(message)}</p>' if message else ""
+    intro, legal_fields = _register_legal_fields(catalog or unpublished_catalog())
     return render_account_document(
         title="Create account — PiqSavi",
         page="register",
@@ -134,7 +182,7 @@ def render_register_page(*, next_path: str, message: str = "") -> str:
         main=f"""
         <section class="account-card">
           <h1>Create a PiqSavi account</h1>
-          <p>Registration stores your account. It does not accept unpublished legal policies as if they were live.</p>
+          <p>{h(intro)}</p>
           {notice}
           <p class="form-status" data-account-status role="status"></p>
           <form class="account-form" data-account-form="register">
@@ -155,14 +203,7 @@ def render_register_page(*, next_path: str, message: str = "") -> str:
               <input name="remember_me" type="checkbox">
               <span>Remember me on this device</span>
             </label>
-            <label class="check">
-              <input name="terms_accepted" type="checkbox" required>
-              <span>I accept the Terms of Service. The public Terms page is not published yet and currently returns 404.</span>
-            </label>
-            <label class="check">
-              <input name="privacy_acknowledged" type="checkbox" required>
-              <span>I acknowledge the Privacy Policy. The public Privacy page is not published yet and currently returns 404.</span>
-            </label>
+            {legal_fields}
             <button type="submit" class="btn btn-primary btn-block">Create account</button>
           </form>
           <p>Already have an account? <a class="text-link" href="/login?next={_esc(next_path)}">Sign in</a></p>

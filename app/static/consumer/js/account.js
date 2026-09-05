@@ -159,8 +159,8 @@ function bindForms() {
               password: String(data.get("password") || ""),
               display_name: String(data.get("display_name") || ""),
               remember_me: remember,
-              terms_accepted: data.get("terms_accepted") === "on",
-              privacy_acknowledged: data.get("privacy_acknowledged") === "on",
+              terms_accepted: Boolean(form.querySelector("[name=terms_accepted]")?.checked),
+              privacy_acknowledged: Boolean(form.querySelector("[name=privacy_acknowledged]")?.checked),
             }),
           });
           if (!response.ok) {
