@@ -1,6 +1,6 @@
 # Sprint 27 — Transactional Identity & Email
 
-**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented. Sprint 27 is **not complete**. Staging inbox E2E, EXT-09 DNS verification, email-change, and production cutover remain open.
+**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented; 27.2 verified email-change lifecycle implemented. Sprint 27 is **not complete**. Staging inbox E2E, EXT-09 DNS verification, and production cutover remain open.
 **Primary owner / domain:** Identity / user platform (Sprint 17 domain; adapter hardening)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-5
@@ -19,14 +19,41 @@
 | Demo/inline tokens blocked in staging/production | implemented |
 | PiqSavi sender/link identity (configurable) | implemented — uses `TRANSACTIONAL_EMAIL_FROM*` + `PUBLIC_APP_BASE_URL` |
 | Session revoke-all after password reset | implemented (existing session store) |
-| Email-change confirmation | **not started** (remaining Sprint 27 work) |
+| Email-change confirmation | **implemented** (27.2) — authenticated request + purpose-bound confirm; staging inbox E2E still required |
 | EXT-08 Resend account | `applied` / **AMBER** — account establishment only; not provisioned |
 | EXT-09 sender-domain DNS auth | `applied` / **AMBER** — DNS **plan** only; not verified |
 | Staging real-inbox E2E | **not done** |
 | Production email readiness / Secrets Manager cutover | **not claimed** (path recorded; attach remains Sprint 41) |
 | Sprint 27 / P0-5 closure | **not closed** |
 
-27.1 implements the production email boundary and reset/verify confirm routes. It does **not** complete Sprint 27. It does **not** claim EXT-09 domain verification or production sender readiness.
+27.1 implements the production email boundary and reset/verify confirm routes. 27.2 adds verified account email change. Neither slice completes Sprint 27. Neither claims EXT-09 domain verification or production sender readiness.
+
+## 27.2 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| Authenticated `POST /api/v1/auth/email-change` | implemented — session principal is the only account authority |
+| Current-password re-auth (Sprint 28.1 pattern) | implemented — `Invalid credentials.` on mismatch |
+| Purpose-bound `email_change` token (hash only, 24h, single-use) | implemented — operational store `user_platform.email_changes` |
+| Confirmation to the proposed new email via `EmailSender` | implemented — PiqSavi template; `PUBLIC_APP_BASE_URL` links |
+| Account email unchanged until valid confirm | implemented |
+| Confirm atomically sets new email + `email_verified=True` | implemented — mailbox control proven by the new-address token |
+| Session revoke-all after confirm | implemented (existing session store) |
+| Newest-request-wins | implemented — later request invalidates prior unconsumed tokens |
+| Occupied destination | request is enumeration-safe (accepted, no token); confirm fails closed |
+| Old-email security notice | implemented after successful confirm; no token in the notice |
+| Client-supplied user/profile/account IDs | ignored — cannot retarget another account |
+| EXT-08 / EXT-09 / staging inbox E2E / production readiness | **unchanged** — not claimed |
+
+**Re-auth policy.** Email change is a sensitive action. The caller must present a valid bearer session **and** the current account password, matching Sprint 28.1 account deletion. The request body has no account selector.
+
+**Token lifecycle.** Tokens are generated with `secrets.token_urlsafe`, stored as SHA-256 hashes only, bound to the authenticated user, the intended new email, and `purpose=email_change`. TTL is 24 hours. Confirmation requires the correct hash, purpose, user binding, destination-email binding, and an unconsumed unexpired record that is the newest unconsumed request for that user. Password-reset and ordinary verification tokens cannot confirm email change; email-change tokens cannot reset a password or satisfy ordinary verify-email confirmation.
+
+**Verified-state semantics.** Successful confirmation sets `email_verified=True` for the new email. Prior verification state is not carried over.
+
+**Session security.** Successful confirmation calls `SessionRepository.revoke_all_for_user`. The user must sign in again with the new email. Other users' sessions are untouched.
+
+**External blockers (still open).** EXT-08 is account-establishment only. EXT-09 is a DNS plan only. There is no real staging inbox E2E. Production email readiness is not claimed.
 
 ## Objective
 

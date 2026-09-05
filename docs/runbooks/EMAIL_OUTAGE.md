@@ -1,17 +1,17 @@
 # Email outage runbook (identity transactional mail)
 
-**Sprint:** 27.1 foundation  
+**Sprint:** 27.1 foundation + 27.2 email-change  
 **Provider:** Resend  
 **Port:** `EmailSender` / `ResendEmailSender`  
 **EXT-08:** `applied` (account only)  
 **EXT-09:** `applied` (DNS plan only — not verified)
 
-This runbook is for identity password-reset and verification mail. It does
-not cover Sprint 19 notification digests.
+This runbook is for identity password-reset, verification, and email-change
+mail. It does not cover Sprint 19 notification digests.
 
 ## Symptoms
 
-- Users do not receive reset or verification mail
+- Users do not receive reset, verification, or email-change mail
 - Auth audit events show `email_delivery_failed`
 - Production startup fails when Resend is missing; staging may still boot
   with `NullEmailSender` when `LAUNCH_STRICT_STARTUP` is false
@@ -37,17 +37,17 @@ not cover Sprint 19 notification digests.
 4. If DNS/sender auth is the cause: EXT-09 is still plan-only until records
    are applied and Resend reports the domain verified. Do not claim
    production sender readiness.
-5. Contingency: disable public self-serve reset/verify (invite-only) rather
-   than turning on demo tokens in staging/production.
+5. Contingency: disable public self-serve reset/verify/email-change
+   (invite-only) rather than turning on demo tokens in staging/production.
 
 ## Recovery
 
 - Restore a valid Resend key in Secrets Manager and redeploy/restart.
-- After EXT-09 DNS apply/verify, confirm a real inbox receive of reset and
-  verify mail before treating Sprint 27 as closable.
+- After EXT-09 DNS apply/verify, confirm a real inbox receive of reset,
+  verify, and email-change mail before treating Sprint 27 as closable.
 
 ## What this does not cover
 
 - Sprint 19 `EmailNotificationProvider` (still mock)
-- Email-change confirmation (not implemented in 27.1)
+- Live staging inbox proof for email-change (27.2 code path exists; E2E not done)
 - Distributed abuse controls (Sprint 40)

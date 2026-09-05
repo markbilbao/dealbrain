@@ -62,8 +62,8 @@ single process's memory and resets on restart. Exceeding the limit raises
 
 `AuditLogger` records `SecurityEvent` entries for register, login
 success/failure, logout, session expiry, password reset/verification
-requests, rate limiting, CSRF rejection, MFA challenges, and OAuth link
-attempts. Without a configured `AuditLogRepository`, events are kept in an
+requests, email-change request/delivery-failure/confirm, rate limiting,
+CSRF rejection, MFA challenges, and OAuth link attempts. Without a configured `AuditLogRepository`, events are kept in an
 in-process ring buffer (`InMemoryAuditLogRepository` when wired via
 `InMemoryUserPlatformStore`) — there is no durable, queryable audit trail in
 Sprint 17.

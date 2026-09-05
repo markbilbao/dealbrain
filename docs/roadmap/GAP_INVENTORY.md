@@ -91,10 +91,10 @@ This inventory records every material Global Public Beta requirement and its cov
 | Password-reset email | `implemented_needs_staging_proof` | Resend-backed send path; no staging inbox evidence yet | 27 |
 | Verification email | `implemented_needs_staging_proof` | Same | 27 |
 | Reset-token expiry / invalidation | `implemented_needs_staging_proof` | Confirm + expiry + consume; inbox E2E still required | 27 |
-| Email-change verification | `missing_from_roadmap` | Deferred — not in 27.1 | 27 |
+| Email-change verification | `implemented_needs_staging_proof` | 27.2 request + confirm implemented; no staging inbox E2E | 27 |
 | Secure session cookies / documented session architecture | `implemented_verified` | Bearer sessions documented; cookies N/A unless introduced | 17 |
 | Session rotation | `planned_underspecified` | Login still issues a new session; no refresh-token rotation | 27 |
-| Session revocation | `implemented_verified` | Logout + password-reset confirm revoke-all | 27 |
+| Session revocation | `implemented_verified` | Logout + password-reset / email-change confirm revoke-all | 27 |
 | Auth rate limiting | `implemented_verified` | Per-process buckets | 22 |
 | Account enumeration protection | `planned_underspecified` | Needs hardening review | 40 |
 | Brute-force / credential-stuffing protection | `planned_underspecified` | Rate limit only; no lockout/bot | 40 |

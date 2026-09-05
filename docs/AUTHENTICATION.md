@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 28.1 (consent hooks, delete/export)
+**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 27.2 (verified email change) + Sprint 28.1 (consent hooks, delete/export)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -102,9 +102,52 @@ header is not used. Staging/production startup requires
 `RESEND_API_KEY`, `TRANSACTIONAL_EMAIL_FROM`, and `https` public base URL.
 `NullEmailSender` is not permitted in those environments.
 
-EXT-09 sender-domain DNS verification is still a plan only. 27.1 does not
-claim production email readiness. Email-change confirmation is not
-implemented in 27.1.
+EXT-09 sender-domain DNS verification is still a plan only. 27.1/27.2 do not
+claim production email readiness.
+
+## Email change (Sprint 27.2)
+
+HTTP:
+
+- `POST /api/v1/auth/email-change` — authenticated request
+- `POST /api/v1/auth/email-change/confirm` — token
+
+Ownership: the authenticated principal/session is the only account
+authority. Request bodies and query strings may contain `user_id`,
+`profile_id`, or other identity selectors; those fields are ignored and
+cannot retarget another account.
+
+Re-auth: the request requires the current account password, using the same
+`Invalid credentials.` failure as Sprint 28.1 account deletion. A missing
+or invalid bearer session is rejected before password checks.
+
+The current account email does not change until a valid confirmation. The
+confirmation token is generated with `secrets.token_urlsafe`, persisted as
+a SHA-256 hash only in `user_platform.email_changes`, bound to the user,
+the intended new email, and `purpose=email_change`, expires in 24 hours,
+and is single-use. Newest request wins: a later request invalidates prior
+unconsumed tokens for that user.
+
+Validation:
+
+- Invalid addresses are rejected with the existing email normalizer.
+- The same effective email as the current account is rejected.
+- An occupied destination returns the same accepted body as a free
+  destination and does not create a token (no extra occupancy signal).
+- Confirmation of an occupied, expired, consumed, wrong-purpose, stale, or
+  unbound token fails with `Invalid or expired email-change token.`
+- Provider failure leaves the account email unchanged and never returns
+  the provider body or a staging/production raw token.
+
+On valid confirm the bound account email is updated, `email_verified` is
+set `True` (mailbox control was proven), the token is consumed, all
+sessions for that user are revoked, and a token-free notice is sent to the
+old address: “Your PiqSavi account email was changed.” Notice-delivery
+failure does not roll back the change.
+
+Password-reset and ordinary verification tokens cannot confirm email
+change. Email-change tokens cannot reset a password or satisfy ordinary
+verify-email confirmation.
 
 ## MFA and OAuth extension points
 
@@ -134,7 +177,7 @@ header is treated as an unauthenticated request.
 | Domain exception | HTTP status | Example |
 |--------------------|-------------|---------|
 | `UserPlatformValidationError` | 400 | Weak password, malformed email |
-| `UserPlatformAuthError` | 401 | Bad credentials, expired/revoked session, invalid reset/verify token |
+| `UserPlatformAuthError` | 401 | Bad credentials, expired/revoked session, invalid reset/verify/email-change token |
 | `UserPlatformConflictError` | 409 | Email already registered |
 | `UserPlatformRateLimitError` | 429 | Too many register/login attempts |
 
@@ -142,7 +185,8 @@ header is treated as an unauthenticated request.
 
 - **No MFA** implemented — extension point only.
 - **No OAuth / external identity providers** — extension point only.
-- **Email-change confirmation** is not implemented (remaining Sprint 27 work).
+- **Email-change confirmation** is implemented in 27.2 (code path only;
+  staging inbox E2E and EXT-09 remain open).
 - **EXT-09** sender-domain SPF/DKIM/DMARC is not verified. Do not claim
   production sender authentication from 27.1 code alone.
 - **Staging inbox E2E** is still required to close Sprint 27.
