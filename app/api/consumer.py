@@ -5,6 +5,7 @@ from __future__ import annotations
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
@@ -302,9 +303,10 @@ async def save_shopping_market(request: Request) -> RedirectResponse:
 async def _location_payload(request: Request) -> dict[str, Any]:
     if request.method == "POST":
         content_type = str(request.headers.get("content-type") or "")
-        if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
-            form = await request.form()
-            return {str(key): str(value) for key, value in form.items()}
+        if "application/x-www-form-urlencoded" in content_type:
+            raw = (await request.body()).decode("utf-8")
+            parsed = parse_qs(raw, keep_blank_values=True)
+            return {key: (values[-1] if values else "") for key, values in parsed.items()}
         try:
             body = await request.json()
         except (JSONDecodeError, ValueError):
