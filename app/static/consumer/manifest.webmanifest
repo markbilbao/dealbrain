@@ -1,0 +1,16 @@
+{
+  "name": "PiqSavi",
+  "short_name": "PiqSavi",
+  "description": "Your AI Personal Shopper",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#0B1B33",
+  "theme_color": "#0B1B33",
+  "icons": [
+    {
+      "src": "/static/early_access/assets/piqsavi-logo.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

@@ -68,6 +68,8 @@ def _document(view: DecisionPageView, main: str) -> str:
     <title>{h(title)}</title>
     <meta name="description" content="PiqSavi is Your AI Personal Shopper.">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="/static/early_access/assets/piqsavi-logo.png">
+    <link rel="manifest" href="/static/consumer/manifest.webmanifest">
     <link rel="stylesheet" href="/static/consumer/css/piqsavi.css">
   </head>
   <body class="page-{h(view.page)} why-{h(view.why_variant)}"
@@ -110,14 +112,15 @@ def _document(view: DecisionPageView, main: str) -> str:
     {_location_modal(view)}
     {_recalculating_modal(view)}
     <div class="ask-overlay" id="ask-overlay" hidden>
-      <div class="ask-panel" role="dialog" aria-labelledby="ask-panel-title">
+      <div class="ask-panel" role="dialog" aria-modal="true" aria-labelledby="ask-panel-title" tabindex="-1">
         <div class="ask-panel-head">
           <h2 id="ask-panel-title">Ask PiqSavi</h2>
-          <button type="button" class="icon-btn js-close-ask" aria-label="Close">{ICON_CLOSE}</button>
+          <button type="button" class="icon-btn js-close-ask" aria-label="Close conversation">{ICON_CLOSE}</button>
         </div>
-        <div class="ask-panel-body" id="ask-panel-body"></div>
+        <div class="ask-panel-body" id="ask-panel-body" aria-live="polite"></div>
       </div>
     </div>
+    {_decision_footer()}
     <script type="module" src="/static/consumer/js/consumer.js"></script>
   </body>
 </html>
@@ -130,11 +133,27 @@ def _coverage_status(view: DecisionPageView) -> str:
     disclosure = view.shopping_coverage_disclosure or (
         "Shopping coverage for this market is not yet available."
     )
+    next_path = {
+        "results": f"/results/{view.decision_id}",
+        "compare": f"/compare/{view.decision_id}",
+        "why": f"/why-best-piq/{view.decision_id}",
+    }[view.page]
+    selected = "selected" if market == "PH" else ""
     return f"""
     <div class="coverage-status" role="status"
          data-coverage-state="{"available" if view.shopping_coverage_available else "unavailable"}">
       <p class="coverage-label">Shopping market: {h(market)} ({h(origin)})</p>
       <p class="coverage-hint">{h(disclosure)}</p>
+      <form class="market-shell" method="post" action="/consumer/shopping-market">
+        <input type="hidden" name="next" value="{h(next_path)}">
+        <input type="hidden" name="decision_id" value="{h(view.decision_id)}">
+        <label for="shopping-market">Choose shopping market</label>
+        <select id="shopping-market" name="country_code">
+          <option value="PH" {selected}>Philippines</option>
+        </select>
+        <button type="submit" class="btn btn-secondary btn-compact">Update market</button>
+        <p class="form-hint">This is a Sprint 29 UI shell. Selecting a market does not certify live shopping coverage. Domain policy stays with Sprint 37.</p>
+      </form>
     </div>
     """
 
@@ -150,6 +169,28 @@ def _currency_status(view: DecisionPageView) -> str:
       <p class="currency-label">Offer currency: {h(sources)}</p>
       <p class="currency-hint">{h(disclosure)}</p>
     </div>
+    """
+
+
+def _decision_path(view: DecisionPageView) -> str:
+    return {
+        "results": f"/results/{view.decision_id}",
+        "compare": f"/compare/{view.decision_id}",
+        "why": f"/why-best-piq/{view.decision_id}",
+    }[view.page]
+
+
+def _decision_footer() -> str:
+    return """
+    <footer class="decision-footer">
+      <nav aria-label="Support and legal">
+        <a href="/support">Support</a>
+        <a href="/support#report">Report incorrect information</a>
+        <a href="/account">Account</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+      </nav>
+    </footer>
     """
 
 
@@ -171,21 +212,21 @@ def _site_header(view: DecisionPageView) -> str:
       <nav class="header-nav" aria-label="Primary">
         <a href="/#how-it-works">How it works</a>
         <a href="#piqscore">PiqScore</a>
-        <a href="/">Saved</a>
-        <a href="/">Watch</a>
+        <a href="/account#saved">Saved</a>
+        <a href="/account#watch">Watch</a>
       </nav>
       <div class="header-actions">
-        <a class="text-link" href="/">Sign in</a>
-        <a class="btn btn-primary btn-compact" href="/">Sign up</a>
+        <a class="text-link" href="/login?next={h(_decision_path(view))}">Sign in</a>
+        <a class="btn btn-primary btn-compact" href="/register?next={h(_decision_path(view))}">Sign up</a>
         <button type="button" class="btn btn-gradient btn-compact js-focus-ask header-ask">Ask PiqSavi</button>
-        <a class="profile-btn" href="/" aria-label="Account">{ICON_USER}</a>
+        <a class="profile-btn" href="/account" aria-label="Account">{ICON_USER}</a>
       </div>
       <nav id="mobile-nav" class="mobile-nav" hidden>
         <a href="/#how-it-works">How it works</a>
         <a href="#piqscore">PiqScore</a>
-        <a href="/">Saved</a>
-        <a href="/">Watch</a>
-        <a href="/">Sign in</a>
+        <a href="/account#saved">Saved</a>
+        <a href="/account#watch">Watch</a>
+        <a href="/login?next={h(_decision_path(view))}">Sign in</a>
       </nav>
     </header>
     """
@@ -648,10 +689,10 @@ def _disclosures(view: DecisionPageView) -> str:
     <section class="save-prompt">
       {ICON_USER}
       <div>
-        <h2>Want to save or track this?</h2>
-        <p>Create a free account to save this Piq and get price updates.</p>
+        <h2>Want to save this buying decision?</h2>
+        <p>Create a free account to save this decision for later. Watch and price-update notifications are not available yet.</p>
       </div>
-      <a class="btn btn-secondary" href="/">Sign up free</a>
+      <a class="btn btn-secondary" href="/register?next={h(_decision_path(view))}">Sign up free</a>
     </section>
     <p class="fine-print">{ICON_CLOCK}{h(view.freshness_disclaimer)}
       <a class="text-link" href="/#how-it-works">Learn how PiqSavi works →</a>

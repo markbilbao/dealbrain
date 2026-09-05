@@ -23,6 +23,7 @@ from app.domain.entities.user_platform import (
     User,
     UserPreference,
     UserProfile,
+    UserSession,
     UserSettings,
 )
 from app.domain.exceptions import (
@@ -86,6 +87,10 @@ class UserPlatformService:
     def me(self, access_token: str | None) -> User:
         self._require_enabled()
         return self._auth.current_user(access_token)
+
+    def current_session(self, access_token: str | None) -> UserSession:
+        self._require_enabled()
+        return self._auth.validate_session(access_token)
 
     def request_password_reset(self, email: str) -> dict[str, Any]:
         self._require_enabled()

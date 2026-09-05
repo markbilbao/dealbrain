@@ -32,6 +32,11 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | 29.4B `refine_session_recommendation` | merged | Shopper may clarify preferences after Recommendation. Session Best Piq may change using already-evaluated products/evidence. PiqScore does not change. Canonical snapshot does not mutate. Original Recommendation remains historical. Evaluated set cannot expand. No new research. No affiliate influence. |
 | 29.4C `propose_research` | implemented | Detect when the shopper asks for evidence/product outside currently evaluated evidence. PiqSavi may propose additional research. Research does **not** automatically execute. User confirmation remains required. Research execution remains unimplemented and owned by Sprints 31–38. |
 | Research Authorization / Execution Handoff Contract | implemented | Explicit confirmation of the exact active proposal creates a server-authoritative authorization. Sprint 31 planning is separate; live execution remains unavailable and owned by Sprints 31–38. |
+| Account / auth / export / delete UI | implemented | Document routes `/login`, `/register`, `/reset-password`, `/verify-email`, `/account`, `/support` wired to Sprint 27/28 APIs. Not staging-proven on current-main. |
+| Market-selection UI shell | implemented | Interactive PH selector posts to `/consumer/shopping-market`. Domain/policy remains Sprint 37. |
+| SEO technical foundation | implemented | `robots.txt`, `sitemap.xml`, canonical/JSON-LD on public landing, staging noindex, UUID/account noindex. Search Console remains Sprint 39/45. |
+| Consumer a11y closeout slice | implemented | Escape/close, focus trap/restore, `aria-live`, safe-area, keyboard-open dock. Browser matrix recorded; not a signed a11y audit. |
+| Full CC-01 staging E2E on current-main | pending | Requires owner merge + immutable current-main staging deploy. Last staging SHA `ec7dd1dc` is not this baseline. |
 
 **Truthfulness rules already locked for presentation:**
 

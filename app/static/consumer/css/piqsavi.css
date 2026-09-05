@@ -53,7 +53,9 @@ svg {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -667,8 +669,12 @@ h1, h2, h3 { margin: 0.15rem 0; letter-spacing: -0.02em; }
   bottom: 0;
   background: rgba(255, 255, 255, 0.96);
   border-top: 1px solid var(--line);
-  padding: 0.6rem 1rem 0.85rem;
+  padding: 0.6rem calc(1rem + env(safe-area-inset-right, 0px)) calc(0.85rem + env(safe-area-inset-bottom, 0px)) calc(1rem + env(safe-area-inset-left, 0px));
   min-height: var(--ask-h);
+}
+
+.ask-dock.is-keyboard-open {
+  bottom: var(--kb-inset, 0px);
 }
 
 .ask-overlay[hidden] { display: none; }
@@ -805,4 +811,99 @@ h1, h2, h3 { margin: 0.15rem 0; letter-spacing: -0.02em; }
   .ask-form .btn { width: 100%; }
   .price-value { font-size: 1.6rem; }
   main { width: min(100% - 1.25rem, 1180px); }
+}
+
+.btn-danger {
+  background: #9b1c1c;
+  color: #fff;
+}
+
+.market-shell {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: center;
+  margin-top: 0.75rem;
+}
+
+.market-shell select {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.7rem;
+  background: #fff;
+}
+
+.decision-footer,
+.account-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 1.5rem auto 7rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.decision-footer nav,
+.account-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.account-main {
+  width: min(640px, calc(100% - 2rem));
+  margin: 1.5rem auto 4rem;
+}
+
+.account-card {
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.account-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.account-form .field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.account-form .field input {
+  width: 100%;
+}
+
+.check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.account-dl {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.account-dl div {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.5rem;
+}
+
+.form-status {
+  min-height: 1.2em;
+}
+
+.ask-panel:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-overlay,
+  .recalc-overlay,
+  .ask-dock {
+    transition: none;
+  }
 }

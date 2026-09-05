@@ -95,12 +95,36 @@ function initAccordion() {
   });
 }
 
+let askRestoreFocus = null;
+
+function focusableIn(container) {
+  return [...container.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )];
+}
+
 function showAsk(text) {
   const overlay = qs("ask-overlay");
   const body = qs("ask-panel-body");
+  const panel = overlay?.querySelector(".ask-panel");
   if (!overlay || !body) return;
+  if (overlay.hidden) {
+    askRestoreFocus = document.activeElement;
+  }
   body.innerHTML = text;
   overlay.hidden = false;
+  const focusable = panel ? focusableIn(panel) : [];
+  (focusable[0] || panel)?.focus?.();
+}
+
+function closeAsk() {
+  const overlay = qs("ask-overlay");
+  if (!overlay || overlay.hidden) return;
+  overlay.hidden = true;
+  if (askRestoreFocus && typeof askRestoreFocus.focus === "function") {
+    askRestoreFocus.focus();
+  }
+  askRestoreFocus = null;
 }
 
 function clearAskProposalBinding(input) {
@@ -132,9 +156,23 @@ function bindAskChips(root) {
 function initAsk() {
   const overlay = qs("ask-overlay");
   document.querySelectorAll(".js-close-ask").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (overlay) overlay.hidden = true;
-    });
+    btn.addEventListener("click", () => closeAsk());
+  });
+  overlay?.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const panel = overlay.querySelector(".ask-panel");
+    if (!panel) return;
+    const nodes = focusableIn(panel);
+    if (!nodes.length) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
   document.querySelectorAll(".js-focus-ask").forEach((btn) => {
     btn.addEventListener("click", () => qs("ask-input-dock")?.focus());
@@ -257,8 +295,44 @@ function initRecalc() {
   }, 900);
 }
 
+function initDialogEscape() {
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const overlay = qs("ask-overlay");
+    if (overlay && !overlay.hidden) {
+      event.preventDefault();
+      closeAsk();
+      return;
+    }
+    const dialog = qs("location-dialog");
+    if (dialog && (dialog.open || dialog.hasAttribute("open") || !dialog.hidden)) {
+      if (typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+      dialog.hidden = true;
+    }
+  });
+}
+
+function initKeyboardSafeArea() {
+  const dock = document.querySelector(".ask-dock");
+  if (!dock || !window.visualViewport) return;
+  const sync = () => {
+    const inset = Math.max(
+      0,
+      window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop,
+    );
+    document.documentElement.style.setProperty("--kb-inset", `${inset}px`);
+    dock.classList.toggle("is-keyboard-open", inset > 80);
+  };
+  window.visualViewport.addEventListener("resize", sync);
+  window.visualViewport.addEventListener("scroll", sync);
+  sync();
+}
+
 initNav();
 initLocation();
 initAccordion();
 initAsk();
 initRecalc();
+initDialogEscape();
+initKeyboardSafeArea();

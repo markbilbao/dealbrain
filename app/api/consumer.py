@@ -5,16 +5,17 @@ from __future__ import annotations
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.consumer import mode as consumer_mode
 from app.consumer.canonical_presentation import page_view_from_snapshot
 from app.consumer.canonical_resolve import resolve_canonical_snapshot
-from app.consumer.decision_owner import OWNER_COOKIE, parse_owner_cookie
 from app.consumer.fixtures import DEFAULT_CATALOG_ID, get_decision
+from app.consumer.guest_continuity import ensure_guest_owner_cookie
 from app.consumer.location import (
     DELIVERY_COOKIE,
     LocationValidationError,
@@ -23,8 +24,10 @@ from app.consumer.location import (
     set_delivery_cookie,
     skipped_context,
 )
+from app.consumer.owner_authorization import authorized_owner_from_request
 from app.consumer.pages import render_page
 from app.consumer.presentation import build_page_view
+from app.consumer.seo import apply_staging_noindex_if_needed, robots_txt, sitemap_xml
 from app.consumer.session_overlay import apply_session_overlay_to_view
 from app.consumer.shopping_market import (
     SHOPPING_MARKET_COOKIE,
@@ -68,7 +71,7 @@ def _shopping_market_from_request(request: Request):
 
 
 def _owner_from_request(request: Request):
-    return parse_owner_cookie(request.cookies.get(OWNER_COOKIE))
+    return authorized_owner_from_request(request)
 
 
 def _page_view(
@@ -84,8 +87,9 @@ def _page_view(
     location = _location_from_request(request)
     selected_market = _shopping_market_from_request(request)
     prompt = location.is_absent if location_prompt is None else location_prompt
+    owner = _owner_from_request(request)
     if is_canonical_uuid(decision_id):
-        snapshot = resolve_canonical_snapshot(decision_id, _owner_from_request(request), snapshots)
+        snapshot = resolve_canonical_snapshot(decision_id, owner, snapshots)
         if snapshot is None:
             return build_page_view(
                 decision_id=decision_id,
@@ -105,7 +109,6 @@ def _page_view(
             location_error=location_error,
             session_shopping_market=selected_market,
         )
-        owner = _owner_from_request(request)
         if owner is not None:
             conversation = get_shopping_conversation_repository().find_bound_for_owner(
                 owner,
@@ -125,10 +128,13 @@ def _page_view(
     )
 
 
-def _html(view) -> HTMLResponse:
+def _html(view, request: Request | None = None) -> HTMLResponse:
     from app.consumer.robots import apply_private_decision_noindex
 
-    return apply_private_decision_noindex(HTMLResponse(render_page(view)))
+    response = apply_private_decision_noindex(HTMLResponse(render_page(view)))
+    if request is not None:
+        ensure_guest_owner_cookie(request, response)
+    return response
 
 
 def _safe_next(next_path: str, decision_id: str, fallback: PageName) -> str:
@@ -148,6 +154,18 @@ def _page_from_next(next_path: str) -> PageName:
     if next_path.startswith("/why-best-piq/"):
         return "why"
     return "results"
+
+
+@router.get("/robots.txt", include_in_schema=False)
+async def robots_document() -> PlainTextResponse:
+    return apply_staging_noindex_if_needed(PlainTextResponse(robots_txt(), media_type="text/plain"))
+
+
+@router.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_document() -> Response:
+    return apply_staging_noindex_if_needed(
+        Response(content=sitemap_xml(), media_type="application/xml")
+    )
 
 
 @router.get("/search")
@@ -191,7 +209,7 @@ async def results_page(
         recalculating=bool(recalculating),
         snapshots=snapshots,
     )
-    return _html(view)
+    return _html(view, request)
 
 
 @router.get("/compare/{decision_id}", response_class=HTMLResponse)
@@ -206,7 +224,7 @@ async def compare_page(
         page="compare",
         snapshots=snapshots,
     )
-    return _html(view)
+    return _html(view, request)
 
 
 @router.get("/why-best-piq/{decision_id}", response_class=HTMLResponse)
@@ -221,7 +239,7 @@ async def why_page(
         page="why",
         snapshots=snapshots,
     )
-    return _html(view)
+    return _html(view, request)
 
 
 @router.api_route("/consumer/location", methods=["GET", "POST"], response_model=None)
@@ -252,7 +270,7 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
             location_error=str(exc),
             snapshots=snapshots,
         )
-        return _html(view)
+        return _html(view, request)
     changed = previous.is_known and previous.destination_key != context.destination_key
     separator = "&" if "?" in destination else "?"
     if changed and not is_canonical_uuid(decision_id):
@@ -282,6 +300,11 @@ async def save_shopping_market(request: Request) -> RedirectResponse:
 
 async def _location_payload(request: Request) -> dict[str, Any]:
     if request.method == "POST":
+        content_type = str(request.headers.get("content-type") or "")
+        if "application/x-www-form-urlencoded" in content_type:
+            raw = (await request.body()).decode("utf-8")
+            parsed = parse_qs(raw, keep_blank_values=True)
+            return {key: (values[-1] if values else "") for key, values in parsed.items()}
         try:
             body = await request.json()
         except (JSONDecodeError, ValueError):
