@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.consumer import mode as consumer_mode
@@ -23,7 +23,9 @@ from app.consumer.location import (
     set_delivery_cookie,
     skipped_context,
 )
+from app.consumer.guest_continuity import ensure_guest_owner_cookie
 from app.consumer.pages import render_page
+from app.consumer.seo import apply_staging_noindex_if_needed, robots_txt, sitemap_xml
 from app.consumer.presentation import build_page_view
 from app.consumer.session_overlay import apply_session_overlay_to_view
 from app.consumer.shopping_market import (
@@ -125,10 +127,13 @@ def _page_view(
     )
 
 
-def _html(view) -> HTMLResponse:
+def _html(view, request: Request | None = None) -> HTMLResponse:
     from app.consumer.robots import apply_private_decision_noindex
 
-    return apply_private_decision_noindex(HTMLResponse(render_page(view)))
+    response = apply_private_decision_noindex(HTMLResponse(render_page(view)))
+    if request is not None:
+        ensure_guest_owner_cookie(request, response)
+    return response
 
 
 def _safe_next(next_path: str, decision_id: str, fallback: PageName) -> str:
@@ -148,6 +153,20 @@ def _page_from_next(next_path: str) -> PageName:
     if next_path.startswith("/why-best-piq/"):
         return "why"
     return "results"
+
+
+@router.get("/robots.txt", include_in_schema=False)
+async def robots_document() -> PlainTextResponse:
+    return apply_staging_noindex_if_needed(
+        PlainTextResponse(robots_txt(), media_type="text/plain")
+    )
+
+
+@router.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_document() -> Response:
+    return apply_staging_noindex_if_needed(
+        Response(content=sitemap_xml(), media_type="application/xml")
+    )
 
 
 @router.get("/search")
@@ -191,7 +210,7 @@ async def results_page(
         recalculating=bool(recalculating),
         snapshots=snapshots,
     )
-    return _html(view)
+    return _html(view, request)
 
 
 @router.get("/compare/{decision_id}", response_class=HTMLResponse)
@@ -206,7 +225,7 @@ async def compare_page(
         page="compare",
         snapshots=snapshots,
     )
-    return _html(view)
+    return _html(view, request)
 
 
 @router.get("/why-best-piq/{decision_id}", response_class=HTMLResponse)
@@ -221,7 +240,7 @@ async def why_page(
         page="why",
         snapshots=snapshots,
     )
-    return _html(view)
+    return _html(view, request)
 
 
 @router.api_route("/consumer/location", methods=["GET", "POST"], response_model=None)
@@ -252,7 +271,7 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
             location_error=str(exc),
             snapshots=snapshots,
         )
-        return _html(view)
+        return _html(view, request)
     changed = previous.is_known and previous.destination_key != context.destination_key
     separator = "&" if "?" in destination else "?"
     if changed and not is_canonical_uuid(decision_id):
@@ -282,6 +301,10 @@ async def save_shopping_market(request: Request) -> RedirectResponse:
 
 async def _location_payload(request: Request) -> dict[str, Any]:
     if request.method == "POST":
+        content_type = str(request.headers.get("content-type") or "")
+        if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            form = await request.form()
+            return {str(key): str(value) for key, value in form.items()}
         try:
             body = await request.json()
         except (JSONDecodeError, ValueError):

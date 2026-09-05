@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app import __version__
+from app.api.account import router as account_router
 from app.api.consumer import mount_consumer_static
 from app.api.consumer import router as consumer_router
 from app.api.demo import router as demo_router
@@ -328,6 +329,7 @@ def create_app() -> FastAPI:
 
     app.include_router(early_access_page_router)
     app.include_router(legal_page_router)
+    app.include_router(account_router)
     app.include_router(consumer_router)
     app.include_router(probes_router)
     app.include_router(api_router)

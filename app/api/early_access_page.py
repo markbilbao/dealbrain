@@ -9,6 +9,9 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.consumer.account_pages import public_head_extras
+from app.consumer.seo import apply_staging_noindex_if_needed
+from app.core.config import get_settings
 from app.core.countries import country_options
 from app.core.logging import get_logger, log_extra
 from app.core.public_brand import PUBLIC_BRAND, PUBLIC_TAGLINE
@@ -34,6 +37,8 @@ async def early_access_landing(request: Request) -> HTMLResponse:
     html = html.replace("<!--COUNTRY_OPTIONS-->", _country_options_html())
     html = html.replace("{{PUBLIC_BRAND}}", escape(PUBLIC_BRAND))
     html = html.replace("{{PUBLIC_TAGLINE}}", escape(PUBLIC_TAGLINE))
+    extras = public_head_extras(staging=get_settings().is_staging)
+    html = html.replace("</head>", f"{extras}\n  </head>", 1)
     logger.info(
         "early_access_page_view",
         extra={
@@ -43,7 +48,7 @@ async def early_access_landing(request: Request) -> HTMLResponse:
             )
         },
     )
-    return HTMLResponse(content=html)
+    return apply_staging_noindex_if_needed(HTMLResponse(content=html))
 
 
 def mount_early_access_static(app) -> None:  # noqa: ANN001 — FastAPI app
