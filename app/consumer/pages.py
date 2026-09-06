@@ -91,6 +91,8 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-destination-snapshot="{snapshot}"
         data-shopping-market-certified="{"true" if view.shopping_market_certified else "false"}"
         data-destination-reevaluation-required="{"true" if view.destination_reevaluation_required else "false"}"
+        data-destination-reevaluation-status="{h(view.destination_reevaluation_status)}"
+        data-updated-delivery-cost-available="{"true" if view.updated_delivery_cost_available else "false"}"
         data-selected-shopping-market="{h(view.selected_shopping_market)}"
         data-shopping-market-origin="{h(view.shopping_market_origin)}"
         data-shopping-coverage-available="{"true" if view.shopping_coverage_available else "false"}"
@@ -104,6 +106,7 @@ def _document(view: DecisionPageView, main: str) -> str:
     <main id="main">
       {_ask_top(view) if view.page != "why" else ""}
       {_location_status(view)}
+      {_reevaluation_status(view)}
       {_coverage_status(view)}
       {_currency_status(view)}
       {main}
@@ -194,10 +197,20 @@ def _decision_footer() -> str:
     """
 
 
+def _display_delivery(view: DecisionPageView):
+    """Current shopper destination when declared; otherwise the evaluated location."""
+
+    session = view.session_delivery
+    if session is not None and not session.is_absent:
+        return session
+    return view.location
+
+
 def _location_state(view: DecisionPageView) -> str:
-    if view.location.is_known:
+    location = _display_delivery(view)
+    if location.is_known:
         return "known"
-    if view.location.is_skipped:
+    if location.is_skipped:
         return "skipped"
     return "absent"
 
@@ -256,23 +269,52 @@ def _ask_top(view: DecisionPageView) -> str:
 def _session_location_note(view: DecisionPageView) -> str:
     if not view.session_location_differs:
         return ""
+    historical = view.location.display_place or "the original delivery location"
     current = view.session_location_label or "a different area"
+    if view.destination_reevaluation_required:
+        return (
+            f'<p class="location-hint" data-session-location-differs="true">'
+            f"This decision was evaluated for {h(historical)}. "
+            f"Your current session location is {h(current)}. "
+            "Those evaluated costs are historical and are not this location's current effective cost."
+            "</p>"
+        )
     return (
         f'<p class="location-hint" data-session-location-differs="true">'
-        f"This decision was evaluated for {h(view.location.display_place)}. "
+        f"This decision was evaluated for {h(historical)}. "
         f"Your current session location is {h(current)} and has not changed this decision."
         "</p>"
     )
 
 
+def _reevaluation_status(view: DecisionPageView) -> str:
+    disclosure = view.destination_reevaluation_disclosure
+    if not disclosure:
+        return ""
+    historical = view.historical_cost_disclosure or ""
+    historical_html = f'<p class="reevaluation-hint">{h(historical)}</p>' if historical else ""
+    return f"""
+    <div class="reevaluation-status" role="status"
+         data-reevaluation-state="{h(view.destination_reevaluation_status)}"
+         data-updated-delivery-cost-available="{"true" if view.updated_delivery_cost_available else "false"}">
+      <p class="reevaluation-label">{h(disclosure)}</p>
+      {historical_html}
+    </div>
+    """
+
+
 def _location_status(view: DecisionPageView) -> str:
-    if view.location.is_known:
+    location = _display_delivery(view)
+    if location.is_known:
         if view.presentation_mode == "canonical":
-            hint = (
-                "Costs shown are those evaluated for this decision"
-                if view.delivery_costs_verified
-                else "Some costs were unknown when this decision was evaluated"
-            )
+            if view.destination_reevaluation_required:
+                hint = "Shown costs belong to the original evaluated location, not this new destination"
+            else:
+                hint = (
+                    "Costs shown are those evaluated for this decision"
+                    if view.delivery_costs_verified
+                    else "Some costs were unknown when this decision was evaluated"
+                )
         else:
             hint = (
                 "Costs calculated for this delivery area"
@@ -282,23 +324,27 @@ def _location_status(view: DecisionPageView) -> str:
         return f"""
         <div class="location-status location-known">
           <p class="location-label">{ICON_PIN}
-            <span>{h(view.location.delivering_to_label)}</span>
+            <span>{h(location.delivering_to_label)}</span>
             <button type="button" class="text-link js-open-location">Change</button>
           </p>
           <p class="location-hint">{h(hint)}</p>
           {_session_location_note(view)}
         </div>
         """
-    if view.location.is_skipped:
-        return """
+    if location.is_skipped:
+        extra = _session_location_note(view)
+        return f"""
         <div class="location-status location-unknown" role="status">
           <p>No delivery location set • Some costs may be unknown</p>
           <button type="button" class="text-link js-open-location">Add location</button>
+          {extra}
         </div>
         """
-    return """
+    extra = _session_location_note(view)
+    return f"""
     <div class="location-status location-absent" hidden>
       <p>No delivery location set</p>
+      {extra}
     </div>
     """
 

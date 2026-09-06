@@ -160,6 +160,11 @@ class DecisionPageView:
     qualification_state: str | None = None
     shopping_market_certified: bool = False
     destination_reevaluation_required: bool = False
+    destination_reevaluation_status: str = "not_required"
+    destination_reevaluation_disclosure: str | None = None
+    historical_cost_disclosure: str | None = None
+    updated_delivery_cost_available: bool = False
+    session_delivery: DeliveryContext | None = None
     selected_shopping_market: str = "PH"
     shopping_market_origin: str = "intended_default"
     shopping_coverage_available: bool = False
