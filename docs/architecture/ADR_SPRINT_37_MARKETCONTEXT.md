@@ -1,6 +1,6 @@
 # ADR — Sprint 37.1 MarketContext composition
 
-**Status:** Accepted for Sprint 37.1 only. Sprint 37 is **not complete**.
+**Status:** Accepted for Sprint 37.1; 37.2–37.4 addenda recorded. Sprint 37 is **not complete**.
 **Date:** 2026-09-03
 **Baseline recorded:** `ba05aa7e205eab69a2f727e28b6b97d0d3b130ff`
 **Related:** [`../roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](../roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md)
@@ -51,6 +51,21 @@ Source offer currency is monetary truth. Preferred/display currency (PHP on PH M
 ## Out of scope
 
 Live FX provider / EXT-23 credentials and production quotes, live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.
+
+## 37.4 addendum — destination re-evaluation readiness
+
+Sprint 37.4 adds a server-authoritative destination-change assessment on the existing `DeliveryContext` / `destination_key` / `DestinationInvalidation` path.
+
+- Same normalized destination does not invalidate.
+- A shopper-declared destination change that may affect shipping or effective cost is `required_unavailable` while `DESTINATION_REEVALUATION_IMPLEMENTED` is False.
+- A missing session declaration (`absent`) is not a shopper change.
+- Destination-insensitive economics (every shipping/tax/import line `not_applicable`) remain usable; no fake reprice.
+- Destination-specific previous shipping is not reused as current for the new destination.
+- The prior canonical decision, PiqScores, Recommendation, economics, and provenance stay immutable.
+- The Sprint 38 handoff is `attempt_certified_destination_reevaluation()`. It fail-closes. It does not execute merchants, invent shipping, or fabricate execution IDs.
+- `DESTINATION_REEVALUATION_IMPLEMENTED` remains **False**. It means live evidence-backed re-evaluation, not contract readiness.
+
+This addendum does not certify PH, start Sprint 38, close P1-1B/P1-2, or create a second price model.
 
 ## 2026-09-06 owner lock addendum
 

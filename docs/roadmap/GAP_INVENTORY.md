@@ -469,6 +469,27 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 
 ---
 
+## 2026-09-06 Sprint 37.4 status addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-authorized destination re-evaluation readiness slice.
+
+| Field | Value |
+|-------|-------|
+| Sprint 37 | In progress. 37.1–37.3 merged. 37.4 destination-change fail-closed / re-evaluation readiness implemented. Live evidence-backed re-evaluation remains unavailable. Sprint 37 is **not complete**. |
+| Destination comparison / invalidation | Implemented on existing `DeliveryContext` / `destination_key` |
+| Re-evaluation-required state | Implemented (`required_unavailable` while live path is blocked) |
+| Canonical decision immutability | Enforced / tested |
+| Shipping / effective-cost truthfulness | Hardened |
+| `DESTINATION_REEVALUATION_IMPLEMENTED` | False — live destination re-evaluation, not contract readiness |
+| Certified shopping markets | 0 |
+| Production FX quotes / providers | 0 |
+| P1-1B / P1-2 | Not fully closed |
+| Sprint 32 | Unchanged: in progress, blocked on external certification |
+| Sprint 33–36 / 38 | Not started |
+| Authority | [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../architecture/ADR_SPRINT_37_MARKETCONTEXT.md) |
+
+---
+
 ## 2026-09-04 Sprint 28.1 status addendum
 
 This addendum does **not** rewrite earlier snapshots. It records the owner-authorized consent/deletion/export/publication-gate slice.

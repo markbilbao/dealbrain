@@ -1,6 +1,6 @@
 # Sprint 37 — MarketContext, Currency & Localization
 
-**Status:** In progress — 37.1 and 37.2 merged; 37.3 currency authority + conversion-unavailable foundation implemented. Sprint 37 is **not complete**. P1-1B is partially progressed and **not** fully closed. P1-2 is **not** fully closed.
+**Status:** In progress — 37.1–37.3 merged; 37.4 destination re-evaluation readiness implemented. Live evidence-backed destination re-evaluation remains unavailable. Sprint 37 is **not complete**. P1-1B is partially progressed and **not** fully closed. P1-2 is **not** fully closed.
 **Primary owner / domain:** Product platform / marketplace
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-1B, P1-2; multinational honesty
@@ -58,6 +58,25 @@
 | P1-1B / P1-2 closure | **not closed** |
 
 37.3 satisfies domain currency authority, conversion-unavailable presentation, and fail-closed comparison. It does **not** complete EXT-23. Production currency conversion remains unavailable.
+
+## 37.4 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| Destination comparison / invalidation (normalized key + declared transitions) | implemented |
+| Server-authoritative re-evaluation-required state | implemented |
+| Fail-closed unavailable re-evaluation (`required_unavailable`) | implemented |
+| Canonical decision immutability | enforced / tested |
+| Shipping / effective-cost truthfulness | hardened |
+| Destination-insensitive economics remain usable when proven `not_applicable` | implemented |
+| Live merchant-backed destination re-evaluation | **not implemented** |
+| `DESTINATION_REEVALUATION_IMPLEMENTED` | **False** (unchanged — live evidence path) |
+| Sprint 38 live execution / fake live executor | **not started** |
+| Production certified shopping markets | **0** |
+| Production FX provider / live quotes | **none** (count = 0) |
+| P1-1B / P1-2 closure | **not closed** |
+
+37.4 implements destination-change fail-closed / re-evaluation readiness. Live evidence-backed re-evaluation remains unavailable. It does **not** close Sprint 37. It does **not** start Sprint 38.
 
 ## Objective
 
