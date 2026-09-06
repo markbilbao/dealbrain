@@ -10,13 +10,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
+from app.domain.entities.offer_economics import CanonicalOfferEconomics
 from app.domain.entities.research_execution import DESTINATION_REEVALUATION_IMPLEMENTED
 from app.market.context import MarketContext
-
-if TYPE_CHECKING:
-    from app.domain.entities.offer_economics import CanonicalOfferEconomics
 
 DESTINATION_SENSITIVE_COMPONENT_KINDS = frozenset({"shipping", "tax", "import"})
 ReevaluationStatus = Literal["not_required", "required_unavailable"]
@@ -65,7 +63,12 @@ class DestinationInvalidation:
 
 
 def assert_destination_reevaluation_not_implemented() -> None:
-    """Sprint 37 keeps live destination re-evaluation unimplemented."""
+    """Live-execution boundary. Assessment must not call this.
+
+    Sprint 37 has no live destination executor. A future Sprint 38 path may
+    flip ``DESTINATION_REEVALUATION_IMPLEMENTED``; this guard refuses live
+    execution until that path exists. It must not block destination assessment.
+    """
 
     if DESTINATION_REEVALUATION_IMPLEMENTED:
         raise RuntimeError("DESTINATION_REEVALUATION_IMPLEMENTED must remain False in Sprint 37")
@@ -89,12 +92,22 @@ def destination_declaration_changed(
     return previous.destination_key != current.destination_key
 
 
-def _destination_insensitive(
+def economics_are_destination_insensitive(
     offer_economics: Sequence[CanonicalOfferEconomics] | None,
 ) -> bool:
+    """True only when destination-sensitive cost is proven not applicable.
+
+    Missing economics fail closed. Verified shipping, including verified zero,
+    remains destination-specific unless the line is ``not_applicable``.
+    An international offer with ``import_charges is None`` is not proven
+    destination-insensitive; do not invent an import line.
+    """
+
     if not offer_economics:
         return False
     for offer in offer_economics:
+        if offer.international and offer.import_charges is None:
+            return False
         for line in (offer.shipping, offer.taxes, offer.import_charges):
             if line is None:
                 continue
@@ -115,13 +128,12 @@ def invalidate_for_destination_change(
 
     Product facts, canonical PiqScore, and Recommendation stay untouched.
     Live merchant re-evaluation is not attempted. Destination-insensitive
-    economics (every shipping/tax/import line ``not_applicable``) remain usable.
-    Missing economics fail closed as potentially destination-sensitive.
+    economics remain usable only when proven. Missing economics and
+    international offers without import evidence fail closed.
     """
 
-    assert_destination_reevaluation_not_implemented()
     changed = destination_declaration_changed(previous, current)
-    insensitive = _destination_insensitive(offer_economics)
+    insensitive = economics_are_destination_insensitive(offer_economics)
     stale = changed and not insensitive
     status: ReevaluationStatus = "required_unavailable" if stale else "not_required"
     return DestinationInvalidation(

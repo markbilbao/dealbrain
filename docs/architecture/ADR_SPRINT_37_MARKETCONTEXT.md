@@ -59,10 +59,10 @@ Sprint 37.4 adds a server-authoritative destination-change assessment on the exi
 - Same normalized destination does not invalidate.
 - A shopper-declared destination change that may affect shipping or effective cost is `required_unavailable` while `DESTINATION_REEVALUATION_IMPLEMENTED` is False.
 - A missing session declaration (`absent`) is not a shopper change.
-- Destination-insensitive economics (every shipping/tax/import line `not_applicable`) remain usable; no fake reprice.
+- Destination-insensitive economics remain usable only when proven. An international offer with missing `import_charges` is not destination-insensitive.
 - Destination-specific previous shipping is not reused as current for the new destination.
 - The prior canonical decision, PiqScores, Recommendation, economics, and provenance stay immutable.
-- The Sprint 38 handoff is `attempt_certified_destination_reevaluation()`. It fail-closes. It does not execute merchants, invent shipping, or fabricate execution IDs.
+- Destination assessment (`assess_destination_reevaluation`, `invalidate_for_destination_change`) is independent of the live-execution flag. `assert_destination_reevaluation_not_implemented()` is the live-execution guard only. Sprint 37 has no live executor.
 - `DESTINATION_REEVALUATION_IMPLEMENTED` remains **False**. It means live evidence-backed re-evaluation, not contract readiness.
 
 This addendum does not certify PH, start Sprint 38, close P1-1B/P1-2, or create a second price model.

@@ -18,10 +18,9 @@ from app.domain.entities.offer_economics import CanonicalOfferEconomics
 from app.domain.entities.research_execution import DESTINATION_REEVALUATION_IMPLEMENTED
 from app.market.context import MarketContext
 from app.market.invalidation import (
-    DESTINATION_SENSITIVE_COMPONENT_KINDS,
     DestinationInvalidation,
-    assert_destination_reevaluation_not_implemented,
     destination_declaration_changed,
+    economics_are_destination_insensitive,
     invalidate_for_destination_change,
 )
 
@@ -97,30 +96,6 @@ def live_destination_reevaluation_available() -> bool:
     return DESTINATION_REEVALUATION_IMPLEMENTED
 
 
-def economics_are_destination_insensitive(
-    offer_economics: Sequence[CanonicalOfferEconomics] | None,
-) -> bool:
-    """True only when every destination-sensitive line is proven not applicable.
-
-    Missing economics fail closed: they may be destination-sensitive.
-    Verified shipping, including verified zero, is still destination-specific
-    unless the line is explicitly ``not_applicable``.
-    """
-
-    if not offer_economics:
-        return False
-    for offer in offer_economics:
-        lines = (offer.shipping, offer.taxes, offer.import_charges)
-        for line in lines:
-            if line is None:
-                continue
-            if line.kind not in DESTINATION_SENSITIVE_COMPONENT_KINDS:
-                continue
-            if line.status != "not_applicable":
-                return False
-    return True
-
-
 def assess_destination_reevaluation(
     previous: MarketContext,
     current: MarketContext,
@@ -129,18 +104,17 @@ def assess_destination_reevaluation(
 ) -> DestinationReevaluationAssessment:
     """Decide the destination-change state without executing merchants.
 
-    Future certified evidence-backed re-evaluation must enter through this
-    function. While ``DESTINATION_REEVALUATION_IMPLEMENTED`` is False, a
-    required re-evaluation is always ``required_unavailable``.
+    Assessment is independent of the live-execution flag. This function never
+    calls merchants, invents shipping, or mutates a canonical decision.
+    While no live executor exists, a required re-evaluation is
+    ``required_unavailable``.
     """
 
-    assert_destination_reevaluation_not_implemented()
     invalidation = invalidate_for_destination_change(
         previous,
         current,
         offer_economics=offer_economics,
     )
-    live_available = live_destination_reevaluation_available()
     if not invalidation.reevaluation_required:
         disclosure = (
             DESTINATION_INSENSITIVE_DISCLOSURE
@@ -157,34 +131,15 @@ def assess_destination_reevaluation(
             disclosure=disclosure,
             historical_cost_disclosure=None,
         )
-    if live_available:
-        raise RuntimeError(
-            "live destination re-evaluation must not run while Sprint 38 is not started"
-        )
     return DestinationReevaluationAssessment(
         invalidation=invalidation,
         reevaluation_status="required_unavailable",
-        live_evidence_path_available=False,
+        live_evidence_path_available=live_destination_reevaluation_available(),
         prior_canonical_decision_preserved=True,
         previous_destination_shipping_reused=False,
         manufactured_shipping=False,
         disclosure=REEVALUATION_UNAVAILABLE_DISCLOSURE,
         historical_cost_disclosure=HISTORICAL_COST_DISCLOSURE,
-    )
-
-
-def attempt_certified_destination_reevaluation(
-    previous: MarketContext,
-    current: MarketContext,
-    *,
-    offer_economics: Sequence[CanonicalOfferEconomics] | None = None,
-) -> DestinationReevaluationAssessment:
-    """Sprint 38 handoff. Fail closed; do not manufacture shipping or mutate decisions."""
-
-    return assess_destination_reevaluation(
-        previous,
-        current,
-        offer_economics=offer_economics,
     )
 
 
@@ -195,7 +150,6 @@ __all__ = [
     "DestinationReevaluationAssessment",
     "ReevaluationStatus",
     "assess_destination_reevaluation",
-    "attempt_certified_destination_reevaluation",
     "destination_declaration_changed",
     "economics_are_destination_insensitive",
     "live_destination_reevaluation_available",

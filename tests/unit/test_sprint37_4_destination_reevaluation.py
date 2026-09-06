@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.consumer.canonical_presentation import (
@@ -33,7 +33,6 @@ from app.market.destination_reevaluation import (
     HISTORICAL_COST_DISCLOSURE,
     REEVALUATION_UNAVAILABLE_DISCLOSURE,
     assess_destination_reevaluation,
-    attempt_certified_destination_reevaluation,
     economics_are_destination_insensitive,
     live_destination_reevaluation_available,
 )
@@ -140,6 +139,30 @@ def _digital_snapshot(**kwargs):
     return attach_offer_economics(base, offers, delivery=base.delivery_context)
 
 
+def _international_missing_import_snapshot(**kwargs):
+    base = _economics_snapshot(**kwargs)
+    offers = (
+        capture_offer_economics(
+            offer_id="offer-intl-sony",
+            product_id=base.evaluated_products[0].product_id,
+            listing=_uuid_money("listing", 19990),
+            shipping=_uuid_money("shipping", None, "not_applicable"),
+            taxes=_uuid_money("tax", None, "not_applicable"),
+            price_state="final_effective_cost",
+            dominant_amount=19990,
+            merchant="International Merchant",
+            voucher=None,
+            import_charges=None,
+            international=True,
+            delivery=base.delivery_context,
+        ),
+    )
+    snapshot = attach_offer_economics(base, offers, delivery=base.delivery_context)
+    assert snapshot.offer_economics[0].international is True
+    assert snapshot.offer_economics[0].import_charges is None
+    return snapshot
+
+
 def test_same_normalized_destination_does_not_invalidate() -> None:
     previous = _market(context_from_manual("Cebu City", None))
     current = _market(context_from_manual("cebu city", None))
@@ -238,6 +261,28 @@ def test_destination_insensitive_economics_remain_usable() -> None:
     assert view.recalculating is False
 
 
+def test_international_missing_import_is_not_destination_insensitive() -> None:
+    snapshot = _international_missing_import_snapshot()
+    offer = snapshot.offer_economics[0]
+    assert offer.international is True
+    assert offer.shipping.status == "not_applicable"
+    assert offer.taxes.status == "not_applicable"
+    assert offer.import_charges is None
+    assert economics_are_destination_insensitive(snapshot.offer_economics) is False
+    result = assess_destination_reevaluation(
+        _market(_taguig()),
+        _market(_cebu()),
+        offer_economics=snapshot.offer_economics,
+    )
+    assert result.destination_changed is True
+    assert result.destination_insensitive_economics is False
+    assert result.reevaluation_required is True
+    assert result.reevaluation_status == "required_unavailable"
+    assert result.manufactured_shipping is False
+    assert result.live_reevaluation_attempted is False
+    assert offer.import_charges is None
+
+
 def test_destination_specific_shipping_is_not_reused_for_new_destination() -> None:
     snapshot = _economics_snapshot()
     assessment = destination_assessment_from_snapshot(snapshot, _cebu())
@@ -329,7 +374,7 @@ def test_canonical_decision_and_piqscores_remain_immutable() -> None:
     scores = tuple(item.canonical_piqscore.value for item in snapshot.evaluated_products)
     reco = snapshot.recommendation.best_piq_product_id
     view = page_view_from_snapshot(snapshot, page="results", session_location=_cebu())
-    attempt = attempt_certified_destination_reevaluation(
+    assessment = assess_destination_reevaluation(
         _market(_taguig()),
         _market(_cebu()),
         offer_economics=snapshot.offer_economics,
@@ -341,10 +386,10 @@ def test_canonical_decision_and_piqscores_remain_immutable() -> None:
     assert view.canonical_piqscore_set_sha256 == snapshot.canonical_piqscore_set_sha256
     assert view.recommendation_snapshot_sha256 == snapshot.recommendation.snapshot_sha256
     assert view.recalculating is False
-    assert attempt.prior_canonical_decision_preserved is True
-    assert attempt.invalidation.piqscore_rewritten is False
-    assert attempt.invalidation.recommendation_rewritten is False
-    assert attempt.invalidation.canonical_snapshot_rewritten is False
+    assert assessment.prior_canonical_decision_preserved is True
+    assert assessment.invalidation.piqscore_rewritten is False
+    assert assessment.invalidation.recommendation_rewritten is False
+    assert assessment.invalidation.canonical_snapshot_rewritten is False
 
 
 def test_unavailable_reevaluation_preserves_prior_decision() -> None:
@@ -367,6 +412,40 @@ def test_live_flag_and_handoff_remain_unimplemented() -> None:
     assert live_destination_reevaluation_available() is False
     assert_destination_reevaluation_not_implemented()
     assert production_certified_shopping_markets().to_tuple() == ()
+    source = inspect.getsource(__import__("app.market.destination_reevaluation", fromlist=["*"]))
+    assert "attempt_certified_destination_reevaluation" not in source
+
+
+def test_assessment_works_independently_of_live_execution_guard() -> None:
+    snapshot = _economics_snapshot()
+    digest = snapshot.content_sha256
+    with (
+        patch("app.market.destination_reevaluation.DESTINATION_REEVALUATION_IMPLEMENTED", True),
+        patch("app.market.invalidation.DESTINATION_REEVALUATION_IMPLEMENTED", True),
+    ):
+        result = assess_destination_reevaluation(
+            _market(_taguig()),
+            _market(_cebu()),
+            offer_economics=snapshot.offer_economics,
+        )
+        invalidation = invalidate_for_destination_change(
+            _market(_taguig()),
+            _market(_cebu()),
+            offer_economics=snapshot.offer_economics,
+        )
+        with pytest.raises(RuntimeError, match="must remain False"):
+            assert_destination_reevaluation_not_implemented()
+    assert result.reevaluation_required is True
+    assert result.reevaluation_status == "required_unavailable"
+    assert result.live_reevaluation_attempted is False
+    assert result.manufactured_shipping is False
+    assert result.prior_canonical_decision_preserved is True
+    assert invalidation.live_reevaluation_attempted is False
+    assert invalidation.canonical_snapshot_rewritten is False
+    assert snapshot.content_sha256 == digest
+    assert DESTINATION_REEVALUATION_IMPLEMENTED is False
+    assert live_destination_reevaluation_available() is False
+    assert_destination_reevaluation_not_implemented()
 
 
 def test_affiliate_neutrality_in_destination_logic() -> None:

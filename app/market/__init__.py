@@ -36,8 +36,6 @@ from app.market.destination_reevaluation import (
     REEVALUATION_UNAVAILABLE_DISCLOSURE,
     DestinationReevaluationAssessment,
     assess_destination_reevaluation,
-    attempt_certified_destination_reevaluation,
-    economics_are_destination_insensitive,
     live_destination_reevaluation_available,
 )
 from app.market.fx import (
@@ -56,6 +54,7 @@ from app.market.invalidation import (
     DestinationInvalidation,
     assert_destination_reevaluation_not_implemented,
     destination_declaration_changed,
+    economics_are_destination_insensitive,
     invalidate_for_destination_change,
 )
 from app.market.selection import (
@@ -101,7 +100,6 @@ __all__ = [
     "assess_destination_reevaluation",
     "assess_offer_currencies",
     "assess_shopping_coverage",
-    "attempt_certified_destination_reevaluation",
     "compose_market_context",
     "connector_invocation_eligible",
     "destination_declaration_changed",
