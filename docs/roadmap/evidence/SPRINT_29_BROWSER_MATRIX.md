@@ -27,4 +27,4 @@
 - Node/React production builds
 - Pixel-perfect Sprint 44 artwork lab (Sprint 44)
 
-Staging browser evidence is part of the pending current-main E2E, not this document.
+Staging HTML/CSS/JS locks (skip link, dialog, Escape/focus-trap source, Ask 80/72) were verified on Deploy Staging #27. An interactive multi-browser lab pass is still not recorded here and is not a signed a11y audit.
