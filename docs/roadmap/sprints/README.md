@@ -10,7 +10,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | 29 | [Production Consumer Decision Experience & Conversational Continuity](SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md) |
 | 30 | [Public Beta Readiness Audit (Historical)](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_HISTORICAL.md) |
 | 31 | [Merchant Platform Unification](SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md) — formally owner-closed; ADR: [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md) |
-| 32 | [Philippines Merchant Certification](SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) — in progress; not complete |
+| 32 | [Philippines Merchant Certification](SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) — in progress; not complete; initial validation market; TikTok not launch-critical |
 | 33 | [United States Merchant Certification](SPRINT_33_UNITED_STATES_MERCHANT_CERTIFICATION.md) |
 | 34 | [Singapore Merchant Certification](SPRINT_34_SINGAPORE_MERCHANT_CERTIFICATION.md) |
 | 35 | [United Kingdom Merchant Certification](SPRINT_35_UNITED_KINGDOM_MERCHANT_CERTIFICATION.md) |
@@ -23,6 +23,6 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | 42 | [Production Operations, Monitoring & DR Evidence](SPRINT_42_PRODUCTION_OPERATIONS_DR.md) |
 | 43 | [Performance & Capacity Validation](SPRINT_43_PERFORMANCE_CAPACITY_VALIDATION.md) |
 | 44 | [Claims Control, Approvals & Production Rehearsal](SPRINT_44_CLAIMS_APPROVALS_REHEARSAL.md) |
-| 45 | [Controlled Global Public Beta Launch](SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md) — target no later than 2026-09-30 |
+| 45 | [Controlled Global Public Beta Launch](SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md) — target no later than 2026-09-30; verifies EC-01…EC-31 including effective-purchase-cost evidence |
 | 46 | [Post-Launch Stabilization](SPRINT_46_POST_LAUNCH_STABILIZATION.md) |
 | 47 | [Offer Timing, Promotions & Buying Action Intelligence](SPRINT_47_OFFER_TIMING_PROMOTIONS_BUYING_ACTION.md) — post-beta; not a launch prerequisite |

@@ -483,3 +483,23 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 | EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty |
 | EXT-22 | Unchanged: `not_started` — no CMP/banner |
 | Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) |
+
+---
+
+## 2026-09-06 owner lock addendum — PH beta merchant neutrality and effective cost
+
+This addendum does **not** rewrite earlier snapshots. It records owner decisions dated 2026-09-06. Documentation only; no merchant is certified by this lock.
+
+| Field | Value |
+|-------|-------|
+| Owner target | Controlled Public Beta **no later than September 30, 2026** — unchanged |
+| Initial validation focus | Philippines first (market priority, not a two-marketplace-only restriction) |
+| Initial affiliate-monetization targets | Shopee Philippines and Lazada Philippines — not exclusive search coverage; not ranking privileges |
+| Merchant neutrality | Non-affiliate merchants remain fully eligible for PiqScore, Best Piq, and Recommendation |
+| Search inclusion | Legitimate data access only; affiliate status is not the inclusion test; no scraping workaround |
+| TikTok Shop PH | Not September-launch-critical; must not delay Sprint 45 |
+| Effective purchase cost | Reuse Sprint 29 canonical economics; no second price model; no silent PiqScore rewrite |
+| Shipping / voucher honesty | Unknown shipping ≠ ₱0/FREE; only verified applicable discounts/vouchers enter scored effective cost |
+| Sprint 47 | Remains post-beta. Do not pull campaign prediction, Buy Now/Wait/Watch, or price-drop monitoring into September |
+| Launch evidence | Sprint 45 verifies EC-31 on the frozen candidate using actual certified capabilities |
+| Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) §9.5; [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md`](sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md); [`sprints/SPRINT_47_OFFER_TIMING_PROMOTIONS_BUYING_ACTION.md`](sprints/SPRINT_47_OFFER_TIMING_PROMOTIONS_BUYING_ACTION.md) |

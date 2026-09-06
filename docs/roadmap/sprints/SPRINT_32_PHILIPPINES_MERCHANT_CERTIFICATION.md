@@ -24,7 +24,43 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1�
 | Live current-data validation | none |
 | Sprint 32 closure | blocked |
 
-The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, or production-ready merchant integration.
+The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, live Lazada research, or production-ready merchant integration.
+
+### 2026-09-06 owner lock (documentation only; does not close this sprint)
+
+Philippines is the **initial commercial/product validation focus** for the September 2026 beta. That is a market-priority decision, not a restriction that PiqSavi may only ever search two marketplaces, and not a change to the existing rule that PH certification failure removes/delays PH only.
+
+**Initial affiliate-monetization targets** for the September PH beta:
+
+- Shopee Philippines
+- Lazada Philippines
+
+Use affiliate links for those merchants where affiliate approval/tracking is available and legally permitted. This does **not** make Shopee or Lazada the exclusive search/recommendation universe, and it does **not** grant ranking privileges. Existing Sprint 32 truth remains authoritative:
+
+- no PH merchant may be called certified unless real evidence supports it;
+- product-data rights and affiliate rights remain separate;
+- production certification remains evidence-based;
+- do not falsely mark Shopee or Lazada as live, approved, production-ready, or contractually usable until actual certification is complete.
+
+**Merchant-neutral search/recommendation.** Every legitimately supported merchant, retailer, marketplace, or product-data source available for the shopper's market remains fully eligible to enter the evaluated set, receive canonical PiqScore, become Best Piq, become the Recommendation, rank above affiliate merchants, and receive a normal outbound merchant link. Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces may participate when a legitimate data path exists. If a non-affiliate merchant wins, PiqSavi may earn ₱0 and must still recommend it.
+
+**Search inclusion** depends on a legitimate, sufficiently trustworthy data path (official API, authorized product feed, approved affiliate/product feed, direct retailer/partner integration, permitted public data source, or another contractually/technically legitimate source). Affiliate status is not the inclusion test. Do not use scraping as a workaround. If a merchant has no legitimate usable product-data path, do not claim it was searched.
+
+**TikTok Shop PH** is not required for the September 2026 beta. It must not delay Sprint 45, must not appear in public marketplace-coverage claims unless actually supported, must not receive pre-launch engineering priority over higher-value launch work, and must not be represented as searched when it was not queried. Do not destructively remove existing general architecture merely because TikTok is deferred.
+
+**Effective-cost capability recording.** Each PH source certification must record — using the existing Sprint 31 capability-policy states (`allowed` / `restricted` / `prohibited` / `unknown`), not a parallel authorization model — whether the authorized data path can legitimately provide:
+
+- current listing price
+- seller discount
+- platform discount
+- voucher/promotion information
+- voucher applicability/eligibility
+- destination-dependent shipping
+- verified free-shipping state
+- unavoidable checkout/other costs where exposed
+- timestamp/freshness
+
+Provider approval and affiliate approval do not imply permission for any of these data capabilities. Do not require a merchant to expose capabilities it does not provide; record the limitation honestly.
 
 ### Closure blockers (current)
 
@@ -50,7 +86,7 @@ Certify at least one real, legally usable, operationally validated merchant-data
 
 - Full market path: provider selection, access application, legal/terms, credentials, sandbox (where available), real endpoint, mapping, matching, rate/quota/timeout/retry, failure modes, circuit-breaker hooks, provenance/freshness, shipping/availability, affiliate validation, monitoring, staging, limited rollout, production validation prep, public disclosure row
 - Implement and validate Sprint 31 minimum reliability contracts on the PH real path (timeout, bounded retry, backoff, quota/credential/partial-failure types, health, kill switch, breaker baseline)
-- Populate and certify Sprint 31 merchant contractual capability/policy metadata for the PH real path (provider/market-scoped; fail-closed when unknown)
+- Populate and certify Sprint 31 merchant contractual capability/policy metadata for the PH real path (provider/market-scoped; fail-closed when unknown), including the effective-cost data capabilities listed in the 2026-09-06 owner lock
 
 ### Merchant capability / authorization evidence (shared bar for 32–36)
 
@@ -90,8 +126,12 @@ Certification stages must remain distinct (do not collapse):
 
 - US/SG/UK/CA certification
 - Claiming complete PH retail coverage
+- Treating Shopee and Lazada as the exclusive search/recommendation universe
+- Falsely marking Shopee, Lazada, TikTok Shop, or any other PH source as live, approved, production-ready, or certified
+- Making TikTok Shop PH launch-critical for September 2026
 - Cross-connector production hardening suite (38)
 - Owning the shared capability/policy contract design (Sprint 31)
+- Creating a second price model or a parallel authorization model for effective-cost fields
 
 ## External dependencies
 
@@ -129,8 +169,9 @@ Certification stages must remain distinct (do not collapse):
 
 - At least one real, legally usable merchant path with current-data validation
 - Market-specific normalization and product/variant matching evidenced
-- Sprint 31 contractual capability/policy metadata populated, evidence-backed, and enforcement-validated for that path (fail-closed for unknown)
+- Sprint 31 contractual capability/policy metadata populated, evidence-backed, and enforcement-validated for that path (fail-closed for unknown), including recorded effective-cost data capabilities
 - Certification report distinguishes application / approval / credentials / technical connectivity / contractual usability / production certification
+- Shopee / Lazada / any other PH source remain uncertified until the production-certification stage is actually met
 - Staging certification complete; limited production validation prepared/executed as required by gate
 - Monitoring and public coverage disclosure published
 - Kill switch tested

@@ -314,3 +314,17 @@ Sprint 4 / Sprint 18 remain documented dual-run. Dual-path disposition review de
 Sprint 31 research routing remains additive planning/eligibility only. It does not take live execution from Sprint 38 or market certification from Sprints 32–36. Affiliate economics remain downstream.
 
 Sprint 31 was formally owner-closed before Sprint 32 implementation began. Sprint 32 is in progress and is **not complete**. Production certified providers remain zero.
+
+### 15.1 2026-09-06 owner lock (additive; documentation)
+
+The 2026-09-06 PH-beta merchant-neutrality and effective-cost lock does **not** redistribute Architecture Lock ownership.
+
+- Sprint 5 remains PiqScore / DealScore owner. Do not silently rewrite PiqScore ownership.
+- Sprint 6 remains Recommendation owner.
+- Sprint 29 remains canonical offer-economics capture owner (schema 1.1). September effective purchase cost **reuses** that contract; do not create a second price model.
+- Sprint 37 remains shipping / destination honesty and destination re-evaluation owner.
+- Sprint 20 / Layer 5 remains affiliate economics, downstream of the shopping decision.
+- Sprints 32–36 remain market certification owners, including recording effective-cost data capabilities on the existing Sprint 31 capability-policy model.
+- Sprint 47 remains post-beta. Do not pull campaign prediction, Buy Now / Wait / Watch, or price-drop monitoring into September.
+
+Affiliate availability and commission must not determine search inclusion, evaluated-set membership, PiqScore, Recommendation, Best Piq, or which merchant wins.

@@ -7,7 +7,7 @@
 
 ## Objective
 
-Execute controlled public launch **no later than September 30, 2026** by performing **final go/no-go verification** against all Global Public Beta exit criteria (EC-01…EC-30). Sprint 45 does not re-own implementation for criteria primarily owned by earlier sprints, except launch-control items EC-20, EC-22, and EC-30.
+Execute controlled public launch **no later than September 30, 2026** by performing **final go/no-go verification** against all Global Public Beta exit criteria (EC-01…EC-31). Sprint 45 does not re-own implementation for criteria primarily owned by earlier sprints, except launch-control items EC-20, EC-22, and EC-30. Sprint 45 verifies EC-31 on the frozen candidate; it does not re-own canonical economics (29), PH capability recording (32), shipping/destination honesty (37), or PiqScore/Recommendation (5/6).
 
 September 30, 2026 is the owner target launch date. It is not permission to bypass security, privacy/legal, truthfulness, evidence, rehearsal, or production-readiness gates. Reduce optional market/provider/feature scope rather than weaken those gates.
 
@@ -18,8 +18,11 @@ September 30, 2026 is the owner target launch date. It is not permission to bypa
 - Launch monitoring window + handoff package for Sprint 46
 - Publish legal URLs if not live
 - Publish coverage matrix
-- Enforce exit criteria EC-01…EC-30 from master roadmap §9 (verify owners’ evidence; do not substitute documentation for runtime proof)
+- Enforce exit criteria EC-01…EC-31 from master roadmap §9 (verify owners’ evidence; do not substitute documentation for runtime proof)
+- Verify EC-31 effective-purchase-cost launch evidence on the frozen candidate (master roadmap §9.5)
 - Market subset rule applied if EXT failures (remove markets rather than fake readiness)
+- TikTok Shop PH is not required for this launch and must not delay Sprint 45
+- Do not pull Sprint 47 into this sprint
 - Do not mark launch ready if any non-waivable blocker remains
 - Where an optional market is not certified: remove that market from launch claims
 - Where an optional non-core feature is not ready: demote/remove the claim or feature rather than fake readiness
@@ -78,18 +81,21 @@ September 30, 2026 is the owner target launch date. It is not permission to bypa
 
 ## Acceptance criteria
 
-- All applicable EC-01…EC-30 true (or market/feature removed where the criterion allows)
+- All applicable EC-01…EC-31 true (or market/feature removed where the criterion allows)
 - Owner target date: no later than September 30, 2026
 - No non-waivable blocker remains
 - Only certified markets named
-- EC-09 capability-policy invariant verified for every named shopping market (declared, evidence-backed, fail-closed enforced; unknown permissions do not enable production features); remove/disable markets or providers that fail rather than weakening the gate
+- EC-09 capability-policy invariant verified for every named shopping market (declared, evidence-backed, fail-closed enforced; unknown permissions do not enable production features), including recorded effective-cost data capabilities; remove/disable markets or providers that fail rather than weakening the gate
+- EC-31 verified on the frozen launch candidate using actual certified merchant capabilities available at launch: where those sources expose the fields, a real or suitably certified staging case demonstrates that a verified discount can reduce effective cost; a verified applicable voucher can reduce effective cost; known shipping can increase effective cost; effective cost can change offer ordering/Recommendation; a non-affiliate merchant can outrank an affiliate merchant; unknown shipping does not become zero/free; an unverified/conditional voucher does not affect PiqScore; and affiliate commission does not affect the result. Do not require a merchant to expose capabilities it does not provide; expose that limitation honestly.
 - Rollback authority on-call
 - Checklist signed
 - Monitoring handoff to Sprint 46 recorded
 - No documentation-only evidence accepted for runtime criteria
 - EC-02 cannot pass unless CC-01 passes on the frozen launch candidate.
 - EC-22 cannot be signed unless the exact CC-01 evidence package is attached.
-- Public launch is no-go if Ask PiqSavi loses context, changes the evaluated set without approved research, mutates canonical PiqScores, fabricates execution, violates affiliate neutrality, or fails Results/Compare/Why/mobile continuity.
+- Public launch is no-go if Ask PiqSavi loses context, changes the evaluated set without approved research, mutates canonical PiqScores, fabricates execution, violates affiliate neutrality, ranks by sticker price alone when verified purchase-cost components exist, treats unknown shipping as zero/free, silently subtracts unverified/conditional vouchers from scored effective cost, or fails Results/Compare/Why/mobile continuity.
+- Shopee and Lazada must not be represented as live, approved, production-ready, or contractually usable unless actual certification is complete.
+- A non-affiliate merchant remains fully eligible to become Best Piq / Recommendation.
 
 ### Additive PiqSavi launch gate (not marked complete)
 

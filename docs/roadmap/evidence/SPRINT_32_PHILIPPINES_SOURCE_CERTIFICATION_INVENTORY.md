@@ -321,10 +321,44 @@ No Zalora, Carousell, Shein, or other extra PH retailers are contemplated in rep
 
 ---
 
+## 2026-09-06 owner lock — certification recording and launch scope
+
+This addendum does **not** certify any provider and does not change the merchant-level facts above. Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**.
+
+### Effective-cost data capabilities (required at certification)
+
+When a later trusted review creates a PH production certification, each source must record — using existing Sprint 31 `CapabilityPolicyState` values (`allowed` / `restricted` / `prohibited` / `unknown`), not a parallel model — whether the authorized data path can legitimately provide:
+
+| Capability to record | Notes |
+|----------------------|-------|
+| Current listing price | Distinct from final effective cost |
+| Seller discount | Only when applicable to the evaluated offer |
+| Platform discount | Only when applicable to the evaluated offer |
+| Voucher/promotion information | Presence ≠ applicability |
+| Voucher applicability/eligibility | Required before a voucher may reduce scored effective cost |
+| Destination-dependent shipping | Sprint 37 owns honesty; 32 records whether the path can supply it |
+| Verified free-shipping state | Unknown shipping is not FREE |
+| Unavoidable checkout/other costs where exposed | Taxes/duties/import/checkout when the path exposes them |
+| Timestamp/freshness | Required for current-data claims |
+
+Provider approval and affiliate approval do not imply permission for any of these capabilities. Do not require a merchant to expose capabilities it does not provide; record the limitation honestly.
+
+Affiliate permission remains independent from product-data permission. Commission / payout fields remain non-authorization facts.
+
+### Launch-scope notes (do not rewrite historical rows)
+
+- Philippines is the initial commercial/product validation focus.
+- Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets**, not exclusive search coverage and not ranking privileges.
+- Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain eligible when a legitimate data path exists.
+- **TikTok Shop PH is not launch-critical** for September 2026. Keep the contemplated TikTok inventory rows. Do not destructively remove architecture. Do not claim TikTok was searched unless it was actually queried. Do not give TikTok pre-launch engineering priority over higher-value launch work.
+- Search inclusion depends on a legitimate data path, not affiliate status. Scraping is not a workaround.
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
 - No production evidence catalog rows are seeded.
 - No merchant HTTP, credentials, scraping, or live research is authorized.
 - Shopee remains uncertified and fail-closed.
+- Lazada remains uncertified and fail-closed.
+- TikTok Shop remains uncertified and is not September-launch-critical.
 - Sprint 32 is **not complete**.

@@ -68,6 +68,7 @@ Sprint 31 owns the **shared contractual/policy layer** that market certification
 - source attribution; branding / disclosure obligations
 - country / market scope
 - post-termination disablement or deletion obligations
+- effective-cost data capabilities later recorded by market certification sprints (32–36): current listing price; seller discount; platform discount; voucher/promotion information; voucher applicability/eligibility; destination-dependent shipping; verified free-shipping state; unavoidable checkout/other costs where exposed; timestamp/freshness. Use the existing policy states (`allowed` / `restricted` / `prohibited` / `unknown`). Do not create a parallel authorization model. Provider approval and affiliate approval do not imply permission for these capabilities.
 
 **Reduced modes remain possible** and must be representable:
 
@@ -193,3 +194,4 @@ Feature-flag unified router; keep dual-run
 - Does not silently redistribute Architecture Lock ownership for Sprints 1–25.
 - Completion requires listed evidence maturity, not code presence alone.
 - Connector/market sprints require real provider evidence when claiming supported markets.
+- The 2026-09-06 effective-cost capability list is additive documentation for later 32–36 population. It does **not** reopen this closed sprint.

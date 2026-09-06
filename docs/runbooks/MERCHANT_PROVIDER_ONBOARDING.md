@@ -97,6 +97,15 @@ Unknown or unverified permission must not enable production functionality. Use `
 | Credential storage requirements | | | |
 | Prohibited-use clauses | | | |
 | Affiliate agreement independence (affiliate ≠ product-data permission) | | | |
+| Current listing price capability | | | |
+| Seller discount capability | | | |
+| Platform discount capability | | | |
+| Voucher/promotion information capability | | | |
+| Voucher applicability/eligibility capability | | | |
+| Destination-dependent shipping capability | | | |
+| Verified free-shipping-state capability | | | |
+| Unavoidable checkout/other-cost capability | | | |
+| Timestamp/freshness capability | | | |
 | Written approval / evidence location | | | |
 
 Sensitive or high-risk uses (reviews, AI reuse of merchant content, comparison where terms are ambiguous, caching beyond explicit documentation, material transformation) remain unapproved unless supported by suitable evidence.
@@ -210,9 +219,15 @@ Affiliate economics may **not** influence:
 - legal / policy approval
 - provider eligibility
 - routing priority
+- which merchants are searched
 - evaluated-set inclusion
 - PiqScore
 - Recommendation
+- Best Piq
+- organic ordering
+- which merchant wins
+
+Affiliate economics are downstream of the shopping decision. A non-affiliate merchant may become Best Piq. Search inclusion depends on a legitimate data path, not affiliate status.
 
 Affiliate permission is independent of product-data permission. Reduced modes remain possible:
 

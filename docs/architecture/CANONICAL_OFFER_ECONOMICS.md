@@ -120,3 +120,36 @@ to fill missing production economics.
 
 Reading or answering from a snapshot does not mutate economics, digest, PiqScore,
 Recommendation, evaluated set, or evidence provenance.
+
+## 2026-09-06 owner lock — September effective-purchase-cost reuse
+
+The September 2026 beta launch lock requires ranking from the **best verified
+effective purchase cost** available from certified evidence, not sticker/listing
+price alone when reliable purchase-cost components exist.
+
+This document remains the **only** canonical offer-economics contract. Do **not**
+create a second price model. Do **not** silently rewrite PiqScore ownership.
+
+September uses fields already owned here:
+
+- listing price
+- verified discounts
+- verified vouchers where captured (`applied=false` when unverified/ineligible)
+- shipping
+- taxes/duties/import costs
+- dominant price state
+- structured unknowns
+- provenance/freshness
+
+A discount or voucher may affect scored effective cost / PiqScore only when
+evidence supports applicability to the evaluated offer under the known shopper
+context. Unknown shipping must never become ₱0 / FREE / included / assumed
+negligible. Incomplete offers must keep their truthful price state (for example
+**Price before shipping**) and must not gain an artificial ranking advantage by
+treating unknown costs as zero.
+
+Preserve the one-dominant-price principle. Existing price-state labels remain
+authoritative. Do not show multiple competing “final” totals on one offer card.
+
+This lock is **not** Sprint 47. Historical campaign prediction, promotion timing,
+Buy Now / Wait / Watch, and price-drop monitoring remain post-beta.

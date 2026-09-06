@@ -272,3 +272,13 @@ These clarifications do **not** change any EXT row’s `Current status`. They se
 | EXT-07 | Affiliate tracking / monetized redirect where applicable | Product-data comparison rights, or that affiliate economics may influence ranking |
 
 **Rules:** Provider approval alone must not automatically enable every policy capability. Capability population and production certification occur later when actual terms, policies, credentials, and provider-specific evidence are available (market certification sprints). Affiliate permission and product-data permission remain independent. Unknown permissions fail closed.
+
+### 2026-09-06 owner lock addendum (statuses unchanged)
+
+This addendum does **not** move any EXT row. Counsel-clearance and Shopee operational facts above remain historical.
+
+- Philippines is the initial commercial/product validation focus.
+- Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets** (EXT-07 remains optional). They are not exclusive search coverage and are not certified by this lock.
+- Search/recommendation inclusion depends on a legitimate product-data path, not EXT-07 affiliate tracking.
+- **TikTok Shop PH is not September-launch-critical.** Counsel clearance to apply to TikTok remains historical and does not make TikTok a Sprint 45 prerequisite. Do not represent TikTok as searched or supported unless an authorized path actually exists.
+- Provider approval and affiliate approval still do not imply listing-price, discount, voucher, shipping, or checkout-cost capability permission.
