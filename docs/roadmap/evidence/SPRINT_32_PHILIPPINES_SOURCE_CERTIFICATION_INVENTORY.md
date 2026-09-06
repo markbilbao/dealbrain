@@ -325,23 +325,33 @@ No Zalora, Carousell, Shein, or other extra PH retailers are contemplated in rep
 
 This addendum does **not** certify any provider and does not change the merchant-level facts above. Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**.
 
-### Effective-cost data capabilities (required at certification)
+### Effective-cost field evidence (required at certification)
 
-When a later trusted review creates a PH production certification, each source must record — using existing Sprint 31 `CapabilityPolicyState` values (`allowed` / `restricted` / `prohibited` / `unknown`), not a parallel model — whether the authorized data path can legitimately provide:
+When a later trusted review creates a PH production certification, each source must record the components below **without treating `CapabilityPolicyState` as technical availability**. Preserve Sprint 31: technical ability ≠ contractual permission. Do not invent a second authorization system.
 
-| Capability to record | Notes |
-|----------------------|-------|
-| Current listing price | Distinct from final effective cost |
-| Seller discount | Only when applicable to the evaluated offer |
-| Platform discount | Only when applicable to the evaluated offer |
-| Voucher/promotion information | Presence ≠ applicability |
-| Voucher applicability/eligibility | Required before a voucher may reduce scored effective cost |
-| Destination-dependent shipping | Sprint 37 owns honesty; 32 records whether the path can supply it |
-| Verified free-shipping state | Unknown shipping is not FREE |
-| Unavoidable checkout/other costs where exposed | Taxes/duties/import/checkout when the path exposes them |
-| Timestamp/freshness | Required for current-data claims |
+For each component, record three distinct facts:
 
-Provider approval and affiliate approval do not imply permission for any of these capabilities. Do not require a merchant to expose capabilities it does not provide; record the limitation honestly.
+| Layer | Meaning | How to record |
+|-------|---------|---------------|
+| A. Technical / source availability | Does the authorized data path actually expose enough data for this component? | Factual/technical evidence about the provider response/path. Reuse existing connector/certification evidence where possible. If `ConnectorCapability` is operation-level rather than field-level, record field exposure in the certification evidence/report. **Not** a policy state. |
+| B. Contractual / policy authorization | May PiqSavi ingest/use/display/transform/compare this field for this provider/market? | Existing Sprint 31 `CapabilityPolicyState` only: `allowed` / `restricted` / `prohibited` / `unknown`. |
+| C. Offer / shopper applicability | Where relevant, does evidence establish applicability to the evaluated offer under the known shopper context? | Offer-level evidence. Required before a discount/voucher may reduce scored effective cost. |
+
+| Component | Technical exposure (A) | Policy (B) | Applicability note (C) |
+|-----------|------------------------|------------|------------------------|
+| Current listing price | Exposed / not exposed / unknown | `allowed` / `restricted` / `prohibited` / `unknown` | Distinct from final effective cost |
+| Seller discount | Exposed / not exposed / unknown | same Sprint 31 states | May reduce scored cost only when applicable to this offer/shopper |
+| Platform discount | Exposed / not exposed / unknown | same Sprint 31 states | Same applicability rule |
+| Voucher/promotion information | Exposed / not exposed / unknown | same Sprint 31 states | Presence ≠ applicability |
+| Voucher eligibility/applicability information | Exposed / not exposed / unknown | same Sprint 31 states | Required before a voucher may reduce scored effective cost |
+| Destination-dependent shipping | Exposed / not exposed / unknown | same Sprint 31 states | Sprint 37 owns honesty; 32 records whether the path can supply it |
+| Free-shipping status | Exposed / not exposed / unknown | same Sprint 31 states | Unknown shipping is not FREE |
+| Unavoidable checkout/other costs | Exposed / not exposed / unknown | same Sprint 31 states | Taxes/duties/import/checkout when the path exposes them |
+| Timestamp/freshness | Exposed / not exposed / unknown | same Sprint 31 states | Required for current-data claims |
+
+Preserved distinctions: field present ≠ permitted to use; permitted to use ≠ field actually available; voucher available ≠ voucher applicable to this shopper/offer. All required conditions must be satisfied before a component can influence scored effective purchase cost.
+
+Provider approval and affiliate approval do not imply technical exposure or policy permission. Do not require a merchant to expose fields it does not provide; record the limitation honestly.
 
 Affiliate permission remains independent from product-data permission. Commission / payout fields remain non-authorization facts.
 
@@ -349,9 +359,10 @@ Affiliate permission remains independent from product-data permission. Commissio
 
 - Philippines is the initial commercial/product validation focus.
 - Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets**, not exclusive search coverage and not ranking privileges.
-- Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain eligible when a legitimate data path exists.
+- Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain **eligible** for routing when a legitimate data path exists. Eligibility is not a requirement to query every integrated merchant on every request.
+- Affiliate status must never exclude or privilege an otherwise relevant legitimate source.
 - **TikTok Shop PH is not launch-critical** for September 2026. Keep the contemplated TikTok inventory rows. Do not destructively remove architecture. Do not claim TikTok was searched unless it was actually queried. Do not give TikTok pre-launch engineering priority over higher-value launch work.
-- Search inclusion depends on a legitimate data path, not affiliate status. Scraping is not a workaround.
+- Search inclusion depends on a legitimate data path, not affiliate status. Scraping is not a workaround. Public language remains **Best Piq among the offers PiqSavi evaluated**.
 
 ## Explicit non-claims
 

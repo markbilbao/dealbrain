@@ -279,6 +279,6 @@ This addendum does **not** move any EXT row. Counsel-clearance and Shopee operat
 
 - Philippines is the initial commercial/product validation focus.
 - Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets** (EXT-07 remains optional). They are not exclusive search coverage and are not certified by this lock.
-- Search/recommendation inclusion depends on a legitimate product-data path, not EXT-07 affiliate tracking.
+- Search/recommendation **eligibility** depends on a legitimate product-data path, not EXT-07 affiliate tracking. Affiliate status must never exclude or privilege an otherwise relevant legitimate source. Eligibility is not a requirement to query every integrated merchant on every request.
 - **TikTok Shop PH is not September-launch-critical.** Counsel clearance to apply to TikTok remains historical and does not make TikTok a Sprint 45 prerequisite. Do not represent TikTok as searched or supported unless an authorized path actually exists.
-- Provider approval and affiliate approval still do not imply listing-price, discount, voucher, shipping, or checkout-cost capability permission.
+- Provider approval and affiliate approval still do not imply technical field exposure or policy permission for listing-price, discount, voucher, shipping, or checkout-cost fields. Policy states remain `allowed` / `restricted` / `prohibited` / `unknown` and are not technical availability.

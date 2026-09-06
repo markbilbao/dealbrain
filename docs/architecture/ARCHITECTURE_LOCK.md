@@ -324,7 +324,7 @@ The 2026-09-06 PH-beta merchant-neutrality and effective-cost lock does **not** 
 - Sprint 29 remains canonical offer-economics capture owner (schema 1.1). September effective purchase cost **reuses** that contract; do not create a second price model.
 - Sprint 37 remains shipping / destination honesty and destination re-evaluation owner.
 - Sprint 20 / Layer 5 remains affiliate economics, downstream of the shopping decision.
-- Sprints 32–36 remain market certification owners, including recording effective-cost data capabilities on the existing Sprint 31 capability-policy model.
+- Sprints 32–36 remain market certification owners, including recording effective-cost field evidence. Technical/source field exposure is certification-evidence fact and is **not** `CapabilityPolicyState`. Policy authorization continues to use only the existing Sprint 31 states (`allowed` / `restricted` / `prohibited` / `unknown`). Offer/shopper applicability is a third, distinct condition.
 - Sprint 47 remains post-beta. Do not pull campaign prediction, Buy Now / Wait / Watch, or price-drop monitoring into September.
 
-Affiliate availability and commission must not determine search inclusion, evaluated-set membership, PiqScore, Recommendation, Best Piq, or which merchant wins.
+Affiliate availability and commission must never include/exclude a source from organic consideration, prioritize a source, or alter PiqScore, Recommendation, Best Piq, or which merchant wins. Merchant neutrality is eligibility for routing, not a requirement to query every integrated merchant on every request. Public wording remains Best Piq among the offers PiqSavi evaluated.

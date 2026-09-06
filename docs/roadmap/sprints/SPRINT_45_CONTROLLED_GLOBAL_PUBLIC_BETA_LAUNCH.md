@@ -7,7 +7,7 @@
 
 ## Objective
 
-Execute controlled public launch **no later than September 30, 2026** by performing **final go/no-go verification** against all Global Public Beta exit criteria (EC-01…EC-31). Sprint 45 does not re-own implementation for criteria primarily owned by earlier sprints, except launch-control items EC-20, EC-22, and EC-30. Sprint 45 verifies EC-31 on the frozen candidate; it does not re-own canonical economics (29), PH capability recording (32), shipping/destination honesty (37), or PiqScore/Recommendation (5/6).
+Execute controlled public launch **no later than September 30, 2026** by performing **final go/no-go verification** against all Global Public Beta exit criteria (EC-01…EC-31). Sprint 45 does not re-own implementation for criteria primarily owned by earlier sprints, except launch-control items EC-20, EC-22, and EC-30. Sprint 45 verifies EC-31 on the frozen candidate; it does not re-own canonical economics (29), PH field-evidence recording (32), shipping/destination honesty (37), or PiqScore/Recommendation (5/6).
 
 September 30, 2026 is the owner target launch date. It is not permission to bypass security, privacy/legal, truthfulness, evidence, rehearsal, or production-readiness gates. Reduce optional market/provider/feature scope rather than weaken those gates.
 
@@ -85,8 +85,8 @@ September 30, 2026 is the owner target launch date. It is not permission to bypa
 - Owner target date: no later than September 30, 2026
 - No non-waivable blocker remains
 - Only certified markets named
-- EC-09 capability-policy invariant verified for every named shopping market (declared, evidence-backed, fail-closed enforced; unknown permissions do not enable production features), including recorded effective-cost data capabilities; remove/disable markets or providers that fail rather than weakening the gate
-- EC-31 verified on the frozen launch candidate using actual certified merchant capabilities available at launch: where those sources expose the fields, a real or suitably certified staging case demonstrates that a verified discount can reduce effective cost; a verified applicable voucher can reduce effective cost; known shipping can increase effective cost; effective cost can change offer ordering/Recommendation; a non-affiliate merchant can outrank an affiliate merchant; unknown shipping does not become zero/free; an unverified/conditional voucher does not affect PiqScore; and affiliate commission does not affect the result. Do not require a merchant to expose capabilities it does not provide; expose that limitation honestly.
+- EC-09 capability-policy invariant verified for every named shopping market (declared, evidence-backed, fail-closed enforced; unknown permissions do not enable production features), including effective-cost field evidence that distinguishes technical/source exposure from Sprint 31 policy authorization and from offer/shopper applicability; remove/disable markets or providers that fail rather than weakening the gate
+- EC-31 verified on the frozen launch candidate using actual certified merchant technical exposure and policy permissions available at launch: where those sources expose the fields **and** policy permits their use, a real or suitably certified staging case demonstrates that a verified applicable discount can reduce effective cost; a verified applicable voucher can reduce effective cost; known shipping can increase effective cost; effective cost can change offer ordering/Recommendation; a non-affiliate merchant can outrank an affiliate merchant; unknown shipping does not become zero/free; an unverified/conditional voucher does not affect PiqScore; and affiliate commission does not affect the result. Do not require a merchant to expose fields it does not provide; expose that limitation honestly. Do not treat policy state as proof of technical availability. Do not imply every supported merchant was queried unless execution evidence proves it.
 - Rollback authority on-call
 - Checklist signed
 - Monitoring handoff to Sprint 46 recorded
@@ -95,7 +95,7 @@ September 30, 2026 is the owner target launch date. It is not permission to bypa
 - EC-22 cannot be signed unless the exact CC-01 evidence package is attached.
 - Public launch is no-go if Ask PiqSavi loses context, changes the evaluated set without approved research, mutates canonical PiqScores, fabricates execution, violates affiliate neutrality, ranks by sticker price alone when verified purchase-cost components exist, treats unknown shipping as zero/free, silently subtracts unverified/conditional vouchers from scored effective cost, or fails Results/Compare/Why/mobile continuity.
 - Shopee and Lazada must not be represented as live, approved, production-ready, or contractually usable unless actual certification is complete.
-- A non-affiliate merchant remains fully eligible to become Best Piq / Recommendation.
+- A non-affiliate merchant remains fully eligible to become Best Piq / Recommendation. Affiliate status must never exclude or privilege an otherwise relevant legitimate source. Merchant neutrality is eligibility for routing, not a requirement to query every integrated merchant on every request. Public wording remains Best Piq among the offers PiqSavi evaluated.
 
 ### Additive PiqSavi launch gate (not marked complete)
 

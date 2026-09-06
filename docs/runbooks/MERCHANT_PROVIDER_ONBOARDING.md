@@ -97,20 +97,31 @@ Unknown or unverified permission must not enable production functionality. Use `
 | Credential storage requirements | | | |
 | Prohibited-use clauses | | | |
 | Affiliate agreement independence (affiliate ≠ product-data permission) | | | |
-| Current listing price capability | | | |
-| Seller discount capability | | | |
-| Platform discount capability | | | |
-| Voucher/promotion information capability | | | |
-| Voucher applicability/eligibility capability | | | |
-| Destination-dependent shipping capability | | | |
-| Verified free-shipping-state capability | | | |
-| Unavoidable checkout/other-cost capability | | | |
-| Timestamp/freshness capability | | | |
 | Written approval / evidence location | | | |
 
 Sensitive or high-risk uses (reviews, AI reuse of merchant content, comparison where terms are ambiguous, caching beyond explicit documentation, material transformation) remain unapproved unless supported by suitable evidence.
 
 Do not store privileged legal advice or production secrets in Git.
+
+## Effective-cost field evidence (do not collapse layers)
+
+Preserve **Technical ability ≠ contractual permission.** Do not invent a second authorization system. If `ConnectorCapability` is operation-level rather than field-level, record field exposure here rather than treating policy state as technical availability.
+
+For each component, record A, B, and C separately. Policy states are only `allowed` / `restricted` / `prohibited` / `unknown`.
+
+| Component | A. Technical/source exposure (exposed / not exposed / unknown) | B. Policy authorization | C. Applicability evidence (if relevant) |
+|-----------|---------------------------------------------------------------|-------------------------|----------------------------------------|
+| Current listing price | | | |
+| Seller discount | | | |
+| Platform discount | | | |
+| Voucher/promotion information | | | |
+| Voucher eligibility/applicability information | | | |
+| Destination-dependent shipping | | | |
+| Free-shipping status | | | |
+| Unavoidable checkout/other costs | | | |
+| Timestamp/freshness | | | |
+
+field present ≠ permitted to use. permitted to use ≠ field actually available. voucher available ≠ voucher applicable to this shopper/offer. All required conditions must be satisfied before a component can influence scored effective purchase cost.
 
 ## Certification checklist
 
@@ -219,7 +230,7 @@ Affiliate economics may **not** influence:
 - legal / policy approval
 - provider eligibility
 - routing priority
-- which merchants are searched
+- which sources are eligible for organic consideration
 - evaluated-set inclusion
 - PiqScore
 - Recommendation
@@ -227,7 +238,7 @@ Affiliate economics may **not** influence:
 - organic ordering
 - which merchant wins
 
-Affiliate economics are downstream of the shopping decision. A non-affiliate merchant may become Best Piq. Search inclusion depends on a legitimate data path, not affiliate status.
+Affiliate economics are downstream of the shopping decision. A non-affiliate merchant may become Best Piq. Affiliate status must never exclude or privilege an otherwise relevant legitimate source. Search inclusion depends on a legitimate data path, not affiliate status. Merchant neutrality is eligibility for routing, not a requirement to query every integrated merchant on every request. The router may select actually attempted sources using legitimate non-affiliate operational factors. Public wording remains Best Piq among the offers PiqSavi evaluated.
 
 Affiliate permission is independent of product-data permission. Reduced modes remain possible:
 

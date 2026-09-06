@@ -142,11 +142,14 @@ September uses fields already owned here:
 - provenance/freshness
 
 A discount or voucher may affect scored effective cost / PiqScore only when
-evidence supports applicability to the evaluated offer under the known shopper
-context. Unknown shipping must never become ₱0 / FREE / included / assumed
-negligible. Incomplete offers must keep their truthful price state (for example
-**Price before shipping**) and must not gain an artificial ranking advantage by
-treating unknown costs as zero.
+the field is technically exposed by the authorized path, Sprint 31 policy
+permits its use, **and** evidence supports applicability to the evaluated
+offer under the known shopper context. Field present ≠ permitted to use.
+Permitted to use ≠ field actually available. Voucher available ≠ voucher
+applicable to this shopper/offer. Unknown shipping must never become ₱0 /
+FREE / included / assumed negligible. Incomplete offers must keep their
+truthful price state (for example **Price before shipping**) and must not
+gain an artificial ranking advantage by treating unknown costs as zero.
 
 Preserve the one-dominant-price principle. Existing price-state labels remain
 authoritative. Do not show multiple competing “final” totals on one offer card.

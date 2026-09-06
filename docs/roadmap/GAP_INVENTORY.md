@@ -495,8 +495,9 @@ This addendum does **not** rewrite earlier snapshots. It records owner decisions
 | Owner target | Controlled Public Beta **no later than September 30, 2026** — unchanged |
 | Initial validation focus | Philippines first (market priority, not a two-marketplace-only restriction) |
 | Initial affiliate-monetization targets | Shopee Philippines and Lazada Philippines — not exclusive search coverage; not ranking privileges |
-| Merchant neutrality | Non-affiliate merchants remain fully eligible for PiqScore, Best Piq, and Recommendation |
-| Search inclusion | Legitimate data access only; affiliate status is not the inclusion test; no scraping workaround |
+| Merchant neutrality | Non-affiliate merchants remain fully eligible for routing / PiqScore / Best Piq / Recommendation. Eligibility is not a requirement to query every integrated merchant on every request. Affiliate status must never exclude or privilege an otherwise relevant legitimate source. |
+| Search inclusion | Legitimate data access only; affiliate status is not the inclusion or exclusion test; no scraping workaround; Best Piq among the offers PiqSavi evaluated |
+| Effective-cost evidence layers | Technical/source field exposure ≠ Sprint 31 policy authorization ≠ offer/shopper applicability. Do not treat `CapabilityPolicyState` as technical availability. |
 | TikTok Shop PH | Not September-launch-critical; must not delay Sprint 45 |
 | Effective purchase cost | Reuse Sprint 29 canonical economics; no second price model; no silent PiqScore rewrite |
 | Shipping / voucher honesty | Unknown shipping ≠ ₱0/FREE; only verified applicable discounts/vouchers enter scored effective cost |
