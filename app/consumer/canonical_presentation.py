@@ -54,7 +54,10 @@ from app.domain.entities.offer_economics import (
 )
 from app.domain.entities.research_execution import TrustedMarketContext
 from app.market.context import compose_market_context
-from app.market.invalidation import invalidate_for_destination_change
+from app.market.destination_reevaluation import (
+    DestinationReevaluationAssessment,
+    assess_destination_reevaluation,
+)
 from app.market.selection import SelectedShoppingMarket
 from app.market.support import production_certified_shopping_markets
 from app.services.canonical_offer_economics import money_component_from_canonical
@@ -74,12 +77,9 @@ def page_view_from_snapshot(
     """Build the existing consumer view model from one verified snapshot."""
 
     historical = _delivery_from_snapshot(snapshot)
-    session_differs = _session_differs(historical, session_location)
     trusted = _trusted_from_snapshot(snapshot)
-    invalidation = invalidate_for_destination_change(
-        compose_market_context(trusted_market=trusted, delivery=historical),
-        compose_market_context(trusted_market=trusted, delivery=session_location),
-    )
+    assessment = destination_assessment_from_snapshot(snapshot, session_location)
+    session_differs = assessment.destination_changed
     economics_by_id = {item.product_id: item for item in snapshot.offer_economics}
     highest = max(snapshot.evaluated_products, key=lambda item: item.canonical_piqscore.value)
     cards = tuple(
@@ -153,6 +153,7 @@ def page_view_from_snapshot(
         recommendation_qualified_message=qualified_message,
         session_location_differs=session_differs,
         session_location_label=session_location.display_place or None,
+        session_delivery=session_location,
         presentation_mode="canonical",
         qualification_state=(
             snapshot.qualification.state if snapshot.qualification is not None else None
@@ -160,9 +161,28 @@ def page_view_from_snapshot(
         shopping_market_certified=production_certified_shopping_markets().is_certified(
             trusted.country_code if trusted is not None else None
         ),
-        destination_reevaluation_required=invalidation.reevaluation_required,
+        destination_reevaluation_required=assessment.reevaluation_required,
+        destination_reevaluation_status=assessment.reevaluation_status,
+        destination_reevaluation_disclosure=assessment.disclosure,
+        historical_cost_disclosure=assessment.historical_cost_disclosure,
+        updated_delivery_cost_available=False,
     )
     return attach_currency_presentation(attach_shopping_coverage(view, session_shopping_market))
+
+
+def destination_assessment_from_snapshot(
+    snapshot: CanonicalDecisionSnapshot,
+    session_location: DeliveryContext,
+) -> DestinationReevaluationAssessment:
+    """Server-owned destination comparison for one immutable snapshot."""
+
+    historical = _delivery_from_snapshot(snapshot)
+    trusted = _trusted_from_snapshot(snapshot)
+    return assess_destination_reevaluation(
+        compose_market_context(trusted_market=trusted, delivery=historical),
+        compose_market_context(trusted_market=trusted, delivery=session_location),
+        offer_economics=snapshot.offer_economics,
+    )
 
 
 def _delivery_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> DeliveryContext:
@@ -197,12 +217,6 @@ def _trusted_from_snapshot(snapshot: CanonicalDecisionSnapshot) -> TrustedMarket
         return TrustedMarketContext(country_code=code)
     except ValueError:
         return None
-
-
-def _session_differs(historical: DeliveryContext, session: DeliveryContext) -> bool:
-    if not historical.is_known or not session.is_known:
-        return False
-    return historical.destination_key != session.destination_key
 
 
 def _card_from_product(
@@ -472,9 +486,10 @@ def _unknowns_from_snapshot(
                 items.append(unknown)
     if not snapshot.offer_economics:
         items.append("Offer economics were not captured in this decision snapshot.")
-    if session_differs and session_location.display_place:
+    if session_differs:
+        place = session_location.display_place or "a newly declared destination"
         items.append(
-            f"Your current session location is {session_location.display_place}. "
+            f"Your current session location is {place}. "
             "This historical decision was not re-evaluated for that destination."
         )
     return tuple(items)

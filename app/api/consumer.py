@@ -8,11 +8,20 @@ from typing import Any
 from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 
 from app.consumer import mode as consumer_mode
-from app.consumer.canonical_presentation import page_view_from_snapshot
+from app.consumer.canonical_presentation import (
+    destination_assessment_from_snapshot,
+    page_view_from_snapshot,
+)
 from app.consumer.canonical_resolve import resolve_canonical_snapshot
 from app.consumer.fixtures import DEFAULT_CATALOG_ID, get_decision
 from app.consumer.guest_continuity import ensure_guest_owner_cookie
@@ -280,6 +289,29 @@ async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
     response = RedirectResponse(url=target, status_code=303)
     set_delivery_cookie(response, context)
     return response
+
+
+@router.get("/consumer/decisions/{decision_id}/destination-reevaluation")
+async def destination_reevaluation_state(
+    request: Request,
+    decision_id: str,
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+) -> JSONResponse:
+    """Server-owned destination-change assessment. Does not reprice or mutate."""
+
+    if not is_canonical_uuid(decision_id):
+        return JSONResponse({"detail": "Not found"}, status_code=404)
+    owner = _owner_from_request(request)
+    snapshot = resolve_canonical_snapshot(decision_id, owner, snapshots)
+    if snapshot is None:
+        return JSONResponse({"detail": "Not found"}, status_code=404)
+    session_location = _location_from_request(request)
+    assessment = destination_assessment_from_snapshot(snapshot, session_location)
+    payload = assessment.to_dict()
+    payload["decision_id"] = snapshot.decision_id
+    payload["context_version"] = snapshot.context_version
+    payload["canonical_content_sha256"] = snapshot.content_sha256
+    return JSONResponse(payload)
 
 
 @router.api_route("/consumer/shopping-market", methods=["GET", "POST"], response_model=None)

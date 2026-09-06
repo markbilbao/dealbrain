@@ -271,6 +271,20 @@ main {
   font-size: 0.9rem;
 }
 
+.reevaluation-status {
+  text-align: center;
+  margin: 0 0 1rem;
+}
+
+.reevaluation-label {
+  font-weight: 700;
+}
+
+.reevaluation-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .currency-status {
   text-align: center;
   margin: 0 0 1rem;
