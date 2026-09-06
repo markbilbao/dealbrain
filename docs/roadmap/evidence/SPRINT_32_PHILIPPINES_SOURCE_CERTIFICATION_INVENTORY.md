@@ -321,10 +321,55 @@ No Zalora, Carousell, Shein, or other extra PH retailers are contemplated in rep
 
 ---
 
+## 2026-09-06 owner lock — certification recording and launch scope
+
+This addendum does **not** certify any provider and does not change the merchant-level facts above. Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**.
+
+### Effective-cost field evidence (required at certification)
+
+When a later trusted review creates a PH production certification, each source must record the components below **without treating `CapabilityPolicyState` as technical availability**. Preserve Sprint 31: technical ability ≠ contractual permission. Do not invent a second authorization system.
+
+For each component, record three distinct facts:
+
+| Layer | Meaning | How to record |
+|-------|---------|---------------|
+| A. Technical / source availability | Does the authorized data path actually expose enough data for this component? | Factual/technical evidence about the provider response/path. Reuse existing connector/certification evidence where possible. If `ConnectorCapability` is operation-level rather than field-level, record field exposure in the certification evidence/report. **Not** a policy state. |
+| B. Contractual / policy authorization | May PiqSavi ingest/use/display/transform/compare this field for this provider/market? | Existing Sprint 31 `CapabilityPolicyState` only: `allowed` / `restricted` / `prohibited` / `unknown`. |
+| C. Offer / shopper applicability | Where relevant, does evidence establish applicability to the evaluated offer under the known shopper context? | Offer-level evidence. Required before a discount/voucher may reduce scored effective cost. |
+
+| Component | Technical exposure (A) | Policy (B) | Applicability note (C) |
+|-----------|------------------------|------------|------------------------|
+| Current listing price | Exposed / not exposed / unknown | `allowed` / `restricted` / `prohibited` / `unknown` | Distinct from final effective cost |
+| Seller discount | Exposed / not exposed / unknown | same Sprint 31 states | May reduce scored cost only when applicable to this offer/shopper |
+| Platform discount | Exposed / not exposed / unknown | same Sprint 31 states | Same applicability rule |
+| Voucher/promotion information | Exposed / not exposed / unknown | same Sprint 31 states | Presence ≠ applicability |
+| Voucher eligibility/applicability information | Exposed / not exposed / unknown | same Sprint 31 states | Required before a voucher may reduce scored effective cost |
+| Destination-dependent shipping | Exposed / not exposed / unknown | same Sprint 31 states | Sprint 37 owns honesty; 32 records whether the path can supply it |
+| Free-shipping status | Exposed / not exposed / unknown | same Sprint 31 states | Unknown shipping is not FREE |
+| Unavoidable checkout/other costs | Exposed / not exposed / unknown | same Sprint 31 states | Taxes/duties/import/checkout when the path exposes them |
+| Timestamp/freshness | Exposed / not exposed / unknown | same Sprint 31 states | Required for current-data claims |
+
+Preserved distinctions: field present ≠ permitted to use; permitted to use ≠ field actually available; voucher available ≠ voucher applicable to this shopper/offer. All required conditions must be satisfied before a component can influence scored effective purchase cost.
+
+Provider approval and affiliate approval do not imply technical exposure or policy permission. Do not require a merchant to expose fields it does not provide; record the limitation honestly.
+
+Affiliate permission remains independent from product-data permission. Commission / payout fields remain non-authorization facts.
+
+### Launch-scope notes (do not rewrite historical rows)
+
+- Philippines is the initial commercial/product validation focus.
+- Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets**, not exclusive search coverage and not ranking privileges.
+- Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain **eligible** for routing when a legitimate data path exists. Eligibility is not a requirement to query every integrated merchant on every request.
+- Affiliate status must never exclude or privilege an otherwise relevant legitimate source.
+- **TikTok Shop PH is not launch-critical** for September 2026. Keep the contemplated TikTok inventory rows. Do not destructively remove architecture. Do not claim TikTok was searched unless it was actually queried. Do not give TikTok pre-launch engineering priority over higher-value launch work.
+- Search inclusion depends on a legitimate data path, not affiliate status. Scraping is not a workaround. Public language remains **Best Piq among the offers PiqSavi evaluated**.
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
 - No production evidence catalog rows are seeded.
 - No merchant HTTP, credentials, scraping, or live research is authorized.
 - Shopee remains uncertified and fail-closed.
+- Lazada remains uncertified and fail-closed.
+- TikTok Shop remains uncertified and is not September-launch-critical.
 - Sprint 32 is **not complete**.

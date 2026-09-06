@@ -21,8 +21,10 @@ Freeze claims to evidence, obtain approvals, and rehearse production launch/roll
 - Production launch rehearsal success
 - Launch checklist prepared for sign-off
 - Integrity certification (DealScore/neutrality monitoring on)
-- Verify (do not implement) Sprint 37 shipping-honesty and unsupported-market public wording (P1-2 / P1-1B claims check)
-- Verify (do not implement) that every market/merchant named in the coverage matrix has Sprint 32–36 capability-policy evidence: declared, evidence-backed, fail-closed enforced; omit/disable markets or providers lacking it rather than weakening the gate
+- Verify (do not implement) Sprint 37 shipping-honesty and unsupported-market public wording (P1-2 / P1-1B claims check), including that unknown shipping is never presented as ₱0 / FREE without evidence
+- Verify (do not implement) that every market/merchant named in the coverage matrix has Sprint 32–36 capability-policy evidence: declared, evidence-backed, fail-closed enforced, plus effective-cost field evidence that distinguishes technical/source exposure from Sprint 31 policy authorization and from offer/shopper applicability; omit/disable markets or providers lacking it rather than weakening the gate
+- Verify (do not implement) that public coverage language stays scoped to **Best Piq among the offers PiqSavi evaluated**; does not imply every supported merchant was queried unless execution evidence proves it; does not imply universal marketplace completeness; does not name TikTok Shop unless actually supported; and does not call Shopee or Lazada live/certified/production-ready without certification
+- Verify (do not implement) EC-31 effective-purchase-cost honesty and affiliate neutrality: non-affiliate merchants remain eligible for Best Piq; affiliate status never excludes or privileges an otherwise relevant legitimate source; unverified/conditional vouchers do not affect PiqScore; affiliate commission does not affect the result
 - Verify, but do not implement, CC-01 Conversational Continuity on the frozen staging candidate.
 - Verify that every conversational answer and research/loading claim maps to captured evidence or an actual execution record.
 - Verify that session Recommendation refinement leaves canonical PiqScores unchanged.

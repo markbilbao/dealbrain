@@ -51,3 +51,7 @@ Source offer currency is monetary truth. Preferred/display currency (PHP on PH M
 ## Out of scope
 
 Live FX provider / EXT-23 credentials and production quotes, live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.
+
+## 2026-09-06 owner lock addendum
+
+The September launch lock reaffirms this ADR: unknown shipping/tax/import stay unknown; verified `0` may be FREE; unknown or estimated `0` may not. Destination-sensitive shipping participates in Sprint 29 canonical effective purchase cost when known. Server-side re-evaluation remains the only legitimate destination-change path. This addendum does not implement live re-evaluation, create a second price model, or pull Sprint 47 into pre-launch.

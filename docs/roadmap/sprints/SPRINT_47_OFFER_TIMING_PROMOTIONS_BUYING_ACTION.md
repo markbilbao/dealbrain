@@ -16,6 +16,8 @@ This sprint does not replace canonical PiqScore or canonical Recommendation.
 
 - Sprint 47 is **not** a prerequisite for Sprint 45.
 - Date pressure on September 30, 2026 must not pull this work into pre-launch scope.
+- The 2026-09-06 effective-purchase-cost launch lock is a clarification of existing Sprint 29 canonical offer economics and Sprint 37 shipping honesty. It does **not** implement 47.1–47.5 and does **not** move these items into September: historical campaign prediction; promotion timing intelligence; Buy Now / Wait / Watch layer; future-sale prediction; campaign-aware Wait; price-drop monitoring.
+- September only requires correct use of currently verified purchase-cost information available during the evaluated decision.
 - Buying Action does **not** replace canonical Recommendation.
 - Do not reinterpret current canonical `Wait` as guaranteed future promotion timing.
 - Campaign-aware Wait requires evidence.
@@ -79,6 +81,7 @@ Personal urgency (`need it by`) is a Layer 3/4 input, not a PiqScore input.
 
 - Blocking or delaying Sprint 45
 - Reopening Sprints 29–46 as implementation owners for this item
+- Absorbing the 2026-09-06 effective-purchase-cost launch lock as Sprint 47 pre-work
 - Scraping
 - Inventing 8.8 / 9.9 / 11.11 discounts
 - Guaranteed lowest price or “smartest deal” claims
@@ -107,7 +110,7 @@ None with Sprint 45.
 
 ## Go / no-go gate
 
-Post-beta only. Cannot be used to satisfy EC-01…EC-30.
+Post-beta only. Cannot be used to satisfy EC-01…EC-31.
 
 ## Rollback or contingency
 

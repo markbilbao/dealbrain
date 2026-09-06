@@ -95,6 +95,16 @@ Ship a coherent MarketContext with honest currency, localization, unsupported-ma
 - Country/market, currency, FX, locale, destination context, shipping-market honesty, unsupported-market behavior, cross-border cost semantics, delivery-location decision context
 - **Destination re-evaluation (locked):** if changing destination could materially change shipping/effective buying cost, PiqSavi must perform server-side re-evaluation using supported evidence. Do not implement client-side fake repricing. Potential result may change shipping, effective cost, qualification, and Best Piq. Canonical PiqScore changes only through a legitimate new/re-evaluated decision, not presentation manipulation.
 
+### 2026-09-06 owner lock — shipping and effective-cost honesty
+
+This lock strengthens existing P1-2 / destination-re-evaluation rules. It does **not** close Sprint 37, start a second price model, or pull Sprint 47 into pre-launch.
+
+- Unknown shipping must never become ₱0, FREE, included, or assumed negligible unless evidence supports that state.
+- If destination-specific shipping is known, it participates in Sprint 29 canonical effective purchase cost.
+- If shipping materially depends on shopper destination and the shopper supplies or changes destination, use this sprint's server-side re-evaluation contract. No client-side fake repricing.
+- Ranking/comparison must not give an incomplete offer an artificial advantage by treating unknown shipping or other unknown costs as zero.
+- September beta uses currently verified purchase-cost information from canonical offer economics. Historical campaign prediction, promotion timing, Buy Now / Wait / Watch, and price-drop monitoring remain Sprint 47 / post-beta.
+
 ## Explicit non-goals
 
 - Full multilingual product

@@ -69,6 +69,24 @@ Sprint 31 owns the **shared contractual/policy layer** that market certification
 - country / market scope
 - post-termination disablement or deletion obligations
 
+**Effective-cost field evidence (additive for later 32–36 population; does not reopen this sprint; does not create a second authorization system).** Preserve **Technical ability ≠ contractual permission.** For each effective-cost component, certification evidence must distinguish three facts:
+
+| Layer | Question | Record as |
+|-------|----------|-----------|
+| A. Technical / source availability | Does the authorized data path actually expose enough data for this component? | Factual/technical evidence about the provider response/path. Reuse existing connector/certification evidence where possible. If `ConnectorCapability` is operation-level rather than field-level, record field exposure in the certification evidence/report. This is **not** `CapabilityPolicyState`. |
+| B. Contractual / policy authorization | May PiqSavi ingest, use, display, transform, or compare that field for this provider/market? | Existing Sprint 31 policy states only: `allowed` / `restricted` / `prohibited` / `unknown`. |
+| C. Offer / shopper applicability | Where relevant, does evidence establish that this discount/voucher/shipping state applies to the evaluated offer under the known shopper context? | Offer-level evidence. Not a policy state and not technical exposure. |
+
+Components to record at those three layers (not every provider must expose every item): current listing price; seller discount; platform discount; voucher/promotion information; voucher eligibility/applicability information; destination-dependent shipping; free-shipping status; unavoidable checkout/other costs where exposed; timestamp/freshness.
+
+Preserved distinctions:
+
+- field present ≠ permitted to use
+- permitted to use ≠ field actually available
+- voucher available ≠ voucher applicable to this shopper/offer
+
+All three required conditions must be satisfied before a component can influence scored effective purchase cost. Provider approval and affiliate approval do not imply technical exposure or policy permission for these fields.
+
 **Reduced modes remain possible** and must be representable:
 
 - Data/compare permitted, affiliate not permitted → organic comparison/ranking may operate without monetization.
@@ -193,3 +211,4 @@ Feature-flag unified router; keep dual-run
 - Does not silently redistribute Architecture Lock ownership for Sprints 1–25.
 - Completion requires listed evidence maturity, not code presence alone.
 - Connector/market sprints require real provider evidence when claiming supported markets.
+- The 2026-09-06 effective-cost field-evidence list is additive documentation for later 32–36 population. It does **not** reopen this closed sprint, does **not** treat `CapabilityPolicyState` as technical field availability, and does **not** create a parallel authorization model.
