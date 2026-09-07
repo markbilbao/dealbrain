@@ -61,7 +61,10 @@ async def test_password_recovery_and_verification_presentation(client: AsyncClie
     reset_token = await client.get("/reset-password", params={"token": "sample-token"})
     verify = await client.get("/verify-email")
     verify_token = await client.get("/verify-email", params={"token": "sample-token"})
-    assert "If an account exists for that address, we'll send password-reset instructions." in reset.text
+    assert (
+        "If an account exists for that address, we'll send password-reset instructions."
+        in reset.text
+    )
     assert 'data-account-form="reset-request"' in reset.text
     assert 'data-account-form="reset-confirm"' in reset_token.text
     assert 'name="token" value="sample-token"' in reset_token.text

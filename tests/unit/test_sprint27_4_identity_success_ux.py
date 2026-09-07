@@ -5,14 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from httpx import AsyncClient
-
 from app.consumer.account_pages import (
     render_account_settings_page,
     render_confirm_email_change_page,
     render_reset_password_page,
     render_verify_email_page,
 )
+from httpx import AsyncClient
 
 ROOT = Path(__file__).resolve().parents[2]
 ACCOUNT_JS = (ROOT / "app/static/consumer/js/account.js").read_text(encoding="utf-8")
@@ -33,7 +32,7 @@ def _section(html: str, start_marker: str, end_marker: str | None = None) -> str
 
 
 def _signed_in_html() -> str:
-    start = ACCOUNT_HTML.index('data-account-signed-in')
+    start = ACCOUNT_HTML.index("data-account-signed-in")
     return ACCOUNT_HTML[start:]
 
 
@@ -53,7 +52,7 @@ def test_account_page_exposes_email_change_only_when_signed_in() -> None:
     assert "Send confirmation" in signed_in
     assert "Change email" in signed_in
     assert "We'll send a confirmation link there before changing your account." in signed_in
-    assert 'data-email-change-status' in signed_in
+    assert "data-email-change-status" in signed_in
     assert 'role="status"' in signed_in
     assert 'aria-live="polite"' in signed_in
     assert 'data-account-form="email-change"' not in signed_out
@@ -65,9 +64,9 @@ def test_account_page_exposes_email_change_only_when_signed_in() -> None:
 def test_verified_account_state_does_not_prompt_verification_by_default() -> None:
     assert "data-account-verify-needed hidden" in ACCOUNT_HTML
     assert "Verify your email" in ACCOUNT_HTML
-    assert 'payload.email_verified' in ACCOUNT_JS
-    assert 'verifyNeeded.hidden = true' in ACCOUNT_JS
-    assert 'verifyNeeded.hidden = false' in ACCOUNT_JS
+    assert "payload.email_verified" in ACCOUNT_JS
+    assert "verifyNeeded.hidden = true" in ACCOUNT_JS
+    assert "verifyNeeded.hidden = false" in ACCOUNT_JS
     assert 'textContent = "Verified"' in ACCOUNT_JS
     assert "Request or confirm email verification" not in ACCOUNT_JS
 
@@ -88,9 +87,9 @@ def test_email_change_confirm_page_does_not_claim_success_before_submit() -> Non
     assert 'data-account-form="email-change-confirm"' in CONFIRM_TOKEN_HTML
     assert "Confirm email change" in CONFIRM_TOKEN_HTML
     assert "Email changed" in CONFIRM_TOKEN_HTML
-    assert 'data-identity-success hidden' in CONFIRM_TOKEN_HTML
-    assert 'data-identity-failure hidden' in CONFIRM_TOKEN_HTML
-    assert 'data-identity-pending hidden' not in CONFIRM_TOKEN_HTML
+    assert "data-identity-success hidden" in CONFIRM_TOKEN_HTML
+    assert "data-identity-failure hidden" in CONFIRM_TOKEN_HTML
+    assert "data-identity-pending hidden" not in CONFIRM_TOKEN_HTML
     pending = _section(CONFIRM_TOKEN_HTML, "data-identity-pending", "data-identity-success")
     assert "Email changed" not in pending
     assert "updated and verified" not in pending
@@ -116,23 +115,31 @@ def test_email_change_confirm_js_clears_local_auth_and_hides_form() -> None:
     assert 'revealIdentityOutcome("failure")' in ACCOUNT_JS
     assert "pendingIdentityToken" in ACCOUNT_JS
     assert "consumeUrlToken" in ACCOUNT_JS
-    assert "searchParams.delete(\"token\")" in ACCOUNT_JS
+    assert 'searchParams.delete("token")' in ACCOUNT_JS
     assert "Sign in again using your new email address." in CONFIRM_TOKEN_HTML
     assert 'href="/login"' in CONFIRM_TOKEN_HTML
 
 
 def test_verification_and_reset_final_states_hide_active_forms() -> None:
-    assert 'data-identity-success hidden' in VERIFY_CONFIRM_HTML
+    assert "data-identity-success hidden" in VERIFY_CONFIRM_HTML
     assert "Email verified" in VERIFY_CONFIRM_HTML
     assert "Your email address has been verified." in VERIFY_CONFIRM_HTML
     assert "Continue to account" in VERIFY_CONFIRM_HTML
-    assert "Confirm email" in _section(VERIFY_CONFIRM_HTML, "data-identity-pending", "data-identity-success")
-    assert "Confirm email" not in _section(VERIFY_CONFIRM_HTML, "data-identity-success", "data-identity-failure")
+    assert "Confirm email" in _section(
+        VERIFY_CONFIRM_HTML, "data-identity-pending", "data-identity-success"
+    )
+    assert "Confirm email" not in _section(
+        VERIFY_CONFIRM_HTML, "data-identity-success", "data-identity-failure"
+    )
     assert "Password reset" in RESET_CONFIRM_HTML
     assert "Your password has been updated." in RESET_CONFIRM_HTML
     assert "You can now sign in using your new password." in RESET_CONFIRM_HTML
-    assert "Set new password" in _section(RESET_CONFIRM_HTML, "data-identity-pending", "data-identity-success")
-    assert "Set new password" not in _section(RESET_CONFIRM_HTML, "data-identity-success", "data-identity-failure")
+    assert "Set new password" in _section(
+        RESET_CONFIRM_HTML, "data-identity-pending", "data-identity-success"
+    )
+    assert "Set new password" not in _section(
+        RESET_CONFIRM_HTML, "data-identity-success", "data-identity-failure"
+    )
     assert "Request a new reset link" in RESET_CONFIRM_HTML
     assert 'revealIdentityOutcome("success")' in ACCOUNT_JS
     assert '"/api/v1/auth/verify-email/confirm"' in ACCOUNT_JS
@@ -141,9 +148,15 @@ def test_verification_and_reset_final_states_hide_active_forms() -> None:
 
 def test_request_sent_states_are_enumeration_safe() -> None:
     assert "Check your email" in RESET_REQUEST_HTML
-    assert "If an account exists for that address, we've sent password-reset instructions." in RESET_REQUEST_HTML
+    assert (
+        "If an account exists for that address, we've sent password-reset instructions."
+        in RESET_REQUEST_HTML
+    )
     assert "Check your email" in VERIFY_REQUEST_HTML
-    assert "If an account exists for that address, we've sent a verification link." in VERIFY_REQUEST_HTML
+    assert (
+        "If an account exists for that address, we've sent a verification link."
+        in VERIFY_REQUEST_HTML
+    )
     assert "demo token" not in RESET_REQUEST_HTML.lower()
     assert "demo token" not in VERIFY_REQUEST_HTML.lower()
     assert "Sprint 27" not in RESET_REQUEST_HTML
@@ -155,7 +168,11 @@ def test_request_sent_states_are_enumeration_safe() -> None:
 
 def test_identity_success_and_error_copy_never_includes_raw_tokens() -> None:
     for html in (CONFIRM_TOKEN_HTML, VERIFY_CONFIRM_HTML, RESET_CONFIRM_HTML, ACCOUNT_JS):
-        assert "sample-token" not in _section(html, "data-identity-success") if "data-identity-success" in html else True
+        assert (
+            "sample-token" not in _section(html, "data-identity-success")
+            if "data-identity-success" in html
+            else True
+        )
         assert "reset_token_demo_only" not in html
         assert "verification_token_demo_only" not in html
         assert "email_change_token_demo_only" not in html
@@ -184,7 +201,7 @@ async def test_confirm_email_change_route_is_noindex_and_omits_query_token(
     assert page.headers.get("X-Robots-Tag") == "noindex, nofollow"
     assert secret not in page.text
     assert 'data-account-form="email-change-confirm"' in page.text
-    assert 'data-identity-success hidden' in page.text
+    assert "data-identity-success hidden" in page.text
     assert "This email-change link is invalid or has expired." in missing.text
     assert "Your email address has been updated and verified." not in _section(
         missing.text, "data-identity-failure"
@@ -203,7 +220,10 @@ async def test_account_and_identity_pages_keep_existing_export_delete_surfaces(
     assert "Watch is not available yet" in account.text
     assert 'data-account-form="email-change"' in account.text
     assert "Change email" in account.text
-    assert "If an account exists for that address, we'll send password-reset instructions." in reset.text
+    assert (
+        "If an account exists for that address, we'll send password-reset instructions."
+        in reset.text
+    )
     assert "If an account exists for that address, we'll send a verification link." in verify.text
 
 

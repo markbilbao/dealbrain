@@ -36,7 +36,7 @@ def _identity_panels(
         if not body:
             continue
         hidden = "" if name == start else " hidden"
-        sections.append(f'<div data-identity-{name}{hidden}>{body}</div>')
+        sections.append(f"<div data-identity-{name}{hidden}>{body}</div>")
     return "".join(sections)
 
 
