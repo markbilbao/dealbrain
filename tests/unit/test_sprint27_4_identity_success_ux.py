@@ -116,6 +116,8 @@ def test_email_change_confirm_js_clears_local_auth_and_hides_form() -> None:
     assert "pendingIdentityToken" in ACCOUNT_JS
     assert "consumeUrlToken" in ACCOUNT_JS
     assert 'searchParams.delete("token")' in ACCOUNT_JS
+    assert 'page === "verify-email"' in ACCOUNT_JS
+    assert 'page === "reset-password"' in ACCOUNT_JS
     assert "Sign in again using your new email address." in CONFIRM_TOKEN_HTML
     assert 'href="/login"' in CONFIRM_TOKEN_HTML
 

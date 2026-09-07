@@ -175,6 +175,10 @@ function bindIdentityToken() {
     if (!pendingIdentityToken) {
       revealIdentityOutcome("failure");
     }
+    return;
+  }
+  if (page === "verify-email" || page === "reset-password") {
+    consumeUrlToken();
   }
 }
 
