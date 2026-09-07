@@ -42,7 +42,7 @@ Use affiliate links for those merchants where affiliate approval/tracking is ava
 - production certification remains evidence-based;
 - do not falsely mark Shopee or Lazada as live, approved, production-ready, or contractually usable until actual certification is complete.
 
-### 2026-09-07 owner lock (documentation only; does not close this sprint)
+### 2026-09-07 owner lock (primarily roadmap/policy plus narrow launch-UI honesty; does not close this sprint)
 
 **Affiliate monetization is deferred for the September public beta.** Shopee and Lazada are no longer September affiliate launch dependencies. Optimise/Lazada affiliate approval, Shopee affiliate approval, tracking access, payout setup, or network credentials must not block Sprint 32 closure or Sprint 45. The 2026-09-06 “initial affiliate-monetization targets” clause is superseded for launch sequencing; it remains a historical record.
 

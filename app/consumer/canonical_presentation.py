@@ -130,9 +130,11 @@ def page_view_from_snapshot(
         highest_piqscore_name=highest.display_name,
         recommendation_decision=snapshot.recommendation.decision,
         shopper=_shopper_from_snapshot(snapshot, historical, best),
-        # Launch UUID pages use ordinary outbound merchant links. Per-action
-        # affiliate disclosure is injected only when an affiliate relationship
-        # is actually attached to that action.
+        # September beta canonical UUID pages use ordinary outbound merchant
+        # links and therefore do not render an active-affiliate disclosure.
+        # Future affiliate activation must explicitly attach the appropriate
+        # disclosure together with the affiliate action; that path is not
+        # enabled by this launch lock.
         affiliate_disclosure="",
         freshness_disclaimer=FRESHNESS_DISCLAIMER,
         data_classification=snapshot.data_classification,

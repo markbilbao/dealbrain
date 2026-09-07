@@ -1,7 +1,11 @@
 """2026-09-07 lock: public beta without affiliate monetization.
 
-Documentation/configuration review only. Affiliate architecture stays.
-Ranking/scoring paths must remain monetization-unaware.
+Primarily roadmap/policy reconciliation plus a narrow launch-UI honesty
+change that removes inactive affiliate-disclosure copy from canonical UUID
+pages. Affiliate architecture stays. Ranking/scoring paths must remain
+monetization-unaware. This lock does not modify PiqScore or Recommendation,
+enable affiliate tracking, add affiliate credentials, certify merchants,
+start Sprint 38, or publish legal documents.
 """
 
 from __future__ import annotations
@@ -150,12 +154,15 @@ def _snapshot() -> CanonicalDecisionSnapshot:
 
 def test_owner_lock_records_zero_affiliate_public_beta() -> None:
     roadmap = _read("docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md")
-    assert "OWNER ROADMAP LOCK — 2026-09-07" in roadmap
-    assert "PUBLIC BETA MONETIZATION DEFERRED — PRODUCT VALIDATION LAUNCH LOCKED" in roadmap
-    assert "without affiliate monetization" in roadmap
-    assert "Affiliate revenue is not a launch requirement" in roadmap
-    assert "September 30, 2026" in roadmap
-    assert "ordinary outbound merchant links" in roadmap
+    lock = roadmap.split("OWNER ROADMAP LOCK — 2026-09-07", 1)[1].split("## 0.", 1)[0]
+    assert "PUBLIC BETA MONETIZATION DEFERRED — PRODUCT VALIDATION LAUNCH LOCKED" in lock
+    assert "without affiliate monetization" in lock
+    assert "Affiliate revenue is not a launch requirement" in lock
+    assert "September 30, 2026" in lock
+    assert "ordinary outbound merchant links" in lock
+    assert "documentation/configuration only" not in lock
+    assert "primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change" in lock
+    assert "app/consumer/canonical_presentation.py" in lock
     sprint32 = _read("docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md")
     assert "**Status:** In progress" in sprint32
     assert "Sprint 32 is **not complete**" in sprint32
@@ -262,6 +269,10 @@ def test_incomplete_sprints_are_not_marked_complete() -> None:
 
 
 def test_canonical_uuid_pages_omit_inactive_affiliate_disclosure() -> None:
+    source = _read("app/consumer/canonical_presentation.py")
+    assert "injected only when an affiliate relationship is actually attached" not in source
+    assert "do not render an active-affiliate disclosure" in source
+    assert "enabled by this launch lock" in source
     view = page_view_from_snapshot(
         _snapshot(),
         page="results",

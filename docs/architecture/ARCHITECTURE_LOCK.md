@@ -329,7 +329,7 @@ The 2026-09-06 PH-beta merchant-neutrality and effective-cost lock does **not** 
 
 Affiliate availability and commission must never include/exclude a source from organic consideration, prioritize a source, or alter PiqScore, Recommendation, Best Piq, or which merchant wins. Merchant neutrality is eligibility for routing, not a requirement to query every integrated merchant on every request. Public wording remains Best Piq among the offers PiqSavi evaluated.
 
-### 15.2 2026-09-07 owner lock (additive; documentation)
+### 15.2 2026-09-07 owner lock (additive; primarily roadmap plus narrow launch-UI honesty)
 
 The 2026-09-07 public-beta-without-affiliate-monetization lock does **not** redistribute Architecture Lock ownership and does **not** delete Sprint 20.
 

@@ -21,4 +21,4 @@
 
 Keep this disclosure architecture. Do not delete it. The published Affiliate & Advertising Disclosure may remain future-capable with conditional wording (“may”, “where active”).
 
-Launch UI must **not** show active-affiliate disclosure such as “Affiliate link” or “PiqSavi may earn a commission” next to ordinary outbound merchant links when no affiliate relationship is actually active for that action. Per-action labels are only valid when an affiliate relationship is actually attached to that action. This note does not publish legal documents and does not claim counsel approval.
+Launch UI must **not** show active-affiliate disclosure such as “Affiliate link” or “PiqSavi may earn a commission” next to ordinary outbound merchant links. Canonical UUID pages omit inactive affiliate-disclosure copy. Future affiliate activation must explicitly attach the appropriate disclosure together with the affiliate action; that path is not enabled by this launch lock. This note does not publish legal documents and does not claim counsel approval.

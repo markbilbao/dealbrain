@@ -91,8 +91,10 @@ Affiliate wrapping stays downstream. Commission cannot influence PiqScore,
 Recommendation, Best Piq, qualification, or ranking.
 
 September 2026 public beta launches without affiliate monetization. Canonical
-UUID pages must not inject per-action commission claims next to ordinary
-outbound merchant URLs. Affiliate attachment, if later activated, remains
+UUID pages do not render an active-affiliate disclosure next to ordinary
+outbound merchant URLs. Future affiliate activation must explicitly attach the
+appropriate disclosure together with the affiliate action; that path is not
+enabled by this launch lock. Affiliate attachment, if later activated, remains
 downstream of the captured organic decision.
 
 ## Capture path

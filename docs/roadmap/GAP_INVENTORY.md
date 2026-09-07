@@ -530,7 +530,7 @@ This addendum does **not** rewrite earlier snapshots. It records owner decisions
 
 ## 2026-09-07 owner lock addendum — public beta without affiliate monetization
 
-This addendum does **not** rewrite earlier snapshots. It records the owner decision dated 2026-09-07. Documentation only; no merchant is certified; affiliate architecture is not deleted; Sprint 47 remains post-beta.
+This addendum does **not** rewrite earlier snapshots. It records the owner decision dated 2026-09-07. Primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change that removes inactive affiliate-disclosure copy from canonical UUID pages; no merchant is certified; affiliate architecture is not deleted; Sprint 47 remains post-beta.
 
 | Field | Value |
 |-------|-------|
