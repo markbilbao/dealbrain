@@ -86,8 +86,8 @@ This inventory records every material Global Public Beta requirement and its cov
 
 | Requirement | Class | Evidence / notes | Owning sprint |
 |-------------|-------|------------------|---------------|
-| Transactional email provider | `implemented_needs_staging_proof` | Resend adapter + fail-closed staging/prod factory; EXT-08 still `applied` not provisioned | 27 |
-| Sender-domain verification | `externally_blocked` | EXT-09 DNS **plan** only; not applied/verified | 27 |
+| Transactional email provider | `implemented_needs_staging_proof` | Resend adapter + fail-closed staging/prod factory; 27.3 staging config contract ready; EXT-08 still `applied` not provisioned | 27 |
+| Sender-domain verification | `externally_blocked` | EXT-09 DNS **plan** only; operator runbook ready; not applied/verified | 27 |
 | Password-reset email | `implemented_needs_staging_proof` | Resend-backed send path; no staging inbox evidence yet | 27 |
 | Verification email | `implemented_needs_staging_proof` | Same | 27 |
 | Reset-token expiry / invalidation | `implemented_needs_staging_proof` | Confirm + expiry + consume; inbox E2E still required | 27 |
@@ -497,7 +497,7 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 | Field | Value |
 |-------|-------|
 | Sprint 28 | In progress. 28.1 legal publication gate, consent records, delete/export APIs, inventories, and private-URL noindex implemented. Sprint 28 is **not complete**. |
-| Sprint 27 | Unchanged: in progress, not complete |
+| Sprint 27 | In progress. 27.3 code/config cutover readiness implemented. EXT-09 DNS not verified. Real inbox E2E not done. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. |
 | Sprint 37 | Unchanged: in progress, not complete |
 | Sprint 32 | Unchanged: in progress, blocked on external certification |
 | EXT-19 | Unchanged: `applied` — written approval not present |

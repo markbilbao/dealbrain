@@ -339,6 +339,8 @@ class TestEnvironmentSafety:
         assert sender.from_header == "PiqSavi <no-reply@piqsavi.com>"
         status = identity_email_status(cfg)
         assert status["adapter"] == "resend"
+        assert status["configured"] is True
+        assert status["external_evidence"] == "pending"
         assert status["ready"] is False
 
     def test_staging_uses_resend_when_configured(self) -> None:
@@ -383,6 +385,8 @@ class TestEnvironmentSafety:
         assert isinstance(sender, NullEmailSender)
         status = identity_email_status(cfg)
         assert status["adapter"] == "null"
+        assert status["configured"] is False
+        assert status["external_evidence"] == "pending"
         assert status["ready"] is False
         result = validate_settings(cfg)
         assert result.ok is False

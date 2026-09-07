@@ -2,7 +2,7 @@
 
 This document covers two separate email ports. Do not merge them.
 
-## Identity transactional email (Sprint 27.1 + 27.2)
+## Identity transactional email (Sprint 27.1 + 27.2 + 27.3)
 
 **Port:** `EmailSender` in `app/auth/email.py`  
 **Adapters:** `NullEmailSender` (development/test) and `ResendEmailSender` (`app/auth/email_resend.py`)  
@@ -28,11 +28,23 @@ Configuration (no secrets in git):
 - `PUBLIC_APP_BASE_URL` (trusted link base; never request `Host`)
 
 EXT-08 remains `applied` (account establishment). EXT-09 remains `applied`
-(DNS plan only). 27.1/27.2 do **not** claim sender-domain verification or
+(DNS plan only). 27.1/27.2/27.3 do **not** claim sender-domain verification or
 production email readiness. Health/config `identity_email_ready` stays
-`false` while that evidence is missing — including staging on
-`NullEmailSender`. Email-change confirmation uses the same `EmailSender`
+`false` while that evidence is missing — including when the Resend adapter
+is configured. Email-change confirmation uses the same `EmailSender`
 port and PiqSavi templates; it does not call Resend from auth service code.
+
+Staging cutover contract (non-secret; 27.3):
+
+- `TRANSACTIONAL_EMAIL_PROVIDER=resend` when `dealbrain/staging/resend_api_key` is present
+- `TRANSACTIONAL_EMAIL_FROM=no-reply@piqsavi.com`
+- `TRANSACTIONAL_EMAIL_FROM_NAME=PiqSavi`
+- `PUBLIC_APP_BASE_URL=https://staging.piqsavi.com` (trusted action-link origin; not TLS proof)
+- `ALLOW_DEMO_RESET_TOKENS=false`
+- `RESEND_API_KEY` from Secrets Manager only
+
+Operator runbook: [`runbooks/EXT_09_RESEND_DNS.md`](runbooks/EXT_09_RESEND_DNS.md)  
+Staging E2E template: [`roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md`](roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md)
 
 Sprint 19 notification email below is unchanged and still mock-only.
 

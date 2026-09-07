@@ -15,6 +15,7 @@ from app.auth.email import EmailDeliveryError, EmailMessage, EmailSender
 
 RESEND_EMAILS_URL = "https://api.resend.com/emails"
 _DEFAULT_TIMEOUT_SECONDS = 10.0
+_GENERIC_FAILURE = "Transactional email delivery failed."
 
 
 class ResendEmailSender(EmailSender):
@@ -33,7 +34,9 @@ class ResendEmailSender(EmailSender):
         sender = (from_address or "").strip()
         if not key:
             raise EmailDeliveryError("Resend API key is not configured.")
-        if not sender:
+        if _looks_like_placeholder(key):
+            raise EmailDeliveryError("Resend API key is not configured.")
+        if not _is_usable_from_address(sender):
             raise EmailDeliveryError("Transactional sender address is not configured.")
         self._api_key = key
         self._from_address = sender
@@ -69,9 +72,14 @@ class ResendEmailSender(EmailSender):
         except EmailDeliveryError:
             raise
         except Exception as exc:
-            raise EmailDeliveryError("Transactional email delivery failed.") from exc
-        if response.status_code >= 400:
-            raise EmailDeliveryError("Transactional email delivery failed.")
+            raise EmailDeliveryError(_GENERIC_FAILURE) from exc
+        status = getattr(response, "status_code", None)
+        try:
+            code = int(status)
+        except (TypeError, ValueError) as exc:
+            raise EmailDeliveryError(_GENERIC_FAILURE) from exc
+        if code < 200 or code >= 300:
+            raise EmailDeliveryError(_GENERIC_FAILURE)
 
     def _default_http_post(
         self,
@@ -82,3 +90,37 @@ class ResendEmailSender(EmailSender):
         timeout: float,
     ) -> httpx.Response:
         return httpx.post(url, json=json, headers=headers, timeout=timeout)
+
+
+def _is_usable_from_address(value: str) -> bool:
+    sender = (value or "").strip()
+    if not sender or "@" not in sender or " " in sender:
+        return False
+    local, _, domain = sender.partition("@")
+    if not local or not domain or "." not in domain:
+        return False
+    return not _looks_like_placeholder(sender)
+
+
+def _looks_like_placeholder(value: str) -> bool:
+    lowered = value.strip().lower()
+    if not lowered:
+        return True
+    if lowered in {
+        "change_me",
+        "changeme",
+        "replace_me",
+        "password",
+        "secret",
+        "todo",
+        "placeholder",
+        "example",
+        "test",
+        "dev",
+    }:
+        return True
+    if "change_me" in lowered or "replace_me" in lowered:
+        return True
+    if lowered.startswith("<") and lowered.endswith(">"):
+        return True
+    return lowered.startswith("${") and lowered.endswith("}")

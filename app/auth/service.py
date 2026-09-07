@@ -665,7 +665,12 @@ class AuthService:
         if not base:
             return None
         try:
-            return build_trusted_action_url(base, path, token)
+            return build_trusted_action_url(
+                base,
+                path,
+                token,
+                require_https=app_settings.is_production,
+            )
         except UserPlatformValidationError:
             return None
 
