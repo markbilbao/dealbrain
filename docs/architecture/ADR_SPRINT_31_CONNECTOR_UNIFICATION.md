@@ -377,6 +377,8 @@ Unchanged by this disposition:
 
 Unchanged. Shopee affiliate, Admitad / Mitgo, Optimise, and Involve Asia remain downstream monetization. They are not certification authority, routing authority, merchant-data permission authority, or PiqScore / Recommendation inputs. This branch contains no affiliate implementation.
 
+**2026-09-07 additive note:** September public beta launches without affiliate monetization. Those networks are not September launch dependencies. Do not delete this downstream architecture. Affiliate approval is not product-data permission.
+
 ## Remaining follow-up items
 
 | Item | Status |

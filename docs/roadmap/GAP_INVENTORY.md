@@ -523,5 +523,23 @@ This addendum does **not** rewrite earlier snapshots. It records owner decisions
 | Effective purchase cost | Reuse Sprint 29 canonical economics; no second price model; no silent PiqScore rewrite |
 | Shipping / voucher honesty | Unknown shipping ≠ ₱0/FREE; only verified applicable discounts/vouchers enter scored effective cost |
 | Sprint 47 | Remains post-beta. Do not pull campaign prediction, Buy Now/Wait/Watch, or price-drop monitoring into September |
-| Launch evidence | Sprint 45 verifies EC-31 on the frozen candidate using actual certified capabilities |
+| Launch evidence | Sprint 45 verifies EC-31 on the frozen candidate using actual certified capabilities. Mixed affiliate/non-affiliate runtime proof is conditional (2026-09-07). |
 | Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) §9.5; [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md); [`sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md`](sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md); [`sprints/SPRINT_47_OFFER_TIMING_PROMOTIONS_BUYING_ACTION.md`](sprints/SPRINT_47_OFFER_TIMING_PROMOTIONS_BUYING_ACTION.md) |
+
+---
+
+## 2026-09-07 owner lock addendum — public beta without affiliate monetization
+
+This addendum does **not** rewrite earlier snapshots. It records the owner decision dated 2026-09-07. Primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change that removes inactive affiliate-disclosure copy from canonical UUID pages; no merchant is certified; affiliate architecture is not deleted; Sprint 47 remains post-beta.
+
+| Field | Value |
+|-------|-------|
+| Verdict | **PUBLIC BETA MONETIZATION DEFERRED — PRODUCT VALIDATION LAUNCH LOCKED** |
+| Owner target | Controlled Public Beta **no later than September 30, 2026** — unchanged |
+| Launch monetization | None required. Ordinary outbound merchant links. PiqSavi may earn ₱0. |
+| Beta learning objective | Usefulness, recommendation quality, shopper trust, completed decisions, merchant click-through, repeat usage, demand. No affiliate conversion metric for launch acceptance. |
+| Affiliate architecture | Retained for later downstream activation. Must not alter eligibility, evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering. |
+| Shopee / Lazada | No longer September affiliate launch dependencies. Product-data certification remains required. Historical affiliate/network evidence retained. |
+| EC-31 mixed proof | Conditional: required only if affiliate-enabled merchants are active; otherwise architecture/tests prove affiliate economics are absent from scoring/recommendation. Effective-cost requirements unchanged. |
+| Launch UI | No per-action “Affiliate link” / commission claim next to ordinary non-affiliate links. Legal Affiliate & Advertising Disclosure remains future-capable and unpublished. |
+| Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) 2026-09-07 lock; [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`sprints/SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md`](sprints/SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md); [`sprints/SPRINT_44_CLAIMS_APPROVALS_REHEARSAL.md`](sprints/SPRINT_44_CLAIMS_APPROVALS_REHEARSAL.md); [`sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md`](sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md) |

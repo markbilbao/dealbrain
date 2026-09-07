@@ -78,5 +78,11 @@ The adapter does not invent:
 Compare PRODUCT FIT cells stay unknown (`—`) for canonical UUID decisions.
 View offer is omitted when no outbound URL was captured.
 
+Canonical UUID launch pages use ordinary outbound merchant links and
+therefore do not render an active-affiliate disclosure. Future affiliate
+activation must explicitly attach the appropriate disclosure together with
+the affiliate action; that path is not enabled by this launch lock. Fixture
+catalog pages remain non-live Product Foundation demos.
+
 Live research, live merchant integration, and destination repricing remain
 separate future work.

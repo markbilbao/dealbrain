@@ -26,3 +26,15 @@ Called by Shopping Assistant **after** DealScore / match ranking. Returns
 - No real affiliate network APIs or credentials
 - Templates use `DEMO_*` placeholders
 - Estimated commission is never a ranking input
+
+## 2026-09-07 public-beta posture (additive)
+
+September public beta launches **without affiliate monetization**. This service remains available for later downstream activation (organic decision → winning merchant → optional affiliate attachment). Do not delete it.
+
+At launch:
+
+- merchant links are ordinary outbound merchant links
+- no affiliate parameters, Sub IDs, redirect/tracking layer, commission claim, or PiqSavi-initiated affiliate attribution cookie
+- a legitimate merchant remains fully eligible for research, PiqScore, Best Piq, Recommendation, and an outbound link even if PiqSavi earns ₱0
+
+`generate_for_recommendation` returning `None` / ordinary destination URLs is valid launch behavior. Affiliate activation must never modify source eligibility, evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering.

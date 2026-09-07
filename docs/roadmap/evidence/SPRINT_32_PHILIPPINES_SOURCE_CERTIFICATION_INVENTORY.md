@@ -364,6 +364,10 @@ Affiliate permission remains independent from product-data permission. Commissio
 - **TikTok Shop PH is not launch-critical** for September 2026. Keep the contemplated TikTok inventory rows. Do not destructively remove architecture. Do not claim TikTok was searched unless it was actually queried. Do not give TikTok pre-launch engineering priority over higher-value launch work.
 - Search inclusion depends on a legitimate data path, not affiliate status. Scraping is not a workaround. Public language remains **Best Piq among the offers PiqSavi evaluated**.
 
+### 2026-09-07 owner lock addendum (do not rewrite historical rows)
+
+Affiliate monetization is deferred for September public beta. Shopee and Lazada are no longer September affiliate launch dependencies. Product-data certification remains required. Ordinary outbound merchant links are valid launch behavior. Do not delete historical affiliate/network evidence in this inventory. Do not represent affiliate approval as product-data permission. Do not scrape merchants because monetization was removed.
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.

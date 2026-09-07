@@ -747,8 +747,11 @@ def _disclosures(view: DecisionPageView) -> str:
 
 
 def _affiliate_only(view: DecisionPageView) -> str:
+    text = view.affiliate_disclosure.strip()
+    if not text:
+        return ""
     return f"""
-    <p class="affiliate-note">{ICON_SHIELD}{h(view.affiliate_disclosure)}</p>
+    <p class="affiliate-note">{ICON_SHIELD}{h(text)}</p>
     """
 
 

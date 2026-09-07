@@ -42,6 +42,16 @@ Use affiliate links for those merchants where affiliate approval/tracking is ava
 - production certification remains evidence-based;
 - do not falsely mark Shopee or Lazada as live, approved, production-ready, or contractually usable until actual certification is complete.
 
+### 2026-09-07 owner lock (primarily roadmap/policy plus narrow launch-UI honesty; does not close this sprint)
+
+**Affiliate monetization is deferred for the September public beta.** Shopee and Lazada are no longer September affiliate launch dependencies. Optimise/Lazada affiliate approval, Shopee affiliate approval, tracking access, payout setup, or network credentials must not block Sprint 32 closure or Sprint 45. The 2026-09-06 “initial affiliate-monetization targets” clause is superseded for launch sequencing; it remains a historical record.
+
+This does **not** permit a fake or data-less PH shopping launch. At least one genuinely useful PH shopping path must still have legitimate, certified data access (official API, authorized product feed, direct retailer integration, authorized partner feed, permitted public source, or another documented legitimate data route). Do not scrape merchants merely because affiliate monetization is removed. Affiliate approval is not product-data permission.
+
+At launch, merchant links are ordinary outbound merchant links: no affiliate parameters, Sub IDs, redirect/tracking layer, commission claim, or PiqSavi-initiated affiliate attribution cookie, and no sponsored ranking. A legitimate merchant remains fully eligible to enter research, enter the evaluated set, receive PiqScore, become Best Piq, become Recommendation, and receive an outbound merchant link. PiqSavi may earn ₱0. That is intentional.
+
+Affiliate architecture must not be deleted. Future activation remains downstream of organic decision → winning merchant → optional affiliate attachment. It may never modify source eligibility, evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering.
+
 **Merchant-neutral search/recommendation.** Affiliate status must never exclude an otherwise legitimate source from consideration. All relevant, enabled, certified merchant/data sources for the shopper's market are eligible for server-side research routing regardless of monetization status — including official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces with a legitimate data path. Eligibility is not a requirement to query every integrated merchant on every shopper request. The research/router may decide which sources are actually attempted for a specific request using legitimate non-affiliate factors such as shopper market, requested category/product, connector capability, provider restrictions, coverage, source health, availability, timeout/degradation, and other operational relevance. Affiliate commission, affiliate availability, or partner economics must never include/exclude a source from organic consideration, prioritize a source, or alter PiqScore, Recommendation, Best Piq, or organic ordering. A source that is actually evaluated remains fully eligible to receive canonical PiqScore, become Best Piq, become the Recommendation, rank above affiliate merchants, and receive a normal outbound merchant link. If a non-affiliate merchant wins, PiqSavi may earn ₱0 and must still recommend it. Public language remains **Best Piq among the offers PiqSavi evaluated**. Do not imply all supported merchants were queried unless later execution evidence proves they were. Sprint 38 execution traces remain responsible later for truthful attempted / succeeded / failed / timed-out sources and evaluated-offer count; this lock does not start Sprint 38.
 
 **Search inclusion** depends on a legitimate, sufficiently trustworthy data path (official API, authorized product feed, approved affiliate/product feed, direct retailer/partner integration, permitted public data source, or another contractually/technically legitimate source). Affiliate status is not the inclusion or exclusion test. Do not use scraping as a workaround. If a merchant has no legitimate usable product-data path, or was not actually queried, do not claim it was searched.
@@ -133,8 +143,10 @@ Certification stages must remain distinct (do not collapse):
 - US/SG/UK/CA certification
 - Claiming complete PH retail coverage
 - Treating Shopee and Lazada as the exclusive search/recommendation universe
+- Treating Shopee/Lazada affiliate approval as a Sprint 32 or Sprint 45 launch blocker
 - Falsely marking Shopee, Lazada, TikTok Shop, or any other PH source as live, approved, production-ready, or certified
 - Making TikTok Shop PH launch-critical for September 2026
+- Destructively removing affiliate services, attribution models, neutrality tests, or provider/network support
 - Cross-connector production hardening suite (38)
 - Owning the shared capability/policy contract design (Sprint 31)
 - Creating a second price model or a parallel authorization model for effective-cost fields
