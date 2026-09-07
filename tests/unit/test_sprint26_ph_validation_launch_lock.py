@@ -67,10 +67,11 @@ def test_ph_only_no_affiliate_launch_scope() -> None:
     assert "Affiliate revenue is not a launch acceptance requirement" in ROADMAP
     assert "Sprint 47 remains post-beta" in ROADMAP
     assert "not unconditional legal approval" in ROADMAP
-    assert (
-        "Mixed affiliate/non-affiliate runtime comparison is required only if affiliate-enabled merchants are active"
-        in ROADMAP
+    mixed = (
+        "Mixed affiliate/non-affiliate runtime comparison is required only if "
+        "affiliate-enabled merchants are active"
     )
+    assert mixed in ROADMAP
     assert "Philippines only" in SPRINT_45
     assert "If zero affiliate-enabled merchants are active" in SPRINT_45
 
