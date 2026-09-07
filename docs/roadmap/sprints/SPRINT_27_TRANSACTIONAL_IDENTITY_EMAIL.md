@@ -1,6 +1,6 @@
 # Sprint 27 — Transactional Identity & Email
 
-**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented; 27.2 verified email-change lifecycle implemented; 27.3 code/config cutover readiness + operator harness implemented. Sprint 27 is **not complete**. EXT-09 DNS is **not** verified. Real inbox E2E is **not** done. Production secret attach remains Sprint 41.
+**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented; 27.2 verified email-change lifecycle implemented; 27.3 code/config cutover readiness + operator harness implemented; 27.4 consumer email-change + identity success-state UX implemented. Sprint 27 is **not complete**. EXT-09 DNS is **not** verified. Real inbox E2E is **not** done. Live staging email-change inbox E2E is still required. Production secret attach remains Sprint 41.
 **Primary owner / domain:** Identity / user platform (Sprint 17 domain; adapter hardening)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-5
@@ -76,6 +76,24 @@
 | Sprint 27 / P0-5 closure | **not closed** |
 
 27.3 prepares repository-controlled cutover so the owner can apply Cloudflare DNS and run real staging inbox proof immediately afterward. It does **not** claim DNS verification, inbox delivery, or Sprint 27 complete.
+
+## 27.4 record (consumer UX slice)
+
+| Area | Status |
+|------|--------|
+| Account "Change email" form | implemented — signed-in Account only; current password re-auth; existing `POST /api/v1/auth/email-change` |
+| Displayed account email | unchanged until confirm succeeds |
+| `GET /confirm-email-change` | implemented — explicit confirm button; no auto-success; token not rendered |
+| Email-change success state | implemented — sign-in required; local bearer token cleared |
+| Email verification final state | implemented — confirm control removed after success |
+| Password-reset final state | implemented — reset form removed after success |
+| Request-sent copy | implemented — enumeration-safe consumer language |
+| Implementation evidence | tests + lint only; **not** live inbox proof |
+| Live staging email-change inbox E2E | **still required** — owner/operator after deploy |
+| Final Account/auth visual design | **not this slice** |
+| Sprint 27 / P0-5 closure | **not closed** |
+
+27.4 exposes the already-implemented email-change lifecycle in the Account UI and replaces engineering-stage confirmation leftovers with dedicated success/failure states. It is implementation evidence only. It does **not** prove live staging inbox delivery, does **not** mark production email readiness, and does **not** close Sprint 27.
 
 **Staging secret injection.** Deploy Staging never reads Resend from GitHub. The host assemble script reads optional Secrets Manager leaf `dealbrain/staging/resend_api_key` (same prefix as `app_secret_key` / `cors_origins`). If the leaf is missing or placeholder, assembled `TRANSACTIONAL_EMAIL_PROVIDER` stays `null` and `RESEND_API_KEY` is empty so current staging does not construct `ResendEmailSender` without a key. After the owner creates the secret, the next staging deploy selects Resend automatically.
 

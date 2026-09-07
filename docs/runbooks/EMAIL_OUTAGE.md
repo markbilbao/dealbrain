@@ -1,6 +1,6 @@
 # Email outage runbook (identity transactional mail)
 
-**Sprint:** 27.1 foundation + 27.2 email-change + 27.3 cutover readiness  
+**Sprint:** 27.1 foundation + 27.2 email-change + 27.3 cutover readiness + 27.4 consumer confirmation UX (inbox E2E still required)  
 **Provider:** Resend  
 **Port:** `EmailSender` / `ResendEmailSender`  
 **EXT-08:** `applied` (account only)  
@@ -51,5 +51,5 @@ mail. It does not cover Sprint 19 notification digests.
 ## What this does not cover
 
 - Sprint 19 `EmailNotificationProvider` (still mock)
-- Live staging inbox proof for email-change (27.2 code path exists; E2E not done)
+- Live staging inbox proof for email-change (27.2 code path + 27.4 consumer pages exist; E2E not done)
 - Distributed abuse controls (Sprint 40)

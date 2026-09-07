@@ -14,7 +14,15 @@ ACCOUNT_JS = (ROOT / "app/static/consumer/js/account.js").read_text(encoding="ut
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "path",
-    ("/login", "/register", "/reset-password", "/verify-email", "/account", "/support"),
+    (
+        "/login",
+        "/register",
+        "/reset-password",
+        "/verify-email",
+        "/confirm-email-change",
+        "/account",
+        "/support",
+    ),
 )
 async def test_account_document_routes_are_noindex(client: AsyncClient, path: str) -> None:
     response = await client.get(path)
@@ -53,12 +61,14 @@ async def test_password_recovery_and_verification_presentation(client: AsyncClie
     reset_token = await client.get("/reset-password", params={"token": "sample-token"})
     verify = await client.get("/verify-email")
     verify_token = await client.get("/verify-email", params={"token": "sample-token"})
-    assert "does not display demo tokens" in reset.text
+    assert "If an account exists for that address, we'll send password-reset instructions." in reset.text
     assert 'data-account-form="reset-request"' in reset.text
     assert 'data-account-form="reset-confirm"' in reset_token.text
     assert 'name="token" value="sample-token"' in reset_token.text
     assert 'data-account-form="verify-request"' in verify.text
     assert 'data-account-form="verify-confirm"' in verify_token.text
+    assert "Sprint 27 identity APIs" not in reset.text
+    assert "does not invent email delivery" not in reset_token.text
     assert "/api/v1/auth/password-reset" in ACCOUNT_JS
     assert "/api/v1/auth/verify-email" in ACCOUNT_JS
 

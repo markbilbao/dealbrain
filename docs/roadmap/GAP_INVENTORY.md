@@ -558,3 +558,14 @@ This subsection does **not** replace the owner lock above. It records the Sprint
 | EXT-07 | `n_a_beta` / post-beta — not a September blocker |
 | EXT-19 | Remains `applied`. Conditional comprehensive counsel review is not unconditional legal approval. |
 | Authority | [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) 2026-09-07 lock; [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md); [`sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md`](sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md) |
+
+---
+
+## 2026-09-07 Sprint 27.4 consumer UX addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the consumer email-change / identity success-state slice.
+
+| Field | Value |
+|-------|-------|
+| Sprint 27 | In progress. 27.4 exposes Account email-change and dedicated verification/reset/email-change success states. This is implementation evidence only. EXT-09 DNS not verified. Real inbox E2E not done. Live staging email-change inbox E2E is still required. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. |
+| Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) |

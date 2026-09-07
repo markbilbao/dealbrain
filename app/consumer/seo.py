@@ -25,6 +25,7 @@ PRIVATE_ROBOTS_DISALLOWS = (
     "/register",
     "/reset-password",
     "/verify-email",
+    "/confirm-email-change",
     "/support",
     "/consumer/",
 )

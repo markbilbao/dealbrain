@@ -23,6 +23,7 @@ async def test_robots_and_sitemap_keep_decision_and_account_paths_private(
     assert "Disallow: /compare/" in robots.text
     assert "Disallow: /why-best-piq/" in robots.text
     assert "Disallow: /account" in robots.text
+    assert "Disallow: /confirm-email-change" in robots.text
     assert "Allow: /" in robots.text
     assert "Sitemap:" in robots.text
     assert "<loc>https://piqsavi.com/</loc>" in sitemap.text
