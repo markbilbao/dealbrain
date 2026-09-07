@@ -1,6 +1,6 @@
 # Sprint 27 — Transactional Identity & Email
 
-**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented; 27.2 verified email-change lifecycle implemented. Sprint 27 is **not complete**. Staging inbox E2E, EXT-09 DNS verification, and production cutover remain open.
+**Status:** In progress — 27.1 identity email adapter + reset/verify confirm implemented; 27.2 verified email-change lifecycle implemented; 27.3 code/config cutover readiness + operator harness implemented. Sprint 27 is **not complete**. EXT-09 DNS is **not** verified. Real inbox E2E is **not** done. Production secret attach remains Sprint 41.
 **Primary owner / domain:** Identity / user platform (Sprint 17 domain; adapter hardening)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-5
@@ -56,6 +56,30 @@
 **Old-email notice.** The notice is a secondary notification, not authorization. It is sent only after a first-time identity mutation, contains no confirmation token, and never rolls back a completed or in-progress identity change.
 
 **External blockers (still open).** EXT-08 is account-establishment only. EXT-09 is a DNS plan only. There is no real staging inbox E2E. Production email readiness is not claimed.
+
+## 27.3 record (owner slice)
+
+| Area | Status |
+|------|--------|
+| Staging demo-token example reconciled (`ALLOW_DEMO_RESET_TOKENS=false`) | implemented |
+| Staging non-secret Resend configuration contract | implemented — example + compose + host env assembly |
+| `RESEND_API_KEY` injection path | documented — AWS Secrets Manager `dealbrain/staging/resend_api_key` via `assemble-runtime-env.py`; no key in git |
+| Trusted `PUBLIC_APP_BASE_URL` action links | preserved — request / forwarded Host unused |
+| Resend failure isolation (timeout / non-2xx / transport / missing key / invalid From) | strengthened — generic `EmailDeliveryError`; no provider body, key, or token leak |
+| PiqSavi consumer email branding | verified — no DealBrain in transactional copy |
+| `identity_email_status().ready` | remains `false` — configuration ≠ inbox E2E |
+| Operator EXT-09 DNS runbook | ready — copy records from live Resend UI; no invented DNS values |
+| Staging inbox E2E evidence template | ready — owner/operator executes after DNS verify |
+| EXT-09 DNS verified | **NO** |
+| Real inbox E2E | **NO** |
+| Production secret attached | **NO** — Sprint 41 |
+| Sprint 27 / P0-5 closure | **not closed** |
+
+27.3 prepares repository-controlled cutover so the owner can apply Cloudflare DNS and run real staging inbox proof immediately afterward. It does **not** claim DNS verification, inbox delivery, or Sprint 27 complete.
+
+**Staging secret injection.** Deploy Staging never reads Resend from GitHub. The host assemble script reads optional Secrets Manager leaf `dealbrain/staging/resend_api_key` (same prefix as `app_secret_key` / `cors_origins`). If the leaf is missing or placeholder, assembled `TRANSACTIONAL_EMAIL_PROVIDER` stays `null` and `RESEND_API_KEY` is empty so current staging does not construct `ResendEmailSender` without a key. After the owner creates the secret, the next staging deploy selects Resend automatically.
+
+**Readiness truth.** `identity_email_status()` may report `adapter=resend` and `configured=true` when settings are valid. `external_evidence` stays `pending`. `ready` stays `false` until DNS + real inbox E2E exist. Health still exposes only `identity_email_adapter` and `identity_email_ready`.
 
 ## Objective
 

@@ -1,10 +1,10 @@
 # Email outage runbook (identity transactional mail)
 
-**Sprint:** 27.1 foundation + 27.2 email-change  
+**Sprint:** 27.1 foundation + 27.2 email-change + 27.3 cutover readiness  
 **Provider:** Resend  
 **Port:** `EmailSender` / `ResendEmailSender`  
 **EXT-08:** `applied` (account only)  
-**EXT-09:** `applied` (DNS plan only — not verified)
+**EXT-09:** `applied` (DNS plan only — not verified). Operator steps: [`EXT_09_RESEND_DNS.md`](EXT_09_RESEND_DNS.md)
 
 This runbook is for identity password-reset, verification, and email-change
 mail. It does not cover Sprint 19 notification digests.
@@ -34,9 +34,11 @@ mail. It does not cover Sprint 19 notification digests.
    intended PiqSavi sender and `https` public origin.
 3. Check Resend dashboard delivery/failure status. Do not paste provider
    payloads containing credentials into tickets or logs.
-4. If DNS/sender auth is the cause: EXT-09 is still plan-only until records
-   are applied and Resend reports the domain verified. Do not claim
-   production sender readiness.
+4. If DNS/sender auth is the cause: follow [`EXT_09_RESEND_DNS.md`](EXT_09_RESEND_DNS.md).
+   EXT-09 is still plan-only until records are applied and Resend reports
+   the domain verified. Do not claim production sender readiness. Staging
+   `PUBLIC_APP_BASE_URL=https://staging.piqsavi.com` is the trusted link
+   origin; it is not proof that staging TLS currently works.
 5. Contingency: disable public self-serve reset/verify/email-change
    (invite-only) rather than turning on demo tokens in staging/production.
 

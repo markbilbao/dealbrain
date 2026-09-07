@@ -35,8 +35,9 @@ Configurable in-process limits for:
 
 ### Demo token / reset token hardening (Sprint 23)
 
-- `ALLOW_DEMO_RESET_TOKENS` must be false in production; raw reset/verification
-  tokens are omitted from API responses when disabled or in production.
+- `ALLOW_DEMO_RESET_TOKENS` must be false in staging and production; raw
+  reset/verification/email-change tokens are omitted from API responses when
+  disabled or outside development.
 - `DEMO_LAUNCHER_ENABLED` must be false in production.
 - Production persistence backends must be `sqlalchemy` (no silent memory fallback).
 
