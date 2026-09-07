@@ -20,3 +20,7 @@
 - Simulated only — no real conversion postbacks
 - No billing or payout settlement
 - Does not modify DealScore
+
+## 2026-09-07 public-beta posture (additive)
+
+Attribution remains available for later monetization activation. September launch must not initiate a PiqSavi affiliate attribution cookie, affiliate Sub ID, or affiliate redirect/tracking layer on ordinary outbound merchant links. Affiliate conversion is not a Sprint 39 launch-acceptance metric.

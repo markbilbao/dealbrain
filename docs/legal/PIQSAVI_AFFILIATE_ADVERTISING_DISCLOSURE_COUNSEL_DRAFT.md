@@ -117,6 +117,14 @@ Repository evidence at drafting does **not** independently prove approved produc
 
 [COUNSEL TO CONFIRM: how to describe demo/fixture affiliate foundations vs future live programs in consumer-facing copy]
 
+### 2026-09-07 owner launch addendum (does not publish this draft)
+
+Owner decision dated 2026-09-07: PiqSavi will launch the initial public beta **without affiliate monetization**. Affiliate revenue is not a launch requirement. This draft remains **unpublished**, **not legally approved**, and future-capable. Conditional wording (“may”, “where active”) may remain in general legal documents.
+
+Launch UI must **not** show active-affiliate disclosure such as “Affiliate link” or “PiqSavi may earn a commission” next to ordinary outbound merchant links when no affiliate relationship is actually active for that action. Ordinary non-affiliate merchant links are valid launch behavior. PiqSavi may earn ₱0 from every launch transaction.
+
+This addendum does **not** claim counsel approval, does not publish this disclosure, does not delete this draft, and does not treat affiliate approval as product-data permission. Counsel record remains distinct from engineering implementation/publication.
+
 ---
 
 ## 4. How Affiliate Links May Work

@@ -57,7 +57,7 @@ Derived from current evidence only. Do not mark external approvals green without
 | EXT-04 | UK merchant/API or affiliate access | Marketplace eng + legal | 35 | United Kingdom market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name UK | Same counsel-clearance note as EXT-01. Still required: application submission evidence for this market; then same for UK | Delay UK market naming | Market UK |
 | EXT-05 | CA merchant/API or affiliate access | Marketplace eng + legal | 36 | Canada market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name CA | Same counsel-clearance note as EXT-01. Still required: application submission evidence for this market; then same for CA | Delay CA market naming | Market CA |
 | EXT-06 | Merchant credentials (all markets) | Ops + marketplace | 32–36 | global launch *(per named market)* | After approval | 1–2 weeks | `not_started` | **RED** per named market | Secrets Manager entries; no plaintext in git | Market cannot certify | Market(s) |
-| EXT-07 | Affiliate tracking IDs | Growth + marketplace | 32–36 | optional beta capability | After partner approval | 1–4 weeks | `not_started` | **AMBER** (optional) | Valid tracked redirect in staging/prod | Organic links without monetization claims; disclose | Monetized affiliate claims |
+| EXT-07 | Affiliate tracking IDs | Growth + marketplace | 32–36 | optional beta capability | After partner approval | 1–4 weeks | `not_started` | **GREEN** for September launch (not required); **AMBER** only for later monetized-affiliate claims | Valid tracked redirect in staging/prod when monetization is later activated | Ordinary outbound merchant links without monetization claims; disclose only when an affiliate relationship is actually active | Later monetized affiliate claims — **not** September shopping launch |
 | EXT-08 | Transactional email provider (Resend) | Identity eng | 27 | identity | evidence verified 2026-08-08 | 3–10 days | `applied` | **AMBER** | Sanitized Resend dashboard/account-establishment proof retained at [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) (see EXT-08 notes); delivery/reset+verify remains Sprint 27 | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
 | EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | evidence verified 2026-08-08 | 3–14 days | `applied` | **AMBER** | Sanitized Resend sender-domain DNS-authentication plan retained at [`evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png) (see EXT-09 notes); DNS apply/verify + delivery remain Sprint 27 | Same as EXT-08 | Public self-serve auth |
 | EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | **GREEN** for ownership | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
@@ -106,7 +106,7 @@ Technical current-main staging proof does **not** advance any EXT row. Remaining
 - EXT-19 / EXT-20 / EXT-21 — counsel engaged; written approval and live policy URLs missing
 - EXT-24 — paging destination not started
 - EXT-29 — Search Console not started
-- EXT-07 / EXT-15 / EXT-16 / EXT-22 / EXT-23 / EXT-25 — optional; reduce claims rather than delay launch
+- EXT-07 / EXT-15 / EXT-16 / EXT-22 / EXT-23 / EXT-25 — optional; reduce claims rather than delay launch. **EXT-07 is not a September launch blocker** (2026-09-07): public beta launches without affiliate monetization.
 
 **GREEN (for the stated claim only):**
 
@@ -282,3 +282,14 @@ This addendum does **not** move any EXT row. Counsel-clearance and Shopee operat
 - Search/recommendation **eligibility** depends on a legitimate product-data path, not EXT-07 affiliate tracking. Affiliate status must never exclude or privilege an otherwise relevant legitimate source. Eligibility is not a requirement to query every integrated merchant on every request.
 - **TikTok Shop PH is not September-launch-critical.** Counsel clearance to apply to TikTok remains historical and does not make TikTok a Sprint 45 prerequisite. Do not represent TikTok as searched or supported unless an authorized path actually exists.
 - Provider approval and affiliate approval still do not imply technical field exposure or policy permission for listing-price, discount, voucher, shipping, or checkout-cost fields. Policy states remain `allowed` / `restricted` / `prohibited` / `unknown` and are not technical availability.
+
+### 2026-09-07 owner lock addendum (statuses unchanged)
+
+This addendum does **not** move any EXT row and does **not** delete historical affiliate/network evidence.
+
+- Public beta launches **without affiliate monetization**. Affiliate revenue is not a launch requirement. Ordinary outbound merchant links are valid launch behavior.
+- **EXT-07 remains `not_started` and optional.** It is **not** a September launch blocker. Shopee affiliate approval, Lazada/Optimise affiliate approval, tracking access, payout setup, and network credentials must not block Sprint 45.
+- EXT-01…EXT-06 remain product-data / credential launch dependencies for **naming** a market. Affiliate approval is not product-search, API, feed, pricing, shipping, or voucher-data permission. Do not represent affiliate approval as product-data permission.
+- Shopee Philippines and Lazada Philippines are **no longer September affiliate launch dependencies**. The 2026-09-06 “initial affiliate-monetization targets” note above remains historical.
+- Affiliate architecture, attribution models, neutrality tests, and provider/network support must remain available for later activation. Future attachment is downstream of organic decision → winning merchant.
+- Mixed affiliate/non-affiliate runtime comparison is not required while zero affiliate-enabled merchants are active. Architecture/tests must still prove affiliate economics are absent from organic scoring/recommendation paths.

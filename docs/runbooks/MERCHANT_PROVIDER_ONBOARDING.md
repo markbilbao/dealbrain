@@ -245,6 +245,8 @@ Affiliate permission is independent of product-data permission. Reduced modes re
 - data/compare permitted, affiliate not permitted → organic comparison may operate without monetization
 - affiliate permitted, product-data comparison not permitted → destination-only; cannot independently satisfy named-market current-data claims
 
+**2026-09-07 additive note:** September public beta launches without affiliate monetization. Ordinary outbound merchant links are valid. Affiliate architecture must not be deleted. Shopee/Lazada affiliate approval is not a launch dependency and is not product-data permission.
+
 ## Later-sprint ownership
 
 | Sprint | Owns | Do not do in this runbook |

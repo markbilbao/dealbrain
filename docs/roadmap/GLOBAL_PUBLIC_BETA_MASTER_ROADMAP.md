@@ -1,8 +1,8 @@
 # PiqSavi — Global Public Beta Master Roadmap
 
 **Status:** Authoritative master roadmap (documentation only)
-**Owner lock date:** 2026-08-24 (launch date / sprint lock); **2026-09-06** (PH beta merchant neutrality + effective-cost launch lock)
-**Lock branch:** `docs/lock-public-launch-roadmap-sept-2026`; this update on `cursor/lock-ph-beta-marketplaces-effective-cost-bc11`
+**Owner lock date:** 2026-08-24 (launch date / sprint lock); **2026-09-06** (PH beta merchant neutrality + effective-cost launch lock); **2026-09-07** (public beta without affiliate monetization)
+**Lock branch:** `docs/lock-public-launch-roadmap-sept-2026`; this update on `cursor/lock-beta-no-affiliate-launch-7153`
 **Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0`
 **Supersedes:** Sprint 40 hard endpoint; Sprint 30 “public launch” target as launch achievement; prior Sprint 46 program-endpoint wording as the final numbered stop
 **Preserves:** Sprint identities 1–40 as historical; Architecture Lock domain ownership for Sprints 1–25; Sprint 30 closed-audit identity
@@ -50,6 +50,30 @@
 > Only verified currently applicable discounts/vouchers may reduce scored effective cost. Unknown shipping must never become ₱0 / FREE / included / assumed negligible. Sprint 47 remains post-beta and is not pulled into September.
 >
 > This lock is documentation only. It does not certify any merchant, start Sprint 38, publish Privacy or Terms, or advance the engineering baseline.
+
+---
+
+> **OWNER ROADMAP LOCK — 2026-09-07**
+>
+> **PUBLIC BETA MONETIZATION DEFERRED — PRODUCT VALIDATION LAUNCH LOCKED**
+>
+> PiqSavi will launch the initial public beta **without affiliate monetization**. September 30, 2026 remains the owner target. This lock does not weaken truthfulness, legal, privacy, security, merchant-data certification, production, or evidence gates.
+>
+> The purpose of the September beta is to: prove product usefulness; prove recommendation quality; prove shopper trust; prove users complete buying decisions; prove users click through to merchants; measure repeat usage; and validate product-market demand. **Affiliate revenue is not a launch requirement.** PiqSavi may earn ₱0 from every launch transaction. That is intentional.
+>
+> **Launch outbound-link rule.** At launch, merchant links are ordinary outbound merchant links. There are no affiliate parameters, Sub IDs, redirect/tracking layer, commission claim, or PiqSavi-initiated affiliate attribution cookie, and no sponsored ranking. A legitimate merchant remains fully eligible to enter research, enter the evaluated set, receive PiqScore, become Best Piq, become Recommendation, and receive an outbound merchant link.
+>
+> **Affiliate architecture is deferred, not abandoned.** Do not destructively remove affiliate services, attribution domain models, future affiliate architecture, affiliate-neutrality tests, or provider/network support. Future affiliate activation remains downstream: organic decision → winning merchant → optional affiliate attachment. It may never modify source eligibility, the evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering.
+>
+> **Shopee and Lazada are no longer September affiliate launch dependencies.** Optimise/Lazada affiliate approval, Shopee affiliate approval, tracking access, payout setup, or network credentials must not block launch. Do not delete historical affiliate/network evidence. Do not represent affiliate approval as product-data permission. Affiliate approval remains separate from product-search rights, API rights, product feeds, pricing data rights, shipping data rights, and voucher data rights.
+>
+> **Merchant data is still required.** This decision does not permit a fake or data-less shopping launch. At least one genuinely useful PH shopping path must still have legitimate, certified data access (official API, authorized product feed, direct retailer integration, authorized partner feed, permitted public source, or another documented legitimate data route). Do not scrape merchants merely because affiliate monetization is removed. Search coverage remains all relevant, enabled, certified merchant/data sources for the shopper’s market regardless of monetization. Public claim remains **Best Piq among the offers PiqSavi evaluated**.
+>
+> **EC-31 mixed-affiliate runtime proof is conditional.** If affiliate-enabled merchants are active in the frozen launch candidate, evidence must prove affiliate neutrality by showing that affiliate status cannot alter source eligibility, effective-cost evaluation, PiqScore, Recommendation, Best Piq, or organic ordering. If zero affiliate-enabled merchants are active at launch, runtime mixed-monetization comparison is not required. Architecture/tests must still prove that affiliate economics are absent from organic scoring/recommendation paths. Mixed affiliate/non-affiliate runtime evidence is deferred until affiliate monetization is activated. Every other EC-31 effective-cost requirement is unchanged.
+>
+> **Launch UI honesty.** Keep the Affiliate & Advertising Disclosure as a future-capable legal document (conditional “may” / “where active” wording may remain). Launch UI must not show active-affiliate disclosure such as “Affiliate link” or “PiqSavi may earn a commission” next to ordinary links when no affiliate relationship is actually active for that action. Do not claim counsel approval beyond recorded evidence.
+>
+> This lock is documentation/configuration only. It does not certify any merchant, start Sprint 38, enable affiliate tracking, add affiliate credentials, publish legal documents, mark Sprints 32/37/38/39/40/44/45 complete, or move Sprint 47 into pre-launch. It does **not** rewrite the 2026-09-06 merchant-neutrality or effective-cost lock except where that lock named Shopee/Lazada as September **affiliate-monetization** launch targets.
 
 ---
 
@@ -400,7 +424,7 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | DealScore / organic neutrality | Verified | 5/6 + 44 certify | CI + monitoring | Integrity gate — NON-WAIVABLE |
 | Fixture never shown as live | Verified | 18 + 38/45 | Freshness gates + release check | Yes — NON-WAIVABLE |
 | Verified effective purchase cost used for September ranking (not sticker alone when reliable components exist) | Canonical economics merged (29); shipping honesty in 37; certification capability recording in 32 | 45 verifies on frozen candidate (implementation: 29 / 32 / 37; neutrality: 5/6/20/44) | EC-31 evidence package using actual certified capabilities | Yes — NON-WAIVABLE for honesty |
-| Non-affiliate merchant may outrank affiliate merchant / become Best Piq | Engine verified | 5/6/20 + 44/45 | Neutrality + real or certified staging case | Integrity gate — NON-WAIVABLE |
+| Non-affiliate merchant remains eligible for Best Piq; affiliate status cannot alter organic ranking | Engine verified | 5/6/20 + 44/45 | Architecture/tests prove affiliate economics are absent from scoring/recommendation. Mixed affiliate/non-affiliate runtime comparison is required only if affiliate-enabled merchants are active in the frozen candidate | Integrity gate — NON-WAIVABLE (architecture/tests); mixed runtime proof is conditional |
 | Sprint 47 buying-action / campaign prediction | Spec only (P2-OT-01) | 47 | Post-beta | POST-LAUNCH — do not pull into September |
 
 Full itemization: [`GAP_INVENTORY.md`](GAP_INVENTORY.md).
@@ -411,7 +435,7 @@ Full itemization: [`GAP_INVENTORY.md`](GAP_INVENTORY.md).
 
 | Market | Required merchant paths | Currency / localization | Certification sprint | Launch gate |
 |--------|-------------------------|-------------------------|----------------------|-------------|
-| Philippines | ≥1 real legally usable connector/feed/affiliate path. Initial commercial/product validation focus. Initial affiliate-monetization targets: Shopee PH + Lazada PH (not exclusive search coverage). | PHP + EN; MarketContext | 32 | EXT-01 provisioned; staging+prod validation; coverage row published. TikTok Shop PH is not launch-critical. |
+| Philippines | ≥1 real legally usable connector/feed/legitimate data path. Initial commercial/product validation focus. Affiliate monetization is **not** a September launch requirement. Shopee PH + Lazada PH remain eligible product-data candidates, not affiliate launch blockers. | PHP + EN; MarketContext | 32 | EXT-01 product-data path provisioned; staging+prod validation; coverage row published. TikTok Shop PH is not launch-critical. EXT-07 affiliate tracking is not a launch blocker. |
 | United States | ≥1 real path | USD + EN | 33 | EXT-02 + same |
 | Singapore | ≥1 real path | SGD + EN | 34 | EXT-03 + same |
 | United Kingdom | ≥1 real path | GBP + EN | 35 | EXT-04 + same |
@@ -428,7 +452,7 @@ Full itemization: [`GAP_INVENTORY.md`](GAP_INVENTORY.md).
 - Fixtures and mock providers cannot certify a market.
 - Empty named-market list is allowed only with non-shopping positioning (not Global Public Beta as defined here).
 - **Philippines first** is the initial commercial/product validation focus as of 2026-09-06. It does not restrict PiqSavi to two marketplaces and does not authorize a public PH claim before Sprint 32 certification. It also does not make PH a non-waivable whole-launch blocker: if PH certification fails, remove/delay PH; Sprint 45 may still launch another certified useful market.
-- Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets**. Use affiliate links for those merchants where affiliate approval/tracking is available and legally permitted. They are not ranking privileges and are not the exclusive search/recommendation universe.
+- Shopee Philippines and Lazada Philippines are **no longer September affiliate launch dependencies** (2026-09-07 lock). Historical 2026-09-06 notes that named them as initial affiliate-monetization targets remain historical. Use ordinary outbound merchant links at launch. Affiliate approval, tracking access, payout setup, or network credentials must not block Sprint 45.
 - Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain fully **eligible** for routing, PiqScore, Best Piq, and Recommendation when a legitimate data path exists — including when PiqSavi earns ₱0. Eligibility is not a requirement to query every integrated merchant on every request.
 - TikTok Shop PH is removed from the September launch-critical path. It must not delay Sprint 45 and must not appear in public marketplace-coverage claims unless actually supported.
 
@@ -447,7 +471,7 @@ Statuses below are copied from the register as of this lock. Do not invent later
 | AWS production + secrets | Ops | 41 | Partial TF; EXT-14 `not_started` | **AMBER** | Delay production | Launch — NON-WAIVABLE |
 | Legal review + published policies | Legal | 28 / 44 / 45 | EXT-19 `applied`; EXT-20/21 `not_started` | **AMBER** | Delay launch | Launch — NON-WAIVABLE |
 | Support / privacy contacts | Ops / privacy | 28 / 39 | EXT-17/18 `provisioned` | **GREEN** for bootstrap reachability | Delay public launch if later lost | Support/legal publication still 28/45 |
-| Analytics / consent tooling | Product | 39 | `not_started` | **AMBER** (learning) | Essential-only first-party | SCOPE-REDUCIBLE |
+| Analytics / consent tooling | Product | 39 | `not_started` | **AMBER** (learning) | Essential-only first-party | SCOPE-REDUCIBLE; affiliate conversion is not a launch-acceptance metric |
 | Search Console | Product / SEO | 39 / 45 | `not_started` (EXT-29) | **AMBER** | Launch without ranking claims; still require noindex honesty | Indexability proof — private-route noindex is NON-WAIVABLE |
 | FX provider | Marketplace | 37 | `not_started` | **AMBER** | No cross-currency compare | SCOPE-REDUCIBLE |
 | Paging destination | Ops | 42 | `not_started` | **AMBER** | Delay prod launch | Launch — NON-WAIVABLE |
@@ -494,7 +518,7 @@ Sprint 45 is the **final go/no-go verification** gate for each criterion. Docume
 | EC-28 | Guest work can continue after register/login without silently losing the active decision | 27 / 29 / 40 | Guest→account transition tests + staging proof | No-go if signup drops the decision when preservation is safely possible |
 | EC-29 | Search/Ask, Save, and Watch remain semantically distinct | 29 *(Watch monitoring: 10/19/47)* | Product copy + UI states do not silently turn Save into Watch or promise notifications before monitoring exists | No-go on false monitoring/notification claims |
 | EC-30 | Approved public pages are technically indexable; Search Console is connected; ranking is not promised | 45 *(foundation 29; measure 39; rehearse 44)* | robots/sitemap/canonicals correct; GSC connected; structured data valid where used | No-go if intended public pages cannot be crawled or private routes are included |
-| EC-31 | Frozen launch candidate uses verified applicable purchase-cost components for effective cost / ranking, remains affiliate-neutral, and does not treat unknown costs as zero | 45 verifies *(implementation: 29 economics + 32 field evidence + 37 shipping/destination honesty; neutrality: 5/6/20/44)* | Effective-purchase-cost evidence package on the frozen candidate (see §9.5). Use only fields the certified sources actually expose **and** that policy permits, and only when offer/shopper applicability is established. Do not imply every supported merchant was queried unless execution evidence proves it. | No-go if sticker-only ranking is used when verified components exist; if unverified/conditional vouchers affect PiqScore; if unknown shipping becomes ₱0/FREE; if affiliate commission affects the result; or if a non-affiliate merchant is suppressed solely for lacking affiliate |
+| EC-31 | Frozen launch candidate uses verified applicable purchase-cost components for effective cost / ranking, remains affiliate-neutral, and does not treat unknown costs as zero | 45 verifies *(implementation: 29 economics + 32 field evidence + 37 shipping/destination honesty; neutrality: 5/6/20/44)* | Effective-purchase-cost evidence package on the frozen candidate (see §9.5). Use only fields the certified sources actually expose **and** that policy permits, and only when offer/shopper applicability is established. Mixed affiliate/non-affiliate runtime comparison is required only if affiliate-enabled merchants are active; otherwise architecture/tests must still prove affiliate economics are absent from organic scoring/recommendation. Do not imply every supported merchant was queried unless execution evidence proves it. | No-go if sticker-only ranking is used when verified components exist; if unverified/conditional vouchers affect PiqScore; if unknown shipping becomes ₱0/FREE; if affiliate commission affects the result; or if a non-affiliate merchant is suppressed solely for lacking affiliate |
 
 **Market note for EC-09:** When multiple markets are named, each named market’s certification sprint (32/33/34/35/36) is the primary owner for that market’s path. Sprint 31 owns the shared capability/policy contract and fail-closed harness; 32–36 populate provider-specific evidence. Sprint 44/45 verify and may remove markets or providers.
 
@@ -618,7 +642,7 @@ Sprint 29 already owns/preserves listing price, verified discounts, verified vou
 
 **One-dominant-price presentation.** Existing price-state labels remain authoritative: Final effective cost; Estimated landed cost; Price before shipping; Before unverified import charges; Potential checkout price. Do not introduce multiple competing “final” totals on one offer card. If a merchant does not provide enough information to calculate final effective cost, show the truthful incomplete price state rather than pretending it is equivalent to a fully costed offer. Ranking/comparison must not give an incomplete offer an artificial advantage by treating unknown costs as zero.
 
-**Neutrality example (explanatory only — not a scoring formula).** A non-affiliate merchant may legitimately outrank an affiliate merchant:
+**Neutrality example (explanatory only — not a scoring formula; not a launch-night runtime requirement when zero affiliate-enabled merchants are active).** A non-affiliate merchant may legitimately outrank an affiliate merchant:
 
 | Source | Listing | Verified reductions / shipping | Effective cost | Affiliate |
 |--------|---------|--------------------------------|----------------|-----------|
@@ -634,10 +658,11 @@ If the official retailer is strongest under the objective scoring model, it may 
 2. a verified applicable voucher can reduce effective cost;
 3. known shipping can increase effective cost;
 4. effective cost can legitimately change offer ordering / Recommendation;
-5. a non-affiliate merchant can outrank an affiliate merchant;
-6. unknown shipping does not become zero / free;
-7. an unverified / conditional voucher does not affect PiqScore;
-8. affiliate commission does not affect the result.
+5. unknown shipping does not become zero / free;
+6. an unverified / conditional voucher does not affect PiqScore;
+7. affiliate commission does not affect the result.
+
+**EC-31 mixed-affiliate proof is conditional (2026-09-07).** If affiliate-enabled merchants are active in the frozen launch candidate, evidence must prove affiliate neutrality by showing that affiliate status cannot alter source eligibility, effective-cost evaluation, PiqScore, Recommendation, Best Piq, or organic ordering. If zero affiliate-enabled merchants are active at launch, runtime mixed-monetization comparison is not required. Architecture/tests must still prove that affiliate economics are absent from organic scoring/recommendation paths. Mixed affiliate/non-affiliate runtime evidence is deferred until affiliate monetization is activated.
 
 Do **not** require a merchant to expose fields it does not provide. In that case PiqSavi must expose the limitation honestly. Evidence must use the actual certified merchant technical exposure and policy permissions available at launch. Do not treat `CapabilityPolicyState` as proof that a field was technically available.
 
@@ -894,7 +919,7 @@ Intended to prevent any launch-critical area from falling between sprints.
 | 7 | PiqScore | 5 / 29 / 44 | Implemented/verified | Neutrality + snapshot integrity | Yes — NON-WAIVABLE | None |
 | 8 | Recommendation | 6 / 29 / 44 | Implemented/verified | Organic decision + disclosure | Yes — NON-WAIVABLE | None |
 | 9 | Canonical economics | 29 (capture); 37 (market honesty) | Schema 1.1 merged | Listing/discount/voucher/shipping/tax/import/unknowns; September ranking uses verified effective purchase cost, not sticker alone when reliable components exist | Yes — NON-WAIVABLE for honesty | Unknowns remain unknowns; no second price model |
-| 9a | Affiliate-neutral merchant coverage | 5/6/20 + 32–36 + 44/45 | Engine verified; PH sources uncertified | Non-affiliate merchants remain fully eligible for routing / PiqScore / Best Piq / Recommendation; Shopee + Lazada are initial affiliate-monetization targets, not exclusive search. Neutrality is eligibility, not a requirement to query every merchant on every request. | Yes — NON-WAIVABLE | Organic links; earn ₱0 if a non-affiliate wins |
+| 9a | Affiliate-neutral merchant coverage | 5/6/20 + 32–36 + 44/45 | Engine verified; PH sources uncertified; affiliate monetization deferred for September launch | Non-affiliate merchants remain fully eligible for routing / PiqScore / Best Piq / Recommendation. Ordinary outbound merchant links are valid launch behavior. Neutrality is eligibility, not a requirement to query every merchant on every request. | Yes — NON-WAIVABLE | Organic links; earn ₱0; mixed runtime comparison deferred until affiliate is activated |
 | 9b | Effective-cost field evidence | 32–36 (PH: 32); contract: 31 | Planned at certification | Each PH source records listing/discount/voucher/shipping/checkout/freshness as technical exposure + Sprint 31 policy state + applicability, kept distinct | Yes to certify that source | Disclose unavailable or unpermitted fields honestly |
 | 9c | TikTok Shop PH | 32 later / post-beta | Deferred from September launch-critical path | Must not delay Sprint 45; no public coverage claim unless actually supported | No for September launch | Investigate/integrate after beta or when an authorized data route exists |
 | 10 | Results | 29 | Merged Product Foundation | Staging Results on UUID | Yes — NON-WAIVABLE | None |
@@ -915,8 +940,8 @@ Intended to prevent any launch-critical area from falling between sprints.
 | 25 | Watch semantics | 10 / 19 / 47 | Primitives exist; monitoring uncertified | Honest Watch vs Save | Yes for honesty — NON-WAIVABLE | Hide/demote Watch until monitoring exists |
 | 26 | Report Incorrect Information | 39 | Planned | Public report path | Yes — NON-WAIVABLE | Delay launch |
 | 27 | Outbound offer handoff | 20 / 29 / 44 | Partial | Safe redirect + disclosure | Yes — NON-WAIVABLE | Omit View offer if no captured URL |
-| 28 | Affiliate neutrality/disclosure | 20 / 28 / 40 / 44 | Engine verified; legal pending | Neutrality tests + public disclosure | Yes — NON-WAIVABLE | Organic links without monetization claims |
-| 29 | Analytics | 39 | Planned | Consent-gated events listed in Sprint 39 | Soft Yes | Essential-only |
+| 28 | Affiliate neutrality/disclosure | 20 / 28 / 40 / 44 | Engine verified; legal pending; launch monetization deferred | Neutrality tests + future-capable legal disclosure; launch UI must not claim commission on ordinary non-affiliate links | Yes — NON-WAIVABLE | Ordinary outbound links; no per-action affiliate label unless a relationship is actually active |
+| 29 | Analytics | 39 | Planned | Consent-gated product-validation events listed in Sprint 39 (decision started/completed, Results viewed, outbound click, completion rate, outbound CTR, repeat decisions, return visits, helpful/not helpful, incorrect report, insufficient-evidence). Affiliate conversion is not a launch-acceptance metric. | Soft Yes | Essential-only |
 | 30 | Feedback/support | 39 / 28 | Inbox provisioned; product path pending | Support contact + in-product path | Yes — NON-WAIVABLE | Delay if contact unpublished |
 | 31 | SEO foundation | 29 | Planned/partial | Semantic HTML, metadata, robots, sitemap, JSON-LD infra | Yes for technical honesty | No mass thin pages |
 | 32 | Private-route noindex protection | 28 / 29 / 40 / 44 / 45 | 28.1 `X-Robots-Tag` + meta robots on Results/Compare/Why; landing not noindexed | UUID Results/Compare/Why non-indexable | Yes — NON-WAIVABLE | Delay launch if leaked |
@@ -950,7 +975,8 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 - Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline). Shopee Sprint 26 evidence is updated on this baseline: affiliate dashboard access observed; Payment & Tax submitted/pending; Affiliate Open API documented but **not granted**. See [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). That is **not** Sprint 32 certification and does **not** close Sprint 26.
 - EXT merchant applications **not started** (EXT-01 / EXT-06 / EXT-07 remain unresolved)
 - No production AWS apply; no live certified market
-- **2026-09-06 documentation lock (this update):** Philippines-first validation, Shopee + Lazada as initial affiliate-monetization targets, merchant-neutral search, TikTok deferred from launch-critical scope, and verified effective-purchase-cost ranking are now owner-locked. This lock does **not** certify any merchant, start Sprint 38, publish Privacy/Terms, or change the engineering baseline.
+- **2026-09-06 documentation lock:** Philippines-first validation, merchant-neutral search, TikTok deferred from launch-critical scope, and verified effective-purchase-cost ranking remain owner-locked. The 2026-09-06 clause that named Shopee + Lazada as September **affiliate-monetization** targets is **superseded** by the 2026-09-07 lock below. This lock does **not** certify any merchant, start Sprint 38, publish Privacy/Terms, or change the engineering baseline.
+- **2026-09-07 documentation lock (this update):** Public beta launches without affiliate monetization. Product validation is the launch objective. Ordinary outbound merchant links are valid launch behavior. Affiliate architecture is preserved for later activation. Shopee/Lazada affiliate approval is not a launch dependency. Product-data certification remains a launch dependency. EC-31 mixed-affiliate runtime proof is conditional. September 30 target is unchanged.
 
 ### Strict gates (cannot be skipped)
 
@@ -965,7 +991,7 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 9. **Sprint 41** — isolated production AWS/DB/secrets/IAM/deploy/rollback/DNS/TLS/hostname. IaC is not proof.
 10. **Sprint 42** — logs/metrics/dashboards/alerts/paging/backup/restore/IR/runbooks/kill switches.
 11. **Sprint 44** — claims vs actual capability; legal/security/ops approvals; production rehearsal including SEO/indexability.
-12. **Sprint 45** — final go/no-go against EC-01…EC-31 no later than 2026-09-30, including verified effective-purchase-cost evidence (EC-31). TikTok Shop PH is not on this critical path.
+12. **Sprint 45** — final go/no-go against EC-01…EC-31 no later than 2026-09-30, including verified effective-purchase-cost evidence (EC-31). TikTok Shop PH is not on this critical path. Affiliate approval / EXT-07 is not on this critical path.
 
 ### Parallelizable after prerequisites
 
@@ -981,7 +1007,7 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 
 ### External risk on this path
 
-See §8 and the register. The items that can miss September 30 unless resolved or scope-reduced are currently **RED/AMBER**: merchant approvals (RED), email DNS/auth (AMBER), counsel written approval + policy publication (AMBER), production DNS/TLS/AWS/secrets (AMBER), paging (AMBER), Search Console (AMBER), FX (AMBER, reducible), AI quota (AMBER, reducible).
+See §8 and the register. The items that can miss September 30 unless resolved or scope-reduced are currently **RED/AMBER**: merchant **product-data** approvals (RED until ≥1 certified market), email DNS/auth (AMBER), counsel written approval + policy publication (AMBER), production DNS/TLS/AWS/secrets (AMBER), paging (AMBER), Search Console (AMBER), FX (AMBER, reducible), AI quota (AMBER, reducible). EXT-07 affiliate tracking is optional and is **not** a September launch blocker (2026-09-07).
 
 ### Scope-reducible if the date is threatened
 
@@ -994,7 +1020,7 @@ See §8 and the register. The items that can miss September 30 unless resolved o
 - Sprint 47 entirely
 - Advanced Watch monitoring promises
 
-Do not scope-reduce: truthfulness, privacy, security, legal publication, production isolation, monitoring/paging, rehearsal, private-route noindex, fixture-never-as-live, merchant-neutral search/recommendation, verified-applicable-only discounts/vouchers, unknown-shipping-is-not-free, affiliate-downstream ranking, or the requirement for at least one useful certified market.
+Do not scope-reduce: truthfulness, privacy, security, legal publication, production isolation, monitoring/paging, rehearsal, private-route noindex, fixture-never-as-live, merchant-neutral search/recommendation, verified-applicable-only discounts/vouchers, unknown-shipping-is-not-free, affiliate-downstream ranking, or the requirement for at least one useful certified market. Affiliate monetization / mixed-runtime affiliate proof **is** scope-reduced for September (2026-09-07 lock).
 
 ---
 
@@ -1012,7 +1038,8 @@ Do not scope-reduce: truthfulness, privacy, security, legal publication, product
 | [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) | Sprint 26 Shopee evidence (affiliate onboarding active / Open API access pending; not certification) |
 | [`evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md`](evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md) | Owner-approved Product Foundation artwork authority and immutable checksum manifest |
 | [`sprints/`](sprints/) | Per-sprint definitions 26–47 |
-| This 2026-09-06 lock | PH-first validation; Shopee + Lazada as initial affiliate-monetization targets; merchant-neutral search; TikTok deferred; effective-purchase-cost launch requirement; Sprint 47 remains post-beta |
+| This 2026-09-06 lock | PH-first validation; merchant-neutral search; TikTok deferred; effective-purchase-cost launch requirement; Sprint 47 remains post-beta. Shopee/Lazada-as-affiliate-monetization-targets clause superseded 2026-09-07. |
+| This 2026-09-07 lock | Public beta without affiliate monetization; ordinary outbound links; affiliate architecture retained; Shopee/Lazada affiliate approval not a launch dependency; EC-31 mixed-affiliate proof conditional; product-data certification remains required |
 | [`../architecture/ARCHITECTURE_LOCK.md`](../architecture/ARCHITECTURE_LOCK.md) | Domain ownership lock (updated cross-link) |
 | [`../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md`](../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md) | Infra contract; M30 matrix still evidential |
 | [`../LAUNCH_READINESS.md`](../LAUNCH_READINESS.md) | Probe/readiness semantics |

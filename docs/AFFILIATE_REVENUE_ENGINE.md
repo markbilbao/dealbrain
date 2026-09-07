@@ -101,3 +101,9 @@ decorates `processing["affiliate"]`. Ranking order and DealScore values are unch
 - **Demo / in-memory data only**
 - Disclosure text is a **placeholder**, not legal advice
 - Commission never influences DealScore or recommendation ranking
+
+## 2026-09-07 public-beta posture (additive)
+
+Affiliate monetization is **deferred, not abandoned**. The September public beta may launch with zero affiliate-enabled merchants. Ordinary outbound merchant links are valid launch behavior. This engine, its domain models, neutrality tests, and provider/network support must remain available for later activation.
+
+Future activation stays Layer 5 / downstream: organic decision → winning merchant → optional affiliate attachment. It may never modify source eligibility, evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering. Shopee/Lazada affiliate approval is not a September launch dependency and is not product-data permission.

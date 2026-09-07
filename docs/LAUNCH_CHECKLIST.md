@@ -26,6 +26,7 @@ demo UI or via `PATCH /api/v1/launch/checklist/{item_id}` (admin token).
 - [ ] Structured logging redacts tokens/passwords/API keys
 - [ ] Merchant isolation still enforced
 - [ ] Affiliate links remain post-rank only
+- [ ] September launch may use ordinary outbound merchant links with zero affiliate-enabled merchants (affiliate architecture retained; do not claim commission unless a relationship is actually active)
 
 ## Reliability
 

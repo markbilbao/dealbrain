@@ -16,3 +16,9 @@
 - Demo copy only — **not legal advice**
 - No compliance workflow or counsel review pipeline
 - No real FTC filing / merchant portal integration
+
+## 2026-09-07 launch-UI rule (additive)
+
+Keep this disclosure architecture. Do not delete it. The published Affiliate & Advertising Disclosure may remain future-capable with conditional wording (“may”, “where active”).
+
+Launch UI must **not** show active-affiliate disclosure such as “Affiliate link” or “PiqSavi may earn a commission” next to ordinary outbound merchant links when no affiliate relationship is actually active for that action. Per-action labels are only valid when an affiliate relationship is actually attached to that action. This note does not publish legal documents and does not claim counsel approval.

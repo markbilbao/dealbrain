@@ -21,6 +21,8 @@ SHA_F = "f" * 64
 SHA_G = "g" * 64
 SHA_H = "h" * 64
 
+# Non-live Product Foundation fixture copy only. Canonical UUID launch pages
+# must not inject this next to ordinary outbound merchant links.
 AFFILIATE_DISCLOSURE = (
     "PiqSavi may earn a commission if you purchase through an eligible link. "
     "This does not affect PiqScore or recommendation ranking."

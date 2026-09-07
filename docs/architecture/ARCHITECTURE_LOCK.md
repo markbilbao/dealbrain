@@ -328,3 +328,13 @@ The 2026-09-06 PH-beta merchant-neutrality and effective-cost lock does **not** 
 - Sprint 47 remains post-beta. Do not pull campaign prediction, Buy Now / Wait / Watch, or price-drop monitoring into September.
 
 Affiliate availability and commission must never include/exclude a source from organic consideration, prioritize a source, or alter PiqScore, Recommendation, Best Piq, or which merchant wins. Merchant neutrality is eligibility for routing, not a requirement to query every integrated merchant on every request. Public wording remains Best Piq among the offers PiqSavi evaluated.
+
+### 15.2 2026-09-07 owner lock (additive; documentation)
+
+The 2026-09-07 public-beta-without-affiliate-monetization lock does **not** redistribute Architecture Lock ownership and does **not** delete Sprint 20.
+
+- Sprint 20 remains affiliate owner. Affiliate architecture, attribution models, neutrality tests, and provider/network support stay in place for later downstream activation.
+- September launch may run with zero affiliate-enabled merchants. Ordinary outbound merchant links are valid. Affiliate approval is not a launch dependency and is not product-data permission.
+- Future affiliate attachment remains: organic decision → winning merchant → optional affiliate attachment. It may never modify source eligibility, evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering.
+- EC-31 mixed affiliate/non-affiliate runtime proof is conditional. Architecture/tests that prove affiliate economics are absent from organic scoring/recommendation paths remain required.
+- This lock does not start Sprint 38, rewrite PiqScore, rewrite Recommendation, or move Sprint 47 into pre-launch.

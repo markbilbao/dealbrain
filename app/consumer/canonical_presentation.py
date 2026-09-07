@@ -7,7 +7,7 @@ recalculate PiqScore, Recommendation, discounts, shipping, taxes, or price state
 from __future__ import annotations
 
 from app.consumer.currency_presentation import attach_currency_presentation
-from app.consumer.fixtures import AFFILIATE_DISCLOSURE, FRESHNESS_DISCLAIMER
+from app.consumer.fixtures import FRESHNESS_DISCLAIMER
 from app.consumer.location import DeliveryContext
 from app.consumer.market_coverage import attach_shopping_coverage
 from app.consumer.presentation import (
@@ -130,7 +130,10 @@ def page_view_from_snapshot(
         highest_piqscore_name=highest.display_name,
         recommendation_decision=snapshot.recommendation.decision,
         shopper=_shopper_from_snapshot(snapshot, historical, best),
-        affiliate_disclosure=AFFILIATE_DISCLOSURE,
+        # Launch UUID pages use ordinary outbound merchant links. Per-action
+        # affiliate disclosure is injected only when an affiliate relationship
+        # is actually attached to that action.
+        affiliate_disclosure="",
         freshness_disclaimer=FRESHNESS_DISCLAIMER,
         data_classification=snapshot.data_classification,
         unknowns=unknowns,
