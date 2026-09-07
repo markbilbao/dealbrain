@@ -1,14 +1,14 @@
 # PiqSavi — Global Public Beta Master Roadmap
 
 **Status:** Authoritative master roadmap (documentation only)
-**Owner lock date:** 2026-08-24 (launch date / sprint lock); **2026-09-06** (PH beta merchant neutrality + effective-cost launch lock); **2026-09-07** (public beta without affiliate monetization)
-**Lock branch:** `docs/lock-public-launch-roadmap-sept-2026`; this update on `cursor/lock-beta-no-affiliate-launch-7153`
+**Owner lock date:** 2026-08-24 (launch date / sprint lock); **2026-09-06** (PH beta merchant neutrality + effective-cost launch lock); **2026-09-07** (public beta without affiliate monetization + PH validation-beta Sprint 26 reconciliation)
+**Lock branch:** `docs/lock-public-launch-roadmap-sept-2026`; 2026-09-07 no-affiliate lock merged from `cursor/lock-beta-no-affiliate-launch-7153`; this Sprint 26 reconciliation on `cursor/sprint-26-ph-validation-launch-reconciliation-4a80`
 **Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0`
 **Supersedes:** Sprint 40 hard endpoint; Sprint 30 “public launch” target as launch achievement; prior Sprint 46 program-endpoint wording as the final numbered stop
 **Preserves:** Sprint identities 1–40 as historical; Architecture Lock domain ownership for Sprints 1–25; Sprint 30 closed-audit identity
 **Companion docs:** [`GAP_INVENTORY.md`](GAP_INVENTORY.md) · [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) · [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) · [`sprints/`](sprints/) · [`evidence/`](evidence/)
 **Sprint 30 audit:** [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) — NOT READY (3/10)
-**Sprint 26 technical evidence:** [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — current-main staging proof verified for SHA `79bd03f`; Sprint 26 remains open for external bootstrap
+**Sprint 26 technical evidence:** [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — current-main staging proof verified for SHA `79bd03f`; Sprint 26 remains open for EXT-01 PH product-data bootstrap
 **Public brand authority:** [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md)
 
 ---
@@ -73,7 +73,9 @@
 >
 > **Launch UI honesty.** Keep the Affiliate & Advertising Disclosure as a future-capable legal document (conditional “may” / “where active” wording may remain). Launch UI must not show active-affiliate disclosure such as “Affiliate link” or “PiqSavi may earn a commission” next to ordinary links when no affiliate relationship is actually active for that action. Do not claim counsel approval beyond recorded evidence.
 >
-> This lock is primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change that removes inactive affiliate-disclosure copy from canonical UUID pages. It does not modify PiqScore, does not modify Recommendation, does not enable affiliate tracking, does not add affiliate credentials, does not certify merchants, does not start Sprint 38, does not publish legal documents, mark Sprints 32/37/38/39/40/44/45 complete, or move Sprint 47 into pre-launch. It does **not** rewrite the 2026-09-06 merchant-neutrality or effective-cost lock except where that lock named Shopee/Lazada as September **affiliate-monetization** launch targets. Production-code scope for this lock is limited to `app/consumer/canonical_presentation.py`, `app/consumer/pages.py`, and `app/consumer/fixtures.py`. Future affiliate disclosure attachment is not enabled by this lock.
+> **Sprint 26 / PH-only additive reconciliation (same 2026-09-07 policy).** PiqSavi will launch its initial public beta as a **Philippines-first product-validation beta without affiliate monetization.** September public beta supported-market target: **Philippines only** unless the owner later expands it. EXT-02 US, EXT-03 Singapore, EXT-04 United Kingdom, and EXT-05 Canada are **not** required for September beta (`n_a_beta`) and no longer sit on the September critical path. **EXT-01 remains launch-critical** and means at least one legitimate, useful PH merchant/product-data path. **Affiliate approval is not enough.** Affiliate permission ≠ product-data permission. Affiliate revenue is not a launch acceptance requirement. EXT-07 is post-launch / optional monetization (`n_a_beta`) and is **not** a September launch blocker. Sprint 26 technical staging proof remains intact. Sprint 26 stays open because the remaining current-scope bootstrap action is the EXT-01 PH product-data access application/request. EXT-19 remains `applied`; conditional counsel review is not unconditional legal approval. Sprint 47 remains post-beta. Mixed affiliate/non-affiliate runtime comparison is required only if affiliate-enabled merchants are active.
+>
+> This lock is primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change that removes inactive affiliate-disclosure copy from canonical UUID pages. It does not modify PiqScore, does not modify Recommendation, does not enable affiliate tracking, does not add affiliate credentials, does not certify merchants, does not start Sprint 38, does not publish legal documents, mark Sprints 32/37/38/39/40/44/45 complete, or move Sprint 47 into pre-launch. It does **not** rewrite the 2026-09-06 merchant-neutrality or effective-cost lock except where that lock named Shopee/Lazada as September **affiliate-monetization** launch targets. Production-code scope for this lock is limited to `app/consumer/canonical_presentation.py`, `app/consumer/pages.py`, and `app/consumer/fixtures.py`. Future affiliate disclosure attachment is not enabled by this lock. The Sprint 26 reconciliation adds no production-code changes.
 
 ---
 
@@ -122,11 +124,11 @@ Where optional market/provider readiness threatens the date:
 
 **reduce launch scope rather than reduce truthfulness or safety.**
 
-Example: if only Philippines and United States are legitimately launch-ready, Sprint 45 may launch those supported markets and omit unsupported markets. Do not require all originally planned markets if this roadmap already allows market removal.
+Example: if only Philippines is legitimately launch-ready, Sprint 45 launches PH and omits US/SG/UK/CA. September 2026 does **not** require those optional markets. Do not substitute another market for PH unless the owner later expands supported-market scope.
 
-At least one truthful, genuinely useful supported market must exist for public shopping launch.
+At least one truthful, genuinely useful supported **PH** market must exist for the September public shopping launch.
 
-The 2026-09-06 owner lock does **not** change this date semantic. Philippines-first is the initial validation focus; it is not permission to name PH without certification, and it is not permission to treat Shopee and Lazada as the exclusive search universe.
+The 2026-09-07 owner lock sets Philippines as the September supported-market target. It is not permission to name PH without certification, and it is not permission to treat Shopee and Lazada as the exclusive search universe inside PH.
 
 ### 0.3 Current approved engineering baseline
 
@@ -252,8 +254,8 @@ Global Public Beta means **all** of the following:
 1. Public web access is available internationally.
 2. Users can register, authenticate, recover accounts, manage privacy choices, and delete their accounts.
 3. PiqSavi clearly distinguishes: globally reachable service; supported shopping markets; supported merchants; delivery destinations; display currencies.
-4. Initial *planned* named live-shopping markets are **Philippines, United States, Singapore, United Kingdom, Canada** — each named only when its market gate passes.
-5. Sprint 45 does **not** require all five planned markets. The actual supported-market list is documented at Sprint 44/45 from certification evidence.
+4. Initial *planned* named live-shopping markets were **Philippines, United States, Singapore, United Kingdom, Canada**. The **September 2026 supported-market target** is **Philippines only** unless the owner later expands it. Each named market is named only when its market gate passes.
+5. Sprint 45 does **not** require US/SG/UK/CA. Those markets are `n_a_beta` for this beta. The actual supported-market list is documented at Sprint 44/45 from certification evidence.
 6. Each **named** supported market has at least one real, legally usable, operationally validated merchant-data path.
 7. At least one genuinely useful certified market must exist for public shopping launch.
 8. Unsupported markets receive explicit coverage disclosure and are never presented with fixture data as live prices.
@@ -283,7 +285,7 @@ Global Public Beta does **not** mean: every retailer worldwide; complete merchan
 | 23 | Production persistence adapters | Preserve |
 | 24 | API contracts | Preserve |
 | 25 (+b.*) | Production infrastructure / staging deploy / rollback | Preserve architecture; complete remaining evidence via 26 / 41 / 42 |
-| 26 | Staging Current-Main Proof & Roadmap Bootstrap | Open — technical proof packaged; EXT bootstrap pending |
+| 26 | Staging Current-Main Proof & Roadmap Bootstrap | Open — technical proof packaged; EXT-01 PH product-data bootstrap pending |
 | 27–28 | Identity/email; privacy/legal | Planned |
 | 29 | Production Consumer Decision Experience & Conversational Continuity | In progress — see §5.1 |
 | 30 | **Reclassified:** Public Beta Readiness Audit (2026-08-06) — **not** a launched public shopping beta | Closed audit |
@@ -332,13 +334,13 @@ Do **not** reopen Sprint 30.
 
 | Sprint | Name | Primary outcome | Main blockers addressed | External dependencies | Exit gate |
 |--------|------|-----------------|-------------------------|-----------------------|-----------|
-| 26 | Staging Current-Main Proof & Roadmap Bootstrap | Historical launch-candidate staging-proven (`79bd03f`); EXT apps bootstrap pending | P0-6 | EXT-01…05,08,10,17,18 bootstrap | Technical: Staging `/ready` + smoke on evidenced digest ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); close still requires register updates. Later SHA `ab23d29` is **not** a Sprint 26 close. |
+| 26 | Staging Current-Main Proof & Roadmap Bootstrap | Historical launch-candidate staging-proven (`79bd03f`); EXT-01 PH product-data bootstrap pending | P0-6 | EXT-01 remaining; EXT-08,10,17,18 done for Sprint 26 | Technical: Staging `/ready` + smoke on evidenced digest ([evidence](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); close still requires EXT-01 product-data application/request evidence. EXT-02…05/`07` are `n_a_beta` for this beta. Later SHA `ab23d29` is **not** a Sprint 26 close. |
 | 27 | Transactional Identity & Email | Real email; reset/verify/email-change; token lifecycle; enumeration-safe errors; session rotation | P0-5; HIGH demo-auth | EXT-08, EXT-09 | **In progress — 27.1 + 27.2 implemented, sprint not complete.** Staging E2E reset+verify+email-change via real provider still required; EXT-09 not verified |
 | 28 | Privacy, Legal, Consent & Deletion | ToS/Privacy/consent/deletion/export + search-index privacy | P0-4; MEDIUM GDPR | EXT-17…22 | **In progress — 28.1 implemented, sprint not complete.** Engineering publication gate, consent records, delete/export APIs, inventories, and private-URL noindex exist. Counsel drafts remain unpublished. EXT-20/21 `not_started`. Staging E2E and 44/45 publication remain open |
 | 29 | Production Consumer Decision Experience & Conversational Continuity | Public decision surfaces + a11y + Ask PiqSavi + SEO technical foundation | P1-6; CC-01 | None critical | Staging UI journey and CC-01 green; FastAPI HTML/CSS/vanilla-JS validation; no fixture-as-live in UUID mode |
 | 30 | Public Beta Readiness Audit *(historical)* | Audit record only | — | — | Closed — NOT READY |
 | 31 | Merchant Platform Unification | One connector/registry/router + min reliability contracts + capability/policy model + research execution contracts | P1-1A | None | Certification suite exists; 4/18 dual-path retired or dual-run documented; reliability + capability/policy + provenance/trace contracts exported (fail-closed) |
-| 32 | Philippines Merchant Certification | ≥1 real PH path. Initial validation market. Record effective-cost field evidence (technical exposure ≠ policy ≠ applicability). TikTok not launch-critical. | P0-1 (PH) | EXT-01,06,07 | Real legally usable current-data response + capability-policy evidence plus distinct technical field-exposure records; staging+limited proof. Fixtures cannot certify. Shopee/Lazada are not certified by this lock. |
+| 32 | Philippines Merchant Certification | ≥1 real PH **product-data** path. Initial and only September validation market unless owner expands. Record effective-cost field evidence (technical exposure ≠ policy ≠ applicability). TikTok not launch-critical. Affiliate tracking not required. | P0-1 (PH) | EXT-01,06 | Real legally usable current-data response + capability-policy evidence plus distinct technical field-exposure records; staging+limited proof. Fixtures cannot certify. Affiliate-only paths cannot independently satisfy EC-09. Shopee/Lazada are not certified by this lock. |
 | 33 | United States Merchant Certification | ≥1 real US path | P0-1 (US) | EXT-02,06,07 | Same for US |
 | 34 | Singapore Merchant Certification | ≥1 real SG path | P0-1 (SG) | EXT-03,06,07 | Same for SG |
 | 35 | United Kingdom Merchant Certification | ≥1 real UK path | P0-1 (UK) | EXT-04,06,07 | Same for UK |
@@ -390,7 +392,7 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 
 | Audit requirement | Existing coverage | New owning sprint | Acceptance evidence | Launch blocker? |
 |-------------------|-------------------|-------------------|---------------------|-----------------|
-| Current-main staging proof | Older SHA staging proven; **`79bd03f` staging_ok packaged**; later SHAs including `d62a6fb` are not Sprint 26 close evidence | 26 | Evidence JSON + `/ready` on evidenced digest — see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); EXT bootstrap still open; later SHAs need their own staging proof before launch | Yes |
+| Current-main staging proof | Older SHA staging proven; **`79bd03f` staging_ok packaged**; later SHAs including `d62a6fb` and PR #114 `1f66688` are not Sprint 26 close evidence | 26 | Evidence JSON + `/ready` on evidenced digest — see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); EXT-01 PH product-data bootstrap still open; later SHAs need their own staging proof before launch | Yes |
 | Real email + password recovery | NullEmailSender / demo tokens | 27 | Inbox delivery + confirm routes | Yes — NON-WAIVABLE |
 | Email verification | Partial request-only | 27 | Verify confirm E2E | Yes — NON-WAIVABLE |
 | ToS / Privacy / consent | Missing | 28 | Published URLs + consent records | Yes — NON-WAIVABLE |
@@ -402,12 +404,12 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | Unsupported-market behavior (P1-1B) | Missing | 37 | Selector + disclosure + no unsupported invoke | Yes (P1) |
 | Shipping-cost honesty (P1-2) | Enrichment default risk | 37 | Shipping-known/unknown modeled + tests; 44 verifies wording | Yes (P1) |
 | Destination re-evaluation | Canonical pages show decision-time destination only | 37 | Server-side re-evaluation when destination could materially change shipping/effective cost | Yes when destination is user-changeable |
-| PH real merchant path | Fixtures only | 32 | Live provider response certified | Yes to **name PH** — SCOPE-REDUCIBLE |
-| US real merchant path | Stubs | 33 | Same | Yes to **name US** — SCOPE-REDUCIBLE |
-| SG real merchant path | Stubs | 34 | Same | Yes to **name SG** — SCOPE-REDUCIBLE |
-| UK real merchant path | Allow-list only | 35 | Same | Yes to **name UK** — SCOPE-REDUCIBLE |
-| CA real merchant path | None | 36 | Same | Yes to **name CA** — SCOPE-REDUCIBLE |
-| At least one certified useful market | None certified | 32–36 + 44/45 | ≥1 named market with real current-data path | Yes — NON-WAIVABLE for shopping launch |
+| PH real merchant path | Fixtures only | 32 | Live provider response certified | Yes to **name PH** — NON-WAIVABLE for the September PH-only shopping beta |
+| US real merchant path | Stubs | 33 | Same | Not required for September (`n_a_beta`) unless owner expands |
+| SG real merchant path | Stubs | 34 | Same | Not required for September (`n_a_beta`) unless owner expands |
+| UK real merchant path | Allow-list only | 35 | Same | Not required for September (`n_a_beta`) unless owner expands |
+| CA real merchant path | None | 36 | Same | Not required for September (`n_a_beta`) unless owner expands |
+| At least one certified useful market | None certified | 32 + 44/45 | ≥1 named PH market with real current-data path for September | Yes — NON-WAIVABLE for shopping launch |
 | MarketContext / FX / localization | Missing | 37 | Fail-closed FX tests + selector | Yes for multi-market honesty |
 | Cross-connector reliability + live research | Missing / partial | 38 | Multi-connector chaos + probes + disclosures + live-mode gate | Yes with live HTTP — NON-WAIVABLE |
 | Product analytics + feedback | Logs/demo only | 39 | Consent-gated events + support/report-incorrect path | Soft Yes (learning); report-incorrect is launch-useful |
@@ -435,23 +437,23 @@ Full itemization: [`GAP_INVENTORY.md`](GAP_INVENTORY.md).
 
 | Market | Required merchant paths | Currency / localization | Certification sprint | Launch gate |
 |--------|-------------------------|-------------------------|----------------------|-------------|
-| Philippines | ≥1 real legally usable connector/feed/legitimate data path. Initial commercial/product validation focus. Affiliate monetization is **not** a September launch requirement. Shopee PH + Lazada PH remain eligible product-data candidates, not affiliate launch blockers. | PHP + EN; MarketContext | 32 | EXT-01 product-data path provisioned; staging+prod validation; coverage row published. TikTok Shop PH is not launch-critical. EXT-07 affiliate tracking is not a launch blocker. |
-| United States | ≥1 real path | USD + EN | 33 | EXT-02 + same |
-| Singapore | ≥1 real path | SGD + EN | 34 | EXT-03 + same |
-| United Kingdom | ≥1 real path | GBP + EN | 35 | EXT-04 + same |
-| Canada | ≥1 real path | CAD + EN; FR-CA decision disclosed | 36 (+37 decision) | EXT-05 + same |
+| Philippines | ≥1 real legally usable connector/feed/legitimate product-data path. Initial and only September supported-market target unless owner expands. Affiliate monetization is **not** a September launch requirement. Shopee PH + Lazada PH remain eligible product-data candidates, not affiliate launch blockers. | PHP + EN; MarketContext | 32 | EXT-01 product-data path provisioned; staging+prod validation; coverage row published. TikTok Shop PH is not launch-critical. EXT-07 affiliate tracking is not a launch blocker. |
+| United States | ≥1 real path if later named | USD + EN | 33 | EXT-02 is `n_a_beta` for September |
+| Singapore | ≥1 real path if later named | SGD + EN | 34 | EXT-03 is `n_a_beta` for September |
+| United Kingdom | ≥1 real path if later named | GBP + EN | 35 | EXT-04 is `n_a_beta` for September |
+| Canada | ≥1 real path if later named | CAD + EN; FR-CA decision disclosed | 36 (+37 decision) | EXT-05 is `n_a_beta` for September |
 | Other countries | None required | Unsupported disclosure only | 37 / 38 | Must not show fixture as live |
 
 **Launch-date protection — market scope (locked):**
 
-- Sprint 45 does **not** require all five planned markets if some provider approvals remain unavailable.
+- Sprint 45 does **not** require US/SG/UK/CA. Those markets are `n_a_beta` for the initial PH-only beta.
 - Supported-market claims are dynamic and evidence-based.
-- If a market fails certification: remove/delay that market; do not fake coverage; do not necessarily delay the entire launch.
-- At least one genuinely useful certified market must exist for public shopping launch.
+- If PH fails certification: delay/remove PH shopping claims; do not fake coverage; do **not** substitute US/SG/UK/CA as the September beta unless the owner later expands supported markets.
+- At least one genuinely useful certified **PH** market must exist for the September public shopping launch.
 - Document the actual supported-market list at Sprint 44/45.
 - Fixtures and mock providers cannot certify a market.
 - Empty named-market list is allowed only with non-shopping positioning (not Global Public Beta as defined here).
-- **Philippines first** is the initial commercial/product validation focus as of 2026-09-06. It does not restrict PiqSavi to two marketplaces and does not authorize a public PH claim before Sprint 32 certification. It also does not make PH a non-waivable whole-launch blocker: if PH certification fails, remove/delay PH; Sprint 45 may still launch another certified useful market.
+- **Philippines first** is the September supported-market target as of 2026-09-07. It does not restrict PiqSavi to two marketplaces inside PH and does not authorize a public PH claim before Sprint 32 certification. If PH certification fails, delay/remove PH shopping claims; do not substitute US/SG/UK/CA as the September beta unless the owner later expands supported markets.
 - Shopee Philippines and Lazada Philippines are **no longer September affiliate launch dependencies** (2026-09-07 lock). Historical 2026-09-06 notes that named them as initial affiliate-monetization targets remain historical. Use ordinary outbound merchant links at launch. Affiliate approval, tracking access, payout setup, or network credentials must not block Sprint 45.
 - Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain fully **eligible** for routing, PiqScore, Best Piq, and Recommendation when a legitimate data path exists — including when PiqSavi earns ₱0. Eligibility is not a requirement to query every integrated merchant on every request.
 - TikTok Shop PH is removed from the September launch-critical path. It must not delay Sprint 45 and must not appear in public marketplace-coverage claims unless actually supported.
@@ -464,12 +466,14 @@ Statuses below are copied from the register as of this lock. Do not invent later
 
 | Dependency | Owner | Target sprint | Current status | Sept 30 risk | Fallback | Launch impact |
 |------------|-------|---------------|----------------|--------------|----------|---------------|
-| Merchant approvals PH/US/SG/UK/CA | Marketplace + legal | 32–36 | `not_started` | **RED** for naming each market; **RED** for shopping launch until ≥1 market is certified | Remove uncertified markets | Market-specific; ≥1 market NON-WAIVABLE |
+| Merchant approvals PH | Marketplace + legal | 32 | EXT-01 `not_started` | **RED** for naming PH; **RED** for September shopping launch until ≥1 useful PH product-data path is certified | Delay PH shopping claims | PH product-data path — NON-WAIVABLE for September shopping beta |
+| Merchant approvals US/SG/UK/CA | Marketplace + legal | 33–36 | EXT-02…05 `n_a_beta` | **GREEN** (not required for initial PH-only beta) | Omit from September supported-market list | Deferred unless owner expands |
+| Affiliate tracking IDs | Growth + marketplace | post-launch | EXT-07 `n_a_beta` | **GREEN** (not a September blocker) | Ordinary outbound merchant links | Later monetized claims only |
 | Transactional email + DNS auth | Identity + ops | 27 | EXT-08/09 `applied` (not provisioned) | **AMBER** | Invite-only / disable self-serve reset (demotes beta) | Launch / auth — NON-WAIVABLE for self-serve |
 | Domain ownership | Ops | 41 | EXT-10 `approved` | **GREEN** for ownership | — | Prerequisite only |
 | Public DNS / TLS | Ops | 41 | EXT-11/12 `not_started` | **AMBER** | Delay public hostname | Launch — NON-WAIVABLE |
 | AWS production + secrets | Ops | 41 | Partial TF; EXT-14 `not_started` | **AMBER** | Delay production | Launch — NON-WAIVABLE |
-| Legal review + published policies | Legal | 28 / 44 / 45 | EXT-19 `applied`; EXT-20/21 `not_started` | **AMBER** | Delay launch | Launch — NON-WAIVABLE |
+| Legal review + published policies | Legal | 28 / 44 / 45 | EXT-19 `applied`; EXT-20/21 `not_started` | **AMBER** | Delay launch | Launch — NON-WAIVABLE. Conditional counsel review is not unconditional approval. |
 | Support / privacy contacts | Ops / privacy | 28 / 39 | EXT-17/18 `provisioned` | **GREEN** for bootstrap reachability | Delay public launch if later lost | Support/legal publication still 28/45 |
 | Analytics / consent tooling | Product | 39 | `not_started` | **AMBER** (learning) | Essential-only first-party | SCOPE-REDUCIBLE; affiliate conversion is not a launch-acceptance metric |
 | Search Console | Product / SEO | 39 / 45 | `not_started` (EXT-29) | **AMBER** | Launch without ranking claims; still require noindex honesty | Indexability proof — private-route noindex is NON-WAIVABLE |
@@ -662,7 +666,7 @@ If the official retailer is strongest under the objective scoring model, it may 
 6. an unverified / conditional voucher does not affect PiqScore;
 7. affiliate commission does not affect the result.
 
-**EC-31 mixed-affiliate proof is conditional (2026-09-07).** If affiliate-enabled merchants are active in the frozen launch candidate, evidence must prove affiliate neutrality by showing that affiliate status cannot alter source eligibility, effective-cost evaluation, PiqScore, Recommendation, Best Piq, or organic ordering. If zero affiliate-enabled merchants are active at launch, runtime mixed-monetization comparison is not required. Architecture/tests must still prove that affiliate economics are absent from organic scoring/recommendation paths. Mixed affiliate/non-affiliate runtime evidence is deferred until affiliate monetization is activated.
+**EC-31 mixed-affiliate proof is conditional (2026-09-07).** If affiliate-enabled merchants are active in the frozen launch candidate, evidence must prove affiliate neutrality by showing that affiliate status cannot alter source eligibility, evaluated set, effective-cost evaluation, PiqScore, Recommendation, Best Piq, or organic ordering. If zero affiliate-enabled merchants are active at launch, runtime mixed-monetization comparison is not required. Architecture/tests must still prove that affiliate economics are absent from organic scoring/recommendation paths. Mixed affiliate/non-affiliate runtime evidence is deferred until affiliate monetization is activated. Every other EC-31 effective-cost requirement is unchanged.
 
 Do **not** require a merchant to expose fields it does not provide. In that case PiqSavi must expose the limitation honestly. Evidence must use the actual certified merchant technical exposure and policy permissions available at launch. Do not treat `CapabilityPolicyState` as proof that a field was technically available.
 
@@ -681,7 +685,7 @@ Mock remains non-production only.
 
 | Capability | Implemented | CI tested | Staging proven | Production rehearsed | Launch approved |
 |------------|:-----------:|:---------:|:--------------:|:--------------------:|:---------------:|
-| Auth register/login/logout | Yes | Yes | Yes (`79bd03f` Sprint 26 tech evidence; Sprint 26 open for EXT) | Pending (41/45) | Pending (44) |
+| Auth register/login/logout | Yes | Yes | Yes (`79bd03f` Sprint 26 tech evidence; Sprint 26 open for EXT-01) | Pending (41/45) | Pending (44) |
 | Password reset / email verify | Partial | Partial | Pending (27) | Pending (41) | Pending (44) |
 | Privacy/deletion/legal | No | No | Pending (28) | Pending (45) | Pending (44) |
 | Consumer decision web UI (Product Foundation) | Yes (merged) | Yes (merged suite) | Pending (29 staging journey on later candidate) | Pending (45) | Pending (44) |
@@ -736,8 +740,8 @@ Mock remains non-production only.
 | Legal package | Counsel | 28 → 44 | Review latency | Delay launch |
 | Consumer decision experience + Conversational Continuity | API stable (24); approved Product Foundation manifest | 29 | Scope creep or parallel Results authority | Preserve canonical Results authority; hold launch if CC-01 is incomplete |
 | Platform unify + min reliability contracts | Lock review | 31 | Dual-run complexity | Documented dual-run; September 15 disposition recorded (retain intentional dual implementations) |
-| First real market | EXT-01…05 + **31 contracts** | 32–36 | Provider denial | Remove failed markets; require ≥1 certified market |
-| Remaining markets | EXT-02…05 + 31 | 33–36 (parallel OK) | Staggered denials | Launch with subset |
+| First real market | EXT-01 + **31 contracts** | 32 | Provider denial / missing product-data rights | Delay PH shopping launch; US/SG/UK/CA are not September substitutes unless owner expands |
+| Remaining markets | EXT-02…05 + 31 | 33–36 (parallel OK after owner expansion) | Staggered denials | `n_a_beta` for September |
 | MarketContext/FX + destination re-eval | 31 + 29 UI shell | 37 | FX vendor | Fail-closed no compare; no client-side fake prices |
 | Cross-connector hardening + live mode | ≥1 certified market preferred | 38 | Incomplete chaos coverage | Hold live shopping launch |
 | Prod path | Staging green | 41 | AWS/DNS/TLS | Delay public |
@@ -972,16 +976,16 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 - Sprint 29 Product Foundation + 29.0–29.4C + economics + UUID presentation + schema 1.2 + research authorization handoff **merged**
 - Sprint 31 research execution router / provider contract **merged** and **formally owner-closed**. Historical gate satisfied.
 - Sprint 32 **in progress** (foundation slices 32.1–32.5). Sprint 32 is **not complete**. Production certified research providers remain **zero**. Live research execution remains unimplemented. No PH merchant is production-certified.
-- Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline). Shopee Sprint 26 evidence is updated on this baseline: affiliate dashboard access observed; Payment & Tax submitted/pending; Affiliate Open API documented but **not granted**. See [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). That is **not** Sprint 32 certification and does **not** close Sprint 26.
-- EXT merchant applications **not started** (EXT-01 / EXT-06 / EXT-07 remain unresolved)
+- Sprint 26 **open** (technical proof is `79bd03f`, not the current baseline). Shopee Sprint 26 evidence records affiliate dashboard access; Payment & Tax submitted/pending; Affiliate Open API documented but **not granted**. See [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). That is **not** Sprint 32 certification, **not** EXT-01 product-data access, and does **not** close Sprint 26.
+- EXT-01 PH product-data access **not started**. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for this beta. EXT-06 remains unresolved for PH credentials.
 - No production AWS apply; no live certified market
 - **2026-09-06 documentation lock:** Philippines-first validation, merchant-neutral search, TikTok deferred from launch-critical scope, and verified effective-purchase-cost ranking remain owner-locked. The 2026-09-06 clause that named Shopee + Lazada as September **affiliate-monetization** targets is **superseded** by the 2026-09-07 lock below. This lock does **not** certify any merchant, start Sprint 38, publish Privacy/Terms, or change the engineering baseline.
-- **2026-09-07 lock (this update):** Public beta launches without affiliate monetization. Product validation is the launch objective. Ordinary outbound merchant links are valid launch behavior. Affiliate architecture is preserved for later activation. Shopee/Lazada affiliate approval is not a launch dependency. Product-data certification remains a launch dependency. EC-31 mixed-affiliate runtime proof is conditional. September 30 target is unchanged. This lock is primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change that removes inactive affiliate-disclosure copy from canonical UUID pages; it does not enable a future affiliate-disclosure attachment path.
+- **2026-09-07 lock (this update):** Public beta launches without affiliate monetization. Product validation is the launch objective. Ordinary outbound merchant links are valid launch behavior. Affiliate architecture is preserved for later activation. Shopee/Lazada affiliate approval is not a launch dependency. Product-data certification remains a launch dependency. EC-31 mixed-affiliate runtime proof is conditional. September 30 target is unchanged. This lock is primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change that removes inactive affiliate-disclosure copy from canonical UUID pages; it does not enable a future affiliate-disclosure attachment path. Additive Sprint 26 / PH-only reconciliation: September supported-market target is Philippines only; EXT-01 remains legitimate PH product-data access (`not_started`); EXT-02…05 and EXT-07 are `n_a_beta`; Sprint 26 remains open for EXT-01 only.
 
 ### Strict gates (cannot be skipped)
 
 1. **Finish remaining Sprint 29 launch proof** — CC-01 staging E2E on the frozen candidate; SEO technical foundation; persistent Ask lock. 29.4B and 29.4C contracts are merged; live research remains later.
-2. **Sprint 26 external bootstrap remaining** — EXT-01…05 applications; Sprint 26 stays open until register evidence exists. Later SHAs still need their own staging proof before launch (EC-01).
+2. **Sprint 26 external bootstrap remaining** — EXT-01 PH product-data access application/request; Sprint 26 stays open until that evidence exists. EXT-02…05 and EXT-07 no longer block Sprint 26 close. Later SHAs still need their own staging proof before launch (EC-01).
 3. **Sprint 27** — real transactional email, sender auth, verify/reset/email-change, token lifecycle, enumeration-safe errors, session rotation, staging E2E, production cutover readiness.
 4. **Sprint 28** — ToS/Privacy/cookie/consent/deletion/export/retention/PII/vendor register/contacts/age notices; search-index privacy; counsel package. Final publication/approval in 44/45.
 5. **Sprint 31 owner close** — satisfied. Router/provider contract is merged; unification ADR, September 15 dual-path disposition (recorded 2026-09-05: retain intentional dual implementations), and onboarding runbook are recorded. Sprint 31 remains formally closed. Sprint 32 has started and remains blocked on external merchant certification, not on Sprint 31.
@@ -1007,11 +1011,11 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 
 ### External risk on this path
 
-See §8 and the register. The items that can miss September 30 unless resolved or scope-reduced are currently **RED/AMBER**: merchant **product-data** approvals (RED until ≥1 certified market), email DNS/auth (AMBER), counsel written approval + policy publication (AMBER), production DNS/TLS/AWS/secrets (AMBER), paging (AMBER), Search Console (AMBER), FX (AMBER, reducible), AI quota (AMBER, reducible). EXT-07 affiliate tracking is optional and is **not** a September launch blocker (2026-09-07).
+See §8 and the register. The items that can miss September 30 unless resolved or scope-reduced are currently **RED/AMBER**: PH product-data access (RED until ≥1 certified PH market), email DNS/auth (AMBER), counsel written approval + policy publication (AMBER), production DNS/TLS/AWS/secrets (AMBER), paging (AMBER), Search Console (AMBER), FX (AMBER, reducible), AI quota (AMBER, reducible). EXT-02…05 are **GREEN** for September (`n_a_beta`). EXT-07 affiliate tracking is optional, `n_a_beta`, and is **not** a September launch blocker (2026-09-07).
 
 ### Scope-reducible if the date is threatened
 
-- Individual markets among PH/US/SG/UK/CA
+- Individual markets among US/SG/UK/CA (already `n_a_beta` for September)
 - Optional providers/sources (TikTok Shop PH is already non-launch-critical)
 - Optional categories
 - Cross-currency compare
@@ -1019,8 +1023,9 @@ See §8 and the register. The items that can miss September 30 unless resolved o
 - Ranking/SEO acquisition outcomes
 - Sprint 47 entirely
 - Advanced Watch monitoring promises
+- Affiliate monetization / EXT-07 tracking (already `n_a_beta` for September)
 
-Do not scope-reduce: truthfulness, privacy, security, legal publication, production isolation, monitoring/paging, rehearsal, private-route noindex, fixture-never-as-live, merchant-neutral search/recommendation, verified-applicable-only discounts/vouchers, unknown-shipping-is-not-free, affiliate-downstream ranking, or the requirement for at least one useful certified market. Affiliate monetization / mixed-runtime affiliate proof **is** scope-reduced for September (2026-09-07 lock).
+Do not scope-reduce: truthfulness, privacy, security, legal publication, production isolation, monitoring/paging, rehearsal, private-route noindex, fixture-never-as-live, merchant-neutral search/recommendation, verified-applicable-only discounts/vouchers, unknown-shipping-is-not-free, affiliate-downstream ranking, or the requirement for at least one useful certified **PH** product-data path. Affiliate monetization / mixed-runtime affiliate proof **is** scope-reduced for September (2026-09-07 lock).
 
 ---
 
@@ -1034,12 +1039,12 @@ Do not scope-reduce: truthfulness, privacy, security, legal publication, product
 | [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) | External dependency register |
 | [`SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md`](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_SUMMARY.md) | Persisted Sprint 30 audit summary |
 | [`evidence/`](evidence/) | Packaged sprint evidence (Sprint 26 current-main staging proof + bootstrap checklist + completion draft) |
-| [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | Sprint 26 technical staging proof (Sprint 26 still open) |
-| [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) | Sprint 26 Shopee evidence (affiliate onboarding active / Open API access pending; not certification) |
+| [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | Sprint 26 technical staging proof (Sprint 26 still open for EXT-01) |
+| [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) | Sprint 26 Shopee evidence (affiliate onboarding active / Open API access pending; not product-data access; not certification) |
 | [`evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md`](evidence/PIQSAVI_CONVERSATIONAL_CONTINUITY_PRODUCT_FOUNDATION_MANIFEST.md) | Owner-approved Product Foundation artwork authority and immutable checksum manifest |
 | [`sprints/`](sprints/) | Per-sprint definitions 26–47 |
 | This 2026-09-06 lock | PH-first validation; merchant-neutral search; TikTok deferred; effective-purchase-cost launch requirement; Sprint 47 remains post-beta. Shopee/Lazada-as-affiliate-monetization-targets clause superseded 2026-09-07. |
-| This 2026-09-07 lock | Public beta without affiliate monetization; ordinary outbound links; affiliate architecture retained; Shopee/Lazada affiliate approval not a launch dependency; EC-31 mixed-affiliate proof conditional; product-data certification remains required; narrow launch-UI honesty change on canonical UUID pages; future affiliate disclosure attachment is not enabled |
+| This 2026-09-07 lock | Public beta without affiliate monetization; ordinary outbound links; affiliate architecture retained; Shopee/Lazada affiliate approval not a launch dependency; EC-31 mixed-affiliate proof conditional; product-data certification remains required; narrow launch-UI honesty change on canonical UUID pages; future affiliate disclosure attachment is not enabled. Additive Sprint 26 / PH-only reconciliation: Philippines-only September supported-market target; EXT-01 = PH product-data access; EXT-02…05/`07` `n_a_beta`; Sprint 26 remains open for EXT-01. |
 | [`../architecture/ARCHITECTURE_LOCK.md`](../architecture/ARCHITECTURE_LOCK.md) | Domain ownership lock (updated cross-link) |
 | [`../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md`](../architecture/SPRINT_25_PRODUCTION_INFRASTRUCTURE.md) | Infra contract; M30 matrix still evidential |
 | [`../LAUNCH_READINESS.md`](../LAUNCH_READINESS.md) | Probe/readiness semantics |
@@ -1051,7 +1056,7 @@ Do not scope-reduce: truthfulness, privacy, security, legal publication, product
 
 | Item | Owner | Covered? |
 |------|-------|----------|
-| P0-1 Live merchants | 32–36 (one primary market sprint per named market); ≥1 market required | Yes |
+| P0-1 Live merchants | 32 (PH for September); 33–36 if owner later expands | Yes |
 | P0-2 Production path | 41 | Yes |
 | P0-3 M30 ops evidence | 42 | Yes |
 | P0-4 Legal/privacy | 28 | Yes |

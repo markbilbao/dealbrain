@@ -4,14 +4,13 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 
 | Sprint | Document |
 |--------|----------|
-| 26 | [Staging Current-Main Proof & Roadmap Bootstrap](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — technical evidence: [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) (sprint still open) |
+| 26 | [Staging Current-Main Proof & Roadmap Bootstrap](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — technical evidence: [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) (sprint still open: EXT-01 PH product-data bootstrap remains) |
 | 27 | [Transactional Identity & Email](SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) — in progress (27.1 implemented; sprint not complete) |
 | 28 | [Privacy, Legal, Consent & Account Deletion](SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) — in progress (28.1 implemented; sprint not complete) |
 | 29 | [Production Consumer Decision Experience & Conversational Continuity](SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md) |
 | 30 | [Public Beta Readiness Audit (Historical)](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_HISTORICAL.md) |
 | 31 | [Merchant Platform Unification](SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md) — formally owner-closed; ADR: [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md) |
-| 32 | [Philippines Merchant Certification](SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) — in progress; not complete; initial validation market; TikTok not launch-critical; affiliate monetization deferred |
-| 33 | [United States Merchant Certification](SPRINT_33_UNITED_STATES_MERCHANT_CERTIFICATION.md) |
+| 32 | [Philippines Merchant Certification](SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) — in progress; not complete; September validation market; product-data path required; TikTok not launch-critical; affiliate monetization deferred / tracking not required |
 | 33 | [United States Merchant Certification](SPRINT_33_UNITED_STATES_MERCHANT_CERTIFICATION.md) |
 | 34 | [Singapore Merchant Certification](SPRINT_34_SINGAPORE_MERCHANT_CERTIFICATION.md) |
 | 35 | [United Kingdom Merchant Certification](SPRINT_35_UNITED_KINGDOM_MERCHANT_CERTIFICATION.md) |

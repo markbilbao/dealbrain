@@ -375,6 +375,8 @@ No Affiliate Open API access-request ID, Seller/ISV application ID, or generic �
 
 This record does **not** mark EXT-01, EXT-06, or EXT-07 complete, approved, or provisioned.
 
+**2026-09-07 register pointer (does not rewrite this 2026-09-02 snapshot):** Authoritative current statuses live in [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md). EXT-01 remains `not_started` and now specifically means PH **product-data** access; this Shopee affiliate record still does **not** satisfy it. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the September PH validation beta. Affiliate permission ≠ product-data permission.
+
 ---
 
 ## 13. Sprint 32 effect
