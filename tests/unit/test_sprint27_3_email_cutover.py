@@ -249,9 +249,7 @@ class TestSenderConstruction:
 
 class TestActionUrls:
     def test_trusted_configured_base_is_used(self) -> None:
-        url = build_trusted_action_url(
-            "https://staging.piqsavi.com", "/reset-password", "abc"
-        )
+        url = build_trusted_action_url("https://staging.piqsavi.com", "/reset-password", "abc")
         assert url == "https://staging.piqsavi.com/reset-password?token=abc"
 
     def test_malformed_action_base_rejected(self) -> None:
@@ -381,9 +379,7 @@ class TestProviderFailureSafety:
             http_post=redirect,
         )
         with pytest.raises(EmailDeliveryError, match="Transactional email delivery failed") as exc:
-            sender.send(
-                EmailMessage(to_address="user@example.com", subject="x", body_text="y")
-            )
+            sender.send(EmailMessage(to_address="user@example.com", subject="x", body_text="y"))
         assert "secret-redirect-body" not in str(exc.value)
 
         def invalid(_url: str, **_kwargs: Any) -> object:
@@ -396,13 +392,9 @@ class TestProviderFailureSafety:
             http_post=invalid,
         )
         with pytest.raises(EmailDeliveryError, match="Transactional email delivery failed"):
-            sender.send(
-                EmailMessage(to_address="user@example.com", subject="x", body_text="y")
-            )
+            sender.send(EmailMessage(to_address="user@example.com", subject="x", body_text="y"))
 
-    def test_resend_failure_stays_enumeration_safe(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_resend_failure_stays_enumeration_safe(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("app.core.config.settings", _settings(APP_ENV="staging"))
 
         def fail(_url: str, **_kwargs: Any) -> httpx.Response:
@@ -451,9 +443,7 @@ class TestBranding:
         }
         for message in messages:
             blob = " ".join(
-                part
-                for part in (message.subject, message.body_text, message.body_html)
-                if part
+                part for part in (message.subject, message.body_text, message.body_html) if part
             )
             assert PUBLIC_BRAND in blob
             assert INTERNAL_CODENAME not in blob
@@ -569,7 +559,7 @@ class TestStagingContractFiles:
     def test_staging_compose_pins_demo_token_false(self) -> None:
         text = STAGING_COMPOSE.read_text(encoding="utf-8")
         assert 'ALLOW_DEMO_RESET_TOKENS: "false"' in text
-        assert "TRANSACTIONAL_EMAIL_FROM_NAME: \"PiqSavi\"" in text
+        assert 'TRANSACTIONAL_EMAIL_FROM_NAME: "PiqSavi"' in text
         assert "https://staging.piqsavi.com" in text
         assert "dealbrain/staging/resend_api_key" in text
 
