@@ -70,6 +70,35 @@ def _get_plain_secret(secret_id: str, region: str) -> str:
     return _aws_get_secret_string(secret_id, region)
 
 
+def _usable_resend_api_key(value: str) -> bool:
+    """Return True only for a non-empty, non-placeholder Resend key.
+
+    Host script stays standalone — do not import application validation.
+    """
+    key = (value or "").strip()
+    if not key:
+        return False
+    lowered = key.lower()
+    if lowered in {
+        "change_me",
+        "changeme",
+        "replace_me",
+        "password",
+        "secret",
+        "todo",
+        "placeholder",
+        "example",
+        "test",
+        "dev",
+    }:
+        return False
+    if "change_me" in lowered or "replace_me" in lowered:
+        return False
+    if lowered.startswith("<") and lowered.endswith(">"):
+        return False
+    return not (lowered.startswith("${") and lowered.endswith("}"))
+
+
 def build_database_url(
     *,
     username: str,
@@ -172,6 +201,24 @@ def assemble(
             mapping[env_name] = _get_plain_secret(f"{secrets_prefix}/{leaf}", region)
         except SecretAssemblyError:
             mapping[env_name] = ""
+
+    # Sprint 27.3 non-secret identity-email contract. The Resend API key is
+    # injected only from Secrets Manager leaf `{prefix}/resend_api_key`
+    # (staging default: dealbrain/staging/resend_api_key). Never write a
+    # placeholder that could pass startup validation. Provider stays null
+    # until a usable key is present so current staging does not construct
+    # ResendEmailSender without credentials.
+    mapping["ALLOW_DEMO_RESET_TOKENS"] = "false"
+    mapping["TRANSACTIONAL_EMAIL_FROM"] = "no-reply@piqsavi.com"
+    mapping["TRANSACTIONAL_EMAIL_FROM_NAME"] = "PiqSavi"
+    mapping["PUBLIC_APP_BASE_URL"] = "https://staging.piqsavi.com"
+    resend_key = mapping.get("RESEND_API_KEY", "")
+    if _usable_resend_api_key(resend_key):
+        mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "resend"
+        mapping["RESEND_API_KEY"] = resend_key.strip()
+    else:
+        mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "null"
+        mapping["RESEND_API_KEY"] = ""
 
     _atomic_write_env(env_file, mapping)
     mode = stat.S_IMODE(env_file.stat().st_mode)
