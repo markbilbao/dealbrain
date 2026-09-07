@@ -5,7 +5,7 @@
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
-**Register row:** EXT-01 (Philippines market) remains `not_started`  
+**Register row:** EXT-01 (Philippines **product-data** access) remains `not_started`  
 **Trusted production certification records:** **zero**
 
 **Related:**
@@ -89,7 +89,7 @@ Owner-observed Shopee facts outside official `main` (affiliate dashboard access,
 | Sprint 31 production certification catalog | empty |
 | Sprint 31 production routing catalog | empty |
 | Sprint 32 production evidence catalog | empty |
-| EXT-01 / EXT-06 / EXT-07 | `not_started` |
+| EXT-01 / EXT-06 | EXT-01 `not_started`; EXT-06 `not_started`; EXT-07 `n_a_beta` for September |
 | Public PH support claim | forbidden |
 
 ---
@@ -357,11 +357,11 @@ Affiliate permission remains independent from product-data permission. Commissio
 
 ### Launch-scope notes (do not rewrite historical rows)
 
-- Philippines is the initial commercial/product validation focus.
-- Shopee Philippines and Lazada Philippines are the September PH beta **initial affiliate-monetization targets**, not exclusive search coverage and not ranking privileges.
+- Philippines is the September supported-market target (2026-09-07).
+- Shopee Philippines and Lazada Philippines were historical 2026-09-06 **initial affiliate-monetization targets**. Affiliate monetization is **not** a September launch requirement. Affiliate approval is not product-data permission and does not certify a live research source.
 - Official brand stores, direct retailers, electronics retailers, authorized reseller sites, and other marketplaces remain **eligible** for routing when a legitimate data path exists. Eligibility is not a requirement to query every integrated merchant on every request.
 - Affiliate status must never exclude or privilege an otherwise relevant legitimate source.
-- **TikTok Shop PH is not launch-critical** for September 2026. Keep the contemplated TikTok inventory rows. Do not destructively remove architecture. Do not claim TikTok was searched unless it was actually queried. Do not give TikTok pre-launch engineering priority over higher-value launch work.
+- **TikTok Shop PH is not launch-critical** for September 2026. Keep the contemplated TikTok inventory rows. Do not include Singapore/paused campaign as PH launch evidence. Do not destructively remove architecture. Do not claim TikTok was searched unless it was actually queried. Do not give TikTok pre-launch engineering priority over higher-value launch work.
 - Search inclusion depends on a legitimate data path, not affiliate status. Scraping is not a workaround. Public language remains **Best Piq among the offers PiqSavi evaluated**.
 
 ### 2026-09-07 owner lock addendum (do not rewrite historical rows)

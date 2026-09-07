@@ -20,14 +20,15 @@ September 30, 2026 is the owner target launch date. It is not permission to bypa
 - Publish coverage matrix
 - Enforce exit criteria EC-01…EC-31 from master roadmap §9 (verify owners’ evidence; do not substitute documentation for runtime proof)
 - Verify EC-31 effective-purchase-cost launch evidence on the frozen candidate (master roadmap §9.5)
-- Market subset rule applied if EXT failures (remove markets rather than fake readiness)
+- Market subset rule: September supported-market target is **Philippines only** unless the owner later expands it. EXT-02…EXT-05 are `n_a_beta` for this beta.
 - TikTok Shop PH is not required for this launch and must not delay Sprint 45
+- Affiliate tracking / EXT-07 is not required for this launch
 - Do not pull Sprint 47 into this sprint
 - Do not mark launch ready if any non-waivable blocker remains
 - Where an optional market is not certified: remove that market from launch claims
 - Where an optional non-core feature is not ready: demote/remove the claim or feature rather than fake readiness
 - Public launch must provide a genuinely useful PiqSavi shopping experience in the supported scope
-- At least one genuinely useful certified market must exist for public shopping launch
+- At least one genuinely useful certified **PH** market must exist for public shopping launch
 - Affiliate monetization is **not** a launch requirement (2026-09-07). Public beta may launch with zero affiliate-enabled merchants. Ordinary non-affiliate outbound merchant links are valid launch behavior
 - Shopee/Lazada affiliate approval, Optimise/Lazada tracking access, payout setup, and network credentials must not block this sprint
 - Do not destructively remove affiliate architecture; future activation remains downstream of organic decision → winning merchant → optional affiliate attachment

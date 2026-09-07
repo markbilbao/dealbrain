@@ -1,17 +1,20 @@
 # Sprint 26 — Staging Current-Main Proof & Roadmap Bootstrap
 
-**Status:** Technical staging proof verified; external bootstrap pending — **Sprint open**
+**Status:** Technical staging proof verified; PH product-data bootstrap pending — **Sprint open**
 **Primary owner / domain:** Ops / release engineering
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-6; P1-7 (primary)
 **Technical evidence package:** [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
 **External bootstrap checklist:** [`../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
-**Shopee current evidence:** [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) — affiliate onboarding active / Open API access pending; Sprint 26 remains open
+**Shopee current evidence:** [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) — affiliate onboarding active / Open API access pending; does **not** satisfy EXT-01 product-data access
 **Completion draft (not a close):** [`../evidence/SPRINT_26_COMPLETION_DRAFT.md`](../evidence/SPRINT_26_COMPLETION_DRAFT.md)
+**2026-09-07 verdict:** **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS**
 
 ## Objective
 
-Prove the current launch candidate on staging and bootstrap external dependency applications so Global Public Beta work can proceed on evidence, not assumptions.
+Prove the current launch candidate on staging and bootstrap the **current-scope** external dependency applications so Global Public Beta work can proceed on evidence, not assumptions.
+
+**2026-09-07 launch-scope lock (documentation only):** PiqSavi will launch its initial public beta as a Philippines-first product-validation beta **without affiliate monetization**. September public beta supported-market target is Philippines only unless the owner later expands it. Affiliate revenue is not a launch acceptance requirement. This does **not** invalidate packaged staging proof at SHA `79bd03f`.
 
 ## Included requirements
 
@@ -19,6 +22,7 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 - Smoke: /live, /ready, auth register/login, search→DealScore→recommendation on staging
 - Record staging-deploy-evidence for the launch candidate
 - Open EXT applications for merchant markets, email provider, domain, support/privacy contacts
+- **Current-scope reconciliation (2026-09-07):** remaining Sprint 26 merchant bootstrap is EXT-01 PH **product-data** access only; EXT-02…EXT-05 are `n_a_beta` for this beta
 - Publish initial entries in EXTERNAL_DEPENDENCY_REGISTER.md with owners and dates
 - Confirm fixture/simulated offers cannot be labeled as live in staging responses
 
@@ -31,11 +35,14 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 ## External dependencies
 
-- EXT-01…EXT-05 bootstrap
+- EXT-01 PH product-data access bootstrap (**remaining Sprint 26 close blocker**)
+- EXT-02…EXT-05 historical market bootstrap — now `n_a_beta` for this beta; not September blockers
+- EXT-07 affiliate tracking — now `n_a_beta` / post-beta; not a September blocker
 - EXT-08
 - EXT-10
 - EXT-17
 - EXT-18
+- EXT-19 engagement bootstrap (complete for Sprint 26; not unconditional legal approval)
 
 ## Implementation deliverables
 
@@ -92,17 +99,21 @@ Prove the current launch candidate on staging and bootstrap external dependency 
 
 | Item | Status |
 |------|--------|
-| Required external dependency actions/applications | Pending (remaining bootstrap rows EXT-01…EXT-05 — market rows still `not_started`; Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed 2026-08-25; real application submission evidence still required; EXT-08 Resend account evidence retained; EXT-09 Resend sender-domain DNS-authentication preparation evidence retained; EXT-10 ownership evidence retained; EXT-17 support-inbox receipt evidence retained; EXT-18 privacy-contact designation/receipt evidence retained; EXT-19 counsel engagement/schedule evidence retained) |
-| Action/application dates | Pending for remaining rows (none invented; EXT-08, EXT-09 preparation, and EXT-10 recorded as evidence verified 2026-08-08; EXT-17 and EXT-18 recorded as 2026-08-09; EXT-19 engagement recorded as 2026-08-10 with consultation 2026-08-19 10:00 Philippines local time) |
-| External-dependency register status updates | Partial — EXT-08 `applied`; EXT-09 `applied` (preparation only — DNS not applied/verified); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (engagement/schedule only — not written approval); remaining Sprint 26 bootstrap rows (EXT-01…EXT-05) remain `not_started` (Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed 2026-08-25; not submitted; no merchant-to-market assignment) |
+| Required current-scope external dependency action | **Pending EXT-01 only** — no PH product-data access application/request evidence exists. Shopee affiliate dashboard / Payment & Tax / Open API documentation do **not** satisfy EXT-01. Lazada/Optimise affiliate approval (if any) is monetization permission only and does **not** certify a live research source. EXT-02…EXT-05 are `n_a_beta` (not required for initial PH beta). EXT-07 is `n_a_beta` (not a September blocker). EXT-08 Resend account evidence retained; EXT-09 DNS-auth preparation retained; EXT-10 ownership retained; EXT-17/18 provisioned; EXT-19 engagement `applied` (conditional later review is not unconditional approval). |
+| Action/application dates | Pending for EXT-01 (none invented). EXT-08/09/10 recorded as evidence verified 2026-08-08; EXT-17/18 as 2026-08-09; EXT-19 engagement as 2026-08-10 with consultation 2026-08-19 10:00 Philippines local time. |
+| External-dependency register status updates | Partial — EXT-02…EXT-05 and EXT-07 now `n_a_beta` for this beta scope; EXT-01 remains `not_started`; EXT-08 `applied`; EXT-09 `applied` (preparation only); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (not `approved`) |
 | Final Sprint 26 completion note | Pending — draft only in evidence package |
-| Sprint 26 final go/no-go close | Pending — Sprint remains open |
+| Sprint 26 final go/no-go close | Pending — Sprint remains open because EXT-01 product-data bootstrap is missing |
 
 Technical conclusion recorded in evidence package:
 
 **SPRINT 26 CURRENT-MAIN STAGING PROOF VERIFIED**
 
-That conclusion does **not** close Sprint 26.
+2026-09-07 close question conclusion:
+
+**SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS**
+
+That conclusion does **not** close Sprint 26. Later `main` SHAs, including PR #114 (`1f66688`), do **not** invalidate this packaged staging proof. Sprint 45 will later re-prove the frozen launch candidate.
 
 ## Brand / domain bootstrap clarification
 
@@ -180,15 +191,16 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Confirmed consultation: 2026-08-19, 10:00 AM, Philippines local time
 - Evidence paths: [`../evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](../evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png); [`../evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](../evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png)
 - Evidence shows counsel acceptance of PiqSavi legal consultation/review; scope covering ToS, Privacy/data-handling, affiliate/advertising disclosures, AI/recommendation disclosures/disclaimers, consumer-protection considerations, deletion/export/retention, cookie/tracking, and country-specific considerations for intended markets; counsel confirmation of date/time with calendar-invite request; supporting-document request before consultation
-- Merchant/affiliate terms-review discussion for research shortlist (Shopee, Lazada, TikTok Shop, Amazon, Temu) is in consultation scope only — does **not** select providers in the register and does **not** advance EXT-01…EXT-05 to `applied`
+- Merchant/affiliate terms-review discussion for research shortlist (Shopee, Lazada, TikTok Shop, Amazon, Temu) is in consultation scope only — does **not** select providers in the register and does **not** advance EXT-01 to `applied`
 - Merchant-program **application** clearance (signed record 2026-08-25) is recorded as sanitized engineering evidence only; applications are **not** submitted
-- Does **not** prove written legal approval of Terms/Privacy, launch legal approval, or privacy-regime compliance
+- Owner-stated later comprehensive counsel review (eight documents; cleared to proceed only after specified revisions / implementation conditions) is **not** unconditional legal approval and does **not** make EXT-19 `approved`
+- Does **not** prove written legal approval of published Terms/Privacy, launch legal approval, or privacy-regime compliance
 
-**Sprint 26 remains OPEN.**
+**Sprint 26 remains OPEN.** The single remaining Sprint 26 blocker is a real PH product-data access application/request for EXT-01.
 
 ## Shopee evidence clarification
 
-Additive clarification only — does **not** close Sprint 26, does **not** start or close Sprint 32, and does **not** move EXT-01 / EXT-06 / EXT-07 off `not_started`:
+Additive clarification only — does **not** close Sprint 26, does **not** start or close Sprint 32, and does **not** move EXT-01 off `not_started`:
 
 - Authoritative Shopee Sprint 26 evidence: [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md)
 - Counsel-cleared to apply (2026-08-25) remains true
@@ -196,7 +208,7 @@ Additive clarification only — does **not** close Sprint 26, does **not** start
 - Payment & Tax: submitted / pending review
 - Affiliate Open API: documented; PiqSavi access **not granted**; AppID/Secret **none**
 - Seller/ISV Open Platform: held; not submitted
-- Do not collapse those tracks into one “Shopee application submitted” or “API-ready” claim
+- Affiliate permission ≠ product-data permission. These facts do **not** satisfy EXT-01.
 
 ## Predecessor sprints
 
@@ -216,7 +228,7 @@ Go if staging smoke green; No-go blocks 27+ public-path work that assumes stagin
 
 Do not close Sprint 26 merely because later Sprint 29 work proceeded under an approved sequencing exception.
 
-**Sprint close gate:** still blocked on external bootstrap actions and register updates. EXT-01…EXT-05 remain `not_started` (Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed; not submitted; no merchant-to-market assignment). EXT-08/09 remain `applied` (not provisioned). EXT-10 remains `approved` (not provisioned). EXT-17/18 remain `provisioned` for bootstrap reachability. EXT-19 remains `applied` (not written approval).
+**Sprint close gate:** still blocked on **one** current-scope bootstrap action: EXT-01 PH product-data access application/request evidence. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for this beta and do not block Sprint 26 close. EXT-08/09 remain `applied` (not provisioned; Sprint 27 owns DNS/delivery). EXT-10 remains `approved` (not provisioned; Sprint 41 owns public hostname). EXT-17/18 remain `provisioned` for bootstrap reachability (publication remains 28/39/45). EXT-19 remains `applied` (not written published-version approval; Sprint 28/44 own remaining legal work).
 
 ## Rollback or contingency
 

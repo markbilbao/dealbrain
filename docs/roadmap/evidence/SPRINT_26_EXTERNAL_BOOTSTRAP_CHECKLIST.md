@@ -4,9 +4,9 @@
 **Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)  
 **Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Related evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) · Shopee current evidence [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) (affiliate onboarding active / Open API access pending; does **not** move EXT-01 to `applied`)  
-**Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone.
+**Rule:** Do **not** change register status from `not_started` until real external action evidence exists. Do **not** invent dates. Do **not** claim an application was submitted from this document alone. Do **not** treat affiliate approval as product-data permission.
 
-**Register snapshot:** EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). EXT-17 is `provisioned` on retained sanitized support-inbox receipt evidence (2026-08-09). EXT-18 is `provisioned` on retained sanitized privacy-contact designation and receipt evidence (2026-08-09). EXT-19 is `applied` on retained sanitized counsel engagement + schedule confirmation evidence (2026-08-10) — consumer ToS/Privacy written approval still pending. Remaining listed bootstrap rows (EXT-01…EXT-05) remain `not_started`. Shopee, Lazada, TikTok Shop, Amazon, and Temu merchant/program applications are counsel-cleared to proceed (signed record 2026-08-25; sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md)). Counsel-form row labels on that PDF are not register IDs. Shopee later operational evidence (affiliate dashboard access; Payment & Tax submitted/pending; Affiliate Open API documented but not granted) is recorded at [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) and does **not** make EXT-01 `applied`. Lazada, TikTok Shop, Amazon, and Temu remain without submission evidence.
+**Register snapshot (2026-09-07 PH validation-beta reconciliation):** EXT-01 remains `not_started` and is the **only remaining Sprint 26 bootstrap blocker** (legitimate PH product-data access application/request still missing). EXT-02…EXT-05 are `n_a_beta` (not required for the initial PH-only beta; rows retained; not submitted). EXT-07 is `n_a_beta` / post-beta (not a September blocker). EXT-08 is `applied` on retained sanitized Resend provider-selection/account-establishment evidence (2026-08-08). EXT-09 is `applied` on retained sanitized Resend sender-domain DNS-authentication **preparation** evidence (2026-08-08) — DNS not applied/verified. EXT-10 is `approved` on retained sanitized ownership evidence (2026-08-08). EXT-17 is `provisioned` on retained sanitized support-inbox receipt evidence (2026-08-09). EXT-18 is `provisioned` on retained sanitized privacy-contact designation and receipt evidence (2026-08-09). EXT-19 is `applied` on retained sanitized counsel engagement + schedule confirmation evidence (2026-08-10) — later owner-stated comprehensive review is **conditional** (proceed after revisions / implementation conditions) and is **not** unconditional written approval. Shopee, Lazada, TikTok Shop, Amazon, and Temu merchant/program applications remain counsel-cleared to proceed (signed record 2026-08-25; sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md)). Counsel-form row labels on that PDF are not register IDs.
 
 ---
 
@@ -28,91 +28,77 @@
 | Support inbox provisioned | EXT-17 (`support@piqsavi.com` alias → monitored Workspace Gmail; sanitized inbound receipt, 2026-08-09) |
 | Provider account established (applied; not approved/provisioned) | EXT-08 (Resend selected; sanitized account-establishment proof, 2026-08-08) |
 | Ownership evidence retained (approved; not provisioned) | EXT-10 (`piqsavi.com` sanitized Cloudflare registration/control proof, 2026-08-08) |
-| Requires provider selection | EXT-01…EXT-05 (merchant/API partner **per market**). Counsel-cleared merchant/program applications are Shopee, Lazada, TikTok Shop, Amazon, and Temu — owner still selects which merchant(s) map to which market(s) and submits. |
+| Requires provider selection | EXT-01 (PH **product-data** path). Counsel-cleared merchant/program applications are Shopee, Lazada, TikTok Shop, Amazon, and Temu — owner still selects a legitimate PH product-data route and submits/requests access. Affiliate approval is not enough. |
 | Sender-domain auth plan prepared (applied; DNS not applied/verified) | EXT-09 (Resend DKIM / Return-Path MX+SPF / DMARC `p=none` plan for `piqsavi.com`, 2026-08-08) |
 | Requires a purchased/configured domain | EXT-11/12 later (DNS/TLS — out of Sprint 26 bootstrap list; still `not_started`, separate from EXT-10 ownership) |
-| Legal gate to submit merchant/program applications | Shopee, Lazada, TikTok Shop, Amazon, and Temu — **cleared** 2026-08-25 (application clearance only). Owner submission + submission evidence still required. Register EXT-01…EXT-05 market rows stay `not_started` until submission evidence. EXT-18 privacy-contact bootstrap still coordinates with EXT-19 for consumer-legal advice. |
-| Market-specific dependencies | EXT-01 PH, EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA |
+| Legal gate to submit merchant/program applications | Shopee, Lazada, TikTok Shop, Amazon, and Temu — **cleared** 2026-08-25 (application clearance only). Owner PH **product-data** submission + submission evidence still required for EXT-01. Register EXT-02…EXT-05 are `n_a_beta` for this beta. EXT-18 privacy-contact bootstrap still coordinates with EXT-19 for consumer-legal advice. |
+| Market-specific dependencies | EXT-01 PH launch-critical; EXT-02 US, EXT-03 SG, EXT-04 UK, EXT-05 CA = `n_a_beta` for the initial PH-only beta |
 
 ---
 
-## EXT-01 — Philippines merchant/API
+## EXT-01 — Philippines merchant/product-data access
 
 | Field | Value |
 |-------|-------|
 | Current documented status | `not_started` |
-| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (signed record 2026-08-25). This does **not** select any of those merchants as the PH provider. |
+| Launch-critical meaning | At least one legitimate, useful PH **product-data** path. Affiliate permission ≠ product-data permission. |
+| Acceptable path types | Official merchant API; authorized product feed; authorized retailer integration; partner/data feed; permitted public data source; another documented legitimate path |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (signed record 2026-08-25). This does **not** select any of those merchants as the PH product-data provider. |
 | Responsible owner | Marketplace eng + legal |
-| Exact action the user must take | Identify official program/portal and intended PH merchant mapping; submit access/application. Counsel legal gate to apply to Shopee, Lazada, TikTok Shop, Amazon, and Temu is satisfied; owner still submits a market-row access application before EXT-01 may become `applied`. Shopee current operational evidence: [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). Payment & Tax pending and Affiliate dashboard access do **not** by themselves move this row. |
-| Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope PH; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
-| Evidence that must be retained | Application confirmation (ticket/email/portal ID); submitted date; partner name; terms draft/version identifier (no secrets in git) |
-| Fallback | Delay PH as named supported market; site may still launch with other markets |
-| Launch impact | Blocks naming Philippines as a supported shopping market (Sprint 32) |
+| Exact action the user must take | Identify and submit/request **product-data** access for at least one useful PH path. Counsel legal gate to apply to the shortlist is satisfied; owner still submits a PH product-data application/request before EXT-01 may become `applied`. Shopee current operational evidence: [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). Payment & Tax pending, Affiliate dashboard access, and Lazada/Optimise affiliate approval do **not** by themselves move this row. An observed Optimise campaign with Product Feed: 0 items does **not** certify Lazada as a live research source. |
+| Information/documents needed | Business identity; intended **product-data** use; market scope PH; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
+| Evidence that must be retained | Application/request confirmation (ticket/email/portal ID); submitted date; partner name; terms draft/version identifier (no secrets in git) |
+| Fallback | Delay PH as named supported market. September public beta supported-market target is Philippines only unless the owner later expands it. |
+| Launch impact | Blocks naming Philippines as a supported shopping market (Sprint 32) and blocks September PH shopping launch until ≥1 useful PH product-data path exists |
 | Register fields to update after action | `Application date`, `Current status` → `applied`, `Evidence required` notes / links (non-secret), decision-window if known |
 
 ---
 
-## EXT-02 — United States merchant/API
+## EXT-02 — United States merchant/API (deferred / `n_a_beta`)
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
-| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this US market row. |
+| Current documented status | `n_a_beta` |
+| Historical bootstrap status | `not_started` — no application submitted |
+| Counsel-clearance status | Historical 2026-08-25 clearance retained. This does **not** assign any merchant to this US market row. |
 | Responsible owner | Marketplace eng + legal |
-| Exact action the user must take | Identify official program/portal and intended US merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
-| Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope US; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
-| Evidence that must be retained | Application confirmation; submitted date; partner name; terms draft/version identifier (no secrets in git) |
-| Fallback | Delay US market naming |
-| Launch impact | Blocks naming United States as a supported shopping market (Sprint 33) |
-| Register fields to update after action | `Application date`, `Current status` → `applied`, evidence notes (non-secret) |
+| Exact action the user must take | **None for September PH beta.** Do not mark submitted. Reopen only if the owner later expands supported markets. |
+| Fallback | Omit US from the September supported-market list |
+| Launch impact | Does **not** block September PH beta |
+| Register fields to update after action | None unless owner expands markets |
 
 ---
 
-## EXT-03 — Singapore merchant/API
+## EXT-03 — Singapore merchant/API (deferred / `n_a_beta`)
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
-| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this SG market row. |
-| Responsible owner | Marketplace eng + legal |
-| Exact action the user must take | Identify official program/portal and intended SG merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
-| Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope SG; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
-| Evidence that must be retained | Application confirmation; submitted date; partner name; terms draft/version identifier (no secrets in git) |
-| Fallback | Delay SG market naming |
-| Launch impact | Blocks naming Singapore as a supported shopping market (Sprint 34) |
-| Register fields to update after action | `Application date`, `Current status` → `applied`, evidence notes (non-secret) |
+| Current documented status | `n_a_beta` |
+| Historical bootstrap status | `not_started` — no application submitted |
+| Exact action the user must take | **None for September PH beta.** TikTok Shop Singapore/paused campaign is **not** PH launch evidence. |
+| Launch impact | Does **not** block September PH beta |
 
 ---
 
-## EXT-04 — United Kingdom merchant/API
+## EXT-04 — United Kingdom merchant/API (deferred / `n_a_beta`)
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
-| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this UK market row. |
-| Responsible owner | Marketplace eng + legal |
-| Exact action the user must take | Identify official program/portal and intended UK merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
-| Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope UK; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
-| Evidence that must be retained | Application confirmation; submitted date; partner name; terms draft/version identifier (no secrets in git) |
-| Fallback | Delay UK market naming |
-| Launch impact | Blocks naming United Kingdom as a supported shopping market (Sprint 35) |
-| Register fields to update after action | `Application date`, `Current status` → `applied`, evidence notes (non-secret) |
+| Current documented status | `n_a_beta` |
+| Historical bootstrap status | `not_started` — no application submitted |
+| Exact action the user must take | **None for September PH beta.** |
+| Launch impact | Does **not** block September PH beta |
 
 ---
 
-## EXT-05 — Canada merchant/API
+## EXT-05 — Canada merchant/API (deferred / `n_a_beta`)
 
 | Field | Value |
 |-------|-------|
-| Current documented status | `not_started` |
-| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (2026-08-25). This does **not** assign any merchant to this CA market row. |
-| Responsible owner | Marketplace eng + legal |
-| Exact action the user must take | Identify official program/portal and intended CA merchant mapping; submit access/application. Counsel legal gate to apply is satisfied; owner still submits. |
-| Information/documents needed | Business identity; intended use; redirect/affiliate model; market scope CA; technical contact — **OWNER INPUT REQUIRED** where not already evidenced |
-| Evidence that must be retained | Application confirmation; submitted date; partner name; terms draft/version identifier (no secrets in git) |
-| Fallback | Delay CA market naming |
-| Launch impact | Blocks naming Canada as a supported shopping market (Sprint 36) |
-| Register fields to update after action | `Application date`, `Current status` → `applied`, evidence notes (non-secret) |
+| Current documented status | `n_a_beta` |
+| Historical bootstrap status | `not_started` — no application submitted |
+| Exact action the user must take | **None for September PH beta.** |
+| Launch impact | Does **not** block September PH beta |
 
 ---
 
@@ -241,10 +227,10 @@
 | What was retained | Engagement acceptance for PiqSavi legal consultation/review; scope covering ToS, Privacy/data-handling, affiliate/advertising disclosures, AI/recommendation disclosures/disclaimers, consumer-protection considerations, deletion/export/retention, cookie/tracking, country-specific considerations for intended markets; counsel confirmation of date/time with calendar-invite request; supporting-document request before consultation |
 | Merchant/affiliate terms review in consultation scope | Discussion expanded to focused review topics for research shortlist Shopee, Lazada, TikTok Shop, Amazon, Temu — **does not** select providers in the register and **does not** advance EXT-01…EXT-05 to `applied` |
 | Merchant-program application clearance | Signed record 2026-08-25: Shopee, Lazada, TikTok Shop, Amazon, and Temu applications counsel-cleared to proceed (conditions N/A; no hold). Sanitized: [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md). Signed PDF outside Git. Counsel-form row labels on that PDF are not register IDs. |
-| Not yet | Written legal approval of consumer ToS/Privacy (EXT-19 `approved`); Terms/Privacy publication; merchant applications submitted; merchant approval; credentials; launch legally approved; privacy-regime compliance claims |
+| Not yet | Written legal approval of **published** consumer ToS/Privacy (EXT-19 `approved`); Terms/Privacy publication; PH product-data application submitted; merchant approval; credentials; launch legally approved; privacy-regime compliance claims |
 | Fallback | Delay public launch |
-| Launch impact | Sprint 26 EXT-19 engagement bootstrap no longer pending; merchant **application** legal gate is cleared; Sprint 28 / 44 still require written approval before EXT-19 `approved`; EXT-01…EXT-05 still require real submission evidence before `applied` |
-| Register fields updated | `Application date` → `2026-08-10`; `Current status` → `applied`; evidence paths + consultation notes retained. Merchant-application clearance recorded in EXT-01…EXT-05 **notes** only — lifecycle remains `not_started`. |
+| Launch impact | Sprint 26 EXT-19 engagement bootstrap no longer pending; merchant **application** legal gate is cleared; Sprint 28 / 44 still require published-version approval before EXT-19 `approved`; EXT-01 still requires real PH product-data submission evidence before `applied`. A later owner-stated comprehensive review (eight documents; proceed only after specified revisions / implementation conditions) is **not** unconditional approval. |
+| Register fields updated | `Application date` → `2026-08-10`; `Current status` → `applied`; evidence paths + consultation notes retained. EXT-02…EXT-05 are now `n_a_beta` for this beta; EXT-01 lifecycle remains `not_started`. |
 
 ---
 
@@ -259,4 +245,4 @@
 - EXT-18 `provisioned` proves privacy-contact designation and reachability for `privacy@piqsavi.com` only; it does **not** prove formal DPO appointment, Privacy Policy legal sufficiency, EXT-19 written approval, or privacy-compliance completion.
 - EXT-19 `applied` proves counsel engagement acceptance and scheduled consultation only; it does **not** prove written legal approval of Terms/Privacy, launch approval, or privacy-compliance completion. EXT-19 is **not** `approved`. Merchant-program **application** clearance (2026-08-25) is recorded separately and does **not** move EXT-01…EXT-05 to `applied`.
 - EXT-11 / EXT-12 remain `not_started`; no DNS hosting / TLS claim is made from EXT-08 `applied`, EXT-09 `applied` (prep), EXT-10 `approved`, EXT-17 `provisioned`, EXT-18 `provisioned`, or EXT-19 `applied`.
-- Remaining checklist actions (other than EXT-08 account bootstrap, EXT-09 DNS-auth preparation, EXT-10 ownership evidence, EXT-17 support-inbox provisioning, EXT-18 privacy-contact provisioning, EXT-19 counsel engagement, and merchant-application **counsel clearance**) are still required before Sprint 26 can close — specifically EXT-01…EXT-05 **real application submission evidence**. This checklist is **not** complete.
+- Remaining checklist actions required before Sprint 26 can close: **EXT-01 real PH product-data access application/request evidence**. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for this beta and do not block Sprint 26 close. Affiliate approval alone cannot satisfy EXT-01. This checklist is **not** complete.

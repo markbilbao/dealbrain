@@ -30,17 +30,16 @@ The trusted Philippines certification architecture is built and validated. PiqSa
 
 Philippines is the **initial commercial/product validation focus** for the September 2026 beta. That is a market-priority decision, not a restriction that PiqSavi may only ever search two marketplaces, and not a change to the existing rule that PH certification failure removes/delays PH only.
 
-**Initial affiliate-monetization targets** for the September PH beta:
+**Initial affiliate-monetization targets** for the September PH beta were recorded on 2026-09-06 as Shopee Philippines and Lazada Philippines. That monetization targeting is **historical**. The 2026-09-07 lock launches **without affiliate monetization**. Ordinary outbound merchant links are valid launch behavior. EXT-07 is not a Sprint 32 September blocker.
 
-- Shopee Philippines
-- Lazada Philippines
-
-Use affiliate links for those merchants where affiliate approval/tracking is available and legally permitted. This does **not** make Shopee or Lazada the exclusive search/recommendation universe, and it does **not** grant ranking privileges. Existing Sprint 32 truth remains authoritative:
+Existing Sprint 32 truth remains authoritative:
 
 - no PH merchant may be called certified unless real evidence supports it;
-- product-data rights and affiliate rights remain separate;
+- **product-data rights and affiliate rights remain separate**;
+- affiliate approval does **not** satisfy EXT-01 unless it independently provides product-data rights sufficient for live PiqSavi research;
 - production certification remains evidence-based;
-- do not falsely mark Shopee or Lazada as live, approved, production-ready, or contractually usable until actual certification is complete.
+- do not falsely mark Shopee or Lazada as live, approved, production-ready, or contractually usable until actual certification is complete;
+- zero affiliate-enabled merchants is acceptable for September.
 
 ### 2026-09-07 owner lock (primarily roadmap/policy plus narrow launch-UI honesty; does not close this sprint)
 
@@ -87,8 +86,9 @@ Preserved distinctions: field present ≠ permitted to use; permitted to use ≠
 - Staging certification incomplete
 - Monitoring / public coverage disclosure incomplete
 - Kill-switch closure evidence incomplete as required
-- EXT-01 / EXT-06 / EXT-07 remain unresolved on the authoritative register
-- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 evidence until separately reconciled into Sprint 26 on `main`
+- EXT-01 / EXT-06 remain unresolved on the authoritative register (EXT-01 = PH product-data access, still `not_started`)
+- EXT-07 is `n_a_beta` for September and does not block this sprint's product-data certification purpose
+- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 evidence until separately reconciled into Sprint 26 on `main`. The 2026-09-07 Sprint 26 reconciliation records those facts as **not** satisfying EXT-01.
 
 ### Production defaults
 
@@ -155,9 +155,9 @@ Certification stages must remain distinct (do not collapse):
 
 ## External dependencies
 
-- EXT-01
-- EXT-06
-- EXT-07
+- EXT-01 (PH product-data access — launch-critical)
+- EXT-06 (PH credentials when a path is approved)
+- EXT-07 is **not** required for September (`n_a_beta` / post-beta)
 
 ## Implementation deliverables
 
@@ -199,8 +199,8 @@ Certification stages must remain distinct (do not collapse):
 - **Fixtures, mocks, imported samples, or simulations cannot close this sprint**
 - PH may be named only after this gate + claims approval
 - Each named market requires: at least one legally usable real source path; current-data evidence; capability-policy evidence; credential/provider approval; truthful coverage definition; staging/limited production proof where required
-- Failure of PH certification removes/delays PH only; it does not necessarily delay Sprint 45 if another certified useful market exists
-- Sprint 45 does not require all five planned markets
+- Failure of PH certification delays/removes PH shopping claims; it does not authorize substituting US/SG/UK/CA as the September beta unless the owner later expands supported markets
+- Sprint 45 does not require US/SG/UK/CA for September
 
 ## Predecessor sprints
 
