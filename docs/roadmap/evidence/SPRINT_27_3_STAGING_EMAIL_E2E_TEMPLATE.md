@@ -101,4 +101,4 @@ Historical template non-claims (kept for the blank harness):
 - EXT-09 is not verified by this template existing
 - `/health` `identity_email_ready` must not be treated as true from configuration alone
 
-Current (2026-09-08) status is recorded in [`SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md): inbox E2E passed; EXT-09 Resend **Verified**; Sprint 27 still open because `identity_email_ready` remains false.
+Current status is recorded in [`SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md): inbox E2E passed; EXT-09 Resend **Verified**; Post-PR #121 / Deploy Staging #32 live `/health` reported `identity_email_adapter=resend` / `identity_email_ready=true`. Sprint 27 / P0-5 is **COMPLETE / CLOSED**. Production email attach remains Sprint 41.

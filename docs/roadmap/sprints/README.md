@@ -5,7 +5,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | Sprint | Document |
 |--------|----------|
 | 26 | [Staging Current-Main Proof & Roadmap Bootstrap](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — technical evidence: [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) (sprint still open: EXT-01 PH product-data bootstrap remains) |
-| 27 | [Transactional Identity & Email](SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) — in progress (27.1–27.4 implemented; 2026-09-08 staging inbox E2E passed; EXT-09 Verified; readiness gate implemented; staging `/health` verification still required; sprint not complete) |
+| 27 | [Transactional Identity & Email](SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) — complete — EXT-09 Verified, staging real-inbox E2E passed, PR #121 readiness gate merged, immutable staging deployment #32 succeeded, and live `/health` confirmed `identity_email_adapter=resend` / `identity_email_ready=true` on 2026-09-08. Production email attach remains Sprint 41 |
 | 28 | [Privacy, Legal, Consent & Account Deletion](SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) — in progress (28.1 implemented; sprint not complete) |
 | 29 | [Production Consumer Decision Experience & Conversational Continuity](SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md) |
 | 30 | [Public Beta Readiness Audit (Historical)](SPRINT_30_PUBLIC_BETA_READINESS_AUDIT_HISTORICAL.md) |

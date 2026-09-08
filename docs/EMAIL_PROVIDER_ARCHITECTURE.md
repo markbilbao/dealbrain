@@ -34,8 +34,11 @@ owner-observed Resend domain **Verified**, 2026-09-08). 27.1/27.2/27.3 do
 is true only when this process has usable Resend runtime configuration **and**
 the merged Sprint 27 external-evidence gate is verified. Missing/placeholder
 keys, a null adapter, unknown environments, and production without a usable
-runtime secret stay `false`. `/health` does not call Resend. Local tests do
-not close Sprint 27; staging deploy and live `/health` verification remain.
+runtime secret stay `false`. `/health` does not call Resend. Sprint 27 /
+P0-5 is **COMPLETE / CLOSED** after PR #121 / Deploy Staging #32: live
+`https://staging.piqsavi.com/health` reported `identity_email_adapter=resend`
+and `identity_email_ready=true` on 2026-09-08. Production transactional email
+is **not** claimed live; production `RESEND_API_KEY` attach remains Sprint 41.
 Email-change confirmation uses the same `EmailSender` port and PiqSavi
 templates; it does not call Resend from auth service code.
 

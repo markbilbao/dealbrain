@@ -179,6 +179,21 @@ Owner/operator observation of the Resend dashboard for `piqsavi.com` on 2026-09-
 | Evidence record | [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) (sanitized text; no invented screenshot) |
 | Explicit non-claims | Does **not** prove production `RESEND_API_KEY` attached, production email live, or Sprint 27 / P0-5 closed (`identity_email_ready` still false) |
 
+This **Verified** addendum's P0-5 non-claim was true when recorded (Deploy Staging #31). It is not rewritten. Sprint 27 / P0-5 later closed on staging after PR #121 / Deploy Staging #32; see the addendum below. Production email attach remains Sprint 41.
+
+### Sprint 27 / P0-5 2026-09-08 Post-PR #121 closure addendum
+
+This addendum does **not** replace the EXT-09 Verified notes above.
+
+| Field | Value |
+|-------|-------|
+| Sprint 27 / P0-5 | **COMPLETE / CLOSED** |
+| Git SHA | `a5468ecf65be40bb36a053a97869cec97e3a529c` (PR #121 merge) |
+| Deploy Staging | #32 / run `34231964695` SUCCESS |
+| Live `/health` | `identity_email_adapter=resend`, `identity_email_ready=true` at `https://staging.piqsavi.com/health` on 2026-09-08 |
+| Production `RESEND_API_KEY` / production email live | **Not proven. Sprint 41.** |
+| Evidence record | [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) §9 |
+
 ### EXT-10 notes (domain ownership — approved)
 
 | Field | Value |

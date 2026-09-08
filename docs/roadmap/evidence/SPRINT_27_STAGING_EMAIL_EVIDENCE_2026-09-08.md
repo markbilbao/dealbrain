@@ -7,7 +7,9 @@
 **Reconciliation date:** 2026-09-08  
 **Baseline `origin/main` SHA:** `55b4e6880875b87bb99bd3331fbe4040fe2483d0`  
 **Contains:** PR #118 (`f0e115cfd7cb426065ce96db8168f46aff092a08`) and PR #119 (this merge commit)  
-**Sprint 27 / P0-5 status after this record:** **OPEN** — EXT-09 is **PASS / VERIFIED**. Remaining closure action is the designed production-code `identity_email_ready` gate update, then staging deploy and `/health` verification.  
+**Sprint 27 / P0-5 status after this original record:** **OPEN** — EXT-09 is **PASS / VERIFIED**. Remaining closure action at that time was the designed production-code `identity_email_ready` gate update, then staging deploy and `/health` verification. That `OPEN` verdict and the live `/health` `identity_email_ready=false` observation below remain historically true for Deploy Staging #31 / SHA `55b4e6880875b87bb99bd3331fbe4040fe2483d0`.
+
+**Post-PR #121 closure follow-up (same date, appended in §9):** **COMPLETE / CLOSED**. After PR #121 merged, built, and deployed through Deploy Staging #32, live `/health` reported `identity_email_adapter=resend` and `identity_email_ready=true`.
 **Production code changed by this record:** No  
 **Merge performed:** No
 
@@ -254,3 +256,48 @@ Status values: **PASS** (implementation + required evidence), **PARTIAL** (imple
 - `identity_email_ready=true` is **not** claimed.
 - Inbox delivery is **not** production cutover.
 - No later sprint (28, 29, 37–41) work is pulled into Sprint 27 by this record.
+
+These non-claims applied to the **original 2026-09-08 reconciliation** (Deploy Staging #31). They are not rewritten. The Post-PR #121 follow-up in §9 records later closure of Sprint 27 / P0-5 on staging only. Production transactional email remains **not** live.
+
+---
+
+## 9. Post-PR #121 closure verification
+
+This follow-up is **additive**. It does not rewrite §2 live `/health` (`identity_email_ready=false` on Deploy Staging #31), §5, or §8.
+
+After the original record, the remaining Sprint 27 closure action was executed:
+
+1. PR #121 merged the identity-email readiness gate onto `main`.
+2. That SHA was built and deployed to staging.
+3. The owner checked the live public staging endpoint.
+
+| Item | Value |
+|------|-------|
+| Git SHA | `a5468ecf65be40bb36a053a97869cec97e3a529c` |
+| PR | #121 — Sprint 27: activate verified identity-email readiness gate |
+| Merge | Yes — `Merge pull request #121 from markbilbao/cursor/sprint-27-identity-email-readiness-cb77` |
+| Main CI | Passed for this SHA |
+| Build Image run | `34230096725` |
+| Release ID | `rel-20260908T130824Z-a5468ecf65be` |
+| Immutable image digest | `sha256:0a0a3022ecb1f758a0f58aef821adf4dadf8b18834ed3971ee70dc45a2d72787` |
+| Deploy Staging | #32 / run `34231964695` — **SUCCESS** |
+| Date | 2026-09-08 |
+| Live endpoint | `https://staging.piqsavi.com/health` |
+| Observed live `/health` | `environment=staging`, `status=up`, `identity_email_adapter=resend`, `identity_email_ready=true` |
+| Authoritative deploy result | `final_status=staging_ok`, `localhost_live=true`, `localhost_ready=true`, `alb_target_healthy=true`, `smoke_ok=true` |
+
+Earlier Sprint 27 evidence already established EXT-09 **PASS / VERIFIED**, public DKIM / SPF / MX / DMARC, Resend sender domain **Verified**, real staging Gmail E2E (verification, password reset, email-change), auth-aware header/logout E2E, demo tokens disabled for staging/production, and secure token lifecycle / enumeration-safe tests.
+
+### Closure verdict
+
+| Question | Verdict |
+|----------|---------|
+| Close Sprint 27 / P0-5 now? | **Yes — COMPLETE / CLOSED** |
+| Earlier Deploy Staging #31 `/health` | Remains historically `identity_email_adapter=resend`, `identity_email_ready=false` |
+| Post-PR #121 Deploy Staging #32 `/health` | `identity_email_adapter=resend`, `identity_email_ready=true` |
+| Production Resend live? | **No** |
+| Production `RESEND_API_KEY` attached? | **No — Sprint 41** |
+| Production email end-to-end verified? | **No — Sprint 41** |
+| Production cutover complete? | **No — Sprint 41** |
+
+Sprint 27 / P0-5 acceptance criteria are satisfied by this staging evidence chain. Production transactional email is **not** claimed live.
