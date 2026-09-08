@@ -13,12 +13,13 @@ import httpx
 import pytest
 from app.auth.email import EmailDeliveryError, EmailMessage, NullEmailSender
 from app.auth.email_factory import (
-    EXTERNAL_EVIDENCE_PENDING,
+    EXTERNAL_EVIDENCE_VERIFIED,
     allows_inline_identity_tokens,
     build_identity_email_sender,
     build_trusted_action_url,
     identity_email_configured,
     identity_email_status,
+    sprint27_external_evidence,
 )
 from app.auth.email_resend import ResendEmailSender
 from app.auth.email_templates import (
@@ -34,7 +35,7 @@ from app.auth.email_templates import (
 from app.auth.security import AuditLogger
 from app.auth.service import AuthService
 from app.core.config import Settings
-from app.core.dependencies import get_user_platform_service
+from app.core.dependencies import get_db, get_launch_health_service, get_user_platform_service
 from app.core.public_brand import INTERNAL_CODENAME, PUBLIC_BRAND
 from app.core.validation import validate_settings
 from app.domain.exceptions import (
@@ -313,24 +314,60 @@ class TestActionUrls:
         assert "evil.example" not in body
 
 
+def _staging_resend(**overrides: Any) -> Settings:
+    payload = {
+        "APP_ENV": "staging",
+        "ALLOW_DEMO_RESET_TOKENS": "false",
+        "TRANSACTIONAL_EMAIL_PROVIDER": "resend",
+        "RESEND_API_KEY": CONFIGURED_KEY,
+        "PUBLIC_APP_BASE_URL": "https://staging.piqsavi.com",
+    }
+    payload.update(overrides)
+    return _settings(**payload)
+
+
+def _health_client(cfg: Settings) -> TestClient:
+    from unittest.mock import AsyncMock, MagicMock
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    app = create_app()
+    session = AsyncMock(spec=AsyncSession)
+    session.execute = AsyncMock(return_value=MagicMock())
+
+    async def override_get_db():
+        yield session
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_launch_health_service] = lambda: LaunchHealthService(cfg=cfg)
+    return TestClient(app)
+
+
 class TestReadinessTruth:
-    def test_configured_resend_is_not_ready(self) -> None:
-        cfg = _settings(
-            APP_ENV="staging",
-            ALLOW_DEMO_RESET_TOKENS="false",
-            TRANSACTIONAL_EMAIL_PROVIDER="resend",
-            RESEND_API_KEY=CONFIGURED_KEY,
-            PUBLIC_APP_BASE_URL="https://staging.piqsavi.com",
-        )
+    def test_verified_evidence_and_configured_staging_resend_is_ready(self) -> None:
+        cfg = _staging_resend()
         status = identity_email_status(cfg)
+        assert sprint27_external_evidence() == EXTERNAL_EVIDENCE_VERIFIED
         assert status["adapter"] == "resend"
         assert status["configured"] is True
-        assert status["external_evidence"] == EXTERNAL_EVIDENCE_PENDING
-        assert status["ready"] is False
+        assert status["external_evidence"] == EXTERNAL_EVIDENCE_VERIFIED
+        assert status["ready"] is True
         assert identity_email_configured(cfg) is True
         report = LaunchHealthService(cfg=cfg).health()
         assert report.checks["identity_email_adapter"] == "resend"
-        assert report.checks["identity_email_ready"] is False
+        assert report.checks["identity_email_ready"] is True
+
+    def test_staging_resend_missing_or_placeholder_key_is_not_ready(self) -> None:
+        for key in ("", "CHANGE_ME", "${RESEND_API_KEY}", "placeholder"):
+            cfg = _staging_resend(RESEND_API_KEY=key)
+            status = identity_email_status(cfg)
+            assert status["adapter"] == "resend"
+            assert status["configured"] is False
+            assert status["external_evidence"] == EXTERNAL_EVIDENCE_VERIFIED
+            assert status["ready"] is False
+            report = LaunchHealthService(cfg=cfg).health()
+            assert report.checks["identity_email_adapter"] == "resend"
+            assert report.checks["identity_email_ready"] is False
 
     def test_null_adapter_is_not_configured_or_ready(self) -> None:
         cfg = _settings(
@@ -341,8 +378,110 @@ class TestReadinessTruth:
         status = identity_email_status(cfg)
         assert status["adapter"] == "null"
         assert status["configured"] is False
-        assert status["external_evidence"] == EXTERNAL_EVIDENCE_PENDING
+        assert status["external_evidence"] == EXTERNAL_EVIDENCE_VERIFIED
         assert status["ready"] is False
+        report = LaunchHealthService(cfg=cfg).health()
+        assert report.checks["identity_email_adapter"] == "null"
+        assert report.checks["identity_email_ready"] is False
+
+    def test_production_without_usable_runtime_resend_is_not_ready(self) -> None:
+        missing_key = _settings(
+            APP_ENV="production",
+            ALLOW_DEMO_RESET_TOKENS="false",
+            TRANSACTIONAL_EMAIL_PROVIDER="resend",
+            RESEND_API_KEY="",
+            PUBLIC_APP_BASE_URL="https://piqsavi.com",
+        )
+        placeholder_key = _settings(
+            APP_ENV="production",
+            ALLOW_DEMO_RESET_TOKENS="false",
+            TRANSACTIONAL_EMAIL_PROVIDER="resend",
+            RESEND_API_KEY="CHANGE_ME",
+            PUBLIC_APP_BASE_URL="https://piqsavi.com",
+        )
+        null_provider = _settings(
+            APP_ENV="production",
+            ALLOW_DEMO_RESET_TOKENS="false",
+            TRANSACTIONAL_EMAIL_PROVIDER="null",
+            RESEND_API_KEY=CONFIGURED_KEY,
+            PUBLIC_APP_BASE_URL="https://piqsavi.com",
+        )
+        for cfg in (missing_key, placeholder_key, null_provider):
+            status = identity_email_status(cfg)
+            assert status["configured"] is False
+            assert status["external_evidence"] == EXTERNAL_EVIDENCE_VERIFIED
+            assert status["ready"] is False
+            report = LaunchHealthService(cfg=cfg).health()
+            assert report.checks["identity_email_ready"] is False
+        assert identity_email_status(null_provider)["adapter"] == "unavailable"
+        assert identity_email_status(missing_key)["adapter"] == "resend"
+
+    def test_unknown_environment_fails_closed(self) -> None:
+        from types import SimpleNamespace
+
+        cfg = SimpleNamespace(
+            app_env="lab",
+            transactional_email_provider="resend",
+            resend_api_key=CONFIGURED_KEY,
+            transactional_email_from="no-reply@piqsavi.com",
+            public_app_base_url="https://staging.piqsavi.com",
+            is_production=False,
+        )
+        status = identity_email_status(cfg)  # type: ignore[arg-type]
+        assert status["adapter"] == "unavailable"
+        assert status["ready"] is False
+
+    def test_pending_evidence_keeps_configured_staging_unready(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(
+            "app.auth.email_factory.sprint27_external_evidence",
+            lambda: "pending",
+        )
+        cfg = _staging_resend()
+        status = identity_email_status(cfg)
+        assert status["configured"] is True
+        assert status["adapter"] == "resend"
+        assert status["external_evidence"] == "pending"
+        assert status["ready"] is False
+
+    def test_health_exposes_ready_true_only_for_valid_staging(self) -> None:
+        valid_staging = _staging_resend()
+        cases: list[tuple[Settings, bool]] = [
+            (valid_staging, True),
+            (_staging_resend(RESEND_API_KEY=""), False),
+            (_staging_resend(RESEND_API_KEY="CHANGE_ME"), False),
+            (
+                _settings(
+                    APP_ENV="staging",
+                    ALLOW_DEMO_RESET_TOKENS="false",
+                    TRANSACTIONAL_EMAIL_PROVIDER="null",
+                ),
+                False,
+            ),
+            (
+                _settings(
+                    APP_ENV="production",
+                    ALLOW_DEMO_RESET_TOKENS="false",
+                    TRANSACTIONAL_EMAIL_PROVIDER="resend",
+                    RESEND_API_KEY="",
+                    PUBLIC_APP_BASE_URL="https://piqsavi.com",
+                ),
+                False,
+            ),
+        ]
+        for cfg, expected_ready in cases:
+            with _health_client(cfg) as client:
+                response = client.get("/health")
+            assert response.status_code == 200
+            checks = response.json()["checks"]
+            if expected_ready:
+                assert checks["identity_email_adapter"] == "resend"
+                assert checks["identity_email_ready"] is True
+            else:
+                assert checks["identity_email_ready"] is False
+            assert "RESEND_API_KEY" not in response.text
+            assert CONFIGURED_KEY not in response.text
 
 
 class TestProviderFailureSafety:

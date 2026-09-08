@@ -1,7 +1,7 @@
 # EXT-09 — Resend sender-domain DNS (operator runbook)
 
 **Status:** Instruction plus 2026-09-08 public-DNS check **and** owner-observed Resend domain **Verified**. Sprint 27 sender-domain evidence is **PASS**. Production `RESEND_API_KEY` attach remains Sprint 41.  
-**Sprint:** 27 — EXT-09 complete; remaining sprint closure is the designed `identity_email_ready` production-code gate.  
+**Sprint:** 27 — EXT-09 complete; remaining sprint closure is staging deploy of the identity-email readiness-gate digest and live `/health` `identity_email_ready=true`.  
 **Domain:** `piqsavi.com`  
 **Provider:** Resend  
 **DNS host:** Cloudflare (registrar/control evidenced for EXT-10; this runbook does not claim production public hostname, TLS, or proxy readiness)
@@ -49,7 +49,7 @@ For each copied record:
 2. Return to the Resend domain screen and run **Verify**
 3. Record the date/time and whether Resend reports the domain verified
 4. Do **not** mark EXT-09 `approved` in the register until sanitized verification evidence is retained
-5. Public DNS or Gmail delivery alone is not verification. Combined with Resend **Verified** (recorded 2026-09-08), Sprint 27 sender-domain evidence is complete. Staging inbox E2E (verify/reset/email-change) also passed 2026-09-08 ([`../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md)). Sprint 27 still does not close until the designed `identity_email_ready` code gate is updated and staging `/health` confirms it.
+5. Public DNS or Gmail delivery alone is not verification. Combined with Resend **Verified** (recorded 2026-09-08), Sprint 27 sender-domain evidence is complete. Staging inbox E2E (verify/reset/email-change) also passed 2026-09-08 ([`../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md)). Sprint 27 still does not close until the readiness-gate digest is deployed and live staging `/health` reports `identity_email_ready=true`.
 
 ## Evidence rules
 
