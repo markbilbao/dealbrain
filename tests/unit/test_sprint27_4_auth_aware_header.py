@@ -114,20 +114,46 @@ def test_invalid_token_clears_local_auth_and_restores_signed_out_header() -> Non
     assert "function clearToken()" in ACCOUNT_JS
 
 
-def test_header_sign_out_posts_logout_clears_auth_and_redirects_home() -> None:
-    assert 'data-account-action="sign-out"' in HEADER
-    assert 'data-sign-out-redirect="/"' in HEADER
-    assert 'href="/"' not in HEADER[HEADER.index("Sign out") - 80 : HEADER.index("Sign out")]
-    sign_out = ACCOUNT_JS[
+def _sign_out_js() -> str:
+    return ACCOUNT_JS[
         ACCOUNT_JS.index("async function signOutCurrentDevice") : ACCOUNT_JS.index(
             "function bindActions()"
         )
     ]
+
+
+def test_header_sign_out_posts_logout_clears_auth_and_redirects_home() -> None:
+    assert 'data-account-action="sign-out"' in HEADER
+    assert 'data-sign-out-redirect="/"' in HEADER
+    assert 'href="/"' not in HEADER[HEADER.index("Sign out") - 80 : HEADER.index("Sign out")]
+    sign_out = _sign_out_js()
     assert 'await api("/api/v1/auth/logout", { method: "POST" })' in sign_out
     assert "await clearLocalAuth()" in sign_out
     assert "window.location.assign(redirectTo)" in sign_out
     assert "document.querySelectorAll('[data-account-action=\"sign-out\"]')" in ACCOUNT_JS
     assert 'button.getAttribute("data-sign-out-redirect") || "/login"' in ACCOUNT_JS
+
+
+def test_sign_out_clears_local_auth_and_redirects_when_logout_request_fails() -> None:
+    sign_out = _sign_out_js()
+    try_idx = sign_out.index("try {")
+    logout_idx = sign_out.index('await api("/api/v1/auth/logout", { method: "POST" })')
+    catch_idx = sign_out.index("} catch {")
+    clear_idx = sign_out.index("await clearLocalAuth()")
+    redirect_idx = sign_out.index("window.location.assign(redirectTo)")
+    assert try_idx < logout_idx < catch_idx < clear_idx < redirect_idx
+    try_body = sign_out[try_idx:catch_idx]
+    catch_body = sign_out[catch_idx:clear_idx]
+    after_catch = sign_out[catch_idx:]
+    assert "await clearLocalAuth()" not in try_body
+    assert "window.location.assign(redirectTo)" not in try_body
+    assert "await clearLocalAuth()" in after_catch
+    assert "window.location.assign(redirectTo)" in after_catch
+    assert "setStatus(" not in catch_body
+    assert "apiError" not in sign_out
+    assert "payload" not in sign_out
+    assert "console." not in sign_out
+    assert "alert(" not in sign_out
 
 
 def test_account_sessions_sign_out_still_uses_shared_logout() -> None:

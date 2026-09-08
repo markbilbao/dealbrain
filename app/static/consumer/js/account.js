@@ -448,7 +448,11 @@ async function loadAccount() {
 
 async function signOutCurrentDevice(redirectTo) {
   setStatus("Signing out…");
-  await api("/api/v1/auth/logout", { method: "POST" });
+  try {
+    await api("/api/v1/auth/logout", { method: "POST" });
+  } catch {
+    /* Logout is best-effort. Local/device auth still clears. */
+  }
   await clearLocalAuth();
   window.location.assign(redirectTo);
 }
