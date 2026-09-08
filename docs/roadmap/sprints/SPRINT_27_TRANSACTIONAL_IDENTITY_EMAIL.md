@@ -95,6 +95,19 @@
 
 27.4 exposes the already-implemented email-change lifecycle in the Account UI and replaces engineering-stage confirmation leftovers with dedicated success/failure states. It is implementation evidence only. It does **not** prove live staging inbox delivery, does **not** mark production email readiness, and does **not** close Sprint 27.
 
+## 27.4 follow-up (auth-aware account header)
+
+| Area | Status |
+|------|--------|
+| Shared account/auth header signed-out vs signed-in | implemented — `How it works` / `Support` always; signed-out shows `Sign in` / `Sign up`; signed-in shows `Account` / `Sign out` |
+| Auth proof | implemented — stored bearer token is not sufficient; header uses existing `GET /api/v1/auth/me`; invalid token clears local/device auth and restores signed-out |
+| Header Sign out | implemented — existing `POST /api/v1/auth/logout` + `clearLocalAuth()` / `/account/clear-device` + redirect `/` |
+| Account Sessions Sign out | retained — same `signOutCurrentDevice` helper; default redirect remains `/login` |
+| Initial markup | auth-dependent controls start `hidden` until `/auth/me` resolves (no Sign-in flash for a valid session) |
+| Sprint 27 / P0-5 closure | **not closed** — this is consumer header UX implementation evidence only |
+
+This follow-up does **not** redesign Account Settings, does **not** change identity success states from 27.4, and does **not** close Sprint 27. EXT-09 DNS, real inbox E2E, and live staging email-change inbox E2E remain required.
+
 **Staging secret injection.** Deploy Staging never reads Resend from GitHub. The host assemble script reads optional Secrets Manager leaf `dealbrain/staging/resend_api_key` (same prefix as `app_secret_key` / `cors_origins`). If the leaf is missing or placeholder, assembled `TRANSACTIONAL_EMAIL_PROVIDER` stays `null` and `RESEND_API_KEY` is empty so current staging does not construct `ResendEmailSender` without a key. After the owner creates the secret, the next staging deploy selects Resend automatically.
 
 **Readiness truth.** `identity_email_status()` may report `adapter=resend` and `configured=true` when settings are valid. `external_evidence` stays `pending`. `ready` stays `false` until DNS + real inbox E2E exist. Health still exposes only `identity_email_adapter` and `identity_email_ready`.

@@ -119,6 +119,10 @@ a {
   font-weight: 600;
 }
 
+.site-header [data-header-auth][hidden] {
+  display: none !important;
+}
+
 .text-link {
   color: var(--blue);
   background: none;

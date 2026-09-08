@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 27.2 (verified email change) + Sprint 27.3 (cutover readiness; DNS/inbox E2E still open) + Sprint 27.4 (consumer email-change + identity success-state UX; live inbox E2E still required) + Sprint 28.1 (consent hooks, delete/export)
+**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 27.2 (verified email change) + Sprint 27.3 (cutover readiness; DNS/inbox E2E still open) + Sprint 27.4 (consumer email-change + identity success-state UX + auth-aware account header; live inbox E2E still required) + Sprint 28.1 (consent hooks, delete/export)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -218,8 +218,10 @@ header is treated as an unauthenticated request.
   operator harnesses. It does not verify DNS or prove inbox delivery.
 - **27.4** adds dedicated verification / password-reset / email-change
   success states and removes engineering-only copy from those surfaces.
-  It does not redesign Account settings and does not claim live email
-  delivery.
+  A follow-up makes the shared account/auth header authentication-aware
+  (`/auth/me` validation; Sign out uses the existing logout + local/device
+  clear). It does not redesign Account settings, does not claim live email
+  delivery, and does not close Sprint 27.
 - **EXT-09** sender-domain SPF/DKIM/DMARC is not verified. Do not claim
   production sender authentication from 27.x code alone.
 - **Staging inbox E2E** is still required to close Sprint 27.
