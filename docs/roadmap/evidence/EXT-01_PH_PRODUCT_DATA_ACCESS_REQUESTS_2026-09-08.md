@@ -1,11 +1,11 @@
 # EXT-01 — Philippines product-data access requests (2026-09-08)
 
-**Document type:** Sanitized Sprint 26 / EXT-01 evidence record (non-secret)  
-**Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)  
-**Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
-**Sprint 26 close record:** [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md)  
-**Evidence / action date:** 2026-09-08  
-**Register lifecycle after this record:** EXT-01 `not_started` → **`applied`**  
+**Document type:** Sanitized Sprint 26 / EXT-01 evidence record (non-secret)
+**Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)
+**Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
+**Sprint 26 close record:** [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md)
+**Evidence / action date:** 2026-09-08
+**Register lifecycle after this record:** EXT-01 `not_started` → **`applied`**
 **Evidence source:** Owner-supplied Gmail **Sent** screenshots (Philippines local timestamps)
 
 This record retains confirmation that PiqSavi submitted real Philippines **product-data** access requests. It does **not** record provider approval, credentials, a product feed, API access, or Sprint 32 certification.

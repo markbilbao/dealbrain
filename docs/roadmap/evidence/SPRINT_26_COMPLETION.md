@@ -1,13 +1,13 @@
 # SPRINT 26 COMPLETE / CLOSED
 
-**Label:** SPRINT 26 COMPLETE / CLOSED  
-**Authority:** Authoritative Sprint 26 final completion record.  
-**Close date:** 2026-09-08  
-**Baseline `origin/main` used for this close:** `576df7f5ffd57a5dd57b84a9bc864f4648afce89`  
-**Technical evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
-**External bootstrap checklist:** [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)  
-**EXT-01 request evidence:** [`EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md)  
-**Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
+**Label:** SPRINT 26 COMPLETE / CLOSED
+**Authority:** Authoritative Sprint 26 final completion record.
+**Close date:** 2026-09-08
+**Baseline `origin/main` used for this close:** `576df7f5ffd57a5dd57b84a9bc864f4648afce89`
+**Technical evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
+**External bootstrap checklist:** [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
+**EXT-01 request evidence:** [`EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md)
+**Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
 **Historical 2026-09-07 draft (superseded for current close status):** [`SPRINT_26_COMPLETION_DRAFT.md`](SPRINT_26_COMPLETION_DRAFT.md)
 
 **2026-09-08 close verdict:**
