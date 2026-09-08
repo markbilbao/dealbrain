@@ -1,10 +1,10 @@
 # EXT-09 — Resend sender-domain DNS (operator runbook)
 
-**Status:** Instruction only. DNS is **not** applied and **not** verified by this document.  
-**Sprint:** 27.3 cutover readiness — owner/operator executes after this PR.  
+**Status:** Instruction plus 2026-09-08 public-DNS check. Public DKIM/SPF/MX/DMARC rows for the Resend plan **are** resolvable. Resend domain **Verified** is **not** independently established. Do not mark EXT-09 `approved` / `provisioned` from public DNS or Gmail delivery.  
+**Sprint:** 27 — remaining closure blocker is provider-side **Verified** evidence.  
 **Domain:** `piqsavi.com`  
 **Provider:** Resend  
-**DNS host:** Cloudflare (registrar/control evidenced for EXT-10; this runbook does not claim public hostname, TLS, or proxy readiness)
+**DNS host:** Cloudflare (registrar/control evidenced for EXT-10; this runbook does not claim production public hostname, TLS, or proxy readiness)
 
 Do **not** invent, guess, or reuse abbreviated record values from screenshots. Copy the exact records displayed by the current Resend domain-verification screen at execution time.
 
@@ -47,7 +47,7 @@ For each copied record:
 2. Return to the Resend domain screen and run **Verify**
 3. Record the date/time and whether Resend reports the domain verified
 4. Do **not** mark EXT-09 `approved` / `provisioned` in the register until sanitized verification evidence is retained
-5. Do **not** treat verification as Sprint 27 complete — real inbox E2E is still required ([`../roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md`](../roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md))
+5. Do **not** treat public DNS or Gmail delivery as Sprint 27 complete — Resend **Verified** remains required. Staging inbox E2E (verify/reset/email-change) passed 2026-09-08 ([`../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md))
 
 ## Evidence rules
 
@@ -60,7 +60,8 @@ Retain only sanitized screenshots/logs:
 
 ## Explicit non-claims
 
-- EXT-09 remains `applied` (plan) until live verify evidence exists
+- EXT-09 remains `applied` until sanitized Resend **Verified** evidence exists
+- Public DNS resolvability (checked 2026-09-08) is not provider verification
 - EXT-11 public hostname DNS and EXT-12 TLS are separate
 - Google Workspace receiving / support / privacy inboxes are separate
 - Production `RESEND_API_KEY` attach remains Sprint 41

@@ -1,9 +1,11 @@
 # Sprint 27.3 — Staging transactional-email E2E evidence template
 
-**Document type:** Operator evidence harness (not completed evidence)  
+**Document type:** Operator evidence harness  
 **Sprint definition:** [`../sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](../sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md)  
 **DNS runbook:** [`../../runbooks/EXT_09_RESEND_DNS.md`](../../runbooks/EXT_09_RESEND_DNS.md)  
-**Status:** Template only. Real inbox E2E has **not** been performed. Do not fill this with invented results.
+**Status:** Historical harness. **Do not rewrite the blank tables below as if they were the original execution log.** Completed 2026-09-08 owner/operator + independent-check evidence lives at [`SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
+
+The 2026-08/27.3 blank template is retained so later operators can re-run the same checks. It is not current closure status.
 
 Use this after EXT-09 is verified in Resend and staging is running the 27.3+ digest with `dealbrain/staging/resend_api_key` attached.
 
@@ -92,7 +94,11 @@ Passwords stay in the operator password manager. Do not paste them here.
 
 ## Explicit non-claims until every required row is evidenced
 
-- Sprint 27 is not complete
+Historical template non-claims (kept for the blank harness):
+
+- Completing this template file itself does not close Sprint 27
 - Production secret is not attached (Sprint 41)
 - EXT-09 is not verified by this template existing
 - `/health` `identity_email_ready` must not be treated as true from configuration alone
+
+Current (2026-09-08) status is recorded in [`SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md): inbox E2E passed; EXT-09 Resend **Verified** still required; Sprint 27 still open.
