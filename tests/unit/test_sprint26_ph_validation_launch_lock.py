@@ -10,7 +10,11 @@ DOCS = ROOT / "docs/roadmap"
 REGISTER = (DOCS / "EXTERNAL_DEPENDENCY_REGISTER.md").read_text(encoding="utf-8")
 ROADMAP = (DOCS / "GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md").read_text(encoding="utf-8")
 SPRINT_26 = (DOCS / "sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md").read_text(encoding="utf-8")
-COMPLETION = (DOCS / "evidence/SPRINT_26_COMPLETION_DRAFT.md").read_text(encoding="utf-8")
+COMPLETION_DRAFT = (DOCS / "evidence/SPRINT_26_COMPLETION_DRAFT.md").read_text(encoding="utf-8")
+COMPLETION = (DOCS / "evidence/SPRINT_26_COMPLETION.md").read_text(encoding="utf-8")
+EXT01_EVIDENCE = (DOCS / "evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md").read_text(
+    encoding="utf-8"
+)
 SPRINT_45 = (DOCS / "sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md").read_text(
     encoding="utf-8"
 )
@@ -26,7 +30,9 @@ RECONCILED_DOCS = [
     DOCS / "sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md",
     DOCS / "sprints/README.md",
     DOCS / "evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md",
+    DOCS / "evidence/SPRINT_26_COMPLETION.md",
     DOCS / "evidence/SPRINT_26_COMPLETION_DRAFT.md",
+    DOCS / "evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md",
     DOCS / "evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md",
     DOCS / "evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md",
 ]
@@ -41,7 +47,7 @@ def _status_cell(row_id: str) -> str:
 
 
 def test_ext_status_reconciliation() -> None:
-    assert _status_cell("EXT-01") == "`not_started`"
+    assert _status_cell("EXT-01") == "`applied`"
     assert _status_cell("EXT-02") == "`n_a_beta`"
     assert _status_cell("EXT-03") == "`n_a_beta`"
     assert _status_cell("EXT-04") == "`n_a_beta`"
@@ -51,14 +57,23 @@ def test_ext_status_reconciliation() -> None:
     assert "PH merchant/product-data access" in REGISTER
     assert "Affiliate permission ≠ product-data permission." in REGISTER
     assert "Affiliate approval does **not** satisfy EXT-01" in REGISTER
+    assert "not `approved` / not `provisioned`" in REGISTER
+    assert "2026-09-08" in REGISTER
+    assert "EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md" in REGISTER
 
 
-def test_sprint_26_remains_open_for_ph_product_data() -> None:
-    assert "SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS" in SPRINT_26
-    assert "SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS" in COMPLETION
-    assert "Sprint 26 remains OPEN" in SPRINT_26
+def test_sprint_26_closed_after_ph_product_data_request() -> None:
+    assert "SPRINT 26 COMPLETE / CLOSED" in SPRINT_26
+    assert "SPRINT 26 COMPLETE / CLOSED" in COMPLETION
+    assert "EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md" in SPRINT_26
     assert "79bd03f" in SPRINT_26
-    assert "NOT YET CLOSED" in COMPLETION
+    assert "applied" in EXT01_EVIDENCE
+    assert "not `approved`" in COMPLETION or "Not `approved`" in COMPLETION
+    assert "Sprint 32 is **not** complete" in COMPLETION
+    # Historical 2026-09-07 draft remains historically truthful.
+    assert "SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS" in COMPLETION_DRAFT
+    assert "NOT YET CLOSED" in COMPLETION_DRAFT
+    assert "SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS" in SPRINT_26
 
 
 def test_ph_only_no_affiliate_launch_scope() -> None:
