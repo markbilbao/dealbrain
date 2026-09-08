@@ -2,6 +2,8 @@ const TOKEN_KEY = "piqsavi_access_token";
 const REMEMBER_KEY = "piqsavi_remember_me";
 const CONVERSATION_KEY = "piqsavi_ask_conversation";
 
+let pendingIdentityToken = "";
+
 function qs(selector, root = document) {
   return root.querySelector(selector);
 }
@@ -46,6 +48,48 @@ function clearToken() {
   } catch {
     /* ignore */
   }
+}
+
+async function clearLocalAuth() {
+  clearToken();
+  try {
+    await fetch("/account/clear-device", { method: "POST", headers: { Accept: "application/json" } });
+  } catch {
+    /* ignore */
+  }
+}
+
+function consumeUrlToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token = String(params.get("token") || "");
+  if (window.history?.replaceState) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("token");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+  return token;
+}
+
+function redactToken(message, token) {
+  let text = String(message || "");
+  if (token) text = text.split(token).join("");
+  return text;
+}
+
+function revealIdentityOutcome(kind) {
+  const pending = qs("[data-identity-pending]");
+  const sent = qs("[data-identity-sent]");
+  const success = qs("[data-identity-success]");
+  const failure = qs("[data-identity-failure]");
+  if (pending) pending.hidden = true;
+  if (sent) sent.hidden = kind !== "sent";
+  if (success) success.hidden = kind !== "success";
+  if (failure) failure.hidden = kind !== "failure";
+}
+
+function acceptedIdentityMessage(payload, deliveredCopy, pendingCopy) {
+  if (payload && payload.email_delivery === true) return deliveredCopy;
+  return pendingCopy;
 }
 
 function apiError(payload, fallback) {
@@ -124,6 +168,139 @@ async function afterAuth(payload, nextPath, remember) {
   window.location.assign(nextPath);
 }
 
+function bindIdentityToken() {
+  const page = document.body?.dataset?.page || "";
+  if (page === "confirm-email-change") {
+    pendingIdentityToken = consumeUrlToken();
+    if (!pendingIdentityToken) {
+      revealIdentityOutcome("failure");
+    }
+    return;
+  }
+  if (page === "verify-email" || page === "reset-password") {
+    consumeUrlToken();
+  }
+}
+
+async function handleIdentityForm(form, kind, data) {
+  if (kind === "reset-request") {
+    setStatus("Sending reset instructions…");
+    const { response, payload } = await api("/api/v1/auth/password-reset", {
+      method: "POST",
+      body: JSON.stringify({ email: String(data.get("email") || "") }),
+    });
+    if (!response.ok) {
+      setStatus(apiError(payload, "Reset request failed."));
+      return;
+    }
+    setStatus("");
+    revealIdentityOutcome("sent");
+    return;
+  }
+  if (kind === "reset-confirm") {
+    setStatus("Updating password…");
+    const token = String(data.get("token") || "");
+    const { response, payload } = await api("/api/v1/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({
+        token,
+        new_password: String(data.get("new_password") || ""),
+      }),
+    });
+    if (!response.ok) {
+      const message = redactToken(apiError(payload, "Password reset confirmation failed."), token);
+      if (response.status === 401) {
+        setStatus("");
+        revealIdentityOutcome("failure");
+        return;
+      }
+      setStatus(message);
+      return;
+    }
+    await clearLocalAuth();
+    setStatus("");
+    revealIdentityOutcome("success");
+    return;
+  }
+  if (kind === "verify-request") {
+    setStatus("Sending a verification link…");
+    const { response, payload } = await api("/api/v1/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ email: String(data.get("email") || "") }),
+    });
+    if (!response.ok) {
+      setStatus(apiError(payload, "Verification request failed."));
+      return;
+    }
+    setStatus("");
+    revealIdentityOutcome("sent");
+    return;
+  }
+  if (kind === "verify-confirm") {
+    setStatus("Confirming email…");
+    const token = String(data.get("token") || "");
+    const { response, payload } = await api("/api/v1/auth/verify-email/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+    if (!response.ok) {
+      const message = redactToken(apiError(payload, "Email confirmation failed."), token);
+      if (response.status === 401) {
+        setStatus("");
+        revealIdentityOutcome("failure");
+        return;
+      }
+      setStatus(message);
+      return;
+    }
+    setStatus("");
+    revealIdentityOutcome("success");
+    return;
+  }
+  if (kind === "email-change") {
+    setStatus("Sending confirmation…", "email-change");
+    const { response, payload } = await api("/api/v1/auth/email-change", {
+      method: "POST",
+      body: JSON.stringify({
+        new_email: String(data.get("new_email") || ""),
+        password: String(data.get("password") || ""),
+      }),
+    });
+    if (!response.ok) {
+      setStatus(apiError(payload, "We could not start the email change."), "email-change");
+      return;
+    }
+    setStatus(
+      acceptedIdentityMessage(
+        payload,
+        "Check your new email for a confirmation link.",
+        "Check your new email. If this address can be used, we've sent a confirmation link to complete the change.",
+      ),
+      "email-change",
+    );
+    form.reset();
+    return;
+  }
+  if (kind === "email-change-confirm") {
+    setStatus("Confirming email change…");
+    const token = pendingIdentityToken;
+    const { response, payload } = await api("/api/v1/auth/email-change/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    });
+    if (!response.ok) {
+      setStatus("");
+      revealIdentityOutcome("failure");
+      return;
+    }
+    await clearLocalAuth();
+    setStatus("");
+    revealIdentityOutcome("success");
+    return;
+  }
+  return false;
+}
+
 function bindForms() {
   document.querySelectorAll("[data-account-form]").forEach((form) => {
     form.addEventListener("submit", async (event) => {
@@ -170,61 +347,7 @@ function bindForms() {
           await afterAuth(payload, safeNext(String(data.get("next") || "")), remember);
           return;
         }
-        if (kind === "reset-request") {
-          setStatus("Submitting reset request…");
-          const { response, payload } = await api("/api/v1/auth/password-reset", {
-            method: "POST",
-            body: JSON.stringify({ email: String(data.get("email") || "") }),
-          });
-          if (!response.ok) {
-            setStatus(apiError(payload, "Reset request failed."));
-            return;
-          }
-          const delivery = payload.email_delivery ? "A reset email can be delivered." : "Email delivery is not available on this host.";
-          setStatus(`If an account exists, the request was accepted. ${delivery} Demo tokens are not shown.`);
-          return;
-        }
-        if (kind === "reset-confirm") {
-          setStatus("Updating password…");
-          const { response, payload } = await api("/api/v1/auth/password-reset/confirm", {
-            method: "POST",
-            body: JSON.stringify({
-              token: String(data.get("token") || ""),
-              new_password: String(data.get("new_password") || ""),
-            }),
-          });
-          if (!response.ok) {
-            setStatus(apiError(payload, "Password reset confirmation failed."));
-            return;
-          }
-          setStatus("Password updated. You can sign in with the new password.");
-          return;
-        }
-        if (kind === "verify-request") {
-          setStatus("Submitting verification request…");
-          const { response, payload } = await api("/api/v1/auth/verify-email", {
-            method: "POST",
-            body: JSON.stringify({ email: String(data.get("email") || "") }),
-          });
-          if (!response.ok) {
-            setStatus(apiError(payload, "Verification request failed."));
-            return;
-          }
-          const delivery = payload.email_delivery ? "A verification email can be delivered." : "Email delivery is not available on this host.";
-          setStatus(`If an account exists, the request was accepted. ${delivery} Demo tokens are not shown.`);
-          return;
-        }
-        if (kind === "verify-confirm") {
-          setStatus("Confirming email…");
-          const { response, payload } = await api("/api/v1/auth/verify-email/confirm", {
-            method: "POST",
-            body: JSON.stringify({ token: String(data.get("token") || "") }),
-          });
-          if (!response.ok) {
-            setStatus(apiError(payload, "Email confirmation failed."));
-            return;
-          }
-          setStatus("Email verified.");
+        if (await handleIdentityForm(form, kind, data) !== false) {
           return;
         }
         if (kind === "delete") {
@@ -240,8 +363,7 @@ function bindForms() {
             setStatus(apiError(payload, "Account deletion failed."), "delete");
             return;
           }
-          clearToken();
-          await fetch("/account/clear-device", { method: "POST", headers: { Accept: "application/json" } });
+          await clearLocalAuth();
           setStatus(
             `Account deleted. Sessions revoked: ${payload.sessions_revoked ?? 0}. This does not certify backup, log, or vendor erasure.`,
             "delete",
@@ -279,9 +401,17 @@ async function loadAccount() {
   qs("[data-account-name]").textContent = payload.display_name || "";
   qs("[data-account-email]").textContent = payload.email || "";
   qs("[data-account-id]").textContent = payload.user_id || "";
-  qs("[data-account-verified]").textContent = payload.email_verified
-    ? "Verified"
-    : "Not verified";
+  const verified = qs("[data-account-verified]");
+  const verifyNeeded = qs("[data-account-verify-needed]");
+  if (payload.email_verified) {
+    verified.textContent = "Verified";
+    verified.classList.add("status-verified");
+    if (verifyNeeded) verifyNeeded.hidden = true;
+  } else {
+    verified.textContent = "Not verified";
+    verified.classList.remove("status-verified");
+    if (verifyNeeded) verifyNeeded.hidden = false;
+  }
   setStatus("Signed in.");
 }
 
@@ -289,8 +419,7 @@ function bindActions() {
   qs('[data-account-action="sign-out"]')?.addEventListener("click", async () => {
     setStatus("Signing out…");
     await api("/api/v1/auth/logout", { method: "POST" });
-    clearToken();
-    await fetch("/account/clear-device", { method: "POST", headers: { Accept: "application/json" } });
+    await clearLocalAuth();
     window.location.assign("/login");
   });
   qs('[data-account-action="export"]')?.addEventListener("click", async () => {
@@ -314,6 +443,7 @@ function bindActions() {
   });
 }
 
+bindIdentityToken();
 bindForms();
 bindActions();
 loadAccount();

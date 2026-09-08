@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from app.api.v1.endpoints.auth import extract_bearer_token
 from app.consumer.account_pages import (
     render_account_settings_page,
+    render_confirm_email_change_page,
     render_login_page,
     render_register_page,
     render_reset_password_page,
@@ -80,6 +81,11 @@ async def verify_email_page(
     email: str | None = Query(default=None),
 ) -> HTMLResponse:
     return _page(render_verify_email_page(token=token or "", email=email or ""))
+
+
+@router.get("/confirm-email-change", response_class=HTMLResponse)
+async def confirm_email_change_page(token: str | None = Query(default=None)) -> HTMLResponse:
+    return _page(render_confirm_email_change_page(has_token=bool((token or "").strip())))
 
 
 @router.get("/account", response_class=HTMLResponse)

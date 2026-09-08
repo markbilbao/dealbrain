@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 27.2 (verified email change) + Sprint 27.3 (cutover readiness; DNS/inbox E2E still open) + Sprint 28.1 (consent hooks, delete/export)
+**Status:** Sprint 17 + Sprint 27.1 (reset/verify confirm; Resend adapter) + Sprint 27.2 (verified email change) + Sprint 27.3 (cutover readiness; DNS/inbox E2E still open) + Sprint 27.4 (consumer email-change + identity success-state UX; live inbox E2E still required) + Sprint 28.1 (consent hooks, delete/export)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -209,10 +209,17 @@ header is treated as an unauthenticated request.
 
 - **No MFA** implemented — extension point only.
 - **No OAuth / external identity providers** — extension point only.
-- **Email-change confirmation** is implemented in 27.2 (code path only;
-  staging inbox E2E and EXT-09 remain open).
+- **Email-change confirmation** is implemented in 27.2 (code path) and
+  exposed in the Account UI in 27.4 (`/account` request form +
+  `/confirm-email-change`). Staging inbox E2E and EXT-09 remain open.
+  27.4 is consumer UX implementation evidence only and does not close
+  Sprint 27.
 - **27.3** prepared staging Resend config, demo-token reconciliation, and
   operator harnesses. It does not verify DNS or prove inbox delivery.
+- **27.4** adds dedicated verification / password-reset / email-change
+  success states and removes engineering-only copy from those surfaces.
+  It does not redesign Account settings and does not claim live email
+  delivery.
 - **EXT-09** sender-domain SPF/DKIM/DMARC is not verified. Do not claim
   production sender authentication from 27.x code alone.
 - **Staging inbox E2E** is still required to close Sprint 27.

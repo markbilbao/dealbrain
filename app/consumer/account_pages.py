@@ -16,6 +16,30 @@ def _esc(value: object) -> str:
     return escape("" if value is None else str(value), quote=True)
 
 
+def _identity_panels(
+    *,
+    pending: str,
+    sent: str = "",
+    success: str = "",
+    failure: str = "",
+    start: str = "pending",
+) -> str:
+    """Render mutually exclusive identity request/confirm outcomes."""
+
+    sections: list[str] = []
+    for name, body in (
+        ("pending", pending),
+        ("sent", sent),
+        ("success", success),
+        ("failure", failure),
+    ):
+        if not body:
+            continue
+        hidden = "" if name == start else " hidden"
+        sections.append(f"<div data-identity-{name}{hidden}>{body}</div>")
+    return "".join(sections)
+
+
 def render_account_document(
     *,
     title: str,
@@ -217,7 +241,12 @@ def render_register_page(
 def render_reset_password_page(*, token: str = "", message: str = "") -> str:
     notice = f'<p class="form-status" role="status">{h(message)}</p>' if message else ""
     if token:
-        form = f"""
+        panels = _identity_panels(
+            pending=f"""
+          <h1>Choose a new password</h1>
+          <p>Enter a new password for your PiqSavi account.</p>
+          {notice}
+          <p class="form-status" data-account-status role="status" aria-live="polite"></p>
           <form class="account-form" data-account-form="reset-confirm">
             <input type="hidden" name="token" value="{_esc(token)}">
             <label class="field">
@@ -226,11 +255,27 @@ def render_reset_password_page(*, token: str = "", message: str = "") -> str:
             </label>
             <button type="submit" class="btn btn-primary btn-block">Set new password</button>
           </form>
-        """
-        heading = "Choose a new password"
-        copy = "This form confirms a reset token. It does not invent email delivery."
+            """,
+            success="""
+          <h1>Password reset</h1>
+          <p>Your password has been updated.</p>
+          <p>You can now sign in using your new password.</p>
+          <p><a class="btn btn-primary" href="/login">Sign in</a></p>
+            """,
+            failure="""
+          <h1>Reset link expired</h1>
+          <p>This password-reset link is invalid or has expired.</p>
+          <p><a class="text-link" href="/reset-password">Request a new reset link</a></p>
+            """,
+        )
+        footer = ""
     else:
-        form = """
+        panels = _identity_panels(
+            pending=f"""
+          <h1>Reset your password</h1>
+          <p>Enter the email address for your account. If an account exists for that address, we'll send password-reset instructions.</p>
+          {notice}
+          <p class="form-status" data-account-status role="status" aria-live="polite"></p>
           <form class="account-form" data-account-form="reset-request">
             <label class="field">
               <span>Email</span>
@@ -238,24 +283,20 @@ def render_reset_password_page(*, token: str = "", message: str = "") -> str:
             </label>
             <button type="submit" class="btn btn-primary btn-block">Request reset</button>
           </form>
-        """
-        heading = "Reset your password"
-        copy = (
-            "If an account exists, PiqSavi accepts the request. "
-            "A reset email is sent only when identity email delivery is available. "
-            "This page does not display demo tokens."
+            """,
+            sent="""
+          <h1>Check your email</h1>
+          <p>If an account exists for that address, we've sent password-reset instructions.</p>
+            """,
         )
+        footer = '<p><a class="text-link" href="/login">Back to sign in</a></p>'
     return render_account_document(
         title="Reset password — PiqSavi",
         page="reset-password",
         main=f"""
         <section class="account-card">
-          <h1>{h(heading)}</h1>
-          <p>{h(copy)}</p>
-          {notice}
-          <p class="form-status" data-account-status role="status"></p>
-          {form}
-          <p><a class="text-link" href="/login">Back to sign in</a></p>
+          {panels}
+          {footer}
         </section>
         """,
     )
@@ -263,15 +304,34 @@ def render_reset_password_page(*, token: str = "", message: str = "") -> str:
 
 def render_verify_email_page(*, token: str = "", email: str = "") -> str:
     if token:
-        form = f"""
+        panels = _identity_panels(
+            pending=f"""
+          <h1>Confirm your email</h1>
+          <p>Confirm to verify the email address for this account.</p>
+          <p class="form-status" data-account-status role="status" aria-live="polite"></p>
           <form class="account-form" data-account-form="verify-confirm">
             <input type="hidden" name="token" value="{_esc(token)}">
             <button type="submit" class="btn btn-primary btn-block">Confirm email</button>
           </form>
-        """
-        copy = "Confirm this verification token. The page does not invent a verified state before the API succeeds."
+            """,
+            success="""
+          <h1>Email verified</h1>
+          <p>Your email address has been verified.</p>
+          <p><a class="btn btn-primary" href="/account">Continue to account</a></p>
+            """,
+            failure="""
+          <h1>Verification link expired</h1>
+          <p>This verification link is invalid or has expired.</p>
+          <p><a class="text-link" href="/verify-email">Request a new verification link</a></p>
+            """,
+        )
+        footer = ""
     else:
-        form = f"""
+        panels = _identity_panels(
+            pending=f"""
+          <h1>Verify your email</h1>
+          <p>Enter the email address for your account. If an account exists for that address, we'll send a verification link.</p>
+          <p class="form-status" data-account-status role="status" aria-live="polite"></p>
           <form class="account-form" data-account-form="verify-request">
             <label class="field">
               <span>Email</span>
@@ -279,21 +339,56 @@ def render_verify_email_page(*, token: str = "", email: str = "") -> str:
             </label>
             <button type="submit" class="btn btn-primary btn-block">Request verification</button>
           </form>
-        """
-        copy = (
-            "Verification email is sent only when identity email delivery is available. "
-            "This page does not display demo tokens."
+            """,
+            sent="""
+          <h1>Check your email</h1>
+          <p>If an account exists for that address, we've sent a verification link.</p>
+            """,
         )
+        footer = '<p><a class="text-link" href="/account">Account settings</a></p>'
     return render_account_document(
         title="Verify email — PiqSavi",
         page="verify-email",
         main=f"""
         <section class="account-card">
-          <h1>Email verification</h1>
-          <p>{h(copy)}</p>
-          <p class="form-status" data-account-status role="status"></p>
-          {form}
-          <p><a class="text-link" href="/account">Account settings</a></p>
+          {panels}
+          {footer}
+        </section>
+        """,
+    )
+
+
+def render_confirm_email_change_page(*, has_token: bool = False) -> str:
+    start = "pending" if has_token else "failure"
+    panels = _identity_panels(
+        start=start,
+        pending="""
+          <h1>Confirm email change</h1>
+          <p>Confirm to finish updating the email address for this account. Your current email stays the same until you confirm.</p>
+          <p class="form-status" data-account-status role="status" aria-live="polite"></p>
+          <form class="account-form" data-account-form="email-change-confirm">
+            <button type="submit" class="btn btn-primary btn-block">Confirm email change</button>
+          </form>
+        """,
+        success="""
+          <h1>Email changed</h1>
+          <p>Your email address has been updated and verified.</p>
+          <p>For your security, you've been signed out on all devices. Sign in again using your new email address.</p>
+          <p><a class="btn btn-primary" href="/login">Sign in</a></p>
+        """,
+        failure="""
+          <h1>Email change link expired</h1>
+          <p>This email-change link is invalid or has expired.</p>
+          <p><a class="text-link" href="/login">Back to sign in</a></p>
+        """,
+    )
+    return render_account_document(
+        title="Confirm email change — PiqSavi",
+        page="confirm-email-change",
+        next_path="/login",
+        main=f"""
+        <section class="account-card">
+          {panels}
         </section>
         """,
     )
@@ -307,7 +402,7 @@ def render_account_settings_page(*, next_path: str = "/account") -> str:
         main=f"""
         <section class="account-card">
           <h1>Account settings</h1>
-          <p class="form-status" data-account-status role="status">Checking this device session…</p>
+          <p class="form-status" data-account-status role="status" aria-live="polite">Checking this device session…</p>
           <div data-account-signed-out hidden>
             <p>Sign in to view account information, export your data, or delete your account.</p>
             <p>
@@ -323,8 +418,24 @@ def render_account_settings_page(*, next_path: str = "/account") -> str:
               <div><dt>Email status</dt><dd data-account-verified></dd></div>
               <div><dt>Account id</dt><dd data-account-id></dd></div>
             </dl>
-            <p class="form-hint">Email verification uses the Sprint 27 identity APIs. Delivery happens only when the identity email adapter is ready.</p>
-            <p><a class="text-link" href="/verify-email">Request or confirm email verification</a></p>
+            <p data-account-verify-needed hidden>
+              <a class="text-link" href="/verify-email">Verify your email</a>
+            </p>
+
+            <h2>Change email</h2>
+            <p>Enter the new email address you want to use. We'll send a confirmation link there before changing your account.</p>
+            <p class="form-status" data-email-change-status role="status" aria-live="polite"></p>
+            <form class="account-form" data-account-form="email-change">
+              <label class="field">
+                <span>New email</span>
+                <input name="new_email" type="email" autocomplete="email" required maxlength="254">
+              </label>
+              <label class="field">
+                <span>Current password</span>
+                <input name="password" type="password" autocomplete="current-password" required>
+              </label>
+              <button type="submit" class="btn btn-primary btn-block">Send confirmation</button>
+            </form>
 
             <h2 id="saved">Saved decisions</h2>
             <p>Save keeps a buying decision or context for later. It does not watch prices and does not send notifications.</p>

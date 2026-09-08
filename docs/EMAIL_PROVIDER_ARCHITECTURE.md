@@ -2,7 +2,7 @@
 
 This document covers two separate email ports. Do not merge them.
 
-## Identity transactional email (Sprint 27.1 + 27.2 + 27.3)
+## Identity transactional email (Sprint 27.1 + 27.2 + 27.3 + 27.4 consumer UX)
 
 **Port:** `EmailSender` in `app/auth/email.py`  
 **Adapters:** `NullEmailSender` (development/test) and `ResendEmailSender` (`app/auth/email_resend.py`)  
