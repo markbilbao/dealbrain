@@ -340,8 +340,10 @@ class TestEnvironmentSafety:
         status = identity_email_status(cfg)
         assert status["adapter"] == "resend"
         assert status["configured"] is True
-        assert status["external_evidence"] == "pending"
-        assert status["ready"] is False
+        assert status["external_evidence"] == "verified"
+        # Usable production runtime config + verified Sprint 27 evidence.
+        # This is not a claim that production email is live (Sprint 41 attach).
+        assert status["ready"] is True
 
     def test_staging_uses_resend_when_configured(self) -> None:
         cfg = _settings(
@@ -386,7 +388,7 @@ class TestEnvironmentSafety:
         status = identity_email_status(cfg)
         assert status["adapter"] == "null"
         assert status["configured"] is False
-        assert status["external_evidence"] == "pending"
+        assert status["external_evidence"] == "verified"
         assert status["ready"] is False
         result = validate_settings(cfg)
         assert result.ok is False

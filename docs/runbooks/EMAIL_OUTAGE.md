@@ -48,10 +48,11 @@ mail. It does not cover Sprint 19 notification digests.
 
 - Restore a valid Resend key in Secrets Manager and redeploy/restart.
 - EXT-09 Resend **Verified** and staging inbox receive of reset, verify, and
-  email-change mail are evidenced on 2026-09-08. Sprint 27 still does not
-  close until the designed `identity_email_status().ready` gate is updated
-  in a separate code PR, that digest is deployed to staging, and `/health`
-  reports `identity_email_ready=true`.
+  email-change mail are evidenced on 2026-09-08. The identity-email readiness
+  gate now reports `ready=true` only when runtime Resend configuration is
+  usable **and** that verified evidence is present. Sprint 27 still does not
+  close until this digest is deployed to staging and live `/health` reports
+  `identity_email_ready=true`. Production email attach remains Sprint 41.
 
 ## What this does not cover
 

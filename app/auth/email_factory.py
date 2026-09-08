@@ -11,7 +11,9 @@ from app.core.config import Settings
 from app.domain.exceptions import ConfigurationValidationError, UserPlatformValidationError
 
 KNOWN_APP_ENVS = frozenset({"development", "staging", "production"})
-EXTERNAL_EVIDENCE_PENDING = "pending"
+# Merged Sprint 27 engineering fact: EXT-09 Verified + real staging inbox E2E.
+# Health must not re-prove this with a live Resend or DNS call.
+EXTERNAL_EVIDENCE_VERIFIED = "verified"
 
 
 def _current_settings() -> Settings:
@@ -58,10 +60,22 @@ def build_trusted_action_url(
     return f"{cleaned}{normalized_path}?{urlencode({'token': token})}"
 
 
+def sprint27_external_evidence() -> str:
+    """Return the Sprint 27 provider/DNS/inbox evidence gate.
+
+    This is an engineering/operational acceptance fact already merged into the
+    repository (EXT-09 Verified, public DKIM/SPF/MX/DMARC, real staging Gmail
+    E2E for verification, password reset, and email change). It does not call
+    Resend or any other external service and does not expose secrets.
+    """
+    return EXTERNAL_EVIDENCE_VERIFIED
+
+
 def identity_email_configured(cfg: Settings | None = None) -> bool:
     """Return True when the Resend adapter has non-placeholder runtime config.
 
     Configuration is not inbox delivery, DNS verification, or Sprint 27 ready.
+    Production with a missing or placeholder ``RESEND_API_KEY`` is not configured.
     """
     cfg = cfg or _current_settings()
     if cfg.transactional_email_provider != "resend":
@@ -81,13 +95,22 @@ def identity_email_configured(cfg: Settings | None = None) -> bool:
 
 
 def identity_email_status(cfg: Settings | None = None) -> dict[str, Any]:
-    """Report identity-email adapter truth without claiming inbox E2E.
+    """Report identity-email adapter, runtime config, and Sprint 27 evidence.
 
-    Staging may operate with ``NullEmailSender`` during external setup.
-    That is not configured, verified, or ready transactional email.
-    ``ready`` stays False until Sprint 27 external evidence exists.
-    ``configured`` means the Resend adapter can be constructed from settings.
-    ``external_evidence`` stays ``pending`` until DNS + real inbox E2E exist.
+    Distinguishes three facts:
+
+    * ``adapter`` — selected sender (``resend``, ``null``, or ``unavailable``).
+    * ``configured`` — this process has a usable Resend key, sender, and
+      public app URL. Missing/placeholder keys stay unconfigured.
+    * ``external_evidence`` — merged Sprint 27 provider/DNS/inbox acceptance
+      (``verified``). Not a live Resend call from ``/health``.
+
+    ``ready`` is true only when a known environment selects Resend, runtime
+    configuration is usable, **and** the verified external-evidence gate is
+    satisfied. Production does not become ready merely because EXT-09 is
+    verified: absent or invalid production secrets keep ``ready`` false.
+    Unknown environments fail closed. This does not claim production email
+    is live.
     """
     cfg = cfg or _current_settings()
     if cfg.app_env not in KNOWN_APP_ENVS or (
@@ -98,11 +121,18 @@ def identity_email_status(cfg: Settings | None = None) -> dict[str, Any]:
         adapter = "resend"
     else:
         adapter = "null"
+    configured = identity_email_configured(cfg)
+    external_evidence = sprint27_external_evidence()
+    ready = (
+        adapter == "resend"
+        and configured
+        and external_evidence == EXTERNAL_EVIDENCE_VERIFIED
+    )
     return {
         "adapter": adapter,
-        "configured": identity_email_configured(cfg),
-        "external_evidence": EXTERNAL_EVIDENCE_PENDING,
-        "ready": False,
+        "configured": configured,
+        "external_evidence": external_evidence,
+        "ready": ready,
     }
 
 

@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1–27.4 (reset/verify/email-change, Resend adapter, consumer UX, auth-aware header) + 2026-09-08 staging inbox E2E passed; EXT-09 Resend **Verified**; Sprint 27 still open while `identity_email_ready=false` + Sprint 28.1 (consent hooks, delete/export)
+**Status:** Sprint 17 + Sprint 27.1–27.4 (reset/verify/email-change, Resend adapter, consumer UX, auth-aware header) + 2026-09-08 staging inbox E2E passed; EXT-09 Resend **Verified**; identity-email readiness gate implemented (`ready` requires verified evidence **and** usable runtime Resend config); Sprint 27 still open pending staging `/health` verification + Sprint 28.1 (consent hooks, delete/export)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -106,8 +106,11 @@ EXT-09 sender-domain DNS: public DKIM/SPF/MX/DMARC rows for the Resend plan were
 [`runbooks/EXT_09_RESEND_DNS.md`](runbooks/EXT_09_RESEND_DNS.md). Staging inbox E2E
 (verify, reset, email-change) passed 2026-09-08:
 [`roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
-Production email attach remains Sprint 41. Sprint 27 stays open while
-`identity_email_ready` is hardcoded `false`.
+Production email attach remains Sprint 41. Sprint 27 stays open until
+this readiness-gate digest is deployed and live `/health` reports
+`identity_email_ready=true`. Implementation is ready; staging deployment
+verification is still required. Production without a usable runtime
+`RESEND_API_KEY` stays `identity_email_ready=false`.
 
 ## Email change (Sprint 27.2)
 
@@ -214,7 +217,8 @@ header is treated as an unauthenticated request.
   exposed in the Account UI in 27.4 (`/account` request form +
   `/confirm-email-change`). Staging inbox E2E for verify, reset, and
   email-change **passed** on 2026-09-08. EXT-09 is **Verified**. Sprint 27 /
-  P0-5 is **not closed** while `identity_email_ready` remains false.
+  P0-5 is **not closed** until this readiness-gate digest is deployed and
+  live staging `/health` reports `identity_email_ready=true`.
 - **27.3** prepared staging Resend config, demo-token reconciliation, and
   operator harnesses. Public DNS for the Resend plan rows is resolvable and
   Resend reports domain **Verified** (2026-09-08).
@@ -227,7 +231,8 @@ header is treated as an unauthenticated request.
 - **EXT-09** sender-domain SPF/DKIM/DMARC public DNS is resolvable and
   Resend reports **Verified**. Do not claim production sender cutover.
 - **Staging inbox E2E** for verify, reset, and email-change is recorded
-  (2026-09-08). Remaining Sprint 27 closure action is the designed
-  production-code `identity_email_ready` gate update, then staging deploy
-  and `/health` verification.
+  (2026-09-08). The `identity_email_status()` evidence gate is now
+  **verified** in code and combined with runtime Resend configuration.
+  Remaining Sprint 27 closure action is staging deploy of this digest, then
+  live `/health` verification. Production attach remains Sprint 41.
 - **No payment integration.**
