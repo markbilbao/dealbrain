@@ -2,7 +2,7 @@
 
 **Status:** Authoritative register for Global Public Beta
 **Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation.
+**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close.
 **Historical inventory HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
 **Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` (historical suite evidence; later `main` including PR #114 does **not** invalidate packaged Sprint 26 staging proof)
 **Owner target:** Controlled Global Public Beta Launch no later than September 30, 2026
@@ -52,7 +52,7 @@ Derived from current evidence only. Do not mark external approvals green without
 
 | ID | Dependency | Owner | Target sprint | Scope | Application date | Expected decision window | Current status | Sept 30 risk | Evidence required | Fallback | Blocks |
 |----|------------|-------|---------------|-------|------------------|--------------------------|----------------|--------------|-------------------|----------|--------|
-| EXT-01 | PH merchant/product-data access (legitimate data path; affiliate permission is not sufficient) | Marketplace eng + legal | 32 | Philippines market | Sprint 26 kickoff | 2–8 weeks | `not_started` | **RED** to name PH; September shopping launch **RED** until ≥1 useful PH product-data path is certified | September launch-critical requirement is **at least one legitimate, useful PH merchant/product-data path** (official merchant API, authorized product feed, authorized retailer integration, partner/data feed, permitted public data source, or another documented legitimate path). Affiliate approval does **not** satisfy EXT-01 unless it independently provides product-data rights/capabilities sufficient for live PiqSavi research. Counsel clearance 2026-08-25 is application-to-apply only and is not submission. Still required: PH product-data access application/request evidence; then signed terms + credential proof + live normalized offer. | Delay PH as named supported market. September public beta supported-market target is Philippines only unless the owner later expands it. | Market PH |
+| EXT-01 | PH merchant/product-data access (legitimate data path; affiliate permission is not sufficient) | Marketplace eng + legal | 32 | Philippines market | 2026-09-08 | 2–8 weeks | `applied` | **RED** to name PH; September shopping launch **RED** until ≥1 useful PH product-data path is certified | September launch-critical requirement is **at least one legitimate, useful PH merchant/product-data path** (official merchant API, authorized product feed, authorized retailer integration, partner/data feed, permitted public data source, or another documented legitimate path). Affiliate approval does **not** satisfy EXT-01 unless it independently provides product-data rights/capabilities sufficient for live PiqSavi research. Counsel clearance 2026-08-25 is application-to-apply only and is not submission. **Request submitted 2026-09-08** to Lazada PH and Shopee PH — see [`evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md). Still required for Sprint 32: provider decision; then signed terms + credential proof + live normalized offer. `applied` ≠ `approved` / `provisioned` / certified. | Delay PH as named supported market. September public beta supported-market target is Philippines only unless the owner later expands it. | Market PH |
 | EXT-02 | US merchant/API or affiliate access | Marketplace eng + legal | 33 | United States market | Sprint 26 kickoff (historical) | 2–8 weeks | `n_a_beta` | **GREEN** (not required for initial PH-only beta) | Historical counsel-clearance note retained. No US application is required for the September PH validation beta. Do **not** mark submitted. Owner expansion of supported markets would reopen this row. | Omit US from September supported-market list | Market US (deferred) |
 | EXT-03 | SG merchant/API or affiliate access | Marketplace eng + legal | 34 | Singapore market | Sprint 26 kickoff (historical) | 2–8 weeks | `n_a_beta` | **GREEN** (not required for initial PH-only beta) | Historical counsel-clearance note retained. No SG application is required for the September PH validation beta. Do **not** mark submitted. | Omit SG from September supported-market list | Market SG (deferred) |
 | EXT-04 | UK merchant/API or affiliate access | Marketplace eng + legal | 35 | United Kingdom market | Sprint 26 kickoff (historical) | 2–8 weeks | `n_a_beta` | **GREEN** (not required for initial PH-only beta) | Historical counsel-clearance note retained. No UK application is required for the September PH validation beta. Do **not** mark submitted. | Omit UK from September supported-market list | Market UK (deferred) |
@@ -86,20 +86,20 @@ Derived from current evidence only. Do not mark external approvals green without
 
 ## Application bootstrap (Sprint 26)
 
-Sprint 26 originally opened applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EXT-18, and scheduled legal engagement (EXT-19). After the 2026-09-07 PH validation-beta lock, **the only remaining Sprint 26 bootstrap that can block Sprint 26 close is EXT-01** (a real PH product-data access application/request). EXT-02…EXT-05 are `n_a_beta` for this beta scope and are **not** September critical-path blockers. EXT-07 is `n_a_beta` / post-beta and is **not** a September blocker. EXT-08, EXT-09, EXT-10, EXT-17, EXT-18, and EXT-19 bootstrap actions remain complete for Sprint 26 purposes; later DNS/delivery (27), publication (28/45), and public hostname (41) work stay with those owning sprints.
+Sprint 26 originally opened applications for EXT-01…EXT-05, EXT-08, EXT-10, EXT-17, EXT-18, and scheduled legal engagement (EXT-19). After the 2026-09-07 PH validation-beta lock, **the only remaining Sprint 26 bootstrap that could block Sprint 26 close was EXT-01** (a real PH product-data access application/request). That request evidence now exists (2026-09-08). Sprint 26 is **COMPLETE / CLOSED**. EXT-02…EXT-05 are `n_a_beta` for this beta scope and are **not** September critical-path blockers. EXT-07 is `n_a_beta` / post-beta and is **not** a September blocker. EXT-08, EXT-09, EXT-10, EXT-17, EXT-18, and EXT-19 bootstrap actions remain complete for Sprint 26 purposes; later DNS/delivery (27), publication (28/45), and public hostname (41) work stay with those owning sprints. Sprint 32 still owns PH certification.
 
 **Action checklist:** [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 
 **Merchant application counsel clearance (2026-08-25):** sanitized record at [`evidence/SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md); owner application preparation at [`evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md). Counsel clearance has been obtained for merchant/program applications covering Shopee, Lazada, TikTok Shop, Amazon, and Temu. These counsel-form merchant labels are separate from the authoritative EXT market-row identifiers. That does **not** make register EXT-01 `applied`, and it does **not** convert affiliate permission into product-data permission.
 
-Technical current-main staging proof does **not** advance any EXT row and is **not** invalidated because `main` later advanced. EXT-08 is `applied` (Resend account-establishment screenshot; staging delivery now separately evidenced 2026-09-08). EXT-09 is **`approved`** (public DNS + Resend domain **Verified**, 2026-09-08; production email attach remains Sprint 41). EXT-10 is `approved` (ownership). EXT-17/EXT-18 are `provisioned`. EXT-19 is `applied` (not unconditional written approval). EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the current PH-only beta. EXT-01 remains `not_started`.
+Technical current-main staging proof does **not** advance any EXT row and is **not** invalidated because `main` later advanced. EXT-08 is `applied` (Resend account-establishment screenshot; staging delivery now separately evidenced 2026-09-08). EXT-09 is **`approved`** (public DNS + Resend domain **Verified**, 2026-09-08; production email attach remains Sprint 41). EXT-10 is `approved` (ownership). EXT-17/EXT-18 are `provisioned`. EXT-19 is `applied` (not unconditional written approval). EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the current PH-only beta. EXT-01 is **`applied`** (2026-09-08 PH product-data requests; not `approved` / not `provisioned`).
 
 
 ### September 30, 2026 — items that can threaten the target
 
 **RED (unless resolved or scope-reduced):**
 
-- EXT-01 / EXT-06 (PH) — no PH product-data access application/request or PH credentials evidenced as `applied`/`approved`/`provisioned`. Counsel clearance to apply (2026-08-25) is historical. Shopee Affiliate dashboard access and Payment & Tax pending do **not** move EXT-01. Affiliate Open API access is **not granted**. Lazada/Optimise affiliate approval, if any, is monetization permission only and does **not** certify a live research source. Naming PH is blocked. September public shopping launch remains blocked until **at least one useful PH product-data path** is certified. US/SG/UK/CA are **not** September substitutes unless the owner later expands supported markets.
+- EXT-01 / EXT-06 (PH) — EXT-01 is now `applied` on 2026-09-08 Lazada PH and Shopee PH product-data request evidence. That is **not** approval, credentials, a feed, or certification. EXT-06 remains `not_started`. Counsel clearance to apply (2026-08-25) is historical. Shopee Affiliate dashboard access and Payment & Tax pending do **not** make EXT-01 `approved`. Affiliate Open API access is **not granted**. Lazada/Optimise affiliate approval, if any, is monetization permission only and does **not** certify a live research source. Naming PH is blocked. September public shopping launch remains blocked until **at least one useful PH product-data path** is certified. US/SG/UK/CA are **not** September substitutes unless the owner later expands supported markets.
 
 **AMBER (schedule-sensitive / external):**
 
@@ -268,7 +268,7 @@ This addendum does **not** replace the EXT-09 Verified notes above.
 | Explicit non-claims | Does **not** prove Terms/Privacy approved for publication; launch legally approved; GDPR / Philippine Data Privacy Act / CCPA/CPRA / global privacy compliance; Sprint 26 closure; or Sprint 27 start/completion. Merchant-application clearance does **not** mean merchants approved PiqSavi or that register EXT-01 is `applied`. |
 | Separation | EXT-19 = counsel engagement / later written approval of consumer legal documents; merchant-program **application** clearance for Shopee, Lazada, TikTok Shop, Amazon, and Temu is noted here without changing EXT-01 lifecycle status; EXT-18 = privacy contact; EXT-20/EXT-21 = policy publication; EXT-01 = PH product-data bootstrap — do not merge |
 
-### EXT-01 notes (PH product-data access — still `not_started`)
+### EXT-01 notes (PH product-data access — `applied` 2026-09-08)
 
 EXT-01 is the Philippines **product-data** bootstrap row. Historical wording “PH merchant/API or affiliate access” is too ambiguous under the 2026-09-07 launch decision and is superseded for launch-critical meaning.
 
@@ -282,19 +282,22 @@ Acceptable sources (when actually authorized and useful for live PiqSavi researc
 
 | Field | Value |
 |-------|-------|
-| Current status (register lifecycle) | `not_started` |
-| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (historical 2026-08-25). This does **not** select a PH product-data provider. |
-| Application / request submitted for PH product-data access? | **No** — no submission evidence in the repository |
-| Merchant-approved product-data path? | **No** |
+| Current status (register lifecycle) | `applied` |
+| Application / request date | 2026-09-08 |
+| Counsel-clearance status | Shopee, Lazada, TikTok Shop, Amazon, and Temu applications are counsel-cleared to proceed (historical 2026-08-25). This does **not** select a PH product-data provider and does **not** by itself make EXT-01 `applied`. |
+| Application / request submitted for PH product-data access? | **Yes** — Lazada PH and Shopee PH product-data access requests sent 2026-09-08. Evidence: [`evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md) |
+| Merchant-approved product-data path? | **No** — awaiting external provider response/decision |
 | Product-data / API rights | **unknown / not established** |
 | Credentials | **No** |
-| `applied` reserved for | Later — only after real PH **product-data** access application/request evidence. Do **not** use `applied` from counsel clearance, affiliate dashboard access, Payment & Tax, or affiliate-network approval alone |
-| Next Sprint 26 action | Owner submits/requests at least one legitimate PH product-data path and retains non-secret confirmation evidence. This is the single remaining Sprint 26 bootstrap blocker. |
-| Explicit non-claims | Does **not** certify any merchant; does **not** enable affiliate tracking; does **not** start Sprint 32 production certification; does **not** create a `ResearchProviderCertification` |
+| `applied` meaning | Request submitted; awaiting decision. Do **not** use `applied` from counsel clearance, affiliate dashboard access, Payment & Tax, or affiliate-network approval alone. Those still do not satisfy this row. |
+| `approved` / `provisioned` reserved for | Later — only after a provider grants a usable PH product-data path and/or credentials exist. Do **not** use `approved` or `provisioned` from the 2026-09-08 emails. |
+| Next Sprint 26 action | None — Sprint 26 bootstrap for EXT-01 is satisfied. Sprint 26 is **COMPLETE / CLOSED**. |
+| Next owner / Sprint 32 action | Await provider response. Sprint 32 still requires approval/access where required, credentials/feed/API availability, technical connectivity, legal/contractual capability confirmation, current PH product-data validation, normalized live offers, source/capability policy evidence, staging certification, monitoring/coverage disclosure, and kill-switch/fail-closed behavior where required. |
+| Explicit non-claims | Does **not** mean Lazada or Shopee approved PiqSavi; does **not** grant credentials, feeds, or production use; does **not** certify any merchant; does **not** enable affiliate tracking; does **not** close Sprint 32; does **not** create a `ResearchProviderCertification` |
 
-**Shopee current truth (repository evidence):** [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) records affiliate dashboard access, Payment & Tax submitted/pending, and Affiliate Open API documentation. Affiliate Open API access is **not granted**. AppID/Secret are **none**. Seller/ISV Open Platform remains **held**. Those facts do **not** make EXT-01 `applied`. Dashboard access / Payment & Tax / affiliate membership ≠ product-data API access.
+**Shopee current truth (repository evidence):** A 2026-09-08 product-data / Open API partnership request was sent to `affiliate_ph@shopee.com` and is retained as EXT-01 `applied` evidence. That is **not** Shopee approval, Open Platform access, Affiliate Open API access, or credentials. [`evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) remains the historical affiliate-onboarding record: affiliate dashboard access, Payment & Tax submitted/pending, Affiliate Open API documented but **not granted**, AppID/Secret **none**, Seller/ISV Open Platform **held**. Dashboard access / Payment & Tax / affiliate membership ≠ product-data API access.
 
-**Lazada current truth (owner-stated operational observation; no new screenshot added):** Optimise/Lazada affiliate access may be approved. That is **monetization permission only** unless separate product-data rights exist. An observed Optimise campaign showed Product Feed: **0 items**. Do **not** certify Lazada as a live research source from affiliate approval.
+**Lazada current truth:** A 2026-09-08 authorized product-data / product-feed request was sent to `affiliate@lazada.com.ph` and is retained as EXT-01 `applied` evidence. That is **not** Lazada approval, a product feed, Open Platform access, or credentials. Historical owner-stated operational observation (no new affiliate screenshot added here): Optimise/Lazada affiliate access may be approved. That is **monetization permission only** unless separate product-data rights exist. An observed Optimise campaign showed Product Feed: **0 items**. Do **not** certify Lazada as a live research source from affiliate approval or from the 2026-09-08 request email.
 
 **TikTok Shop current truth:** September integration is **not required**. Do not include a Singapore/paused campaign as PH launch evidence. No TikTok engineering is required pre-launch. Counsel clearance to apply remains historical.
 
@@ -349,15 +352,27 @@ This addendum does **not** move any EXT row. Counsel-clearance and Shopee operat
 
 ### 2026-09-07 owner lock addendum — public beta without affiliate monetization + PH validation-beta scope
 
-This addendum **does** change current-scope status for EXT-02…EXT-05 and EXT-07 to `n_a_beta`. It does **not** delete those rows, does **not** mark any application submitted, does **not** move EXT-01 off `not_started`, and does **not** delete historical affiliate/network evidence.
+This addendum **does** change current-scope status for EXT-02…EXT-05 and EXT-07 to `n_a_beta`. It does **not** delete those rows, does **not** mark any application submitted as of 2026-09-07, did **not** move EXT-01 off `not_started` on that date, and does **not** delete historical affiliate/network evidence. The 2026-09-08 addendum below later moved EXT-01 to `applied`.
 
 - Public beta launches **without affiliate monetization**. Affiliate revenue is not a launch requirement and is not a launch acceptance requirement. Ordinary outbound merchant links are valid launch behavior.
 - PiqSavi will launch its initial public beta as a **Philippines-first product-validation beta without affiliate monetization**. September public beta supported-market target: **Philippines only** unless the owner later expands it.
 - **EXT-07 is `n_a_beta` and optional.** It is **not** a September launch blocker. Shopee affiliate approval, Lazada/Optimise affiliate approval, tracking access, payout setup, and network credentials must not block Sprint 45. Zero affiliate-enabled merchants is acceptable.
-- **EXT-01** remains launch-critical and means legitimate PH **product-data** access (`not_started`). Affiliate approval alone cannot satisfy it. At least one real useful PH data path is still required. Affiliate approval is not product-search, API, feed, pricing, shipping, or voucher-data permission. Do not represent affiliate approval as product-data permission.
+- **EXT-01** remains launch-critical and means legitimate PH **product-data** access. As of this 2026-09-07 addendum it was `not_started`. Affiliate approval alone cannot satisfy it. At least one real useful PH data path is still required for Sprint 32 / September shopping launch. Affiliate approval is not product-search, API, feed, pricing, shipping, or voucher-data permission. Do not represent affiliate approval as product-data permission.
 - **EXT-02…EXT-05** are deferred / not required for the initial PH beta (`n_a_beta`).
 - Shopee Philippines and Lazada Philippines are **no longer September affiliate launch dependencies**. The 2026-09-06 “initial affiliate-monetization targets” note above remains historical.
 - Affiliate architecture, attribution models, neutrality tests, and provider/network support must remain available for later activation. Future attachment is downstream of organic decision → winning merchant. Do **not** delete affiliate architecture or affiliate-neutrality tests.
 - Mixed affiliate/non-affiliate runtime comparison is not required while zero affiliate-enabled merchants are active. Architecture/tests must still prove affiliate economics are absent from organic scoring/recommendation paths and cannot influence source eligibility, evaluated set, PiqScore, Recommendation, Best Piq, or organic ordering. Effective-cost requirements are unchanged.
-- Sprint 26 technical staging proof remains intact. Sprint 26 stays **open** solely because EXT-01 still lacks a real PH product-data access application/request.
+- Sprint 26 technical staging proof remains intact. As of this 2026-09-07 addendum, Sprint 26 stayed **open** solely because EXT-01 still lacked a real PH product-data access application/request.
 - EXT-19 remains `applied`. Conditional counsel review is not unconditional legal approval.
+
+### 2026-09-08 EXT-01 applied / Sprint 26 close addendum
+
+This addendum does **not** rewrite the 2026-09-07 lock. It records later owner-supplied PH product-data request evidence.
+
+- EXT-01 moved `not_started` → **`applied`**. Application/request date: **2026-09-08**.
+- Providers contacted: Lazada Philippines (`affiliate@lazada.com.ph`, 11:09 PM PH) and Shopee Philippines (`affiliate_ph@shopee.com`, 11:11 PM PH).
+- Evidence: [`evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md) plus sanitized Sent screenshots under [`evidence/external/`](evidence/external/).
+- Sprint 26 is **COMPLETE / CLOSED**. See [`evidence/SPRINT_26_COMPLETION.md`](evidence/SPRINT_26_COMPLETION.md).
+- EXT-01 is **not** `approved`, **not** `provisioned`, **not** certified. No credentials, feeds, or live PH offers are claimed.
+- Sprint 32 remains in progress / blocked on external certification. A submitted email request alone does not satisfy Sprint 32.
+- Affiliate monetization remains deferred. EXT-07 stays `n_a_beta`. Do not reactivate EXT-07 as a Sprint 26/32 acceptance requirement.

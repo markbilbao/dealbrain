@@ -1,14 +1,17 @@
 # Sprint 26 — Staging Current-Main Proof & Roadmap Bootstrap
 
-**Status:** Technical staging proof verified; PH product-data bootstrap pending — **Sprint open**
+**Status:** **COMPLETE / CLOSED** (2026-09-08). Technical staging proof verified; EXT-01 PH product-data access request `applied`.
 **Primary owner / domain:** Ops / release engineering
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-6; P1-7 (primary)
 **Technical evidence package:** [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
 **External bootstrap checklist:** [`../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](../evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
-**Shopee current evidence:** [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) — affiliate onboarding active / Open API access pending; does **not** satisfy EXT-01 product-data access
-**Completion draft (not a close):** [`../evidence/SPRINT_26_COMPLETION_DRAFT.md`](../evidence/SPRINT_26_COMPLETION_DRAFT.md)
-**2026-09-07 verdict:** **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS**
+**EXT-01 request evidence:** [`../evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](../evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md)
+**Shopee affiliate evidence (historical; not EXT-01 approval):** [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md) — affiliate onboarding active / Open API access pending; does **not** by itself satisfy EXT-01
+**Completion record:** [`../evidence/SPRINT_26_COMPLETION.md`](../evidence/SPRINT_26_COMPLETION.md)
+**Historical 2026-09-07 draft:** [`../evidence/SPRINT_26_COMPLETION_DRAFT.md`](../evidence/SPRINT_26_COMPLETION_DRAFT.md)
+**2026-09-07 verdict (historical):** **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS**
+**2026-09-08 verdict:** **SPRINT 26 COMPLETE / CLOSED**
 
 ## Objective
 
@@ -35,7 +38,7 @@ Prove the current launch candidate on staging and bootstrap the **current-scope*
 
 ## External dependencies
 
-- EXT-01 PH product-data access bootstrap (**remaining Sprint 26 close blocker**)
+- EXT-01 PH product-data access bootstrap (**complete for Sprint 26** — `applied` 2026-09-08; not `approved`)
 - EXT-02…EXT-05 historical market bootstrap — now `n_a_beta` for this beta; not September blockers
 - EXT-07 affiliate tracking — now `n_a_beta` / post-beta; not a September blocker
 - EXT-08
@@ -95,25 +98,29 @@ Prove the current launch candidate on staging and bootstrap the **current-scope*
 | Staging promotion discipline (P1-7 technical) | Complete | Current-candidate promotion path evidenced; Sprint 45 final re-verify only |
 | No production mutation | Complete | Staging-only deploy and read-only probes |
 
-### Explicitly pending
+### Explicitly pending as of 2026-09-07 — later closed 2026-09-08
 
-| Item | Status |
+| Item | Status after 2026-09-08 |
 |------|--------|
-| Required current-scope external dependency action | **Pending EXT-01 only** — no PH product-data access application/request evidence exists. Shopee affiliate dashboard / Payment & Tax / Open API documentation do **not** satisfy EXT-01. Lazada/Optimise affiliate approval (if any) is monetization permission only and does **not** certify a live research source. EXT-02…EXT-05 are `n_a_beta` (not required for initial PH beta). EXT-07 is `n_a_beta` (not a September blocker). EXT-08 Resend account evidence retained; EXT-09 DNS-auth preparation retained; EXT-10 ownership retained; EXT-17/18 provisioned; EXT-19 engagement `applied` (conditional later review is not unconditional approval). |
-| Action/application dates | Pending for EXT-01 (none invented). EXT-08/09/10 recorded as evidence verified 2026-08-08; EXT-17/18 as 2026-08-09; EXT-19 engagement as 2026-08-10 with consultation 2026-08-19 10:00 Philippines local time. |
-| External-dependency register status updates | Partial — EXT-02…EXT-05 and EXT-07 now `n_a_beta` for this beta scope; EXT-01 remains `not_started`; EXT-08 `applied`; EXT-09 `applied` (preparation only); EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (not `approved`) |
-| Final Sprint 26 completion note | Pending — draft only in evidence package |
-| Sprint 26 final go/no-go close | Pending — Sprint remains open because EXT-01 product-data bootstrap is missing |
+| Required current-scope external dependency action | **EXT-01 `applied`** — Lazada PH and Shopee PH product-data access requests sent 2026-09-08. Evidence: [`../evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](../evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md). Shopee affiliate dashboard / Payment & Tax / Open API documentation still do **not** by themselves satisfy EXT-01. Lazada/Optimise affiliate approval (if any) is monetization permission only and does **not** certify a live research source. EXT-02…EXT-05 are `n_a_beta`. EXT-07 is `n_a_beta`. EXT-08/09/10/17/18/19 bootstrap rows unchanged. |
+| Action/application dates | EXT-01 recorded as **2026-09-08**. EXT-08/09/10 recorded as evidence verified 2026-08-08; EXT-17/18 as 2026-08-09; EXT-19 engagement as 2026-08-10 with consultation 2026-08-19 10:00 Philippines local time. |
+| External-dependency register status updates | EXT-01 **`applied`**; EXT-02…EXT-05 and EXT-07 `n_a_beta`; EXT-08 `applied`; EXT-09 later `approved` for Sprint 27 sender-domain evidence; EXT-10 `approved`; EXT-17 `provisioned`; EXT-18 `provisioned`; EXT-19 `applied` (not `approved`) |
+| Final Sprint 26 completion note | Complete — [`../evidence/SPRINT_26_COMPLETION.md`](../evidence/SPRINT_26_COMPLETION.md). Historical draft retained. |
+| Sprint 26 final go/no-go close | **CLOSED** — Sprint 26 COMPLETE / CLOSED |
 
 Technical conclusion recorded in evidence package:
 
 **SPRINT 26 CURRENT-MAIN STAGING PROOF VERIFIED**
 
-2026-09-07 close question conclusion:
+2026-09-07 close question conclusion (historical):
 
 **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS**
 
-That conclusion does **not** close Sprint 26. Later `main` SHAs, including PR #114 (`1f66688`), do **not** invalidate this packaged staging proof. Sprint 45 will later re-prove the frozen launch candidate.
+2026-09-08 close question conclusion:
+
+**SPRINT 26 COMPLETE / CLOSED**
+
+The 2026-09-07 conclusion did **not** close Sprint 26. The 2026-09-08 EXT-01 request evidence does. Later `main` SHAs, including PR #114 (`1f66688`), do **not** invalidate the packaged staging proof. Sprint 45 will later re-prove the frozen launch candidate. Sprint 32 remains pending certification.
 
 ## Brand / domain bootstrap clarification
 
@@ -196,11 +203,11 @@ Additive clarification only — does **not** close Sprint 26 and does **not** st
 - Owner-stated later comprehensive counsel review (eight documents; cleared to proceed only after specified revisions / implementation conditions) is **not** unconditional legal approval and does **not** make EXT-19 `approved`
 - Does **not** prove written legal approval of published Terms/Privacy, launch legal approval, or privacy-regime compliance
 
-**Sprint 26 remains OPEN.** The single remaining Sprint 26 blocker is a real PH product-data access application/request for EXT-01.
+**Sprint 26 is COMPLETE / CLOSED** as of 2026-09-08. The 2026-09-07 remaining blocker — a real PH product-data access application/request for EXT-01 — is now `applied`. EXT-01 is not `approved` and Sprint 32 is not complete.
 
 ## Shopee evidence clarification
 
-Additive clarification only — does **not** close Sprint 26, does **not** start or close Sprint 32, and does **not** move EXT-01 off `not_started`:
+Additive historical clarification — the 2026-09-08 product-data emails, not this affiliate record, moved EXT-01 to `applied`. This section still does **not** start or close Sprint 32 and does **not** make EXT-01 `approved`:
 
 - Authoritative Shopee Sprint 26 evidence: [`../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](../evidence/SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md)
 - Counsel-cleared to apply (2026-08-25) remains true
@@ -228,7 +235,7 @@ Go if staging smoke green; No-go blocks 27+ public-path work that assumes stagin
 
 Do not close Sprint 26 merely because later Sprint 29 work proceeded under an approved sequencing exception.
 
-**Sprint close gate:** still blocked on **one** current-scope bootstrap action: EXT-01 PH product-data access application/request evidence. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for this beta and do not block Sprint 26 close. EXT-08/09 remain `applied` (not provisioned; Sprint 27 owns DNS/delivery). EXT-10 remains `approved` (not provisioned; Sprint 41 owns public hostname). EXT-17/18 remain `provisioned` for bootstrap reachability (publication remains 28/39/45). EXT-19 remains `applied` (not written published-version approval; Sprint 28/44 own remaining legal work).
+**Sprint close gate:** satisfied 2026-09-08. EXT-01 PH product-data access application/request evidence is retained and EXT-01 is `applied`. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for this beta and do not block Sprint 26 close. EXT-08 remains `applied` (not provisioned). EXT-09 later became `approved` for Sprint 27 sender-domain evidence; production email attach remains Sprint 41. EXT-10 remains `approved` (not provisioned; Sprint 41 owns public hostname). EXT-17/18 remain `provisioned` for bootstrap reachability (publication remains 28/39/45). EXT-19 remains `applied` (not written published-version approval; Sprint 28/44 own remaining legal work). Sprint 32 remains pending certification.
 
 ## Rollback or contingency
 

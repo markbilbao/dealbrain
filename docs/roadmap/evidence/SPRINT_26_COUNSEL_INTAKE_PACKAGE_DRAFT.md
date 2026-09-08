@@ -17,8 +17,10 @@
 [`../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) ·  
 [`../sprints/SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md`](../sprints/SPRINT_31_MERCHANT_PLATFORM_UNIFICATION.md)
 
-**Register snapshot:**
+**Register snapshot (historical, at draft time):**
 EXT-01…EXT-05 `not_started` · EXT-19 `applied` (counsel engagement/schedule evidenced 2026-08-10; written approval still required) · EXT-08 `applied` · EXT-09 `applied` (DNS prep only) · EXT-10 `approved` · EXT-17 `provisioned` · EXT-18 `provisioned`
+
+**Current-status pointer (2026-09-08):** Authoritative register/close status lives in [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md) and [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md). EXT-01 is now `applied`. Sprint 26 is COMPLETE / CLOSED. This intake draft is not rewritten.
 
 **Note:** Creating this intake package did **not** itself advance EXT-19; later sanitized engagement evidence advanced EXT-19 to `applied`.
 
@@ -423,6 +425,6 @@ This draft does **NOT** authorize:
 - Contacting counsel or providers from this document alone  
 - Inventing provider terms, application dates, or confirmation IDs  
 
-**Sprint 26 remains OPEN** until real remaining bootstrap evidence exists and a final go/no-go close is recorded.
+**Sprint 26 remained OPEN** at the time of this draft until real remaining bootstrap evidence existed and a final go/no-go close was recorded. Current close: [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md).
 
 **End of internal counsel intake package draft.**

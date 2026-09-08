@@ -86,9 +86,10 @@ Preserved distinctions: field present ≠ permitted to use; permitted to use ≠
 - Staging certification incomplete
 - Monitoring / public coverage disclosure incomplete
 - Kill-switch closure evidence incomplete as required
-- EXT-01 / EXT-06 remain unresolved on the authoritative register (EXT-01 = PH product-data access, still `not_started`)
+- EXT-01 is now `applied` (2026-09-08 PH product-data requests). That is **not** provider approval, credentials, a feed, or certification. EXT-06 remains `not_started`.
 - EXT-07 is `n_a_beta` for September and does not block this sprint's product-data certification purpose
-- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 evidence until separately reconciled into Sprint 26 on `main`. The 2026-09-07 Sprint 26 reconciliation records those facts as **not** satisfying EXT-01.
+- A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
+- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
 
 ### Production defaults
 

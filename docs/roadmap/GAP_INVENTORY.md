@@ -267,7 +267,7 @@ Per-market sub-requirements (provider selection, legal review, credentials, sand
 
 | Requirement | Class | Owning sprint |
 |-------------|-------|---------------|
-| Current-main staging deployment + smoke | `implemented_verified` — SHA `79bd03f` staging_ok packaged in [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); Sprint 26 still open for EXT-01 PH product-data bootstrap | 26 |
+| Current-main staging deployment + smoke | `implemented_verified` — SHA `79bd03f` staging_ok packaged in [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); Sprint 26 **COMPLETE / CLOSED** 2026-09-08 (EXT-01 `applied`) | 26 |
 | Production AWS / VPC / DB / secrets / IAM / OIDC / pull / ALB | `planned_sufficient_ac` (TF partial; not applied) | 41 |
 | Domain / DNS / TLS | `externally_blocked` + planned | 41 |
 | CDN / WAF decision | `planned_underspecified` | 41 (decision); deep WAF `post_beta_improvement` |
@@ -323,7 +323,7 @@ Claim-specific matrix lives in the master roadmap.
 
 ## M. External dependencies
 
-See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summary classes: EXT-01 remains `externally_blocked` / `not_started`. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the current PH-only beta. Sprint 26 technical staging proof is packaged; the remaining Sprint 26 bootstrap action is EXT-01 PH product-data access — see [`evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](evidence/SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md).
+See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summary classes: EXT-01 is `applied` (2026-09-08 PH product-data requests; not approved/provisioned; September shopping launch still blocked until a useful PH path is certified). EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the current PH-only beta. Sprint 26 technical staging proof is packaged and Sprint 26 is **COMPLETE / CLOSED** — see [`evidence/SPRINT_26_COMPLETION.md`](evidence/SPRINT_26_COMPLETION.md).
 
 ---
 
@@ -336,7 +336,7 @@ See [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md). Summar
 | P0-3 | P0 | M30 observability / paging / restore / runbooks incomplete | 42 |
 | P0-4 | P0 | Consumer legal + privacy minimum missing | 28 |
 | P0-5 | P0 | Real transactional email + complete password reset | 27 |
-| P0-6 | P0 | Current main not staging-proven | 26 — **technical proof packaged** ([`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); Sprint 26 remains open for EXT-01 PH product-data bootstrap |
+| P0-6 | P0 | Current main not staging-proven | 26 — **technical proof packaged** ([`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)); Sprint 26 **COMPLETE / CLOSED** 2026-09-08 (EXT-01 `applied`) |
 | P1-1A | P1 | Canonical merchant registration/routing unification | 31 |
 | P1-1B | P1 | Unsupported-market product behavior | 37 |
 | P1-2 | P1 | Shipping-cost and unknown-shipping honesty | 37 (44 verifies public wording only) |
@@ -391,7 +391,7 @@ This addendum does **not** rewrite the 2026-08-06 audit as if it never happened.
 | Immediate post-launch | Sprint 46 |
 | Numbered stop | Sprint 47 (P2-OT-01; not a launch prerequisite) |
 | Current approved engineering baseline | `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` — 2977 passed / 0 failed / 0 skipped / 168 warnings (approved merged suite evidence; no newer full-suite run claimed here) |
-| Sprint 26 | Remains open. Packaged staging proof is still SHA `79bd03f`. Later SHAs, including the current baseline and PR #114, are not Sprint 26 close evidence. Remaining close blocker after 2026-09-07: EXT-01 PH product-data bootstrap. |
+| Sprint 26 | Historical 2026-08-24/2026-09-07 note: remained open; packaged staging proof is still SHA `79bd03f`. Later SHAs, including the then-current baseline and PR #114, are not Sprint 26 close evidence. Remaining close blocker after 2026-09-07 was EXT-01 PH product-data bootstrap. **Current (2026-09-08):** COMPLETE / CLOSED after EXT-01 `applied`. |
 | Sprint 29 | Purpose updated to Production Consumer Decision Experience & Conversational Continuity. 29.0–29.4C, Product Foundation, economics, UUID presentation, schema 1.2, and research authorization handoff are **merged**. Live research remains 31–38. |
 | Sprint 31 | Router/provider contract merged (PR #96). Unification ADR and onboarding runbook recorded. Closure evidence implemented; **pending owner close review**. Sprint 32 **NOT STARTED**. Production certified providers remain zero. |
 | Consumer UI class update | Section A “Production consumer web application = missing_from_roadmap / only demo.html” is **stale as of this addendum**. Product Foundation surfaces are merged. Staging/launch proof is still pending. |
@@ -546,14 +546,14 @@ This addendum does **not** rewrite earlier snapshots. It records the owner decis
 
 ### Sprint 26 / PH-only additive reconciliation (same 2026-09-07 policy)
 
-This subsection does **not** replace the owner lock above. It records the Sprint 26 PH validation-beta reconciliation. Documentation only; no merchant is certified; Sprint 26 remains open.
+This subsection does **not** replace the owner lock above. It records the Sprint 26 PH validation-beta reconciliation as of 2026-09-07. Documentation only; no merchant is certified. Sprint 26 remained open on that date and later closed on 2026-09-08.
 
 | Field | Value |
 |-------|-------|
-| Verdict | **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS** |
+| Verdict | **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS** (historical 2026-09-07). Current: **SPRINT 26 COMPLETE / CLOSED** (2026-09-08). |
 | September supported-market target | Philippines only unless the owner later expands it |
 | Launch monetization | Unchanged from the lock above. Affiliate revenue is not a launch acceptance requirement. |
-| EXT-01 | Legitimate PH **product-data** access. Affiliate approval alone cannot satisfy it. Still `not_started`. This is the remaining Sprint 26 blocker. |
+| EXT-01 | Legitimate PH **product-data** access. Affiliate approval alone cannot satisfy it. Historical this snapshot: `not_started` / remaining Sprint 26 blocker. Current: `applied` 2026-09-08. |
 | EXT-02…EXT-05 | `n_a_beta` — not required for initial PH beta; rows retained; not submitted |
 | EXT-07 | `n_a_beta` / post-beta — not a September blocker |
 | EXT-19 | Remains `applied`. Conditional comprehensive counsel review is not unconditional legal approval. |
@@ -610,3 +610,19 @@ This addendum does **not** rewrite earlier snapshots. It records live staging re
 | Production secret attach | Still Sprint 41. Production email not claimed live |
 | Sprint 27 / P0-5 | **COMPLETE / CLOSED** |
 | Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md); [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) §9 |
+
+---
+
+## 2026-09-08 Sprint 26 EXT-01 close addendum
+
+This addendum does **not** rewrite earlier snapshots. It records owner-supplied PH product-data request evidence dated 2026-09-08.
+
+| Field | Value |
+|-------|-------|
+| EXT-01 | `not_started` → **`applied`**. Request date 2026-09-08. Not `approved` / not `provisioned`. |
+| Providers contacted | Lazada Philippines (`affiliate@lazada.com.ph`, 11:09 PM PH); Shopee Philippines (`affiliate_ph@shopee.com`, 11:11 PM PH) |
+| Evidence | [`evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md) |
+| Sprint 26 | **COMPLETE / CLOSED** — [`evidence/SPRINT_26_COMPLETION.md`](evidence/SPRINT_26_COMPLETION.md) |
+| Sprint 32 | Unchanged: in progress / blocked on external certification. A submitted email is not certification. |
+| Affiliate monetization | Remains deferred. EXT-07 stays `n_a_beta`. |
+| Authority | [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md); [`sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) |

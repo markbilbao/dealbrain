@@ -1,12 +1,13 @@
-# DRAFT — SPRINT 26 NOT YET CLOSED
+# HISTORICAL DRAFT — SPRINT 26 NOT YET CLOSED (as of 2026-09-07)
 
-**Label:** DRAFT — SPRINT 26 NOT YET CLOSED  
-**Authority:** This is a completion-note draft only. It does **not** close Sprint 26.  
-**Technical evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
-**External bootstrap checklist:** [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)  
+**Label:** HISTORICAL DRAFT — SPRINT 26 NOT YET CLOSED (as of 2026-09-07)
+**Authority:** Historical completion-note draft only. It recorded the 2026-09-07 state and does **not** remain the current close record.
+**Current close record:** [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md) — **SPRINT 26 COMPLETE / CLOSED** (2026-09-08) after EXT-01 PH product-data request evidence.
+**Technical evidence:** [`SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
+**External bootstrap checklist:** [`SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md`](SPRINT_26_EXTERNAL_BOOTSTRAP_CHECKLIST.md)
 **Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)
 
-**2026-09-07 close-question verdict:**
+**2026-09-07 close-question verdict (historical; later closed 2026-09-08):**
 
 **SPRINT 26 TECHNICAL COMPLETE — PH DATA-ACCESS BOOTSTRAP REMAINS**
 
@@ -40,9 +41,9 @@ Later `main` including PR #114 (`1f66688a39462337911ac67ad7f51bf577d03953`) does
 
 ---
 
-## Pending (required before Sprint 26 close)
+## Pending (required before Sprint 26 close) — historical 2026-09-07
 
-- **Single remaining blocker:** EXT-01 PH **product-data** access application/request evidence. No such evidence exists in the repository.
+- **Single remaining blocker (as of 2026-09-07):** EXT-01 PH **product-data** access application/request evidence. No such evidence existed in the repository on that date. Later satisfied on 2026-09-08 — see [`EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md) and [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md).
 - Exact remaining action: submit/request at least one legitimate useful PH merchant/product-data path (official merchant API, authorized product feed, authorized retailer integration, partner/data feed, permitted public data source, or another documented legitimate path) and retain non-secret confirmation evidence.
 - Affiliate approval alone cannot satisfy EXT-01. Shopee affiliate dashboard / Payment & Tax / Open API documentation do not satisfy it. Lazada/Optimise affiliate approval with Product Feed: 0 items does not certify Lazada as a live research source.
 - Final acceptance review and Sprint 26 go/no-go close
@@ -51,8 +52,8 @@ Later `main` including PR #114 (`1f66688a39462337911ac67ad7f51bf577d03953`) does
 
 ## Explicit non-claims
 
-- Sprint 26 is **not** complete. **SPRINT 26 OPEN. NOT YET CLOSED. DRAFT.**
-- External PH product-data application for EXT-01 is **not** claimed submitted.
+- Sprint 26 was **not** complete as of this 2026-09-07 draft. **SPRINT 26 OPEN. NOT YET CLOSED. DRAFT.** (historical). Current status is **COMPLETE / CLOSED** in [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md).
+- External PH product-data application for EXT-01 was **not** claimed submitted in this draft. That later occurred on 2026-09-08.
 - EXT-02…EXT-05 `n_a_beta` does **not** mean those applications were submitted or those markets are certified.
 - EXT-07 `n_a_beta` does **not** delete affiliate architecture or affiliate-neutrality tests.
 - EXT-08 `applied` does **not** close Sprint 26 and does **not** start Sprint 27.

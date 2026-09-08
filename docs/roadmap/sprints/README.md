@@ -4,7 +4,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 
 | Sprint | Document |
 |--------|----------|
-| 26 | [Staging Current-Main Proof & Roadmap Bootstrap](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — technical evidence: [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) (sprint still open: EXT-01 PH product-data bootstrap remains) |
+| 26 | [Staging Current-Main Proof & Roadmap Bootstrap](SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) — **COMPLETE / CLOSED** (2026-09-08). Technical evidence: [`../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md). EXT-01 `applied` on [`../evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](../evidence/EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md). Close record: [`../evidence/SPRINT_26_COMPLETION.md`](../evidence/SPRINT_26_COMPLETION.md) |
 | 27 | [Transactional Identity & Email](SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) — complete — EXT-09 Verified, staging real-inbox E2E passed, PR #121 readiness gate merged, immutable staging deployment #32 succeeded, and live `/health` confirmed `identity_email_adapter=resend` / `identity_email_ready=true` on 2026-09-08. Production email attach remains Sprint 41 |
 | 28 | [Privacy, Legal, Consent & Account Deletion](SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) — in progress (28.1 implemented; sprint not complete) |
 | 29 | [Production Consumer Decision Experience & Conversational Continuity](SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md) |
