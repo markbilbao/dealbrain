@@ -567,5 +567,5 @@ This addendum does **not** rewrite earlier snapshots. It records the consumer em
 
 | Field | Value |
 |-------|-------|
-| Sprint 27 | In progress. 27.4 exposes Account email-change and dedicated verification/reset/email-change success states. This is implementation evidence only. EXT-09 DNS not verified. Real inbox E2E not done. Live staging email-change inbox E2E is still required. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. |
+| Sprint 27 | In progress. 27.4 exposes Account email-change and dedicated verification/reset/email-change success states. A 27.4 follow-up makes the shared account/auth header authentication-aware. This is implementation evidence only. EXT-09 DNS not verified. Real inbox E2E not done. Live staging email-change inbox E2E is still required. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. |
 | Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) |

@@ -88,12 +88,13 @@ def _account_header(next_path: str) -> str:
       <a class="brand" href="/">{logo_markup()}</a>
       <nav class="header-nav" aria-label="Primary">
         <a href="/#how-it-works">How it works</a>
-        <a href="/account">Account</a>
+        <a href="/account" data-header-auth="signed-in" hidden>Account</a>
         <a href="/support">Support</a>
       </nav>
       <div class="header-actions">
-        <a class="text-link" href="/login?next={_esc(next_path)}">Sign in</a>
-        <a class="btn btn-primary btn-compact" href="/register?next={_esc(next_path)}">Sign up</a>
+        <a class="text-link" href="/login?next={_esc(next_path)}" data-header-auth="signed-out" hidden>Sign in</a>
+        <a class="btn btn-primary btn-compact" href="/register?next={_esc(next_path)}" data-header-auth="signed-out" hidden>Sign up</a>
+        <button type="button" class="text-link" data-header-auth="signed-in" data-account-action="sign-out" data-sign-out-redirect="/" hidden>Sign out</button>
         <a class="profile-btn" href="/account" aria-label="Account">{ICON_USER}</a>
       </div>
     </header>

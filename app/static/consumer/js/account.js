@@ -377,25 +377,51 @@ function bindForms() {
   });
 }
 
-async function loadAccount() {
+function setHeaderAuthState(signedIn) {
+  document.querySelectorAll("[data-header-auth]").forEach((node) => {
+    const state = node.getAttribute("data-header-auth");
+    node.hidden = signedIn ? state !== "signed-in" : state !== "signed-out";
+  });
+}
+
+async function resolveAuthSession() {
+  const token = readToken();
+  if (!token) {
+    setHeaderAuthState(false);
+    return { ok: false, payload: null, reason: "missing" };
+  }
+  try {
+    const { response, payload } = await api("/api/v1/auth/me");
+    if (!response.ok) {
+      await clearLocalAuth();
+      setHeaderAuthState(false);
+      return { ok: false, payload: null, reason: "invalid" };
+    }
+    setHeaderAuthState(true);
+    return { ok: true, payload, reason: "valid" };
+  } catch {
+    setHeaderAuthState(false);
+    return { ok: false, payload: null, reason: "error" };
+  }
+}
+
+function applyAccountPageSession(session) {
   const signedIn = qs("[data-account-signed-in]");
   const signedOut = qs("[data-account-signed-out]");
   if (!signedIn || !signedOut) return;
-  const token = readToken();
-  if (!token) {
+  if (!session.ok) {
     signedOut.hidden = false;
     signedIn.hidden = true;
-    setStatus("You are signed out on this device.");
+    if (session.reason === "invalid") {
+      setStatus("This session is no longer valid. Sign in again.");
+    } else if (session.reason === "error") {
+      setStatus("PiqSavi could not reach the account service. Try again.");
+    } else {
+      setStatus("You are signed out on this device.");
+    }
     return;
   }
-  const { response, payload } = await api("/api/v1/auth/me");
-  if (!response.ok) {
-    clearToken();
-    signedOut.hidden = false;
-    signedIn.hidden = true;
-    setStatus("This session is no longer valid. Sign in again.");
-    return;
-  }
+  const payload = session.payload || {};
   signedOut.hidden = true;
   signedIn.hidden = false;
   qs("[data-account-name]").textContent = payload.display_name || "";
@@ -415,12 +441,28 @@ async function loadAccount() {
   setStatus("Signed in.");
 }
 
-function bindActions() {
-  qs('[data-account-action="sign-out"]')?.addEventListener("click", async () => {
-    setStatus("Signing out…");
+async function loadAccount() {
+  const session = await resolveAuthSession();
+  applyAccountPageSession(session);
+}
+
+async function signOutCurrentDevice(redirectTo) {
+  setStatus("Signing out…");
+  try {
     await api("/api/v1/auth/logout", { method: "POST" });
-    await clearLocalAuth();
-    window.location.assign("/login");
+  } catch {
+    /* Logout is best-effort. Local/device auth still clears. */
+  }
+  await clearLocalAuth();
+  window.location.assign(redirectTo);
+}
+
+function bindActions() {
+  document.querySelectorAll('[data-account-action="sign-out"]').forEach((button) => {
+    button.addEventListener("click", async () => {
+      const redirectTo = button.getAttribute("data-sign-out-redirect") || "/login";
+      await signOutCurrentDevice(redirectTo);
+    });
   });
   qs('[data-account-action="export"]')?.addEventListener("click", async () => {
     setStatus("Preparing export…", "export");
