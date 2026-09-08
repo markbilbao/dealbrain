@@ -1,6 +1,6 @@
 # Sprint 27 — Transactional Identity & Email
 
-**Status:** In progress — **not complete**. 27.1–27.4 implementation is on `main`. 2026-09-08 owner/operator staging inbox E2E (verify, password reset, email-change) **passed**. Auth-aware header/logout E2E **passed**. EXT-09 is **PASS / VERIFIED** (public DNS + Resend domain **Verified**). Production secret attach remains Sprint 41. The `identity_email_status()` gate now records Sprint 27 external evidence as **verified** and sets `ready` only when this process also has usable Resend runtime configuration. **Implementation ready; staging deployment verification still required.** P0-5 closes only after this digest is deployed to staging and live `https://staging.piqsavi.com/health` reports `identity_email_adapter=resend` and `identity_email_ready=true`. Evidence: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
+**Status:** COMPLETE / CLOSED. 27.1–27.4 implementation is on `main`. 2026-09-08 owner/operator staging inbox E2E (verify, password reset, email-change) **passed**. Auth-aware header/logout E2E **passed**. EXT-09 is **PASS / VERIFIED** (public DNS + Resend domain **Verified**). PR #121 merged the identity-email readiness gate at `a5468ecf65be40bb36a053a97869cec97e3a529c`. Deploy Staging #32 succeeded on that digest. Live `https://staging.piqsavi.com/health` on 2026-09-08 reported `identity_email_adapter=resend` and `identity_email_ready=true`. Production secret attach remains Sprint 41. Sprint 27 completion does **not** mean production transactional email is live. Evidence: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
 **Primary owner / domain:** Identity / user platform (Sprint 17 domain; adapter hardening)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-5
@@ -24,9 +24,9 @@
 | EXT-09 sender-domain DNS auth | `approved` — **PASS / VERIFIED** 2026-09-08 (public DNS + Resend domain **Verified**) |
 | Staging real-inbox E2E | **passed** 2026-09-08 (verify, reset, email-change) |
 | Production email readiness / Secrets Manager cutover | **not claimed** (path recorded; attach remains Sprint 41) |
-| Sprint 27 / P0-5 closure | **not closed** — evidence gate implemented; staging `/health` verification after deploy still required |
+| Sprint 27 / P0-5 closure | **COMPLETE / CLOSED** — PR #121 merged; Deploy Staging #32; live `/health` `identity_email_adapter=resend` / `identity_email_ready=true` on 2026-09-08 |
 
-27.1 implements the production email boundary and reset/verify confirm routes. 27.2 adds verified account email change. Neither slice by itself completes Sprint 27. EXT-09 sender-domain evidence is now recorded as **Verified**. Production email attach remains Sprint 41.
+27.1 implements the production email boundary and reset/verify confirm routes. 27.2 adds verified account email change. Neither slice by itself closed Sprint 27. EXT-09 sender-domain evidence is recorded as **Verified**. Production email attach remains Sprint 41.
 
 ## 27.2 record (owner slice)
 
@@ -67,19 +67,19 @@
 | Trusted `PUBLIC_APP_BASE_URL` action links | preserved — request / forwarded Host unused |
 | Resend failure isolation (timeout / non-2xx / transport / missing key / invalid From) | strengthened — generic `EmailDeliveryError`; no provider body, key, or token leak |
 | PiqSavi consumer email branding | verified — no DealBrain in transactional copy |
-| `identity_email_status().ready` | **implemented** — `external_evidence=verified` (merged EXT-09 + inbox E2E); `ready` is true only when adapter is Resend **and** runtime config is usable. Not live-staging-verified until deploy |
+| `identity_email_status().ready` | **implemented and live-staging-verified** — `external_evidence=verified` (merged EXT-09 + inbox E2E); `ready` is true only when adapter is Resend **and** runtime config is usable. Live `https://staging.piqsavi.com/health` after Deploy Staging #32 reported `identity_email_ready=true` |
 | Operator EXT-09 DNS runbook | executed — public DNS resolvable; Resend reports **Verified** |
 | Staging inbox E2E evidence | **passed** 2026-09-08 — [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) |
 | EXT-09 DNS verified | **YES** — public DNS + Resend domain **Verified** (2026-09-08) |
 | Real inbox E2E | **YES** — verify, reset, and email-change on 2026-09-08 |
 | Production secret attached | **NO** — Sprint 41 |
-| Sprint 27 / P0-5 closure | **not closed** |
+| Sprint 27 / P0-5 closure | **COMPLETE / CLOSED** |
 
-27.3 prepares repository-controlled cutover so the owner can apply Cloudflare DNS and run real staging inbox proof. Staging inbox proof and EXT-09 Resend **Verified** now exist (2026-09-08). It does **not** claim production email live or Sprint 27 complete.
+27.3 prepares repository-controlled cutover so the owner can apply Cloudflare DNS and run real staging inbox proof. Staging inbox proof and EXT-09 Resend **Verified** now exist (2026-09-08). Live staging readiness health after PR #121 / Deploy Staging #32 is recorded in the final closure section. It does **not** claim production email live.
 
-## 2026-09-08 reconciliation (authoritative current evidence)
+## 2026-09-08 reconciliation (pre-PR #121 historical evidence)
 
-Full matrix and DNS notes: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
+Full matrix and DNS notes: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md). The table below is the **pre-PR #121** reconciliation. It correctly recorded live `/health` `identity_email_ready=false` on the earlier staging digest. Do not treat that observation as the current post-deploy state. **Final closure** after PR #121 / Deploy Staging #32 is recorded below.
 
 | Decision | Value |
 |----------|-------|
@@ -90,7 +90,7 @@ Full matrix and DNS notes: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-0
 | Production secret attach | **NOT SPRINT 27** — Sprint 41 |
 | `identity_email_ready` | code gate now AND(runtime Resend config, verified Sprint 27 evidence). Live staging still reported `false` on 2026-09-08 on the previous digest. Remaining closure: deploy this digest and confirm live `/health` |
 
-**Remaining closure action:** merge this readiness-gate implementation, deploy the immutable image to staging, and confirm live `https://staging.piqsavi.com/health` reports `identity_email_adapter=resend` and `identity_email_ready=true`. Do not close Sprint 27 from local tests alone. Production email is not live; production `RESEND_API_KEY` attach remains Sprint 41.
+**Remaining closure action at the time of this 2026-09-08 reconciliation:** merge the readiness-gate implementation, deploy the immutable image to staging, and confirm live `https://staging.piqsavi.com/health` reports `identity_email_adapter=resend` and `identity_email_ready=true`. That action completed later the same day after PR #121 and Deploy Staging #32; see **Final closure** below. Production email is not live; production `RESEND_API_KEY` attach remains Sprint 41.
 
 ## 27.4 record (consumer UX slice)
 
@@ -106,9 +106,9 @@ Full matrix and DNS notes: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-0
 | Implementation evidence | tests + lint; live staging email-change inbox E2E passed 2026-09-08 |
 | Live staging email-change inbox E2E | **passed** 2026-09-08 — owner/operator real Gmail confirm |
 | Final Account/auth visual design | **not this slice** |
-| Sprint 27 / P0-5 closure | **not closed** — implementation ready; staging `/health` verification still required |
+| Sprint 27 / P0-5 closure | **COMPLETE / CLOSED** — live staging `/health` verified after Deploy Staging #32 |
 
-27.4 exposes the already-implemented email-change lifecycle in the Account UI and replaces engineering-stage confirmation leftovers with dedicated success/failure states. Live staging inbox delivery for email-change is now evidenced (2026-09-08). It does **not** mark production email readiness and does **not** close Sprint 27.
+27.4 exposes the already-implemented email-change lifecycle in the Account UI and replaces engineering-stage confirmation leftovers with dedicated success/failure states. Live staging inbox delivery for email-change is now evidenced (2026-09-08). It does **not** mark production email readiness. Sprint 27 / P0-5 closure is recorded in **Final closure** below.
 
 ## 27.4 follow-up (auth-aware account header)
 
@@ -119,13 +119,33 @@ Full matrix and DNS notes: [`../evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-0
 | Header Sign out | implemented — existing `POST /api/v1/auth/logout` + `clearLocalAuth()` / `/account/clear-device` + redirect `/` |
 | Account Sessions Sign out | retained — same `signOutCurrentDevice` helper; default redirect remains `/login` |
 | Initial markup | auth-dependent controls start `hidden` until `/auth/me` resolves (no Sign-in flash for a valid session) |
-| Sprint 27 / P0-5 closure | **not closed** — header E2E passed 2026-09-08; staging `/health` `identity_email_ready=true` still required after this digest deploys |
+| Sprint 27 / P0-5 closure | **COMPLETE / CLOSED** — header E2E passed 2026-09-08; live `/health` `identity_email_ready=true` after Deploy Staging #32 |
 
-This follow-up does **not** redesign Account Settings and does **not** change identity success states from 27.4. Staging auth-aware header/logout E2E **passed** on 2026-09-08 after PR #119. EXT-09 is **Verified**. Sprint 27 remains open until this readiness-gate digest is deployed and live `/health` reports `identity_email_ready=true`.
+This follow-up does **not** redesign Account Settings and does **not** change identity success states from 27.4. Staging auth-aware header/logout E2E **passed** on 2026-09-08 after PR #119. EXT-09 is **Verified**. The remaining readiness-gate digest was merged in PR #121 and verified live after Deploy Staging #32.
 
 **Staging secret injection.** Deploy Staging never reads Resend from GitHub. The host assemble script reads optional Secrets Manager leaf `dealbrain/staging/resend_api_key` (same prefix as `app_secret_key` / `cors_origins`). If the leaf is missing or placeholder, assembled `TRANSACTIONAL_EMAIL_PROVIDER` stays `null` and `RESEND_API_KEY` is empty so current staging does not construct `ResendEmailSender` without a key. After the owner creates the secret, the next staging deploy selects Resend automatically.
 
-**Readiness truth.** `identity_email_status()` distinguishes adapter, runtime configuration, and Sprint 27 external evidence. `external_evidence` is **verified** from the merged EXT-09 / inbox-E2E record; `/health` does not call Resend to re-prove it. `ready` is true only when the adapter is Resend, runtime config is usable (non-placeholder key, sender, valid `PUBLIC_APP_BASE_URL`), and that verified evidence gate is satisfied. A missing/placeholder key, `TRANSACTIONAL_EMAIL_PROVIDER=null`, unknown environment, or production without usable runtime Resend configuration keeps `ready=false`. Production email is **not** claimed live. Health still exposes only `identity_email_adapter` and `identity_email_ready`. Live staging `/health` must be re-checked after this digest deploys; local tests do not close Sprint 27 / P0-5.
+**Readiness truth.** `identity_email_status()` distinguishes adapter, runtime configuration, and Sprint 27 external evidence. `external_evidence` is **verified** from the merged EXT-09 / inbox-E2E record; `/health` does not call Resend to re-prove it. `ready` is true only when the adapter is Resend, runtime config is usable (non-placeholder key, sender, valid `PUBLIC_APP_BASE_URL`), and that verified evidence gate is satisfied. A missing/placeholder key, `TRANSACTIONAL_EMAIL_PROVIDER=null`, unknown environment, or production without usable runtime Resend configuration keeps `ready=false`. Production email is **not** claimed live. Health still exposes only `identity_email_adapter` and `identity_email_ready`. Live staging `/health` after Deploy Staging #32 reported `identity_email_adapter=resend` and `identity_email_ready=true`. Local tests alone did not close Sprint 27 / P0-5.
+
+## Final closure (Post-PR #121, 2026-09-08)
+
+Sprint 27 / P0-5 is **COMPLETE / CLOSED**. All Sprint 27 acceptance evidence exists, including the final live staging health proof.
+
+| Item | Value |
+|------|-------|
+| Git SHA | `a5468ecf65be40bb36a053a97869cec97e3a529c` (PR #121 merge commit) |
+| Build Image run | `34230096725` |
+| Release ID | `rel-20260908T130824Z-a5468ecf65be` |
+| Immutable image digest | `sha256:0a0a3022ecb1f758a0f58aef821adf4dadf8b18834ed3971ee70dc45a2d72787` |
+| Deploy Staging | #32 / run `34231964695` — SUCCESS |
+| Date | 2026-09-08 |
+| Live endpoint | `https://staging.piqsavi.com/health` |
+| Observed | `environment=staging`, `status=up`, `identity_email_adapter=resend`, `identity_email_ready=true` |
+| Authoritative deploy result | `final_status=staging_ok`, `localhost_live=true`, `localhost_ready=true`, `alb_target_healthy=true`, `smoke_ok=true` |
+
+Sprint 27 proves: provider architecture and fail-closed behavior; sender-domain authentication; staging real-inbox E2E; staging runtime Resend configuration; merged readiness semantics; live staging readiness health.
+
+Sprint 27 does **not** prove: production Resend live; production `RESEND_API_KEY` attached; production email end-to-end verified; production cutover complete. Those remain Sprint 41.
 
 ## Objective
 

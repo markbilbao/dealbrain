@@ -224,9 +224,11 @@ Do **not** select or purchase a paid email provider from this document.
 
 Staging transactional sender `PiqSavi <no-reply@piqsavi.com>` is owner-observed. Sending-domain Resend **Verified** (EXT-09) is recorded 2026-09-08. This note does not rewrite the lock lists above and does not claim production email.
 
+Post-PR #121 / Deploy Staging #32 the same day: live staging `/health` reported `identity_email_adapter=resend` and `identity_email_ready=true`. Sprint 27 / P0-5 is **COMPLETE / CLOSED**. Production email attach remains Sprint 41.
+
 ### Sprint 27 requirements
 
-Sprint 27 must establish (status 2026-09-08: implementation + staging inbox E2E passed; EXT-09 Resend **Verified**; Sprint 27 still open while `identity_email_ready=false`):
+Sprint 27 must establish (status 2026-09-08: **COMPLETE / CLOSED** after PR #121 / Deploy Staging #32 live `/health` `identity_email_ready=true`; production email attach remains Sprint 41):
 
 - transactional email provider
 - sending-domain verification

@@ -591,3 +591,22 @@ This addendum does **not** rewrite earlier snapshots. It records the 2026-09-08 
 | Sprint 27 / P0-5 | **Not closed** |
 | Remaining closure action | Separate production-code PR for `identity_email_status().ready`; deploy staging; confirm `/health` `identity_email_ready=true` |
 | Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md); [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) |
+
+This 2026-09-08 snapshot is **not** rewritten. The `identity_email_ready=false` / **Not closed** rows were true for Deploy Staging #31. See the Post-PR #121 addendum below.
+
+---
+
+## 2026-09-08 Sprint 27 Post-PR #121 closure addendum
+
+This addendum does **not** rewrite earlier snapshots. It records live staging readiness health after PR #121 and Deploy Staging #32.
+
+| Field | Value |
+|-------|-------|
+| Git SHA | `a5468ecf65be40bb36a053a97869cec97e3a529c` (PR #121 merge) |
+| Build Image | Run `34230096725`; release `rel-20260908T130824Z-a5468ecf65be`; digest `sha256:0a0a3022ecb1f758a0f58aef821adf4dadf8b18834ed3971ee70dc45a2d72787` |
+| Staging deploy | Deploy Staging #32 / run `34231964695` SUCCESS; `final_status=staging_ok` |
+| Live `/health` | `https://staging.piqsavi.com/health` on 2026-09-08: `environment=staging`, `status=up`, `identity_email_adapter=resend`, `identity_email_ready=true` |
+| Earlier #31 observation | Remains historically `identity_email_ready=false` on the previous digest |
+| Production secret attach | Still Sprint 41. Production email not claimed live |
+| Sprint 27 / P0-5 | **COMPLETE / CLOSED** |
+| Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md); [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) §9 |
