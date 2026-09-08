@@ -87,4 +87,6 @@ consultation held ≠ written approval · guidance received ≠ document approve
 
 Do not put privileged counsel advice into Git.
 
-Sprint 26: OPEN · Sprint 27: NOT STARTED · Sprint 28: NOT STARTED · EXT-01…05: not_started · EXT-19: applied · EXT-20/21/22: not_started · Legal approval: NOT CLAIMED · Merchant/provider approval: NOT CLAIMED
+Consultation-day snapshot (2026-08-19, historical): Sprint 26: OPEN · Sprint 27: NOT STARTED · Sprint 28: NOT STARTED · EXT-01…05: not_started · EXT-19: applied · EXT-20/21/22: not_started · Legal approval: NOT CLAIMED · Merchant/provider approval: NOT CLAIMED
+
+Current-status pointer (2026-09-08): Sprint 26 COMPLETE / CLOSED; Sprint 27 COMPLETE / CLOSED; EXT-01 `applied` (not approved); EXT-02…05 `n_a_beta`; EXT-19 still `applied`. Authoritative register: `docs/roadmap/EXTERNAL_DEPENDENCY_REGISTER.md`. Merchant/provider approval is still NOT CLAIMED.

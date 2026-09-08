@@ -375,7 +375,9 @@ No Affiliate Open API access-request ID, Seller/ISV application ID, or generic �
 
 This record does **not** mark EXT-01, EXT-06, or EXT-07 complete, approved, or provisioned.
 
-**2026-09-07 register pointer (does not rewrite this 2026-09-02 snapshot):** Authoritative current statuses live in [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md). EXT-01 remains `not_started` and now specifically means PH **product-data** access; this Shopee affiliate record still does **not** satisfy it. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the September PH validation beta. Affiliate permission ≠ product-data permission.
+**2026-09-07 register pointer (does not rewrite this 2026-09-02 snapshot):** Authoritative current statuses live in [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md). As of 2026-09-07, EXT-01 remained `not_started` and specifically meant PH **product-data** access; this Shopee affiliate record still does **not** satisfy EXT-01 by itself. EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the September PH validation beta. Affiliate permission ≠ product-data permission.
+
+**2026-09-08 register pointer (does not rewrite this 2026-09-02 snapshot):** EXT-01 later became `applied` on a **separate** PH product-data request email to `affiliate_ph@shopee.com` (and a Lazada PH request the same day). See [`EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md). This affiliate-onboarding record still does **not** make EXT-01 `approved` and does **not** close Sprint 32.
 
 ---
 
@@ -425,7 +427,7 @@ None of those values were issued as Affiliate Open API credentials in any case.
 - No `ResearchProviderCertification` is created.
 - No production provider is activated.
 - No public “Shopee supported / live / certified / integrated / API-ready” claim is authorized.
-- Sprint 26 is **not** closed.
+- Sprint 26 was **not** closed by this 2026-09-02 affiliate record. Sprint 26 later closed on 2026-09-08 on separate product-data request evidence.
 - Sprint 32 is **not** closed.
 - Sprint 33 is **not** started.
 

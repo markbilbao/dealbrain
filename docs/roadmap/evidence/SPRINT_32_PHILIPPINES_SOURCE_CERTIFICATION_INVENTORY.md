@@ -5,7 +5,7 @@
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
-**Register row:** EXT-01 (Philippines **product-data** access) remains `not_started`  
+**Register row:** EXT-01 (Philippines **product-data** access) is `applied` (2026-09-08 request evidence). This inventory snapshot originally recorded `not_started`. `applied` ≠ approved / provisioned / certified.
 **Trusted production certification records:** **zero**
 
 **Related:**
@@ -58,13 +58,13 @@ Those records are **incomplete** and are not loaded by `production_research_prov
 
 Production `certified` writes require an exact registered provider: same `provider_id`, capability, market, and source. Documentary IDs (`ph-shopee`, `ph-lazada`, `ph-tiktok-shop`, `ph-amazon`, `ph-temu`) are candidate identities only. They do not become production identities because evidence exists.
 
-Catalog `register` / `replace` remain trusted infrastructure primitives. `ResearchProviderCertificationDecisionService` is the policy path. Incomplete documentary records have no promotion helper. Official `main` still has no submitted Shopee application; unmerged Sprint 26 / owner-observed dashboard progress remains outside this branch.
+Catalog `register` / `replace` remain trusted infrastructure primitives. `ResearchProviderCertificationDecisionService` is the policy path. Incomplete documentary records have no promotion helper. Official `main` now retains the 2026-09-08 Shopee/Lazada PH **product-data request** evidence (EXT-01 `applied`). That is not a Shopee Open Platform application completion, not approval, and not certification. Affiliate-dashboard observations still do not certify.
 
 ### 32.5 reconciliation
 
 Sprint 31 is formally owner-closed. Sprint 32 remains in progress and blocked on external certification. Authoritative slice status lives in [`../sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](../sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md).
 
-Owner-observed Shopee facts outside official `main` (affiliate dashboard access, Payment & Tax pending, Affiliate Open API docs, `productOfferV2`, feeds, GraphQL auth, documented 8000/hour, absent AppID/Secret) are **not** Sprint 32 certification evidence. They require separate Sprint 26 reconciliation before they can become authoritative.
+Owner-observed Shopee affiliate facts (affiliate dashboard access, Payment & Tax pending, Affiliate Open API docs, `productOfferV2`, feeds, GraphQL auth, documented 8000/hour, absent AppID/Secret) are **not** Sprint 32 certification evidence. The 2026-09-08 product-data request emails are now on the Sprint 26 evidence path as EXT-01 `applied` only. They do **not** certify Shopee.
 
 ---
 
@@ -89,7 +89,7 @@ Owner-observed Shopee facts outside official `main` (affiliate dashboard access,
 | Sprint 31 production certification catalog | empty |
 | Sprint 31 production routing catalog | empty |
 | Sprint 32 production evidence catalog | empty |
-| EXT-01 / EXT-06 | EXT-01 `not_started`; EXT-06 `not_started`; EXT-07 `n_a_beta` for September |
+| EXT-01 / EXT-06 | EXT-01 `applied` (2026-09-08 PH product-data requests; not approved); EXT-06 `not_started`; EXT-07 `n_a_beta` for September |
 | Public PH support claim | forbidden |
 
 ---
@@ -108,7 +108,7 @@ Owner-observed Shopee facts outside official `main` (affiliate dashboard access,
 | Technical implementation | Mock search (`ShopeeConnector`), mock collection (`MockShopeeCollector`), mock reviews (`MockShopeeReviewCollector`), official stub (`future-shopee-official`), demo affiliate placeholder. No live official adapter. |
 | Provider descriptor (Sprint 31 production) | none |
 | Counsel / legal review | Counsel-cleared to **apply** (signed record 2026-08-25). Not production authorization. |
-| Application state | **not submitted** on official `main` |
+| Application state | Product-data access **request submitted** 2026-09-08 (EXT-01 `applied`). Provider decision pending. Not approved. Seller/ISV Open Platform still not submitted. |
 | Merchant approval | **no** |
 | Product-data / API rights | **UNKNOWN**. Affiliate Open API access is not established as granted. Seller/ISV Open Platform is a separate program and is not established as granted. |
 | Credentials | **none**. AppID / Secret absent. |
@@ -123,7 +123,7 @@ Owner-observed Shopee facts outside official `main` (affiliate dashboard access,
 | Blocker | No official API access, no credentials, no established data/display/cache/AI rights, no production descriptor or certification |
 | Owning sprint | 26 (application) / 32 (PH certification) |
 
-Official `main` supports counsel/application preparation. Do not treat unmerged Sprint 26 branch notes or conversational observations as authoritative application-progress evidence.
+Official `main` now also retains the 2026-09-08 Shopee PH product-data request evidence ([`EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md)). That request does **not** certify Shopee. Do not treat affiliate-dashboard observations as certification evidence.
 
 ### Contemplated capabilities
 
@@ -154,7 +154,7 @@ Official `main` supports counsel/application preparation. Do not treat unmerged 
 | Technical implementation | Mock search, mock collection, mock reviews, official stub, demo affiliate placeholder. No live official adapter. |
 | Provider descriptor (Sprint 31 production) | none |
 | Counsel / legal review | Counsel-cleared to apply (2026-08-25) |
-| Application state | **not submitted** |
+| Application state | Product-data access **request submitted** 2026-09-08 (EXT-01 `applied`). Provider decision pending. Not approved. |
 | Merchant approval | **no** |
 | Product-data / API rights | **UNKNOWN**. Affiliate portal ≠ Open Platform. |
 | Credentials | **none** |
@@ -166,7 +166,7 @@ Official `main` supports counsel/application preparation. Do not treat unmerged 
 | Production rights | **none** |
 | Certification evidence status | incomplete / none in production catalog |
 | Trusted certification status | no record — **not certified** |
-| Blocker | No application, approval, credentials, rights, or trusted certification |
+| Blocker | Request submitted; no approval, credentials, rights, or trusted certification |
 | Owning sprint | 26 / 32 |
 
 ### Contemplated capabilities

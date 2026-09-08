@@ -4,7 +4,8 @@
 **Sprint definition:** [`../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](../sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md)  
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)  
 **Packaging date (UTC):** 2026-08-06  
-**Sprint 26 closure status:** **Open** — technical staging proof verified; external dependency bootstrap remains
+**Sprint 26 closure status (as of this 2026-08-06 package):** **Open** — technical staging proof verified; external dependency bootstrap remained.
+**Current Sprint 26 status (2026-09-08):** **COMPLETE / CLOSED** — see [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md). This technical package is not rewritten.
 
 ---
 
@@ -226,4 +227,4 @@ No password, token, cookie, authorization header, or other secret material is re
 
 This conclusion covers technical current-main staging proof, release-evidence correlation, zero-mutation smoke, authenticated lifecycle smoke, and P1-7 technical promotion-discipline evidence for SHA `79bd03f9e3df99efe4a978c48bec79eceec46767`.
 
-It does **not** close Sprint 26. External dependency bootstrap actions, application dates, register status updates, and final Sprint 26 go/no-go remain pending (see [`SPRINT_26_COMPLETION_DRAFT.md`](SPRINT_26_COMPLETION_DRAFT.md)).
+It did **not** close Sprint 26 at packaging time. External dependency bootstrap, application dates, register status updates, and final Sprint 26 go/no-go later completed on 2026-09-08 (see [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md); historical draft: [`SPRINT_26_COMPLETION_DRAFT.md`](SPRINT_26_COMPLETION_DRAFT.md)).

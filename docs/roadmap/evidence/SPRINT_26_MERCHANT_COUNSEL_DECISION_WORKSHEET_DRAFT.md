@@ -18,8 +18,10 @@
 [`../sprints/SPRINT_35_UNITED_KINGDOM_MERCHANT_CERTIFICATION.md`](../sprints/SPRINT_35_UNITED_KINGDOM_MERCHANT_CERTIFICATION.md) ·  
 [`../sprints/SPRINT_36_CANADA_MERCHANT_CERTIFICATION.md`](../sprints/SPRINT_36_CANADA_MERCHANT_CERTIFICATION.md)
 
-**Register snapshot at worksheet creation:**  
+**Register snapshot at worksheet creation (historical):**
 EXT-01…EXT-05 `not_started` · EXT-19 `applied` (engagement/schedule evidenced; substantive merchant review pending) · Sprint 26 OPEN · Sprint 27 NOT STARTED
+
+**Current-status pointer (2026-09-08):** Authoritative status lives in [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md) and [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md). EXT-01 is `applied`. Sprint 26 is COMPLETE / CLOSED. This worksheet is not rewritten.
 
 **Update (2026-08-27):** Merchant-program **application** clearance is now recorded in [`SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md). Capability rows below remain **UNKNOWN**. Register EXT-01…EXT-05 remain `not_started`. Application submitted remains **NO**.
 
@@ -539,6 +541,6 @@ This draft does **NOT** authorize:
 - production capability enablement for unknown permissions
 - claims of merchant approval or market certification
 
-**Sprint 26 remains OPEN** until remaining EXT-01…EXT-05 bootstrap **submission** evidence exists and a final go/no-go close is recorded.
+**Sprint 26 remained OPEN** at the time of this worksheet until remaining EXT-01…EXT-05 bootstrap **submission** evidence existed and a final go/no-go close was recorded. Current close: [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md). EXT-02…EXT-05 later became `n_a_beta` for the PH-only beta.
 
 **End of internal merchant counsel decision worksheet draft.**

@@ -129,6 +129,6 @@ Engineering must keep these states separate:
 - No `ResearchProviderCertification` is created.
 - No public “Shopee supported” / “Lazada live” / equivalent claim is authorized.
 - Sprint 32 is **not** started.
-- Sprint 26 remains **open** until real application-submission evidence exists for remaining bootstrap rows.
+- As of this 2026-08-25 clearance record, Sprint 26 remained **open** until real application-submission evidence existed for remaining bootstrap rows. Current status: Sprint 26 **COMPLETE / CLOSED** after 2026-09-08 EXT-01 request evidence — see [`SPRINT_26_COMPLETION.md`](SPRINT_26_COMPLETION.md). This clearance record is not rewritten.
 
 Later Shopee operational observations (affiliate dashboard access; Payment & Tax submitted/pending; Affiliate Open API documented but not granted) are recorded in [`SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md`](SPRINT_26_SHOPEE_APPLICATION_EXECUTION.md). They do **not** rewrite the 2026-08-25 counsel-clearance snapshot above.
