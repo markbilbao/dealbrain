@@ -123,11 +123,7 @@ def identity_email_status(cfg: Settings | None = None) -> dict[str, Any]:
         adapter = "null"
     configured = identity_email_configured(cfg)
     external_evidence = sprint27_external_evidence()
-    ready = (
-        adapter == "resend"
-        and configured
-        and external_evidence == EXTERNAL_EVIDENCE_VERIFIED
-    )
+    ready = adapter == "resend" and configured and external_evidence == EXTERNAL_EVIDENCE_VERIFIED
     return {
         "adapter": adapter,
         "configured": configured,
