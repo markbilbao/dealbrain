@@ -87,7 +87,7 @@ This inventory records every material Global Public Beta requirement and its cov
 | Requirement | Class | Evidence / notes | Owning sprint |
 |-------------|-------|------------------|---------------|
 | Transactional email provider | `implemented_verified` | Resend adapter + fail-closed staging/prod factory; staging `/health` `adapter=resend`; 2026-09-08 real inbox delivery. EXT-08 register row still `applied` (account-establishment screenshot) | 27 |
-| Sender-domain verification | `externally_blocked` | EXT-09 public DKIM/SPF/MX/DMARC DNS resolvable 2026-09-08; Resend domain **Verified** not independently established | 27 |
+| Sender-domain verification | `implemented_verified` | EXT-09 **PASS / VERIFIED** 2026-09-08: public DKIM/SPF/MX/DMARC DNS plus owner-observed Resend domain **Verified**. Production email attach remains Sprint 41 | 27 |
 | Password-reset email | `implemented_verified` | 2026-09-08 owner Gmail delivery + staging confirm + sign-in | 27 |
 | Verification email | `implemented_verified` | 2026-09-08 owner Gmail delivery + confirm; Account `Email status: Verified` | 27 |
 | Reset-token expiry / invalidation | `implemented_verified` | Confirm + expiry + consume tested; live reuse not operator-observed | 27 |
@@ -585,9 +585,9 @@ This addendum does **not** rewrite earlier snapshots. It records the 2026-09-08 
 | Staging deploy | Deploy Staging #31 success on that SHA; `https://staging.piqsavi.com` HTTPS 200 |
 | Real inbox E2E | **Passed** — verification, password reset, and email-change via Gmail from `PiqSavi <no-reply@piqsavi.com>`; no demo tokens |
 | Auth-aware header / logout | **Passed** after PR #119 |
-| EXT-09 | **Still open** — public Resend plan DNS rows resolve; provider **Verified** not independently established |
-| `identity_email_ready` | Live staging `false` with `adapter=resend` — correctly expected until EXT-09 Verified + designed code gate |
+| EXT-09 | **PASS / VERIFIED** — public Resend plan DNS rows plus owner-observed Resend domain **Verified** |
+| `identity_email_ready` | Live staging `false` with `adapter=resend` — remaining Sprint 27 closure action is the designed production-code gate, then staging deploy and `/health` verification |
 | Production secret attach | Still Sprint 41. Not a Sprint 27 blocker. Production email not claimed live |
 | Sprint 27 / P0-5 | **Not closed** |
-| Single next owner action | Resend → Domains → `piqsavi.com`: confirm **Verified** and retain sanitized evidence |
+| Remaining closure action | Separate production-code PR for `identity_email_status().ready`; deploy staging; confirm `/health` `identity_email_ready=true` |
 | Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md); [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) |

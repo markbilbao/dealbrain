@@ -222,11 +222,11 @@ Do **not** select or purchase a paid email provider from this document.
 
 ### 2026-09-08 Sprint 27 note
 
-Staging transactional sender `PiqSavi <no-reply@piqsavi.com>` is owner-observed. Sending-domain Resend **Verified** (EXT-09) remains open. This note does not rewrite the lock lists above and does not claim production email.
+Staging transactional sender `PiqSavi <no-reply@piqsavi.com>` is owner-observed. Sending-domain Resend **Verified** (EXT-09) is recorded 2026-09-08. This note does not rewrite the lock lists above and does not claim production email.
 
 ### Sprint 27 requirements
 
-Sprint 27 must establish (status 2026-09-08: implementation + staging inbox E2E passed; EXT-09 Resend **Verified** still required):
+Sprint 27 must establish (status 2026-09-08: implementation + staging inbox E2E passed; EXT-09 Resend **Verified**; Sprint 27 still open while `identity_email_ready=false`):
 
 - transactional email provider
 - sending-domain verification

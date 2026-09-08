@@ -9,7 +9,7 @@ No DPA status is asserted here. Legal-role questions remain **TBD**.
 |------------------|--------------------------|----------------------------------|----------------------|------------------|
 | Application database (PostgreSQL / SQLAlchemy operational store) | Persist accounts, sessions, profiles, saved items, consent records, ops entities | Account and related payloads in `operational_entities` | Implemented (Sprint 23 adapters; memory default in development) | TBD — counsel-owned |
 | In-memory process stores | Dev/demo persistence | Same domain shapes | Implemented for non-prod defaults | N/A |
-| Resend | Transactional identity email (reset/verify/email-change) | Email address + message content **when provider is configured and sending** | Adapter implemented; 2026-09-08 staging inbox E2E passed; EXT-08 `applied` / AMBER; EXT-09 Resend **Verified** still open | TBD — counsel-owned; DPA **not** recorded here |
+| Resend | Transactional identity email (reset/verify/email-change) | Email address + message content **when provider is configured and sending** | Adapter implemented; 2026-09-08 staging inbox E2E passed; EXT-08 `applied` / AMBER; EXT-09 `approved` / **Verified** | TBD — counsel-owned; DPA **not** recorded here |
 | Null email sender | Tests/dev no-op | None sent | Implemented | N/A |
 | Google Workspace / Gmail | Receive `support@` / `privacy@` mail | Inbound message contents to provisioned aliases | EXT-17 / EXT-18 `provisioned` | TBD — counsel-owned |
 | AWS (staging/prod path) | Hosting, secrets, deploy | App DB, secrets, logs if CloudWatch used | Staging path evidenced; production apply incomplete (EXT-13 partial) | TBD — counsel-owned |
@@ -25,6 +25,6 @@ No DPA status is asserted here. Legal-role questions remain **TBD**.
 
 ## Changes vs prior counsel fact-spec §15
 
-- Resend is now **integrated as an adapter** (Sprint 27.1). Staging inbox E2E passed 2026-09-08. This inventory does **not** claim production sender readiness or EXT-09 Resend **Verified**.
+- Resend is now **integrated as an adapter** (Sprint 27.1). Staging inbox E2E passed 2026-09-08. EXT-09 Resend domain **Verified** is recorded. This inventory does **not** claim production sender cutover.
 - First-party consumer cookies/storage listed in [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) now exist; they are not third-party processors.
 - No analytics, advertising pixels, or CMP vendor was added in Sprint 28.1.

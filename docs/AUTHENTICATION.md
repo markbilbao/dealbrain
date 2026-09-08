@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1–27.4 (reset/verify/email-change, Resend adapter, consumer UX, auth-aware header) + 2026-09-08 staging inbox E2E passed; EXT-09 Resend **Verified** still open + Sprint 28.1 (consent hooks, delete/export)
+**Status:** Sprint 17 + Sprint 27.1–27.4 (reset/verify/email-change, Resend adapter, consumer UX, auth-aware header) + 2026-09-08 staging inbox E2E passed; EXT-09 Resend **Verified**; Sprint 27 still open while `identity_email_ready=false` + Sprint 28.1 (consent hooks, delete/export)
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -102,10 +102,12 @@ header is not used. Staging/production startup requires
 `RESEND_API_KEY`, `TRANSACTIONAL_EMAIL_FROM`, and `https` public base URL.
 `NullEmailSender` is not permitted in those environments.
 
-EXT-09 sender-domain DNS: public DKIM/SPF/MX/DMARC rows for the Resend plan were resolvable on 2026-09-08. Resend domain **Verified** is still not independently established. Operator DNS steps:
+EXT-09 sender-domain DNS: public DKIM/SPF/MX/DMARC rows for the Resend plan were resolvable on 2026-09-08, and owner/operator Resend dashboard evidence the same day shows domain status **Verified**. Operator DNS steps:
 [`runbooks/EXT_09_RESEND_DNS.md`](runbooks/EXT_09_RESEND_DNS.md). Staging inbox E2E
 (verify, reset, email-change) passed 2026-09-08:
 [`roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
+Production email attach remains Sprint 41. Sprint 27 stays open while
+`identity_email_ready` is hardcoded `false`.
 
 ## Email change (Sprint 27.2)
 
@@ -211,21 +213,21 @@ header is treated as an unauthenticated request.
 - **Email-change confirmation** is implemented in 27.2 (code path) and
   exposed in the Account UI in 27.4 (`/account` request form +
   `/confirm-email-change`). Staging inbox E2E for verify, reset, and
-  email-change **passed** on 2026-09-08. EXT-09 Resend **Verified** remains
-  open. Sprint 27 / P0-5 is **not closed**.
+  email-change **passed** on 2026-09-08. EXT-09 is **Verified**. Sprint 27 /
+  P0-5 is **not closed** while `identity_email_ready` remains false.
 - **27.3** prepared staging Resend config, demo-token reconciliation, and
-  operator harnesses. Public DNS for the Resend plan rows is now resolvable;
-  provider **Verified** is not independently established.
+  operator harnesses. Public DNS for the Resend plan rows is resolvable and
+  Resend reports domain **Verified** (2026-09-08).
 - **27.4** adds dedicated verification / password-reset / email-change
   success states and removes engineering-only copy from those surfaces.
   A follow-up makes the shared account/auth header authentication-aware
   (`/auth/me` validation; Sign out uses the existing logout + local/device
   clear). Staging header/logout E2E passed 2026-09-08. It does not redesign
   Account settings and does not close Sprint 27.
-- **EXT-09** sender-domain SPF/DKIM/DMARC public DNS is resolvable.
-  Resend dashboard **Verified** is not independently established. Do not
-  claim production sender authentication.
+- **EXT-09** sender-domain SPF/DKIM/DMARC public DNS is resolvable and
+  Resend reports **Verified**. Do not claim production sender cutover.
 - **Staging inbox E2E** for verify, reset, and email-change is recorded
-  (2026-09-08). Remaining Sprint 27 closure blocker is EXT-09 Resend
-  **Verified** evidence.
+  (2026-09-08). Remaining Sprint 27 closure action is the designed
+  production-code `identity_email_ready` gate update, then staging deploy
+  and `/health` verification.
 - **No payment integration.**

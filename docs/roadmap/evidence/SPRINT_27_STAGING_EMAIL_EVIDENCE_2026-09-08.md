@@ -7,13 +7,13 @@
 **Reconciliation date:** 2026-09-08  
 **Baseline `origin/main` SHA:** `55b4e6880875b87bb99bd3331fbe4040fe2483d0`  
 **Contains:** PR #118 (`f0e115cfd7cb426065ce96db8168f46aff092a08`) and PR #119 (this merge commit)  
-**Sprint 27 / P0-5 status after this record:** **OPEN** — remaining Sprint-27-owned blocker is EXT-09 Resend provider-side domain **Verified** evidence  
+**Sprint 27 / P0-5 status after this record:** **OPEN** — EXT-09 is **PASS / VERIFIED**. Remaining closure action is the designed production-code `identity_email_ready` gate update, then staging deploy and `/health` verification.  
 **Production code changed by this record:** No  
 **Merge performed:** No
 
 This record does **not** rewrite the 2026-08-08 EXT-08/EXT-09 screenshots, the Sprint 26 bootstrap packages, or the 27.3 E2E template as if those documents had always contained this evidence.
 
-No API keys, passwords, raw identity tokens, or full DKIM public-key material are stored here. No screenshots are invented or claimed to exist in this repository for the 2026-09-08 inbox session.
+No API keys, passwords, raw identity tokens, or full DKIM public-key material are stored here. No screenshots are invented. The 2026-09-08 inbox session has no repository screenshot. Owner/operator Resend **Verified** evidence is recorded below as sanitized dashboard observations (no image file was supplied).
 
 ---
 
@@ -22,10 +22,9 @@ No API keys, passwords, raw identity tokens, or full DKIM public-key material ar
 | Question | Verdict |
 |----------|---------|
 | Close Sprint 27 / P0-5 now? | **No** |
-| Outcome | **B** — most Sprint 27 requirements now pass; one Sprint-27-owned closure requirement remains unresolved |
-| Remaining Sprint-27-owned blocker | **EXT-09** — repository acceptance requires Resend to report `piqsavi.com` **Verified**, plus retained sanitized provider evidence. That provider-side state cannot be independently established from public DNS or Gmail delivery. |
-| Single next owner/operator action | Open Resend → Domains → `piqsavi.com`, run **Verify** if the UI is not already Verified, and retain a **sanitized** screenshot/log showing domain status **Verified** (redact keys, tokens, and full DKIM material before commit). |
-| After that action | A follow-up docs update can close EXT-09 / Sprint 27 / P0-5 **only if** the designed `identity_email_status().ready` gate is also updated in a **separate production-code PR** so staging `/health` does not keep reporting `identity_email_ready=false` after Sprint 27 is declared complete. That code change is **not** part of this reconciliation. |
+| Outcome | **B** — Sprint-27-owned sender-domain and inbox evidence now pass; Sprint 27 still cannot close while staging `/health` truthfully reports `identity_email_ready=false` |
+| EXT-09 | **PASS / VERIFIED** — public DKIM/SPF/MX/DMARC DNS plus owner-observed Resend domain status **Verified** |
+| Remaining Sprint-27-owned closure action | Designed production-code update of `identity_email_status().ready` / `external_evidence` in a **separate PR** (not this docs PR), then staging deploy, then confirm `/health` `identity_email_ready=true` |
 | Sprint 41 | Production `RESEND_API_KEY` attach / production email live remains **Sprint 41**. Not a Sprint 27 blocker. Do not claim production email is live. |
 
 ---
@@ -109,7 +108,7 @@ After PR #119 deployment:
 
 ---
 
-## 4. EXT-09 public DNS vs provider Verified
+## 4. EXT-09 public DNS plus provider Verified
 
 Repository standard (`docs/runbooks/EXT_09_RESEND_DNS.md`):
 
@@ -117,9 +116,9 @@ Repository standard (`docs/runbooks/EXT_09_RESEND_DNS.md`):
 2. Apply them in Cloudflare (DNS only for mail TXT/MX).
 3. Return to Resend and run **Verify**.
 4. Record whether Resend reports the domain verified.
-5. Do **not** mark EXT-09 `approved` / `provisioned` until sanitized verification evidence is retained.
+5. Retain sanitized verification evidence before marking EXT-09 `approved`.
 
-Public DNS is **not** a substitute for step 3–5. Gmail delivery is **not** a substitute for Resend **Verified**.
+Public DNS alone is **not** a substitute for step 3–5. Gmail delivery alone is **not** a substitute for Resend **Verified**. Together, the 2026-09-08 public DNS check **and** the owner-observed Resend **Verified** dashboard state satisfy the Sprint 27 sender-domain evidence requirement.
 
 ### 4.1 Public records checked 2026-09-08 (`dig` / `nslookup`)
 
@@ -137,15 +136,31 @@ Compared against the sanitized 2026-08-08 Resend plan
 | Nameservers | `dilbert.ns.cloudflare.com.` / `elisabeth.ns.cloudflare.com.` | Cloudflare-hosted DNS (EXT-10 ownership context; not EXT-09 verify) |
 | `staging.piqsavi.com` | CNAME to staging ALB; HTTPS works | **Not** a transactional-email DKIM/SPF record |
 
-### 4.2 What this does **not** prove
+### 4.2 Owner/operator Resend dashboard evidence (2026-09-08)
 
-- Resend dashboard domain status **Verified**
-- That the operator clicked **Verify** after the records appeared
+Owner/operator observation of the live Resend domain screen for `piqsavi.com` on 2026-09-08. Sanitized. No API key, token, password, or DKIM public-key material. No screenshot file was supplied; none is invented or claimed to exist in this repository.
+
+| Field | Owner-observed value |
+|-------|----------------------|
+| Domain | `piqsavi.com` |
+| Domain status | **Verified** |
+| Event / status message | `Domain verified: Your domain is ready to send emails.` |
+| DNS provider shown | Cloudflare |
+| Region | Tokyo (`ap-northeast-1`) |
+| Observer | Owner/operator |
+| Date | 2026-09-08 |
+
+The reported region matches the independently resolved return-path MX `feedback-smtp.ap-northeast-1.amazonses.com.` That is corroboration of the sending region, not a substitute for the dashboard status.
+
+### 4.3 What this still does **not** prove
+
+- Production sender authentication or production email live
+- Production `RESEND_API_KEY` attached (Sprint 41)
 - DKIM/SPF alignment headers from the 2026-09-08 Gmail messages (not supplied)
-- Production sender authentication
+- `/health` `identity_email_ready=true`
 - Sprint 27 / P0-5 closure
 
-**EXT-09 verdict:** public DNS for the plan’s DKIM / return-path SPF / return-path MX / optional DMARC rows is resolvable. EXT-09 remains **open** / register status **`applied`** until sanitized Resend **Verified** evidence is retained.
+**EXT-09 verdict:** **PASS / VERIFIED.** Public DNS for the plan’s DKIM / return-path SPF / return-path MX / optional DMARC rows is resolvable, and Resend reports domain status **Verified**. Register status: **`approved`**. This is not production email cutover.
 
 ---
 
@@ -167,9 +182,11 @@ Code (`app/auth/email_factory.py`):
 
 This is **not** a stale health bug and **not** a missing operator config flag. It is the designed external-evidence gate: configuration ≠ Sprint 27 ready. Tests assert that a configured Resend adapter still reports `ready=false` (`tests/unit/test_sprint27_3_email_cutover.py`).
 
-**Classification:** **A** — correctly expected until the explicit external-evidence gate is updated.
+**Classification:** designed external-evidence gate, still hardcoded `pending` / `False`.
 
-`ready=false` remains truthful while EXT-09 is open. Closing Sprint 27 while this flag stays hardcoded `false` would contradict `/health`. Flipping it is a **separate production-code change** after EXT-09 Verified evidence exists. This reconciliation does not implement that change.
+EXT-09 is now **Verified**. Inbox E2E has passed. `ready=false` is therefore **no longer** explained by missing sender-domain evidence. It remains the designed code gate. Closing Sprint 27 while staging `/health` still reports `identity_email_ready=false` would contradict health truthfulness.
+
+**Remaining closure action (not this PR):** update `identity_email_status().ready` / `external_evidence` in a **separate production-code PR**, deploy that digest to staging, and verify `/health` reports `identity_email_ready=true`. This reconciliation does not implement that change.
 
 ---
 
@@ -217,13 +234,13 @@ Status values: **PASS** (implementation + required evidence), **PARTIAL** (imple
 | PiqSavi email branding | PASS | Templates + owner sender/subjects (`PiqSavi`, `PiqSavi password reset`, `Confirm your new PiqSavi email`) |
 | Approved staging public base URL | PASS | Contract `https://staging.piqsavi.com`; owner reset/verify/change links opened staging flows; HTTPS independently confirmed |
 | HTTPS staging link behavior | PASS | Owner links opened staging; independent HTTPS 200 + valid cert for `staging.piqsavi.com` |
-| SPF/DKIM/DMARC / EXT-09 | BLOCKED | Public DNS resolvable for plan rows; Resend **Verified** not independently established; no sanitized provider verify screenshot |
+| SPF/DKIM/DMARC / EXT-09 | PASS | Public DNS resolvable for plan rows **and** owner-observed Resend domain status **Verified** (2026-09-08 sanitized dashboard evidence) |
 | Staging real-inbox E2E | PASS | Verify + reset + email-change real Gmail delivery and confirm on 2026-09-08 |
 | Production cutover readiness path | PASS | Path recorded; attach remains Sprint 41 |
 | Production secret attached / prod email live | NOT SPRINT 27 | Sprint 41 |
 | Auth-aware signed-in/signed-out header | PASS | PR #119 on deployed SHA; owner signed-in / refresh / signed-out header E2E |
 | Logout privacy / no stale PII exposure | PASS | Owner: `/account` after logout showed signed-out controls only |
-| P0-5 closure | BLOCKED | EXT-09 Resend Verified evidence still required |
+| P0-5 closure | BLOCKED | Designed `identity_email_ready` production-code gate still reports `false`; not flipped in this docs PR |
 
 ---
 
@@ -231,10 +248,9 @@ Status values: **PASS** (implementation + required evidence), **PARTIAL** (imple
 
 - Sprint 27 is **not** complete.
 - P0-5 is **not** closed.
-- EXT-09 is **not** verified.
+- EXT-09 **is** verified for Sprint 27 sender-domain evidence (public DNS + Resend **Verified**).
 - Production transactional email is **not** live.
 - Production secrets are **not** attached.
 - `identity_email_ready=true` is **not** claimed.
-- Public DNS resolvability is **not** Resend Verified.
-- Inbox delivery is **not** complete sender-authentication proof.
+- Inbox delivery is **not** production cutover.
 - No later sprint (28, 29, 37–41) work is pulled into Sprint 27 by this record.

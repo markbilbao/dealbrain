@@ -28,11 +28,12 @@ Configuration (no secrets in git):
 - `PUBLIC_APP_BASE_URL` (trusted link base; never request `Host`)
 
 EXT-08 remains `applied` (account-establishment screenshot; staging delivery
-evidenced 2026-09-08). EXT-09 remains `applied` (public DNS resolvable;
-Resend **Verified** not independently established). 27.1/27.2/27.3 do **not**
-claim production email readiness. Health/config `identity_email_ready` stays
-`false` while that provider-verify evidence is missing — including when the
-Resend adapter is configured and staging inbox E2E has passed. Email-change
+evidenced 2026-09-08). EXT-09 is **`approved` / VERIFIED** (public DNS plus
+owner-observed Resend domain **Verified**, 2026-09-08). 27.1/27.2/27.3 do
+**not** claim production email readiness. Health/config `identity_email_ready`
+stays hardcoded `false` until a **separate production-code PR** updates the
+designed evidence gate — including when the Resend adapter is configured,
+staging inbox E2E has passed, and EXT-09 is Verified. Email-change
 confirmation uses the same `EmailSender` port and PiqSavi templates; it does
 not call Resend from auth service code.
 
