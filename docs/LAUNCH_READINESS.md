@@ -84,7 +84,7 @@ Global error handlers → consistent JSON (+ legacy detail)
 - No real cloud deployment *(staging path exists under Sprint 25b.*; production cutover owned by Sprints 41–45)*
 - No production database *(planned Sprint 41)*
 - No payment processing
-- No real email / SMS / push *(real transactional email owned by Sprint 27)*
+- No real email / SMS / push *(staging identity transactional email evidenced 2026-09-08; EXT-09 Resend **Verified**; production attach owned by Sprint 41; SMS/push still none)*
 - No subscription billing
 - No production secrets *(Sprint 41)*
 

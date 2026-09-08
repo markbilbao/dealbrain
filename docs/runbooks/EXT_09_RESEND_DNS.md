@@ -1,10 +1,12 @@
 # EXT-09 — Resend sender-domain DNS (operator runbook)
 
-**Status:** Instruction only. DNS is **not** applied and **not** verified by this document.  
-**Sprint:** 27.3 cutover readiness — owner/operator executes after this PR.  
+**Status:** Instruction plus 2026-09-08 public-DNS check **and** owner-observed Resend domain **Verified**. Sprint 27 sender-domain evidence is **PASS**. Production `RESEND_API_KEY` attach remains Sprint 41.  
+**Sprint:** 27 — EXT-09 complete; remaining sprint closure is the designed `identity_email_ready` production-code gate.  
 **Domain:** `piqsavi.com`  
 **Provider:** Resend  
-**DNS host:** Cloudflare (registrar/control evidenced for EXT-10; this runbook does not claim public hostname, TLS, or proxy readiness)
+**DNS host:** Cloudflare (registrar/control evidenced for EXT-10; this runbook does not claim production public hostname, TLS, or proxy readiness)
+
+Owner-observed Resend dashboard (2026-09-08, sanitized): domain status **Verified**; message `Domain verified: Your domain is ready to send emails.`; provider Cloudflare; region Tokyo (`ap-northeast-1`). Recorded in [`../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md).
 
 Do **not** invent, guess, or reuse abbreviated record values from screenshots. Copy the exact records displayed by the current Resend domain-verification screen at execution time.
 
@@ -46,8 +48,8 @@ For each copied record:
 1. Wait for DNS propagation (often minutes; can be longer)
 2. Return to the Resend domain screen and run **Verify**
 3. Record the date/time and whether Resend reports the domain verified
-4. Do **not** mark EXT-09 `approved` / `provisioned` in the register until sanitized verification evidence is retained
-5. Do **not** treat verification as Sprint 27 complete — real inbox E2E is still required ([`../roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md`](../roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md))
+4. Do **not** mark EXT-09 `approved` in the register until sanitized verification evidence is retained
+5. Public DNS or Gmail delivery alone is not verification. Combined with Resend **Verified** (recorded 2026-09-08), Sprint 27 sender-domain evidence is complete. Staging inbox E2E (verify/reset/email-change) also passed 2026-09-08 ([`../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](../roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md)). Sprint 27 still does not close until the designed `identity_email_ready` code gate is updated and staging `/health` confirms it.
 
 ## Evidence rules
 
@@ -60,7 +62,10 @@ Retain only sanitized screenshots/logs:
 
 ## Explicit non-claims
 
-- EXT-09 remains `applied` (plan) until live verify evidence exists
+- EXT-09 sender-domain evidence is **Verified** / register `approved` as of 2026-09-08
+- This is not production email live and not production secret attach (Sprint 41)
+- Public DNS resolvability alone was never sufficient; it is now paired with Resend **Verified**
 - EXT-11 public hostname DNS and EXT-12 TLS are separate
 - Google Workspace receiving / support / privacy inboxes are separate
 - Production `RESEND_API_KEY` attach remains Sprint 41
+- This runbook does not flip `/health` `identity_email_ready`

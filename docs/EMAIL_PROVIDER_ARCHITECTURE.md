@@ -27,12 +27,15 @@ Configuration (no secrets in git):
 - `TRANSACTIONAL_EMAIL_FROM` / `TRANSACTIONAL_EMAIL_FROM_NAME`
 - `PUBLIC_APP_BASE_URL` (trusted link base; never request `Host`)
 
-EXT-08 remains `applied` (account establishment). EXT-09 remains `applied`
-(DNS plan only). 27.1/27.2/27.3 do **not** claim sender-domain verification or
-production email readiness. Health/config `identity_email_ready` stays
-`false` while that evidence is missing — including when the Resend adapter
-is configured. Email-change confirmation uses the same `EmailSender`
-port and PiqSavi templates; it does not call Resend from auth service code.
+EXT-08 remains `applied` (account-establishment screenshot; staging delivery
+evidenced 2026-09-08). EXT-09 is **`approved` / VERIFIED** (public DNS plus
+owner-observed Resend domain **Verified**, 2026-09-08). 27.1/27.2/27.3 do
+**not** claim production email readiness. Health/config `identity_email_ready`
+stays hardcoded `false` until a **separate production-code PR** updates the
+designed evidence gate — including when the Resend adapter is configured,
+staging inbox E2E has passed, and EXT-09 is Verified. Email-change
+confirmation uses the same `EmailSender` port and PiqSavi templates; it does
+not call Resend from auth service code.
 
 Staging cutover contract (non-secret; 27.3):
 
@@ -44,7 +47,8 @@ Staging cutover contract (non-secret; 27.3):
 - `RESEND_API_KEY` from Secrets Manager only
 
 Operator runbook: [`runbooks/EXT_09_RESEND_DNS.md`](runbooks/EXT_09_RESEND_DNS.md)  
-Staging E2E template: [`roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md`](roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md)
+Staging E2E template: [`roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md`](roadmap/evidence/SPRINT_27_3_STAGING_EMAIL_E2E_TEMPLATE.md)  
+2026-09-08 staging evidence: [`roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](roadmap/evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md)
 
 Sprint 19 notification email below is unchanged and still mock-only.
 

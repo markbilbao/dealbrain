@@ -59,8 +59,8 @@ Derived from current evidence only. Do not mark external approvals green without
 | EXT-05 | CA merchant/API or affiliate access | Marketplace eng + legal | 36 | Canada market | Sprint 26 kickoff (historical) | 2–8 weeks | `n_a_beta` | **GREEN** (not required for initial PH-only beta) | Historical counsel-clearance note retained. No CA application is required for the September PH validation beta. Do **not** mark submitted. | Omit CA from September supported-market list | Market CA (deferred) |
 | EXT-06 | Merchant credentials (named markets) | Ops + marketplace | 32 (PH); 33–36 if later expanded | global launch *(per named market)* | After approval | 1–2 weeks | `not_started` | **RED** for naming/certifying PH; not a multi-market September blocker | Secrets Manager entries; no plaintext in git. September named-market target is PH only. | Market cannot certify | Named market(s) |
 | EXT-07 | Affiliate tracking IDs | Growth + marketplace | post-launch / later 32–36 | post-beta | After partner approval (if monetization is later activated) | 1–4 weeks | `n_a_beta` | **GREEN** (not a September blocker) | Valid tracked redirect in staging/prod **when** monetization is later activated. Zero affiliate-enabled merchants is acceptable for September. Ordinary outbound merchant links are acceptable. Affiliate tracking IDs, cookies/attribution, and revenue are **not** required for launch. | Ordinary outbound merchant links without monetization claims; disclose only when an affiliate relationship is actually active | Later monetized affiliate claims — **not** September shopping launch |
-| EXT-08 | Transactional email provider (Resend) | Identity eng | 27 | identity | evidence verified 2026-08-08 | 3–10 days | `applied` | **AMBER** | Sanitized Resend dashboard/account-establishment proof retained at [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) (see EXT-08 notes); delivery/reset+verify remains Sprint 27 | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
-| EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | evidence verified 2026-08-08 | 3–14 days | `applied` | **AMBER** | Sanitized Resend sender-domain DNS-authentication plan retained at [`evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png) (see EXT-09 notes). Operator apply/verify runbook: [`../runbooks/EXT_09_RESEND_DNS.md`](../runbooks/EXT_09_RESEND_DNS.md). DNS apply/verify + delivery remain Sprint 27 — **not verified** | Same as EXT-08 | Public self-serve auth |
+| EXT-08 | Transactional email provider (Resend) | Identity eng | 27 | identity | evidence verified 2026-08-08 | 3–10 days | `applied` | **AMBER** | Sanitized Resend dashboard/account-establishment proof retained at [`evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png`](evidence/external/EXT-08_RESEND_ACCOUNT_2026-08-08.png) (see EXT-08 notes). Staging delivery evidenced 2026-09-08; register status not upgraded from the 2026-08-08 screenshot alone. Production attach remains Sprint 41 | Invite-only with self-serve reset disabled (demotes public beta) | Public self-serve auth |
+| EXT-09 | Sender-domain authentication (SPF/DKIM/DMARC) | Ops + identity | 27 | identity | evidence verified 2026-08-08; Resend **Verified** 2026-09-08 | 3–14 days | `approved` | **GREEN** for Sprint 27 sender-domain auth | Plan screenshot [`evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png`](evidence/external/EXT-09_RESEND_DNS_AUTH_PLAN_2026-08-08.png). Public DKIM/SPF/MX/DMARC resolvable 2026-09-08. Owner-observed Resend domain status **Verified** recorded in [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md). Production email attach remains Sprint 41. Runbook: [`../runbooks/EXT_09_RESEND_DNS.md`](../runbooks/EXT_09_RESEND_DNS.md) | Same as EXT-08 | Public self-serve auth |
 | EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | **GREEN** for ownership | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
 | EXT-11 | DNS for public hostname | Ops | 41 | production infrastructure | After EXT-10 | 1–3 days | `not_started` | **AMBER** | Records resolving to ALB | Delay public access | Public web access |
 | EXT-12 | TLS certificate (ACM or equivalent) | Ops | 41 | production infrastructure | After DNS | 1–7 days | `not_started` | **AMBER** | HTTPS synthetics green | Delay public access | Public web access |
@@ -92,7 +92,8 @@ Sprint 26 originally opened applications for EXT-01…EXT-05, EXT-08, EXT-10, EX
 
 **Merchant application counsel clearance (2026-08-25):** sanitized record at [`evidence/SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_COUNSEL_CLEARANCE.md); owner application preparation at [`evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md`](evidence/SPRINT_26_MERCHANT_APPLICATION_PREPARATION.md). Counsel clearance has been obtained for merchant/program applications covering Shopee, Lazada, TikTok Shop, Amazon, and Temu. These counsel-form merchant labels are separate from the authoritative EXT market-row identifiers. That does **not** make register EXT-01 `applied`, and it does **not** convert affiliate permission into product-data permission.
 
-Technical current-main staging proof does **not** advance any EXT row and is **not** invalidated because `main` later advanced. EXT-08 is `applied` (Resend account). EXT-09 is `applied` (DNS-auth **preparation** only). EXT-10 is `approved` (ownership). EXT-17/EXT-18 are `provisioned`. EXT-19 is `applied` (not unconditional written approval). EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the current PH-only beta. EXT-01 remains `not_started`.
+Technical current-main staging proof does **not** advance any EXT row and is **not** invalidated because `main` later advanced. EXT-08 is `applied` (Resend account-establishment screenshot; staging delivery now separately evidenced 2026-09-08). EXT-09 is **`approved`** (public DNS + Resend domain **Verified**, 2026-09-08; production email attach remains Sprint 41). EXT-10 is `approved` (ownership). EXT-17/EXT-18 are `provisioned`. EXT-19 is `applied` (not unconditional written approval). EXT-02…EXT-05 and EXT-07 are `n_a_beta` for the current PH-only beta. EXT-01 remains `not_started`.
+
 
 ### September 30, 2026 — items that can threaten the target
 
@@ -102,7 +103,7 @@ Technical current-main staging proof does **not** advance any EXT row and is **n
 
 **AMBER (schedule-sensitive / external):**
 
-- EXT-08 / EXT-09 — Resend account and DNS plan only; delivery and domain verification remain Sprint 27
+- EXT-08 — remains `applied` (account-establishment screenshot). Staging identity delivery evidenced 2026-09-08. Production attach remains Sprint 41
 - EXT-11 / EXT-12 / EXT-13 / EXT-14 — public DNS/TLS/production AWS/secrets not applied
 - EXT-19 / EXT-20 / EXT-21 — counsel engaged; conditional review is not unconditional approval; live policy URLs missing
 - EXT-24 — paging destination not started
@@ -112,6 +113,7 @@ Technical current-main staging proof does **not** advance any EXT row and is **n
 **GREEN (for the stated claim only):**
 
 - EXT-10 ownership
+- EXT-09 sender-domain authentication (Resend **Verified** + public DNS, 2026-09-08; not production email live)
 - EXT-17 / EXT-18 bootstrap reachability
 - EXT-02…EXT-05 not required for the initial PH-only beta
 - EXT-07 not required for September (post-launch optional monetization)
@@ -134,6 +136,10 @@ Do not treat counsel’s scheduled 2026-08-19 consultation, merchant-application
 | Explicit non-claims | Does **not** prove API key created, API integration complete, email sent, transactional delivery verified, `piqsavi.com` added to Resend, sender domain verified, SPF/DKIM/DMARC configured, DNS changed, production credentials provisioned, or production email enabled |
 | Separation | EXT-08 = provider selection / account establishment; EXT-09 = sender-domain authentication (SPF/DKIM/DMARC) — do not merge; Sprint 27 owns integration and delivery proof |
 
+### EXT-08 2026-09-08 staging-delivery addendum
+
+Owner/operator-observed real Gmail delivery from `PiqSavi <no-reply@piqsavi.com>` on staging (verify, reset, email-change) is recorded in [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md). Live `/health` reports `identity_email_adapter=resend`. Register status stays `applied` because the retained provider screenshot is still account-establishment only. Production credentials remain Sprint 41.
+
 ### EXT-09 notes (sender-domain authentication preparation — applied)
 
 | Field | Value |
@@ -149,10 +155,29 @@ Do not treat counsel’s scheduled 2026-08-19 consultation, merchant-application
 | Provider-generated values | Some Content fields are visually abbreviated with ellipsis / `[…]` in the Resend UI. Full provider-generated values are **not** transcribed here. Provider-generated value retained in Resend dashboard; full value must be copied directly from Resend at Sprint 27 DNS execution time |
 | Return-Path clarification | `send` is the selected Resend custom Return-Path subdomain for the `send.piqsavi.com` namespace. This does **not** create a user mailbox and is **not** PiqSavi support/privacy inbox MX configuration. Receiving remains outside this task |
 | DMARC clarification | Planned provider configuration currently shows `v=DMARC1; p=none;` only — not enforcement. Do not upgrade to quarantine/reject from this evidence |
-| Explicit non-claims | Does **not** prove Cloudflare DNS records added, DKIM/SPF/DMARC/MX published, DNS propagation, Resend domain verification, sender domain verified, authenticated email delivery, email sent, production email enabled, or Sprint 27 complete. “Plan generated” ≠ “DNS applied”. “EXT-09 `applied`” ≠ “domain verified” |
+| Explicit non-claims | The **2026-08-08 plan screenshot** does **not** prove Cloudflare DNS records added, DKIM/SPF/DMARC/MX published, DNS propagation, Resend domain verification, sender domain verified, authenticated email delivery, email sent, production email enabled, or Sprint 27 complete. “Plan generated” ≠ “DNS applied”. “EXT-09 `applied`” ≠ “domain verified” |
 | Separation | EXT-09 = sender-domain authentication preparation / later DNS auth verification; EXT-11 = DNS hosting for public hostname; EXT-12 = TLS — do not merge. Sprint 27 owns DNS application/verification, Resend integration, and delivery proof |
 
-**DNS records have NOT been applied or verified.**
+### EXT-09 2026-09-08 public DNS addendum
+
+This addendum does **not** replace the 2026-08-08 plan notes. Independent `dig`/`nslookup` on 2026-09-08 showed the plan’s DKIM (`resend._domainkey`), return-path MX/SPF (`send.piqsavi.com`), and optional `_dmarc` `p=none` rows as publicly resolvable. Full DKIM key material is **not** transcribed here.
+
+This still does **not** prove Resend reports the domain **Verified**. Gmail delivery is **not** EXT-09 closure. Register status remained `applied` after the public-DNS check alone.
+
+### EXT-09 2026-09-08 Resend Verified addendum
+
+Owner/operator observation of the Resend dashboard for `piqsavi.com` on 2026-09-08:
+
+| Field | Value |
+|-------|-------|
+| Current status | **`approved`** / **PASS / VERIFIED** |
+| Domain status | **Verified** |
+| Provider message | `Domain verified: Your domain is ready to send emails.` |
+| DNS provider shown | Cloudflare |
+| Region | Tokyo (`ap-northeast-1`) |
+| Public DNS | Plan DKIM / return-path SPF / return-path MX / optional DMARC rows resolvable the same day |
+| Evidence record | [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) (sanitized text; no invented screenshot) |
+| Explicit non-claims | Does **not** prove production `RESEND_API_KEY` attached, production email live, or Sprint 27 / P0-5 closed (`identity_email_ready` still false) |
 
 ### EXT-10 notes (domain ownership — approved)
 

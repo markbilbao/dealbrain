@@ -57,8 +57,8 @@ This inventory records every material Global Public Beta requirement and its cov
 | Logout | `implemented_verified` | Session revoke; staging logout→401 re-verified in Sprint 26 smoke | 17 / 29 / 26 |
 | Durable sessions | `implemented_verified` | SQLAlchemy store staging-proven on current main (`79bd03f`); see [`evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](evidence/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md) | 17 (impl); 26 (staging) |
 | Session expiry and revocation | `implemented_verified` | Expiry + logout revoke; revoke-all hardening → 27; logout revoke re-verified in Sprint 26 authenticated smoke | 17 / 27 / 26 |
-| Password recovery | `implemented_needs_staging_proof` | 27.1 request+confirm+hashed single-use tokens; inbox E2E still required | 27 |
-| Email verification | `implemented_needs_staging_proof` | 27.1 request+confirm; signup queues verify; inbox E2E still required | 27 |
+| Password recovery | `implemented_verified` | 27.1 request+confirm+hashed single-use tokens; 2026-09-08 staging inbox E2E passed | 27 |
+| Email verification | `implemented_verified` | 27.1 request+confirm; signup queues verify; 2026-09-08 staging inbox E2E passed | 27 |
 | Duplicate-account handling | `implemented_verified` | Email uniqueness | 17 |
 | Failed-login handling | `implemented_verified` | Errors + rate limit | 17 / 22 |
 | Account lockout | `missing_from_roadmap` | Rate limit only | 40 |
@@ -72,7 +72,7 @@ This inventory records every material Global Public Beta requirement and its cov
 | AI failure fallback | `implemented_verified` | Deterministic fallback | 13 |
 | Merchant-link redirect | `implemented_needs_staging_proof` | Demo affiliate templates | 20 / 32–36 |
 | Affiliate disclosure | `planned_underspecified` | Placeholder disclosure; not legal-final | 28 / 44 |
-| Returning-user experience | `planned_underspecified` | Sessions exist; no email recovery for real users | 27 / 29 |
+| Returning-user experience | `implemented_needs_staging_proof` | Sessions exist; staging password recovery via real email passed 2026-09-08; consumer UX polish remains 29 | 27 / 29 |
 | Loading / empty / error / timeout / partial / stale / unsupported-market states | `missing_from_roadmap` | Demo partial only | 29 / 38 |
 | Feedback / bug reports / support contact | `missing_from_roadmap` | Merchant field only | 39 |
 | Accessibility baseline | `missing_from_roadmap` | No a11y program | 29 |
@@ -86,14 +86,14 @@ This inventory records every material Global Public Beta requirement and its cov
 
 | Requirement | Class | Evidence / notes | Owning sprint |
 |-------------|-------|------------------|---------------|
-| Transactional email provider | `implemented_needs_staging_proof` | Resend adapter + fail-closed staging/prod factory; 27.3 staging config contract ready; EXT-08 still `applied` not provisioned | 27 |
-| Sender-domain verification | `externally_blocked` | EXT-09 DNS **plan** only; operator runbook ready; not applied/verified | 27 |
-| Password-reset email | `implemented_needs_staging_proof` | Resend-backed send path; no staging inbox evidence yet | 27 |
-| Verification email | `implemented_needs_staging_proof` | Same | 27 |
-| Reset-token expiry / invalidation | `implemented_needs_staging_proof` | Confirm + expiry + consume; inbox E2E still required | 27 |
-| Email-change verification | `implemented_needs_staging_proof` | 27.2 request + confirm implemented; no staging inbox E2E | 27 |
+| Transactional email provider | `implemented_verified` | Resend adapter + fail-closed staging/prod factory; staging `/health` `adapter=resend`; 2026-09-08 real inbox delivery. EXT-08 register row still `applied` (account-establishment screenshot) | 27 |
+| Sender-domain verification | `implemented_verified` | EXT-09 **PASS / VERIFIED** 2026-09-08: public DKIM/SPF/MX/DMARC DNS plus owner-observed Resend domain **Verified**. Production email attach remains Sprint 41 | 27 |
+| Password-reset email | `implemented_verified` | 2026-09-08 owner Gmail delivery + staging confirm + sign-in | 27 |
+| Verification email | `implemented_verified` | 2026-09-08 owner Gmail delivery + confirm; Account `Email status: Verified` | 27 |
+| Reset-token expiry / invalidation | `implemented_verified` | Confirm + expiry + consume tested; live reuse not operator-observed | 27 |
+| Email-change verification | `implemented_verified` | 27.2 lifecycle + 27.4 Account UX; 2026-09-08 staging inbox confirm passed | 27 |
 | Secure session cookies / documented session architecture | `implemented_verified` | Bearer sessions documented; cookies N/A unless introduced | 17 |
-| Session rotation | `planned_underspecified` | Login still issues a new session; no refresh-token rotation | 27 |
+| Session rotation | `implemented_verified` | Login issues a new session; password-reset and email-change confirm revoke-all (tests). Refresh-token rotation is not a Sprint 27 launch AC | 27 |
 | Session revocation | `implemented_verified` | Logout + password-reset / email-change confirm revoke-all | 27 |
 | Auth rate limiting | `implemented_verified` | Per-process buckets | 22 |
 | Account enumeration protection | `planned_underspecified` | Needs hardening review | 40 |
@@ -497,7 +497,7 @@ This addendum does **not** rewrite earlier snapshots. It records the owner-autho
 | Field | Value |
 |-------|-------|
 | Sprint 28 | In progress. 28.1 legal publication gate, consent records, delete/export APIs, inventories, and private-URL noindex implemented. Sprint 28 is **not complete**. |
-| Sprint 27 | In progress. 27.3 code/config cutover readiness implemented. EXT-09 DNS not verified. Real inbox E2E not done. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. |
+| Sprint 27 | In progress. 27.3 code/config cutover readiness implemented. EXT-09 DNS not verified. Real inbox E2E not done. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. Snapshot date 2026-09-04; inbox-E2E sentences superseded by the 2026-09-08 addendum. |
 | Sprint 37 | Unchanged: in progress, not complete |
 | Sprint 32 | Unchanged: in progress, blocked on external certification |
 | EXT-19 | Unchanged: `applied` — written approval not present |
@@ -569,3 +569,25 @@ This addendum does **not** rewrite earlier snapshots. It records the consumer em
 |-------|-------|
 | Sprint 27 | In progress. 27.4 exposes Account email-change and dedicated verification/reset/email-change success states. A 27.4 follow-up makes the shared account/auth header authentication-aware. This is implementation evidence only. EXT-09 DNS not verified. Real inbox E2E not done. Live staging email-change inbox E2E is still required. Production secret attach remains Sprint 41. Sprint 27 is **not complete**. |
 | Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md) |
+
+Inbox-E2E / “not complete” sentences in this **2026-09-07 snapshot** are **not** current. See the 2026-09-08 addendum below.
+
+---
+
+
+## 2026-09-08 Sprint 27 staging evidence reconciliation
+
+This addendum does **not** rewrite earlier snapshots. It records the 2026-09-08 owner/operator staging inbox E2E plus independent HTTPS/DNS/health checks.
+
+| Field | Value |
+|-------|-------|
+| Baseline `origin/main` | `55b4e6880875b87bb99bd3331fbe4040fe2483d0` (PR #119; PR #118 ancestor) |
+| Staging deploy | Deploy Staging #31 success on that SHA; `https://staging.piqsavi.com` HTTPS 200 |
+| Real inbox E2E | **Passed** — verification, password reset, and email-change via Gmail from `PiqSavi <no-reply@piqsavi.com>`; no demo tokens |
+| Auth-aware header / logout | **Passed** after PR #119 |
+| EXT-09 | **PASS / VERIFIED** — public Resend plan DNS rows plus owner-observed Resend domain **Verified** |
+| `identity_email_ready` | Live staging `false` with `adapter=resend` — remaining Sprint 27 closure action is the designed production-code gate, then staging deploy and `/health` verification |
+| Production secret attach | Still Sprint 41. Not a Sprint 27 blocker. Production email not claimed live |
+| Sprint 27 / P0-5 | **Not closed** |
+| Remaining closure action | Separate production-code PR for `identity_email_status().ready`; deploy staging; confirm `/health` `identity_email_ready=true` |
+| Authority | [`sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md`](sprints/SPRINT_27_TRANSACTIONAL_IDENTITY_EMAIL.md); [`evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md`](evidence/SPRINT_27_STAGING_EMAIL_EVIDENCE_2026-09-08.md) |
