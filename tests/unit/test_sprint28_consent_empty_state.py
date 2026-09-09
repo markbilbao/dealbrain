@@ -71,10 +71,7 @@ class _ConsentSurface(HTMLParser):
         copies: list[str] = []
         if self.status_text.strip() == CONSUMER_EMPTY_NOTE:
             copies.append("status")
-        if (
-            not self.unpublished_hidden
-            and self.unpublished_text.strip() == CONSUMER_EMPTY_NOTE
-        ):
+        if not self.unpublished_hidden and self.unpublished_text.strip() == CONSUMER_EMPTY_NOTE:
             copies.append("unpublished")
         return copies
 
@@ -142,6 +139,6 @@ async def test_account_page_serves_single_empty_state_copy(client: AsyncClient) 
     page = await client.get("/account")
     assert page.status_code == 200
     assert page.text.count(CONSUMER_EMPTY_NOTE) == 1
-    assert 'data-consent-unpublished hidden' in page.text
-    assert 'data-consent-status' in page.text
+    assert "data-consent-unpublished hidden" in page.text
+    assert "data-consent-status" in page.text
     assert 'id="consents"' in page.text
