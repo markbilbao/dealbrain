@@ -366,7 +366,8 @@ async def test_account_settings_expose_consent_audit_surface(client: AsyncClient
     assert 'id="consents"' in page.text
     assert "data-consent-records" in page.text
     assert "Your policy acknowledgements will appear here when applicable." in page.text
-    assert "There are no policy acknowledgements recorded for this account yet." in page.text
+    assert page.text.count(CONSUMER_EMPTY_NOTE) == 1
+    assert 'data-consent-unpublished hidden' in page.text
     assert "not a complete legal DSAR" not in page.text
     assert "engineering audit" not in page.text
     _assert_no_consumer_leaks("GET /account", page.text)

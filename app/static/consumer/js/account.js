@@ -493,12 +493,12 @@ async function loadConsentAudit(listNode) {
   }
   const records = Array.isArray(payload.records) ? payload.records : [];
   listNode.replaceChildren();
-  if (unpublished) unpublished.hidden = !payload.unpublished && records.length === 0;
   if (!records.length) {
     if (unpublished) unpublished.hidden = false;
-    setStatus("There are no policy acknowledgements recorded for this account yet.", "consent");
+    setStatus("", "consent");
     return;
   }
+  if (unpublished) unpublished.hidden = true;
   records.forEach((record) => {
     const item = document.createElement("li");
     const policy = String(record.policy_type || "policy");
