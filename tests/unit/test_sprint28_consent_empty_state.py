@@ -95,7 +95,7 @@ def test_successful_zero_record_response_renders_empty_state_once() -> None:
     empty_branch = _empty_record_branch(fn)
     assert CONSUMER_EMPTY_NOTE not in ACCOUNT_JS
     assert CONSUMER_EMPTY_NOTE not in fn
-    assert 'setStatus("There are no policy acknowledgements recorded for this account yet."' not in fn
+    assert f'setStatus("{CONSUMER_EMPTY_NOTE}"' not in fn
     assert "unpublished.hidden = false" in empty_branch
     assert 'setStatus("", "consent")' in empty_branch
     assert empty_branch.count("setStatus(") == 1
