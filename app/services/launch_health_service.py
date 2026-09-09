@@ -12,6 +12,9 @@ from app.core.config import Settings, settings
 from app.domain.entities.launch import DependencyCheck, SystemHealthReport
 from app.launch.cache import TtlCache
 from app.launch.runtime import get_startup_instant, uptime_seconds
+from app.legal.publication import POLICY_PRIVACY, POLICY_TERMS, catalog_from_settings
+from app.privacy.eligibility import age_policy_published
+from app.privacy.tracking import non_essential_tracking_allowed, tracking_mode
 from app.schemas.health import ServiceStatus
 
 
@@ -128,6 +131,7 @@ class LaunchHealthService:
 
         started = get_startup_instant()
         email_status = identity_email_status(self._cfg)
+        legal_catalog = catalog_from_settings(self._cfg)
         return SystemHealthReport(
             status=overall.value,  # type: ignore[arg-type]
             service=self._cfg.app_name,
@@ -149,6 +153,11 @@ class LaunchHealthService:
                 "persistence_database_ok": persistence.get("database_ok"),
                 "identity_email_adapter": email_status["adapter"],
                 "identity_email_ready": email_status["ready"],
+                "legal_terms_published": legal_catalog.is_published(POLICY_TERMS),
+                "legal_privacy_published": legal_catalog.is_published(POLICY_PRIVACY),
+                "tracking_mode": tracking_mode(),
+                "non_essential_tracking_allowed": non_essential_tracking_allowed(),
+                "minimum_age_policy_published": age_policy_published(),
             },
         )
 

@@ -100,17 +100,17 @@ This inventory records every material Global Public Beta requirement and its cov
 | Brute-force / credential-stuffing protection | `planned_underspecified` | Rate limit only; no lockout/bot | 40 |
 | Terms of Service | `implemented_needs_staging_proof` | Publication gate exists; production unpublished; counsel draft not served | 28 |
 | Privacy Policy | `implemented_needs_staging_proof` | Publication gate exists; production unpublished; counsel draft not served | 28 |
-| Cookie/tracking disclosure | `missing_from_roadmap` | Factual cookie inventory refreshed; counsel draft still unpublished; no CMP | 28 |
-| Analytics consent | `missing_from_roadmap` | — | 28 / 39 |
-| Registration consent records | `implemented_needs_staging_proof` | Persist only when a published version exists; unpublished register stores none | 28 |
+| Cookie/tracking disclosure | `implemented_needs_staging_proof` | Factual cookie/storage inventory refreshed including account web-storage; counsel draft unpublished; no CMP banner; essential-only fail-closed hook | 28 |
+| Analytics consent | `missing_from_roadmap` | Essential-only deny-by-default hook in Sprint 28; provider/CMP activation remains Sprint 39 / EXT-22 | 28 / 39 |
+| Registration consent records | `implemented_needs_staging_proof` | Persist only when a published version exists; unpublished register stores none; owner-scoped inspection API exists | 28 |
 | Policy-version acceptance records | `implemented_needs_staging_proof` | Server-owned version + timestamp; production catalog empty | 28 |
-| Account deletion + confirmation + propagation | `implemented_needs_staging_proof` | Authenticated delete + password re-auth; staging E2E not done | 28 |
-| Data export | `implemented_needs_staging_proof` | Authenticated JSON export; staging E2E not done | 28 |
-| Data retention policy | `missing_from_roadmap` | Engineering checklist only; retention periods counsel-owned | 28 |
+| Account deletion + confirmation + propagation | `implemented_needs_staging_proof` | Authenticated delete + password re-auth; 28.2 staging HTTP evidence recorded | 28 |
+| Data export | `implemented_needs_staging_proof` | Authenticated JSON export; 28.2 staging HTTP evidence recorded | 28 |
+| Data retention policy | `implemented_needs_staging_proof` | Engineering TTL map exists; legal retention periods remain counsel-owned; no legal purge jobs | 28 |
 | PII inventory | `implemented_needs_staging_proof` | Engineering inventory for current main; not a legal DPA | 28 |
-| Privacy / support contact | `missing_from_roadmap` | — | 28 / 39 |
-| Minimum age policy | `missing_from_roadmap` | — | 28 |
-| Country-specific notices | `missing_from_roadmap` | — | 28 / 37 |
+| Privacy / support contact | `implemented_needs_staging_proof` | EXT-17/18 provisioned; `/support` wires `support@piqsavi.com` and `privacy@piqsavi.com`; public policy publication still EXT-20/21 | 28 / 39 |
+| Minimum age policy | `implemented_needs_staging_proof` | Fail-closed placeholder; no invented age; no DOB collection; counsel-owned activation | 28 |
+| Country-specific notices | `implemented_needs_staging_proof` | Fail-closed empty catalog; substantive notices remain counsel / Sprint 37 | 28 / 37 |
 | Legal review and approval | `externally_blocked` | Counsel | 28 / 44 |
 | Published legal document URLs | `missing_from_roadmap` | — | 28 / 45 |
 | Data-processing / vendor register | `missing_from_roadmap` | — | 28 |
@@ -626,3 +626,23 @@ This addendum does **not** rewrite earlier snapshots. It records owner-supplied 
 | Sprint 32 | Unchanged: in progress / blocked on external certification. A submitted email is not certification. |
 | Affiliate monetization | Remains deferred. EXT-07 stays `n_a_beta`. |
 | Authority | [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md); [`sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md`](sprints/SPRINT_26_STAGING_CURRENT_MAIN_PROOF.md); [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md) |
+
+---
+
+## 2026-09-09 Sprint 28 internal engineering closeout addendum
+
+This addendum does **not** rewrite earlier snapshots. It records remaining internally controllable Sprint 28 readiness. It does **not** publish counsel drafts and does **not** close P0-4.
+
+| Field | Value |
+|-------|-------|
+| Sprint 28 | **INTERNAL ENGINEERING COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN.** Not COMPLETE/CLOSED. |
+| 28.1 / 28.2 | Unchanged: engineering foundations + staging export/delete HTTP evidence |
+| Consent/audit inspection | Owner-scoped `GET /api/v1/auth/account/consents`; non-PII `GET /api/v1/legal/publication-status`. Records stay empty until publication |
+| Engineering retention map | [`../privacy/ENGINEERING_RETENTION.md`](../privacy/ENGINEERING_RETENTION.md) — technical TTLs only |
+| Tracking | Essential-only fail-closed hook; no CMP banner; EXT-22 `not_started`; Sprint 39 owns activation |
+| Eligibility placeholders | No invented minimum age; no DOB collection; country notices unpublished |
+| Contacts | `/support` uses provisioned `support@piqsavi.com` and `privacy@piqsavi.com` only |
+| EXT-19 | Unchanged: `applied` — written approval not present |
+| EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` 404 |
+| EXT-22 | Unchanged: `not_started` — no CMP/banner |
+| Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) |

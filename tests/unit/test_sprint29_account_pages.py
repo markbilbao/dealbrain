@@ -52,6 +52,7 @@ async def test_login_and_register_forms_wire_existing_auth_apis(client: AsyncCli
     assert "/api/v1/auth/register" in ACCOUNT_JS
     assert "/api/v1/auth/account/export" in ACCOUNT_JS
     assert "/api/v1/auth/account/delete" in ACCOUNT_JS
+    assert "/api/v1/auth/account/consents" in ACCOUNT_JS
     assert "piqsavi.account_owned_export.v1" in (await client.get("/account")).text
 
 

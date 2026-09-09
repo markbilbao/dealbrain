@@ -43,6 +43,8 @@ NON_ACCOUNT_BROWSER_STORES: tuple[str, ...] = (
     "piqsavi_delivery",
     "piqsavi_shopping_market",
     "piqsavi_ask_conversation",
+    "piqsavi_access_token",
+    "piqsavi_remember_me",
 )
 
 # Intentionally excluded from consumer export (and why).

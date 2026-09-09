@@ -53,6 +53,80 @@
       }
     },
     "schemas": {
+      "AccountConsentAuditResponse": {
+        "description": "Authenticated caller's own consent records. Empty when unpublished.",
+        "properties": {
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "policy_accepted_events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Policy Accepted Events",
+            "type": "array"
+          },
+          "privacy_published": {
+            "title": "Privacy Published",
+            "type": "boolean"
+          },
+          "privacy_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Privacy Version Id"
+          },
+          "records": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "terms_published": {
+            "title": "Terms Published",
+            "type": "boolean"
+          },
+          "terms_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Version Id"
+          },
+          "unpublished": {
+            "title": "Unpublished",
+            "type": "boolean"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "terms_published",
+          "privacy_published",
+          "unpublished"
+        ],
+        "title": "AccountConsentAuditResponse",
+        "type": "object"
+      },
       "AccountDeleteRequest": {
         "properties": {
           "confirmation": {
@@ -7519,6 +7593,185 @@
           "label"
         ],
         "title": "KnowledgeNodePayload",
+        "type": "object"
+      },
+      "LegalPublicationStatusResponse": {
+        "description": "Non-PII publication and privacy-readiness posture.\n\nEmpty/false fields are the production truth until counsel-approved\ndocuments are published. This is not a published policy.",
+        "properties": {
+          "activation_owner": {
+            "default": "sprint_39",
+            "title": "Activation Owner",
+            "type": "string"
+          },
+          "advertising_allowed": {
+            "default": false,
+            "title": "Advertising Allowed",
+            "type": "boolean"
+          },
+          "age_policy_published": {
+            "default": false,
+            "title": "Age Policy Published",
+            "type": "boolean"
+          },
+          "analytics_allowed": {
+            "default": false,
+            "title": "Analytics Allowed",
+            "type": "boolean"
+          },
+          "analytics_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analytics Provider"
+          },
+          "banner_implemented": {
+            "default": false,
+            "title": "Banner Implemented",
+            "type": "boolean"
+          },
+          "cmp_vendor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cmp Vendor"
+          },
+          "collects_date_of_birth": {
+            "default": false,
+            "title": "Collects Date Of Birth",
+            "type": "boolean"
+          },
+          "cookie_notice_published": {
+            "default": false,
+            "title": "Cookie Notice Published",
+            "type": "boolean"
+          },
+          "counsel_drafts_are_not_public": {
+            "default": true,
+            "title": "Counsel Drafts Are Not Public",
+            "type": "boolean"
+          },
+          "counsel_owned": {
+            "default": true,
+            "title": "Counsel Owned",
+            "type": "boolean"
+          },
+          "country_notice_count": {
+            "default": 0,
+            "title": "Country Notice Count",
+            "type": "integer"
+          },
+          "country_notices_published": {
+            "default": false,
+            "title": "Country Notices Published",
+            "type": "boolean"
+          },
+          "enforced_at_registration": {
+            "default": false,
+            "title": "Enforced At Registration",
+            "type": "boolean"
+          },
+          "essential_allowed": {
+            "default": true,
+            "title": "Essential Allowed",
+            "type": "boolean"
+          },
+          "ext_22_status": {
+            "default": "not_started",
+            "title": "Ext 22 Status",
+            "type": "string"
+          },
+          "minimum_age_years": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Age Years"
+          },
+          "non_essential_tracking_allowed": {
+            "default": false,
+            "title": "Non Essential Tracking Allowed",
+            "type": "boolean"
+          },
+          "parental_consent_flow": {
+            "default": false,
+            "title": "Parental Consent Flow",
+            "type": "boolean"
+          },
+          "privacy_acceptance_required": {
+            "default": false,
+            "title": "Privacy Acceptance Required",
+            "type": "boolean"
+          },
+          "privacy_contact": {
+            "title": "Privacy Contact",
+            "type": "string"
+          },
+          "privacy_published": {
+            "title": "Privacy Published",
+            "type": "boolean"
+          },
+          "privacy_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Privacy Version Id"
+          },
+          "support_contact": {
+            "title": "Support Contact",
+            "type": "string"
+          },
+          "terms_acceptance_required": {
+            "default": false,
+            "title": "Terms Acceptance Required",
+            "type": "boolean"
+          },
+          "terms_published": {
+            "title": "Terms Published",
+            "type": "boolean"
+          },
+          "terms_version_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Version Id"
+          },
+          "tracking_mode": {
+            "default": "essential_only",
+            "title": "Tracking Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "terms_published",
+          "privacy_published",
+          "support_contact",
+          "privacy_contact"
+        ],
+        "title": "LegalPublicationStatusResponse",
         "type": "object"
       },
       "LiveResponse": {
@@ -19385,6 +19638,56 @@
         ]
       }
     },
+    "/api/v1/auth/account/consents": {
+      "get": {
+        "description": "Owner-scoped consent audit. Empty when no published policy version exists. Does not fabricate acceptance. Client-supplied user_id is ignored.",
+        "operationId": "inspect_account_consents_api_v1_auth_account_consents_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountConsentAuditResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspect the authenticated account's policy-acceptance records",
+        "tags": [
+          "user-platform-auth"
+        ]
+      }
+    },
     "/api/v1/auth/account/delete": {
       "post": {
         "operationId": "delete_account_api_v1_auth_account_delete_post",
@@ -22735,6 +23038,28 @@
         "summary": "Production settings and system status snapshot",
         "tags": [
           "launch-readiness"
+        ]
+      }
+    },
+    "/api/v1/legal/publication-status": {
+      "get": {
+        "description": "Non-PII readiness. Production remains unpublished until EXT-20 / EXT-21. Counsel drafts are never public. Does not activate analytics or a CMP.",
+        "operationId": "publication_status_api_v1_legal_publication_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalPublicationStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Legal publication and essential-only tracking posture",
+        "tags": [
+          "legal-publication"
         ]
       }
     },

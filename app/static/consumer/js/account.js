@@ -444,6 +444,10 @@ function applyAccountPageSession(session) {
 async function loadAccount() {
   const session = await resolveAuthSession();
   applyAccountPageSession(session);
+  const consentList = qs("[data-consent-records]");
+  if (session.ok && consentList) {
+    await loadConsentAudit(consentList);
+  }
 }
 
 async function signOutCurrentDevice(redirectTo) {
@@ -483,6 +487,37 @@ function bindActions() {
       "export",
     );
   });
+}
+
+async function loadConsentAudit(listNode) {
+  const unpublished = qs("[data-consent-unpublished]");
+  setStatus("Loading consent records…", "consent");
+  const { response, payload } = await api("/api/v1/auth/account/consents");
+  if (!response.ok) {
+    setStatus(apiError(payload, "Could not load consent records."), "consent");
+    return;
+  }
+  const records = Array.isArray(payload.records) ? payload.records : [];
+  listNode.replaceChildren();
+  if (unpublished) unpublished.hidden = !payload.unpublished;
+  if (!records.length) {
+    setStatus(
+      payload.unpublished
+        ? "No published policy version exists, so no acceptance records were stored."
+        : "No policy-acceptance records for this account.",
+      "consent",
+    );
+    return;
+  }
+  records.forEach((record) => {
+    const item = document.createElement("li");
+    const policy = String(record.policy_type || "policy");
+    const version = String(record.version_id || "unknown");
+    const accepted = String(record.accepted_at || "");
+    item.textContent = `${policy} ${version}${accepted ? ` accepted ${accepted}` : ""}`;
+    listNode.appendChild(item);
+  });
+  setStatus(`${records.length} policy-acceptance record(s) for this account.`, "consent");
 }
 
 bindIdentityToken();

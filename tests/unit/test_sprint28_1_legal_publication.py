@@ -230,6 +230,22 @@ def test_unrelated_repository_file_cannot_be_published() -> None:
     assert default_legal_publication_root().as_posix().endswith("docs/legal/published")
 
 
+def test_published_root_readme_is_not_served_as_policy_html() -> None:
+    readme = default_legal_publication_root() / "README.md"
+    assert readme.is_file()
+    assert load_approved_public_html("README.md") is None
+    catalog = LegalPublicationCatalog(
+        (
+            published_policy(
+                policy_type="privacy",
+                version_id="privacy-published-readme",
+                html_path="README.md",
+            ),
+        )
+    )
+    assert catalog.published("privacy") is None
+
+
 def test_only_relative_file_under_publication_root_is_served(tmp_path: Path) -> None:
     (tmp_path / "privacy.html").write_text(
         "<html><body><h1>Approved Privacy</h1></body></html>",
