@@ -364,10 +364,7 @@ function bindForms() {
             return;
           }
           await clearLocalAuth();
-          setStatus(
-            `Account deleted. Sessions revoked: ${payload.sessions_revoked ?? 0}. This does not certify backup, log, or vendor erasure.`,
-            "delete",
-          );
+          setStatus("Your account has been deleted. You've been signed out on all devices.", "delete");
           window.setTimeout(() => window.location.assign("/login"), 1200);
         }
       } catch {
@@ -482,31 +479,24 @@ function bindActions() {
     link.download = "piqsavi-account-export.json";
     link.click();
     URL.revokeObjectURL(url);
-    setStatus(
-      `Export downloaded (${payload.export_schema || "unknown schema"}). This is an engineering export, not a complete legal DSAR.`,
-      "export",
-    );
+    setStatus("Your data download is ready.", "export");
   });
 }
 
 async function loadConsentAudit(listNode) {
   const unpublished = qs("[data-consent-unpublished]");
-  setStatus("Loading consent records…", "consent");
+  setStatus("Loading policy acknowledgements…", "consent");
   const { response, payload } = await api("/api/v1/auth/account/consents");
   if (!response.ok) {
-    setStatus(apiError(payload, "Could not load consent records."), "consent");
+    setStatus(apiError(payload, "Could not load policy acknowledgements."), "consent");
     return;
   }
   const records = Array.isArray(payload.records) ? payload.records : [];
   listNode.replaceChildren();
-  if (unpublished) unpublished.hidden = !payload.unpublished;
+  if (unpublished) unpublished.hidden = !payload.unpublished && records.length === 0;
   if (!records.length) {
-    setStatus(
-      payload.unpublished
-        ? "No published policy version exists, so no acceptance records were stored."
-        : "No policy-acceptance records for this account.",
-      "consent",
-    );
+    if (unpublished) unpublished.hidden = false;
+    setStatus("There are no policy acknowledgements recorded for this account yet.", "consent");
     return;
   }
   records.forEach((record) => {

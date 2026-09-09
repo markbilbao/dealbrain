@@ -117,7 +117,7 @@ def _account_footer() -> str:
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
       </nav>
-      <p class="form-hint">Privacy Policy and Terms are not published yet. Those links return 404 until counsel publication.</p>
+      <p class="form-hint">Privacy Policy and Terms will appear when they are available.</p>
     </footer>
     """
 
@@ -184,18 +184,14 @@ def _register_legal_fields(catalog: LegalPublicationCatalog) -> tuple[str, str]:
             """
         )
     if not fields:
-        intro = (
-            "Registration stores your account. Terms of Service and Privacy Policy "
-            "are not published yet. This form does not record acceptance of unpublished policies."
-        )
+        intro = "Create your PiqSavi account."
         return intro, (
             '<p class="form-hint" data-legal-unpublished="true">'
-            "Policies are not yet published. Registration will submit "
-            "terms_accepted=false and privacy_acknowledged=false, and will not invent a consent record."
+            "Legal policies are not yet available for this beta. "
+            "No policy acceptance will be recorded until they are published."
             "</p>"
             '<p class="form-hint" data-eligibility-unpublished="true">'
-            "Minimum-age and country-specific legal notices are not published yet. "
-            "This form does not collect date of birth and does not enforce an unpublished age rule."
+            "PiqSavi does not currently ask for your date of birth during registration."
             "</p>"
         )
     intro = (
@@ -455,22 +451,22 @@ def render_account_settings_page(*, next_path: str = "/account") -> str:
             <p>Watch is not available yet. PiqSavi does not send price-update notifications or monitor saved items in the background.</p>
 
             <h2 id="consents">Privacy and consent</h2>
-            <p>Consent records are stored only when a published policy version exists. <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a> are unpublished 404 pages until counsel publication. This list is your account's engineering audit view, not a complete legal DSAR.</p>
+            <p>Your policy acknowledgements will appear here when applicable. See also <a href="/privacy">Privacy</a> and <a href="/terms">Terms</a>.</p>
             <p class="form-status" data-consent-status role="status"></p>
             <ul data-consent-records></ul>
-            <p class="form-hint" data-consent-unpublished hidden>No published policy version exists, so this account has no acceptance records.</p>
+            <p class="form-hint" data-consent-unpublished hidden>There are no policy acknowledgements recorded for this account yet.</p>
 
             <h2>Sessions</h2>
-            <p>Sign out ends this device session. A session list or revoke-other-devices API is not exposed. Export includes session metadata for this account.</p>
+            <p>Sign out ends this device session.</p>
             <button type="button" class="btn btn-secondary" data-account-action="sign-out">Sign out</button>
 
             <h2 id="export">Download your data</h2>
-            <p>This requests the Sprint 28 engineering export <code>piqsavi.account_owned_export.v1</code>. It is not a complete legal DSAR and does not include Early Access waitlist rows.</p>
+            <p>Download a copy of the data stored on this PiqSavi account.</p>
             <p class="form-status" data-export-status role="status"></p>
             <button type="button" class="btn btn-primary" data-account-action="export">Download my data</button>
 
             <h2 id="delete">Delete account</h2>
-            <p>Deletion requires your password and typing <strong>DELETE</strong>. This calls the Sprint 28 deletion API, revokes sessions, and does not claim backup, log, or vendor erasure.</p>
+            <p>Deleting your account requires your password and typing <strong>DELETE</strong>. This signs you out on all devices.</p>
             <p class="form-status" data-delete-status role="status"></p>
             <form class="account-form" data-account-form="delete">
               <label class="field">
@@ -497,15 +493,11 @@ def render_support_page() -> str:
         page="support",
         main=f"""
         <section class="account-card">
-          <h1>Support and feedback</h1>
-          <p>Use these provisioned PiqSavi contacts. An in-product ticket or analytics backend is owned by Sprint 39 and is not live.</p>
-          <ul>
-            <li><a href="mailto:{support}">{support}</a></li>
-            <li><a href="mailto:{privacy}">{privacy}</a></li>
-          </ul>
+          <h1>Support</h1>
+          <p>Need help or want to report incorrect product information? Contact <a href="mailto:{support}">{support}</a>.</p>
+          <p>For privacy questions, contact <a href="mailto:{privacy}">{privacy}</a>.</p>
           <h2 id="report">Report incorrect information</h2>
-          <p>Email {support} to report an incorrect price, product fact, outdated offer, misleading evidence, or source issue. There is no automated report form until Sprint 39.</p>
-          <p class="form-hint">This page does not collect a support ticket and does not claim a monitored product inbox beyond the published mailbox identities. legal@piqsavi.com is a planned brand-policy address and is not listed as a live contact.</p>
+          <p>Email {support} to report an incorrect price, product fact, outdated offer, misleading evidence, or source issue.</p>
         </section>
         """,
     )

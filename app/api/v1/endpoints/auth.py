@@ -344,10 +344,10 @@ async def export_account(
 @router.get(
     "/account/consents",
     response_model=AccountConsentAuditResponse,
-    summary="Inspect the authenticated account's policy-acceptance records",
+    summary="List the signed-in account's policy acknowledgements",
     description=(
-        "Owner-scoped consent audit. Empty when no published policy version exists. "
-        "Does not fabricate acceptance. Client-supplied user_id is ignored."
+        "Always returns the authenticated caller's policy acknowledgement records. "
+        "Empty when no published policies apply."
     ),
 )
 async def inspect_account_consents(

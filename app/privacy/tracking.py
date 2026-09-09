@@ -4,11 +4,14 @@ PiqSavi currently has no approved non-essential analytics provider. This module
 does not implement a CMP banner, does not load third-party pixels, and does not
 claim counsel approval. Absence of a CMP or analytics provider fails privacy-safe:
 non-essential categories stay OFF.
+
+Public product state and operator EXT/Sprint ownership are split: only the
+product fields belong on unauthenticated APIs.
 """
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 TrackingCategory = Literal["essential", "analytics", "advertising"]
 TrackingMode = Literal["essential_only"]
@@ -19,6 +22,10 @@ CMP_VENDOR: str | None = None
 ANALYTICS_PROVIDER: str | None = None
 
 NON_ESSENTIAL_CATEGORIES: tuple[TrackingCategory, ...] = ("analytics", "advertising")
+
+# Operator-only EXT/Sprint ownership. Not a public API field.
+EXT_22_STATUS = "not_started"
+ACTIVATION_OWNER = "sprint_39"
 
 
 def tracking_mode() -> TrackingMode:
@@ -55,8 +62,8 @@ def non_essential_tracking_allowed() -> bool:
     return any(category_allowed(category) for category in NON_ESSENTIAL_CATEGORIES)
 
 
-def tracking_snapshot() -> dict[str, object]:
-    """Operator-visible tracking posture. Not a cookie banner and not legal advice."""
+def tracking_public_state() -> dict[str, Any]:
+    """Product tracking posture safe for unauthenticated clients."""
     return {
         "tracking_mode": tracking_mode(),
         "cmp_vendor": cmp_vendor(),
@@ -66,6 +73,13 @@ def tracking_snapshot() -> dict[str, object]:
         "advertising_allowed": category_allowed("advertising"),
         "non_essential_tracking_allowed": non_essential_tracking_allowed(),
         "banner_implemented": False,
-        "ext_22_status": "not_started",
-        "activation_owner": "sprint_39",
+    }
+
+
+def tracking_snapshot() -> dict[str, Any]:
+    """Operator-visible tracking posture including EXT-22 / Sprint 39 ownership."""
+    return {
+        **tracking_public_state(),
+        "ext_22_status": EXT_22_STATUS,
+        "activation_owner": ACTIVATION_OWNER,
     }

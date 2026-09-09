@@ -54,7 +54,7 @@
     },
     "schemas": {
       "AccountConsentAuditResponse": {
-        "description": "Authenticated caller's own consent records. Empty when unpublished.",
+        "description": "Authenticated caller's policy acknowledgement records.\n\nEmpty when no published policies apply. Not a complete inventory of every\nprocessing activity.",
         "properties": {
           "notes": {
             "items": {
@@ -7596,13 +7596,9 @@
         "type": "object"
       },
       "LegalPublicationStatusResponse": {
-        "description": "Non-PII publication and privacy-readiness posture.\n\nEmpty/false fields are the production truth until counsel-approved\ndocuments are published. This is not a published policy.",
+        "additionalProperties": false,
+        "description": "Public Terms/Privacy publication and essential-only tracking posture.\n\nFalse/empty fields mean those documents or notices are not published yet.\nThis response is not itself a published policy.",
         "properties": {
-          "activation_owner": {
-            "default": "sprint_39",
-            "title": "Activation Owner",
-            "type": "string"
-          },
           "advertising_allowed": {
             "default": false,
             "title": "Advertising Allowed",
@@ -7655,16 +7651,6 @@
             "title": "Cookie Notice Published",
             "type": "boolean"
           },
-          "counsel_drafts_are_not_public": {
-            "default": true,
-            "title": "Counsel Drafts Are Not Public",
-            "type": "boolean"
-          },
-          "counsel_owned": {
-            "default": true,
-            "title": "Counsel Owned",
-            "type": "boolean"
-          },
           "country_notice_count": {
             "default": 0,
             "title": "Country Notice Count",
@@ -7684,11 +7670,6 @@
             "default": true,
             "title": "Essential Allowed",
             "type": "boolean"
-          },
-          "ext_22_status": {
-            "default": "not_started",
-            "title": "Ext 22 Status",
-            "type": "string"
           },
           "minimum_age_years": {
             "anyOf": [
@@ -19640,7 +19621,7 @@
     },
     "/api/v1/auth/account/consents": {
       "get": {
-        "description": "Owner-scoped consent audit. Empty when no published policy version exists. Does not fabricate acceptance. Client-supplied user_id is ignored.",
+        "description": "Always returns the authenticated caller's policy acknowledgement records. Empty when no published policies apply.",
         "operationId": "inspect_account_consents_api_v1_auth_account_consents_get",
         "parameters": [
           {
@@ -19682,7 +19663,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Inspect the authenticated account's policy-acceptance records",
+        "summary": "List the signed-in account's policy acknowledgements",
         "tags": [
           "user-platform-auth"
         ]
@@ -23043,7 +23024,7 @@
     },
     "/api/v1/legal/publication-status": {
       "get": {
-        "description": "Non-PII readiness. Production remains unpublished until EXT-20 / EXT-21. Counsel drafts are never public. Does not activate analytics or a CMP.",
+        "description": "Unauthenticated product state for whether Terms and Privacy are published, whether acceptance is required, provisioned support/privacy contacts, and whether non-essential tracking is allowed. Unpublished remains the production default. Does not activate analytics or a consent banner.",
         "operationId": "publication_status_api_v1_legal_publication_status_get",
         "responses": {
           "200": {

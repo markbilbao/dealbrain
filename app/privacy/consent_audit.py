@@ -2,6 +2,9 @@
 
 Works when a published policy exists and remains empty when it does not.
 Does not fabricate acceptance records, publication dates, or counsel approval.
+
+Consumer-facing notes and the unauthenticated publication-status payload omit
+internal Sprint/EXT/counsel/DSAR wording. Operator snapshots keep that evidence.
 """
 
 from __future__ import annotations
@@ -18,25 +21,31 @@ from app.legal.publication import (
     unpublished_catalog,
 )
 from app.privacy.contacts import public_contact_snapshot
-from app.privacy.eligibility import eligibility_snapshot
-from app.privacy.tracking import tracking_snapshot
+from app.privacy.eligibility import eligibility_public_state, eligibility_snapshot
+from app.privacy.tracking import tracking_public_state, tracking_snapshot
 
-UNPUBLISHED_NOTE = (
+CONSUMER_ACKNOWLEDGEMENTS_NOTE = "Your policy acknowledgements will appear here when applicable."
+CONSUMER_EMPTY_NOTE = "There are no policy acknowledgements recorded for this account yet."
+OPERATOR_UNPUBLISHED_NOTE = (
     "No published Terms or Privacy version exists. Consent records stay empty "
     "and must not be fabricated."
 )
-OWNER_SCOPED_NOTE = "Records are scoped to the authenticated or operator-supplied user_id only."
-NOT_DSAR_NOTE = "This inspection is engineering audit visibility, not a complete legal DSAR."
+OPERATOR_OWNER_SCOPED_NOTE = (
+    "Records are scoped to the authenticated or operator-supplied user_id only."
+)
+OPERATOR_NOT_DSAR_NOTE = (
+    "This inspection is engineering audit visibility, not a complete legal DSAR."
+)
 
 
 def publication_status_payload(
     catalog: LegalPublicationCatalog | None = None,
 ) -> dict[str, Any]:
-    """Non-PII publication readiness. Safe for unauthenticated clients."""
+    """Non-PII product publication state. Safe for unauthenticated clients."""
     active = catalog or unpublished_catalog()
     terms = active.published(POLICY_TERMS)
     privacy = active.published(POLICY_PRIVACY)
-    payload: dict[str, Any] = {
+    return {
         "terms_published": terms is not None,
         "privacy_published": privacy is not None,
         "terms_version_id": terms.version_id if terms is not None else None,
@@ -44,12 +53,23 @@ def publication_status_payload(
         "terms_acceptance_required": active.requires_acceptance(POLICY_TERMS),
         "privacy_acceptance_required": active.requires_acceptance(POLICY_PRIVACY),
         "cookie_notice_published": False,
-        "counsel_drafts_are_not_public": True,
         **public_contact_snapshot(),
-        **eligibility_snapshot(),
-        **tracking_snapshot(),
+        **eligibility_public_state(),
+        **tracking_public_state(),
     }
-    return payload
+
+
+def operator_publication_snapshot(
+    catalog: LegalPublicationCatalog | None = None,
+) -> dict[str, Any]:
+    """Operator snapshot: public product state plus EXT/Sprint/counsel evidence."""
+    public = publication_status_payload(catalog)
+    extras = {**eligibility_snapshot(), **tracking_snapshot()}
+    return {
+        **public,
+        "counsel_drafts_are_not_public": True,
+        **{key: value for key, value in extras.items() if key not in public},
+    }
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,9 +124,9 @@ def inspect_consent(
             for event in audit.recent(user_id=user_id, limit=100)
             if event.event_type == "policy_accepted" and event.user_id == user_id
         ]
-    notes = [OWNER_SCOPED_NOTE, NOT_DSAR_NOTE]
-    if unpublished:
-        notes.insert(0, UNPUBLISHED_NOTE)
+    notes = [CONSUMER_ACKNOWLEDGEMENTS_NOTE]
+    if unpublished or not records:
+        notes.append(CONSUMER_EMPTY_NOTE)
     return ConsentAuditSnapshot(
         user_id=user_id,
         terms_published=terms is not None,

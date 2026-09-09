@@ -4,6 +4,8 @@ Sprint 28 requires placeholders, not an invented age gate. Counsel still owns
 the minimum age, parental-consent rules, and country-specific legal copy.
 Until those are published, this module records that no age or country notice
 is in force and that registration must not collect date of birth.
+
+Public product state omits counsel-workflow ownership flags.
 """
 
 from __future__ import annotations
@@ -37,8 +39,8 @@ def collects_date_of_birth() -> bool:
     return False
 
 
-def eligibility_snapshot() -> dict[str, Any]:
-    """Operator-visible eligibility posture. Not a public legal notice."""
+def eligibility_public_state() -> dict[str, Any]:
+    """Product eligibility posture safe for unauthenticated clients."""
     return {
         "minimum_age_years": minimum_age_years(),
         "age_policy_published": age_policy_published(),
@@ -47,5 +49,12 @@ def eligibility_snapshot() -> dict[str, Any]:
         "country_notices_published": country_notices_published(),
         "country_notice_count": len(country_notices()),
         "enforced_at_registration": False,
+    }
+
+
+def eligibility_snapshot() -> dict[str, Any]:
+    """Operator-visible eligibility posture including counsel ownership."""
+    return {
+        **eligibility_public_state(),
         "counsel_owned": True,
     }

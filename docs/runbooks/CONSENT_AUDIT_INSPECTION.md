@@ -3,24 +3,42 @@
 **Audience:** operators inspecting whether consent records exist once a published policy version exists.
 **Not:** a public admin dashboard, a complete legal DSAR, or permission to publish counsel drafts.
 
-## Non-PII publication posture (safe)
+## Public publication-status API (unauthenticated)
 
-These checks do **not** list users or acceptance rows:
+`GET /api/v1/legal/publication-status` exposes product state only:
+
+- `terms_published` / `privacy_published` and published version ids
+- acceptance-required flags
+- provisioned `support_contact` / `privacy_contact`
+- `tracking_mode` / `non_essential_tracking_allowed`
+- minimum-age policy published state
+
+It does **not** expose EXT-*, Sprint ownership, counsel-workflow flags, or
+`counsel_drafts_are_not_public`. Those remain operator/internal evidence.
+
+`GET /health` still reports `checks.legal_terms_published` /
+`legal_privacy_published` for operators.
+
+## Operator snapshot
 
 ```text
-GET /api/v1/legal/publication-status
-GET /health   # checks.legal_terms_published / legal_privacy_published
 python scripts/privacy/inspect_publication_status.py
 ```
 
-Production/staging truth today:
+The operator snapshot additionally records Sprint 28 closeout evidence:
+
+- `counsel_drafts_are_not_public=true`
+- `ext_22_status=not_started`
+- `activation_owner=sprint_39`
+- `counsel_owned=true`
+
+Production/staging product truth today:
 
 - `terms_published=false`
 - `privacy_published=false`
 - `tracking_mode=essential_only`
 - `non_essential_tracking_allowed=false`
-- `minimum_age_policy_published=false`
-- `counsel_drafts_are_not_public=true`
+- `minimum_age_policy_published=false` (health) / `age_policy_published=false` (public API)
 
 `/privacy` and `/terms` remain HTTP 404 until EXT-20 / EXT-21.
 
@@ -30,7 +48,10 @@ Production/staging truth today:
 Client-supplied `user_id` is ignored. When no published policy exists the
 `records` array is empty and `unpublished=true`.
 
-Account settings `/account#consents` renders the same payload after sign-in.
+Account settings `/account#consents` renders the same payload after sign-in
+using consumer wording. The engineering/DSAR boundary stays in this runbook:
+the inspection is not a complete legal DSAR, and unpublished catalogs must
+not fabricate acceptance records.
 
 ## Staging procedure (execute only after a published version exists)
 

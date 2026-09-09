@@ -4,15 +4,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LegalPublicationStatusResponse(BaseModel):
-    """Non-PII publication and privacy-readiness posture.
+    """Public Terms/Privacy publication and essential-only tracking posture.
 
-    Empty/false fields are the production truth until counsel-approved
-    documents are published. This is not a published policy.
+    False/empty fields mean those documents or notices are not published yet.
+    This response is not itself a published policy.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     terms_published: bool
     privacy_published: bool
@@ -21,7 +23,6 @@ class LegalPublicationStatusResponse(BaseModel):
     terms_acceptance_required: bool = False
     privacy_acceptance_required: bool = False
     cookie_notice_published: bool = False
-    counsel_drafts_are_not_public: bool = True
     support_contact: str
     privacy_contact: str
     minimum_age_years: int | None = None
@@ -31,7 +32,6 @@ class LegalPublicationStatusResponse(BaseModel):
     country_notices_published: bool = False
     country_notice_count: int = 0
     enforced_at_registration: bool = False
-    counsel_owned: bool = True
     tracking_mode: str = "essential_only"
     cmp_vendor: str | None = None
     analytics_provider: str | None = None
@@ -40,12 +40,14 @@ class LegalPublicationStatusResponse(BaseModel):
     advertising_allowed: bool = False
     non_essential_tracking_allowed: bool = False
     banner_implemented: bool = False
-    ext_22_status: str = "not_started"
-    activation_owner: str = "sprint_39"
 
 
 class AccountConsentAuditResponse(BaseModel):
-    """Authenticated caller's own consent records. Empty when unpublished."""
+    """Authenticated caller's policy acknowledgement records.
+
+    Empty when no published policies apply. Not a complete inventory of every
+    processing activity.
+    """
 
     user_id: str
     terms_published: bool

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -20,11 +21,19 @@ from app.legal.publication import (
     published_policy,
     unpublished_catalog,
 )
-from app.privacy.consent_audit import inspect_consent, publication_status_payload
+from app.privacy.consent_audit import (
+    CONSUMER_EMPTY_NOTE,
+    OPERATOR_NOT_DSAR_NOTE,
+    OPERATOR_UNPUBLISHED_NOTE,
+    inspect_consent,
+    operator_publication_snapshot,
+    publication_status_payload,
+)
 from app.privacy.eligibility import (
     age_policy_published,
     collects_date_of_birth,
     country_notices_published,
+    eligibility_snapshot,
     minimum_age_years,
 )
 from app.privacy.tracking import (
@@ -41,6 +50,33 @@ ROOT = Path(__file__).resolve().parents[2]
 TEST_TERMS_VERSION = "test-terms-published-v1"
 TEST_PRIVACY_VERSION = "test-privacy-published-v1"
 FORBIDDEN_AGE_COPY = ("must be 13", "must be 16", "must be 18", "at least 13", "at least 18")
+INTERNAL_PUBLIC_API_FIELDS = (
+    "counsel_drafts_are_not_public",
+    "counsel_owned",
+    "ext_22_status",
+    "activation_owner",
+)
+CONSUMER_LEAK_PATTERNS = (
+    r"\bSprint\b",
+    r"\bEXT-\d+",
+    r"\bDealBrain\b",
+    r"\bcounsel\b",
+    r"\bDSAR\b",
+    r"engineering audit",
+    r"activation_owner",
+    r"\bnot_started\b",
+    r"legal@piqsavi\.com",
+    r"terms_accepted\s*=\s*false",
+    r"privacy_acknowledged\s*=\s*false",
+    r"\bHTTP 404\b",
+    r"unpublished 404",
+)
+
+
+def _assert_no_consumer_leaks(surface: str, body: str) -> None:
+    for pattern in CONSUMER_LEAK_PATTERNS:
+        match = re.search(pattern, body, flags=re.IGNORECASE)
+        assert match is None, f"{surface} leaked {pattern!r} via {match.group(0)!r}"
 
 
 def _approved_html(path: Path, title: str) -> Path:
@@ -93,6 +129,13 @@ def test_tracking_is_essential_only_and_non_essential_denied() -> None:
     assert snapshot["analytics_provider"] is None
     assert snapshot["ext_22_status"] == "not_started"
     assert snapshot["activation_owner"] == "sprint_39"
+    public = publication_status_payload(unpublished_catalog())
+    for field in INTERNAL_PUBLIC_API_FIELDS:
+        assert field not in public
+    operator = operator_publication_snapshot(unpublished_catalog())
+    assert operator["ext_22_status"] == "not_started"
+    assert operator["activation_owner"] == "sprint_39"
+    assert eligibility_snapshot()["counsel_owned"] is True
 
 
 def test_eligibility_placeholders_do_not_invent_an_age() -> None:
@@ -107,11 +150,15 @@ def test_production_publication_status_is_unpublished() -> None:
     assert payload["terms_published"] is False
     assert payload["privacy_published"] is False
     assert payload["cookie_notice_published"] is False
-    assert payload["counsel_drafts_are_not_public"] is True
     assert payload["support_contact"] == PUBLIC_SUPPORT_EMAIL
     assert payload["privacy_contact"] == PUBLIC_PRIVACY_EMAIL
     assert payload["non_essential_tracking_allowed"] is False
     assert payload["age_policy_published"] is False
+    for field in INTERNAL_PUBLIC_API_FIELDS:
+        assert field not in payload
+    operator = operator_publication_snapshot(catalog_from_settings(Settings()))
+    assert operator["counsel_drafts_are_not_public"] is True
+    assert operator["counsel_owned"] is True
 
 
 def test_published_directory_has_no_public_html() -> None:
@@ -143,7 +190,11 @@ def test_unpublished_inspect_consent_does_not_fabricate_records() -> None:
     assert snapshot.unpublished is True
     assert snapshot.records == ()
     assert snapshot.policy_accepted_events == ()
-    assert any("must not be fabricated" in note for note in snapshot.notes)
+    assert CONSUMER_EMPTY_NOTE in snapshot.notes
+    assert all("must not be fabricated" not in note for note in snapshot.notes)
+    assert all("DSAR" not in note for note in snapshot.notes)
+    assert "must not be fabricated" in OPERATOR_UNPUBLISHED_NOTE
+    assert "not a complete legal DSAR" in OPERATOR_NOT_DSAR_NOTE
 
 
 def test_published_inspect_consent_shows_owner_records_only(tmp_path: Path) -> None:
@@ -197,6 +248,9 @@ async def test_publication_status_api_is_unpublished(client: AsyncClient) -> Non
     assert body["banner_implemented"] is False
     assert body["support_contact"] == PUBLIC_SUPPORT_EMAIL
     assert "legal@piqsavi.com" not in json.dumps(body)
+    for field in INTERNAL_PUBLIC_API_FIELDS:
+        assert field not in body
+    _assert_no_consumer_leaks("GET /api/v1/legal/publication-status", json.dumps(body))
 
 
 @pytest.mark.asyncio
@@ -243,6 +297,9 @@ async def test_account_consents_empty_when_unpublished(client: AsyncClient) -> N
     assert body["user_id"] == created.json()["user"]["user_id"]
     assert body["unpublished"] is True
     assert body["records"] == []
+    assert CONSUMER_EMPTY_NOTE in body["notes"]
+    assert all("DSAR" not in note for note in body["notes"])
+    assert all("must not be fabricated" not in note for note in body["notes"])
 
 
 @pytest.mark.asyncio
@@ -281,8 +338,10 @@ async def test_support_page_uses_provisioned_contacts_only(client: AsyncClient) 
     assert f"mailto:{PUBLIC_SUPPORT_EMAIL}" in page.text
     assert f"mailto:{PUBLIC_PRIVACY_EMAIL}" in page.text
     assert "mailto:legal@piqsavi.com" not in page.text
-    assert "not listed as a live contact" in page.text
+    assert "not listed as a live contact" not in page.text
+    assert "Sprint 39" not in page.text
     assert f'data-tracking-mode="{HTML_TRACKING_MODE_ATTR}"' in page.text
+    _assert_no_consumer_leaks("GET /support", page.text)
 
 
 @pytest.mark.asyncio
@@ -290,6 +349,9 @@ async def test_register_does_not_invent_age_or_dob(client: AsyncClient) -> None:
     page = await client.get("/register")
     assert page.status_code == 200
     assert 'data-eligibility-unpublished="true"' in page.text
+    assert "Legal policies are not yet available for this beta." in page.text
+    assert "terms_accepted=false" not in page.text
+    assert "privacy_acknowledged=false" not in page.text
     assert 'name="date_of_birth"' not in page.text
     assert 'name="dob"' not in page.text
     lower = page.text.lower()
@@ -303,7 +365,11 @@ async def test_account_settings_expose_consent_audit_surface(client: AsyncClient
     assert page.status_code == 200
     assert 'id="consents"' in page.text
     assert "data-consent-records" in page.text
-    assert "not a complete legal DSAR" in page.text
+    assert "Your policy acknowledgements will appear here when applicable." in page.text
+    assert "There are no policy acknowledgements recorded for this account yet." in page.text
+    assert "not a complete legal DSAR" not in page.text
+    assert "engineering audit" not in page.text
+    _assert_no_consumer_leaks("GET /account", page.text)
 
 
 @pytest.mark.asyncio
@@ -330,6 +396,9 @@ def test_publication_status_script_prints_unpublished_json() -> None:
     assert payload["terms_published"] is False
     assert payload["privacy_published"] is False
     assert payload["non_essential_tracking_allowed"] is False
+    assert payload["counsel_drafts_are_not_public"] is True
+    assert payload["ext_22_status"] == "not_started"
+    assert payload["activation_owner"] == "sprint_39"
 
 
 @pytest.mark.asyncio
@@ -339,3 +408,36 @@ async def test_results_page_marks_essential_only_tracking(client: AsyncClient) -
     assert f'data-tracking-mode="{HTML_TRACKING_MODE_ATTR}"' in page.text
     assert "googletagmanager" not in page.text.lower()
     assert "gtag(" not in page.text.lower()
+
+
+@pytest.mark.asyncio
+async def test_consumer_html_and_public_legal_status_hide_internal_terms(
+    client: AsyncClient,
+) -> None:
+    for path in ("/support", "/account", "/register", "/login"):
+        page = await client.get(path)
+        assert page.status_code == 200
+        _assert_no_consumer_leaks(f"GET {path}", page.text)
+    account_js = (ROOT / "app/static/consumer/js/account.js").read_text(encoding="utf-8")
+    _assert_no_consumer_leaks("account.js", account_js)
+    response = await client.get("/api/v1/legal/publication-status")
+    assert response.status_code == 200
+    _assert_no_consumer_leaks(
+        "GET /api/v1/legal/publication-status",
+        json.dumps(response.json()),
+    )
+
+
+def test_openapi_publication_status_omits_internal_fields() -> None:
+    from app.main import create_app
+
+    schema = create_app().openapi()
+    props = schema["components"]["schemas"]["LegalPublicationStatusResponse"]["properties"]
+    for field in INTERNAL_PUBLIC_API_FIELDS:
+        assert field not in props
+    description = schema["paths"]["/api/v1/legal/publication-status"]["get"]["description"]
+    _assert_no_consumer_leaks("openapi publication-status description", description)
+    schema_description = schema["components"]["schemas"]["LegalPublicationStatusResponse"].get(
+        "description", ""
+    )
+    _assert_no_consumer_leaks("openapi LegalPublicationStatusResponse", schema_description)

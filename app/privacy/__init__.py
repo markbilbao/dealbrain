@@ -3,6 +3,7 @@
 from app.privacy.consent_audit import (
     ConsentAuditSnapshot,
     inspect_consent,
+    operator_publication_snapshot,
     publication_status_payload,
 )
 from app.privacy.inventory import (
@@ -25,5 +26,6 @@ __all__ = [
     "ConsentAuditSnapshot",
     "DeletionResult",
     "inspect_consent",
+    "operator_publication_snapshot",
     "publication_status_payload",
 ]
