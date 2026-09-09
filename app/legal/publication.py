@@ -213,9 +213,9 @@ def load_approved_public_html(
 
     This is not a generic filesystem server. Request/browser paths never reach
     this function. Configured mappings are resolved only under
-    ``docs/legal/published`` (or a test-owned root). Absolute paths, ``..``
-    traversal, counsel-draft locations, and files outside the root are
-    rejected.
+    ``docs/legal/published`` (or a test-owned root). Only ``.html`` files are
+    served. Absolute paths, ``..`` traversal, counsel-draft locations, markdown
+    READMEs, and files outside the root are rejected.
     """
     cleaned = (html_path or "").strip()
     if not cleaned:
@@ -231,6 +231,8 @@ def load_approved_public_html(
     except OSError:
         return None
     if not _is_within(resolved, root) or not resolved.is_file():
+        return None
+    if resolved.suffix.lower() != ".html":
         return None
     normalized = resolved.as_posix().lower()
     if any(fragment in normalized for fragment in _BLOCKED_PATH_FRAGMENTS):

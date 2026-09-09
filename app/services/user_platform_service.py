@@ -32,6 +32,7 @@ from app.domain.exceptions import (
     UserPlatformValidationError,
 )
 from app.domain.interfaces.user_platform_repository import ConsentRepository, SavedItemsRepository
+from app.privacy.consent_audit import ConsentAuditSnapshot, inspect_consent
 from app.privacy.lifecycle import AccountLifecycleService, DeletionResult
 from app.profile.service import ProfileService
 from app.session.service import SessionService
@@ -158,6 +159,17 @@ class UserPlatformService:
         payload = self._lifecycle.export_personal_data(user)
         self._audit.record("data_export_completed", user_id=user.user_id, detail="completed")
         return payload
+
+    def inspect_own_consents(self, access_token: str | None) -> ConsentAuditSnapshot:
+        """Return the authenticated caller's consent records. Ignores client user_id."""
+        self._require_enabled()
+        user = self.require_user(access_token)
+        return inspect_consent(
+            user_id=user.user_id,
+            catalog=self._auth.legal_catalog,
+            consents=self._consents,
+            audit=self._audit,
+        )
 
     def resolve_user_id(self, access_token: str | None) -> str | None:
         """Return user_id when authenticated, else None (anonymous fallback)."""
@@ -398,6 +410,7 @@ class UserPlatformService:
                 "POST /api/v1/auth/email-change/confirm",
                 "POST /api/v1/auth/account/delete",
                 "GET /api/v1/auth/account/export",
+                "GET /api/v1/auth/account/consents",
                 "GET /api/v1/profile",
                 "PUT /api/v1/profile",
                 "GET /api/v1/profile/preferences",

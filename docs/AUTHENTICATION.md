@@ -1,6 +1,6 @@
 # Authentication
 
-**Status:** Sprint 17 + Sprint 27.1–27.4 (reset/verify/email-change, Resend adapter, consumer UX, auth-aware header) + 2026-09-08 staging inbox E2E passed; EXT-09 Resend **Verified**; identity-email readiness gate implemented and live-staging-verified (`ready` requires verified evidence **and** usable runtime Resend config); Sprint 27 / P0-5 **COMPLETE / CLOSED** after PR #121 / Deploy Staging #32 live `/health` `identity_email_adapter=resend` / `identity_email_ready=true` on 2026-09-08. Production email attach remains Sprint 41. Sprint 28.1 (consent hooks, delete/export) remains in progress.
+**Status:** Sprint 17 + Sprint 27.1–27.4 (reset/verify/email-change, Resend adapter, consumer UX, auth-aware header) + 2026-09-08 staging inbox E2E passed; EXT-09 Resend **Verified**; identity-email readiness gate implemented and live-staging-verified (`ready` requires verified evidence **and** usable runtime Resend config); Sprint 27 / P0-5 **COMPLETE / CLOSED** after PR #121 / Deploy Staging #32 live `/health` `identity_email_adapter=resend` / `identity_email_ready=true` on 2026-09-08. Production email attach remains Sprint 41. Sprint 28 internal engineering (consent hooks, delete/export, consent/audit inspection, essential-only tracking) is complete; EXT-19/20/21/22 publication/approval remain open.
 **Service:** `AuthService` in `app/auth/service.py`
 **Password hashing:** `app/auth/password.py` (`PasswordHasher`)
 **Security hooks:** `app/auth/security.py` (rate limiting, CSRF, audit, MFA/OAuth extension points)
@@ -34,9 +34,11 @@ bootstrapped (`AuthService._bootstrap_profile`), a `SecurityEvent` is recorded,
 and a session is issued — see [Session Management](SESSION_MANAGEMENT.md).
 
 Sprint 28.1 also adds authenticated `POST /api/v1/auth/account/delete`
-(password re-auth + `confirmation=DELETE`) and `GET /api/v1/auth/account/export`.
-These cover defined account-owned engineering data only; Early Access is a
-separate relationship and this is not a complete legal DSAR.
+(password re-auth + `confirmation=DELETE`), `GET /api/v1/auth/account/export`,
+and `GET /api/v1/auth/account/consents`. These cover defined account-owned
+engineering data only; Early Access is a separate relationship and this is not
+a complete legal DSAR. Non-PII publication posture is
+`GET /api/v1/legal/publication-status`.
 See [`privacy/ACCOUNT_DELETION_PROPAGATION.md`](privacy/ACCOUNT_DELETION_PROPAGATION.md).
 
 ## Login

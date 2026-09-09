@@ -1,7 +1,7 @@
 # Engineering PII inventory (Sprint 28.1)
 
 **Status:** Engineering inventory — **not** a published Privacy Policy, **not** legal advice, **not** a completeness certification.
-**Baseline:** `origin/main` `68664c44d615fb28bb03b5a72868a977b2c5cb8f` plus Sprint 28.1 code on this branch.
+**Baseline:** `origin/main` `d5b997441e6b6e57a684980e45dc07cd94ff0e7e` plus Sprint 28 remaining internal-readiness work on this branch.
 **Counsel-owned:** statutory categories, retention exceptions, DPA roles, age rules, public legal wording.
 
 This inventory records **repository-evidenced** personal and related data. Classifications such as “essential/functional” are product-architecture labels, not legal opinions. Consumer export uses schema `piqsavi.account_owned_export.v1` and is an engineering account-owned export, not a complete legal DSAR. Staging HTTP evidence for that export/delete behavior is recorded in [`../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md`](../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md) and does not change the classifications below.
@@ -29,13 +29,15 @@ This inventory records **repository-evidenced** personal and related data. Class
 | `piqsavi_delivery` | HTTP cookie | Guest delivery city/postal for offer presentation | `city`, `postal_code`, `skipped`, `source`. No street/GPS | First-party cookie `httponly`, `samesite=lax` | Session cookie (no `max_age`) | Browser clear; `clear_delivery_cookie` | Functional |
 | `piqsavi_shopping_market` | HTTP cookie | Guest shopping-market country code | `{country_code}` only | First-party cookie `httponly`, `samesite=lax` | Session cookie (no `max_age`) | Browser clear; `clear_shopping_market_cookie` | Functional |
 
-## sessionStorage
+## sessionStorage / localStorage
 
 | Name | Type | Purpose | Data fields | Storage | TTL | Deletion | Essential/functional (product) |
 |------|------|---------|-------------|---------|-----|----------|--------------------------------|
 | `piqsavi_ask_conversation` | `sessionStorage` | Ask PiqSavi conversation continuity in the tab | `conversation_id` string | Browser `sessionStorage` | Tab/session | Tab close / user clears site data | Functional |
+| `piqsavi_access_token` | `sessionStorage` or `localStorage` | Hold the opaque bearer token on this device | Opaque access token string | `sessionStorage` by default; `localStorage` when remember-me is set | Tab/session or until sign-out / clear | Sign-out and account.js `clearToken`; not an HTTP cookie | Functional / auth device storage |
+| `piqsavi_remember_me` | `localStorage` | Remember whether this browser used remember-me | `"1"` / `"0"` | Browser `localStorage` | Until cleared | Sign-out / user clears site data | Functional |
 
-Auth uses `Authorization: Bearer`, not an auth cookie.
+Auth uses `Authorization: Bearer`, not an auth cookie. The token in web storage is first-party essential/functional device state, not a third-party analytics identifier.
 
 ## Early Access data (unresolved / separate)
 
@@ -67,6 +69,7 @@ Controller / processor / subprocessor roles are **TBD — counsel-owned**. See [
 
 ## Unresolved policy fields (not activated)
 
-- Minimum age / parental consent — counsel-owned; not coded
+- Minimum age / parental consent — counsel-owned; **not coded**; fail-closed placeholder reports `age_policy_published=false` and registration does not collect DOB
 - Marketing consent as a legal basis — not added; `newsletter` / `marketing_enabled` remain preference flags
-- Analytics / cookie CMP consent — EXT-22 `not_started`; no banner implemented
+- Analytics / cookie CMP consent — EXT-22 `not_started`; no banner; essential-only fail-closed hook in `app/privacy/tracking.py`; Sprint 39 owns activation
+- Engineering retention map — [`ENGINEERING_RETENTION.md`](ENGINEERING_RETENTION.md) (technical TTLs only; not a legal schedule)

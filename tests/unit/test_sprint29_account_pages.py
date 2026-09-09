@@ -45,14 +45,17 @@ async def test_login_and_register_forms_wire_existing_auth_apis(client: AsyncCli
     assert 'name="privacy_acknowledged"' not in register.text
     assert "I accept the Terms of Service" not in register.text
     assert "I acknowledge the Privacy Policy" not in register.text
-    assert "not published yet" in register.text
+    assert "Legal policies are not yet available for this beta." in register.text
+    assert "not published yet" not in register.text
     assert 'querySelector("[name=terms_accepted]")' in ACCOUNT_JS
     assert 'querySelector("[name=privacy_acknowledged]")' in ACCOUNT_JS
     assert "/api/v1/auth/login" in ACCOUNT_JS
     assert "/api/v1/auth/register" in ACCOUNT_JS
     assert "/api/v1/auth/account/export" in ACCOUNT_JS
     assert "/api/v1/auth/account/delete" in ACCOUNT_JS
-    assert "piqsavi.account_owned_export.v1" in (await client.get("/account")).text
+    assert "/api/v1/auth/account/consents" in ACCOUNT_JS
+    assert "piqsavi.account_owned_export.v1" not in (await client.get("/account")).text
+    assert "Your data download is ready." in ACCOUNT_JS
 
 
 @pytest.mark.asyncio
@@ -86,17 +89,21 @@ async def test_account_settings_expose_export_delete_and_sign_out(client: AsyncC
     assert 'data-account-form="delete"' in page.text
     assert "Watch is not available yet" in page.text
     assert "does not watch prices" in page.text
-    assert "complete legal DSAR" in page.text
+    assert "Your policy acknowledgements will appear here when applicable." in page.text
+    assert "complete legal DSAR" not in page.text
+    assert "vendor erasure" not in ACCOUNT_JS
 
 
 @pytest.mark.asyncio
-async def test_support_entry_is_honest_about_sprint_39(client: AsyncClient) -> None:
+async def test_support_entry_uses_provisioned_contacts_only(client: AsyncClient) -> None:
     page = await client.get("/support")
     assert "support@piqsavi.com" in page.text
     assert "privacy@piqsavi.com" in page.text
     assert "Report incorrect information" in page.text
-    assert "Sprint 39" in page.text
-    assert "does not collect a support ticket" in page.text
+    assert "Need help or want to report incorrect product information?" in page.text
+    assert "Sprint 39" not in page.text
+    assert "does not collect a support ticket" not in page.text
+    assert "legal@piqsavi.com" not in page.text
 
 
 @pytest.mark.asyncio

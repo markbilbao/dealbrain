@@ -23,6 +23,7 @@ from app.domain.exceptions import (
     UserPlatformRateLimitError,
     UserPlatformValidationError,
 )
+from app.schemas.legal import AccountConsentAuditResponse
 from app.schemas.user_platform import (
     AccountDeleteRequest,
     AccountDeleteResponse,
@@ -338,6 +339,27 @@ async def export_account(
     except (UserPlatformAuthError, UserPlatformValidationError) as exc:
         raise map_user_platform_error(exc) from exc
     return PersonalDataExportResponse.model_validate(payload)
+
+
+@router.get(
+    "/account/consents",
+    response_model=AccountConsentAuditResponse,
+    summary="List the signed-in account's policy acknowledgements",
+    description=(
+        "Always returns the authenticated caller's policy acknowledgement records. "
+        "Empty when no published policies apply."
+    ),
+)
+async def inspect_account_consents(
+    authorization: str | None = Header(default=None),
+    service: UserPlatformService = Depends(get_user_platform_service),
+) -> AccountConsentAuditResponse:
+    token = extract_bearer_token(authorization)
+    try:
+        snapshot = service.inspect_own_consents(token)
+    except (UserPlatformAuthError, UserPlatformValidationError) as exc:
+        raise map_user_platform_error(exc) from exc
+    return AccountConsentAuditResponse.model_validate(snapshot.to_dict())
 
 
 @router.get(

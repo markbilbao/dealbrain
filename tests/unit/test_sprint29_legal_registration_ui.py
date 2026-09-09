@@ -65,7 +65,9 @@ def test_unpublished_register_html_has_no_required_acceptance() -> None:
     assert "I accept the" not in html
     assert "I acknowledge the" not in html
     assert 'data-legal-unpublished="true"' in html
-    assert "not published yet" in html
+    assert "Legal policies are not yet available for this beta." in html
+    assert "No policy acceptance will be recorded until they are published." in html
+    assert "not published yet" not in html
 
 
 @pytest.mark.asyncio

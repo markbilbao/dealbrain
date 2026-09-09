@@ -18,7 +18,7 @@ No DPA status is asserted here. Legal-role questions remain **TBD**.
 | GitHub | Source / CI | Source and CI metadata, not end-user account PII by default | Engineering use | TBD — counsel-owned |
 | Analytics provider | Product analytics | None currently | EXT-15 `not_started`. **Not added in 28.1** | TBD — counsel-owned |
 | Error-tracking provider | Ops errors | None currently | EXT-16 `not_started` | TBD — counsel-owned |
-| Cookie-consent / CMP vendor | Consent UX | None currently | EXT-22 `not_started`. **Banner not implemented in 28.1** | TBD — counsel-owned |
+| Cookie-consent / CMP vendor | Consent UX | None currently | EXT-22 `not_started`. **Banner not implemented.** Essential-only fail-closed hook only; Sprint 39 owns activation | TBD — counsel-owned |
 | FX provider | FX quotes | None currently | EXT-23 `not_started` | TBD — counsel-owned |
 | Merchant / affiliate platforms (Shopee, Lazada, TikTok Shop, Amazon, Temu, Involve Asia, …) | Product data / affiliate | Not live certified | EXT-01 `applied` (2026-09-08 PH product-data requests; not approved); EXT-02…05 `n_a_beta`; 28.1 does **not** modify affiliate routing | TBD — counsel-owned |
 | Legal counsel (Pauline Anne Sambuang) | Consumer legal review engagement | Engagement materials | EXT-19 `applied`; written approval **not** present | N/A |
@@ -27,4 +27,4 @@ No DPA status is asserted here. Legal-role questions remain **TBD**.
 
 - Resend is now **integrated as an adapter** (Sprint 27.1). Staging inbox E2E passed 2026-09-08. EXT-09 Resend domain **Verified** is recorded. This inventory does **not** claim production sender cutover.
 - First-party consumer cookies/storage listed in [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) now exist; they are not third-party processors.
-- No analytics, advertising pixels, or CMP vendor was added in Sprint 28.1.
+- No analytics, advertising pixels, or CMP vendor was added. Non-essential tracking remains denied.

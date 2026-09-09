@@ -13,6 +13,10 @@ PUBLIC_BRAND = "PiqSavi"
 PUBLIC_TAGLINE = "Your AI Personal Shopper"
 INTERNAL_CODENAME = "DealBrain"
 
+# Provisioned public identities (EXT-17 / EXT-18). Do not invent extra mailboxes.
+PUBLIC_SUPPORT_EMAIL = "support@piqsavi.com"
+PUBLIC_PRIVACY_EMAIL = "privacy@piqsavi.com"
+
 PUBLIC_SCORE_NAME = "PiqScore"
 INTERNAL_SCORE_NAME = "DealScore"
 PUBLIC_PERSONAL_SCORE_LABEL = "Personalized PiqScore"

@@ -364,10 +364,7 @@ function bindForms() {
             return;
           }
           await clearLocalAuth();
-          setStatus(
-            `Account deleted. Sessions revoked: ${payload.sessions_revoked ?? 0}. This does not certify backup, log, or vendor erasure.`,
-            "delete",
-          );
+          setStatus("Your account has been deleted. You've been signed out on all devices.", "delete");
           window.setTimeout(() => window.location.assign("/login"), 1200);
         }
       } catch {
@@ -444,6 +441,10 @@ function applyAccountPageSession(session) {
 async function loadAccount() {
   const session = await resolveAuthSession();
   applyAccountPageSession(session);
+  const consentList = qs("[data-consent-records]");
+  if (session.ok && consentList) {
+    await loadConsentAudit(consentList);
+  }
 }
 
 async function signOutCurrentDevice(redirectTo) {
@@ -478,11 +479,35 @@ function bindActions() {
     link.download = "piqsavi-account-export.json";
     link.click();
     URL.revokeObjectURL(url);
-    setStatus(
-      `Export downloaded (${payload.export_schema || "unknown schema"}). This is an engineering export, not a complete legal DSAR.`,
-      "export",
-    );
+    setStatus("Your data download is ready.", "export");
   });
+}
+
+async function loadConsentAudit(listNode) {
+  const unpublished = qs("[data-consent-unpublished]");
+  setStatus("Loading policy acknowledgements…", "consent");
+  const { response, payload } = await api("/api/v1/auth/account/consents");
+  if (!response.ok) {
+    setStatus(apiError(payload, "Could not load policy acknowledgements."), "consent");
+    return;
+  }
+  const records = Array.isArray(payload.records) ? payload.records : [];
+  listNode.replaceChildren();
+  if (unpublished) unpublished.hidden = !payload.unpublished && records.length === 0;
+  if (!records.length) {
+    if (unpublished) unpublished.hidden = false;
+    setStatus("There are no policy acknowledgements recorded for this account yet.", "consent");
+    return;
+  }
+  records.forEach((record) => {
+    const item = document.createElement("li");
+    const policy = String(record.policy_type || "policy");
+    const version = String(record.version_id || "unknown");
+    const accepted = String(record.accepted_at || "");
+    item.textContent = `${policy} ${version}${accepted ? ` accepted ${accepted}` : ""}`;
+    listNode.appendChild(item);
+  });
+  setStatus(`${records.length} policy-acceptance record(s) for this account.`, "consent");
 }
 
 bindIdentityToken();

@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     health,
     intelligence,
     launch,
+    legal,
     marketplace,
     marketplace_data,
     merchant,
@@ -73,6 +74,7 @@ api_v1_router.include_router(community.router, tags=["community"])
 api_v1_router.include_router(graph.router, tags=["knowledge-graph"])
 api_v1_router.include_router(personal.router, tags=["personal-agent"])
 api_v1_router.include_router(early_access.router)
+api_v1_router.include_router(legal.router, tags=["legal-publication"])
 api_v1_router.include_router(auth.router, tags=["user-platform-auth"])
 api_v1_router.include_router(profile.router, tags=["user-platform-profile"])
 api_v1_router.include_router(user.router, tags=["user-platform-saved-items"])

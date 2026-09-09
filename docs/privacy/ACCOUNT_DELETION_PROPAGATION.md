@@ -58,3 +58,11 @@ Exact response deadlines, statutory retention exceptions, whether `privacy@piqsa
 Sanitized HTTP evidence against deployed SHA `ec7dd1dc3ecf788c191f3fa4d406962f1d7aa977` (Deploy Staging #26): [`../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md`](../roadmap/evidence/SPRINT_28_2_STAGING_EXPORT_DELETION_EVIDENCE.md).
 
 That run confirmed export schema `piqsavi.account_owned_export.v1`, password + `DELETE` re-auth, server-derived target identity, two-session revocation, other-user isolation, and Early Access non-deletion for a matching synthetic email. It does **not** upgrade the retained/unresolved rows above. Reset / verify / email-change **row** deletion was not independently inspected in staging RDS.
+
+## Engineering retention map
+
+Technical TTLs vs counsel-owned legal retention: [`ENGINEERING_RETENTION.md`](ENGINEERING_RETENTION.md).
+
+## Consent / audit inspection
+
+Owner-scoped `GET /api/v1/auth/account/consents` and `GET /api/v1/legal/publication-status` exist. Records stay empty until a published policy version exists. Operator runbook: [`../runbooks/CONSENT_AUDIT_INSPECTION.md`](../runbooks/CONSENT_AUDIT_INSPECTION.md). Staging execution after publication uses [`../roadmap/evidence/SPRINT_28_CONSENT_AUDIT_STAGING_TEMPLATE.md`](../roadmap/evidence/SPRINT_28_CONSENT_AUDIT_STAGING_TEMPLATE.md).

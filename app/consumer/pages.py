@@ -25,6 +25,7 @@ from app.consumer.html import (
 )
 from app.consumer.pricing import format_money
 from app.consumer.view_models import DecisionPageView, ProductCardView
+from app.privacy.tracking import HTML_TRACKING_MODE_ATTR
 
 
 def _offer_link(url: str, css: str) -> str:
@@ -100,7 +101,8 @@ def _document(view: DecisionPageView, main: str) -> str:
         data-connector-invocation-eligible="{"true" if view.connector_invocation_eligible else "false"}"
         data-preferred-display-currency="{h(view.preferred_display_currency)}"
         data-currency-conversion-state="{h(view.currency_conversion_state)}"
-        data-source-currencies="{h(",".join(view.source_currencies))}">
+        data-source-currencies="{h(",".join(view.source_currencies))}"
+        data-tracking-mode="{h(HTML_TRACKING_MODE_ATTR)}">
     <a class="skip-link" href="#main">Skip to content</a>
     {_site_header(view)}
     <main id="main">

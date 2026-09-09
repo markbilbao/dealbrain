@@ -138,6 +138,10 @@ class AuthService:
         self._remember_ttl = remember_me_ttl_seconds
         self._enabled = enabled
 
+    @property
+    def legal_catalog(self) -> LegalPublicationCatalog:
+        return self._legal_catalog
+
     def _require_enabled(self) -> None:
         if not self._enabled:
             raise UserPlatformValidationError("User platform authentication is disabled.")
