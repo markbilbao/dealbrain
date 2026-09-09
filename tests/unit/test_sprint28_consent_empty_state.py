@@ -24,8 +24,16 @@ def _load_consent_audit_source(source: str = ACCOUNT_JS) -> str:
 
 def _empty_record_branch(fn: str) -> str:
     start = fn.index("if (!records.length)")
-    end = fn.index("records.forEach", start)
-    return fn[start:end]
+    brace = fn.index("{", start)
+    depth = 0
+    for index, char in enumerate(fn[brace:], start=brace):
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return fn[start : index + 1]
+    raise AssertionError("unterminated empty-record branch")
 
 
 class _ConsentSurface(HTMLParser):
