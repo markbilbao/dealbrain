@@ -98,17 +98,17 @@ This inventory records every material Global Public Beta requirement and its cov
 | Auth rate limiting | `implemented_verified` | Per-process buckets | 22 |
 | Account enumeration protection | `planned_underspecified` | Needs hardening review | 40 |
 | Brute-force / credential-stuffing protection | `planned_underspecified` | Rate limit only; no lockout/bot | 40 |
-| Terms of Service | `implemented_needs_staging_proof` | Publication gate exists; production unpublished; counsel draft not served | 28 |
-| Privacy Policy | `implemented_needs_staging_proof` | Publication gate exists; production unpublished; counsel draft not served | 28 |
+| Terms of Service | `implemented_needs_staging_proof` | Publication gate exists; 2026-09-10 owner verified live `/terms` remains 404; production unpublished; counsel draft not served | 28 |
+| Privacy Policy | `implemented_needs_staging_proof` | Publication gate exists; 2026-09-10 owner verified live `/privacy` remains 404; production unpublished; counsel draft not served | 28 |
 | Cookie/tracking disclosure | `implemented_needs_staging_proof` | Factual cookie/storage inventory refreshed including account web-storage; counsel draft unpublished; no CMP banner; essential-only fail-closed hook | 28 |
 | Analytics consent | `missing_from_roadmap` | Essential-only deny-by-default hook in Sprint 28; provider/CMP activation remains Sprint 39 / EXT-22 | 28 / 39 |
-| Registration consent records | `implemented_needs_staging_proof` | Persist only when a published version exists; unpublished register stores none; owner-scoped inspection API exists | 28 |
+| Registration consent records | `implemented_needs_staging_proof` | Persist only when a published version exists; unpublished register stores none; owner-scoped inspection API exists; 2026-09-10 owner verified `/account#consents` empty state | 28 |
 | Policy-version acceptance records | `implemented_needs_staging_proof` | Server-owned version + timestamp; production catalog empty | 28 |
 | Account deletion + confirmation + propagation | `implemented_needs_staging_proof` | Authenticated delete + password re-auth; 28.2 staging HTTP evidence recorded | 28 |
 | Data export | `implemented_needs_staging_proof` | Authenticated JSON export; 28.2 staging HTTP evidence recorded | 28 |
 | Data retention policy | `implemented_needs_staging_proof` | Engineering TTL map exists; legal retention periods remain counsel-owned; no legal purge jobs | 28 |
 | PII inventory | `implemented_needs_staging_proof` | Engineering inventory for current main; not a legal DPA | 28 |
-| Privacy / support contact | `implemented_needs_staging_proof` | EXT-17/18 provisioned; `/support` wires `support@piqsavi.com` and `privacy@piqsavi.com`; public policy publication still EXT-20/21 | 28 / 39 |
+| Privacy / support contact | `implemented_needs_staging_proof` | EXT-17/18 provisioned; `/support` wires `support@piqsavi.com` and `privacy@piqsavi.com`; 2026-09-10 owner verified live Support page; public policy publication still EXT-20/21 | 28 / 39 |
 | Minimum age policy | `implemented_needs_staging_proof` | Fail-closed placeholder; no invented age; no DOB collection; counsel-owned activation | 28 |
 | Country-specific notices | `implemented_needs_staging_proof` | Fail-closed empty catalog; substantive notices remain counsel / Sprint 37 | 28 / 37 |
 | Legal review and approval | `externally_blocked` | Counsel | 28 / 44 |
@@ -646,3 +646,23 @@ This addendum does **not** rewrite earlier snapshots. It records remaining inter
 | EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` 404 |
 | EXT-22 | Unchanged: `not_started` — no CMP/banner |
 | Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md) |
+
+---
+
+## 2026-09-10 Sprint 28 internal staging verification addendum
+
+This addendum does **not** rewrite earlier snapshots. It records owner-observed browser verification of the fail-closed legal/privacy state on live staging after PR #125 / Deploy Staging #34. It does **not** publish counsel drafts and does **not** close P0-4.
+
+| Field | Value |
+|-------|-------|
+| Sprint 28 | **INTERNAL ENGINEERING + STAGING VERIFICATION COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN.** Not COMPLETE/CLOSED. |
+| Deployed SHA | `fc8be5fe2abb0c73e5db7389ce41c4d348f4ffa0` (PR #125) |
+| Build Image | #106 / run `34431847533` SUCCESS; release `rel-20260910T030346Z-fc8be5fe2abb`; digest `sha256:7fadbea3c41fce984bb430bf18b320fd15eacedff10a6e212e72b1af2ea58534`; manifest `e57d424b9b8c0c50976fdac56fe9064e81e33634ce4e56ae6edf332094f71450` |
+| Staging deploy | Deploy Staging #34 / run `34432570543` SUCCESS; host `status=staging_ok`; evidence SHA-256 `7165c1ca36d3fd902d44a31ed7378aca1841105dadd6c9fb9199b957eb0b8365` |
+| Owner browser checks | 2026-09-10 on `https://staging.piqsavi.com`: `/health` fail-closed unpublished/essential-only; `/privacy` and `/terms` HTTP 404 with no counsel draft served; publication-status unpublished/privacy-safe and free of Sprint/EXT/counsel internals; `/support` exposes only `support@piqsavi.com` and `privacy@piqsavi.com`; signed-in `/account#consents` shows zero acknowledgements and the consumer empty state once |
+| 28.1 / 28.2 | Unchanged: engineering foundations + staging export/delete HTTP evidence |
+| EXT-17 / EXT-18 | Unchanged: `provisioned` |
+| EXT-19 | Unchanged: `applied` — written approval not present |
+| EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` remain 404 |
+| EXT-22 | Unchanged: `not_started` — no CMP/banner |
+| Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md); [`evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md`](evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md) |
