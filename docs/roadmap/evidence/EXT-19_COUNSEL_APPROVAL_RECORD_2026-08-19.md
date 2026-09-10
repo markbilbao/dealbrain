@@ -1,10 +1,10 @@
 # EXT-19 — Comprehensive Legal Document Review & Approval Record
 
-**Document type:** Sanitized engineering / external-dependency evidence  
-**Purpose:** Record the signed counsel review facts needed to reconcile Early Access legal readiness  
-**Date recorded:** 2026-09-10  
-**Counsel-review date:** 2026-08-19  
-**Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)  
+**Document type:** Sanitized engineering / external-dependency evidence
+**Purpose:** Record the signed counsel review facts needed to reconcile Early Access legal readiness
+**Date recorded:** 2026-09-10
+**Counsel-review date:** 2026-08-19
+**Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)
 **Related:** [`EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md) · [`../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md)
 
 **Source of this sanitized record:** owner-supplied signed counsel record, verified outside repository.
@@ -46,8 +46,8 @@ Counsel identity is recorded only because the existing EXT-19 convention already
 | Documents reviewed | All eight prepared legal documents |
 | Overall Early Access / public-beta legal status | Counsel-cleared to proceed **only after** specified revisions / implementation conditions are completed |
 
-This is **not** unconditional approval.  
-This is **not** unrestricted public launch approval.  
+This is **not** unconditional approval.
+This is **not** unrestricted public launch approval.
 This is **not** written approval of published consumer Privacy / Terms versions.
 
 ---

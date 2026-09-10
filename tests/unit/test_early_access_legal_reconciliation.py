@@ -14,9 +14,9 @@ from fastapi.testclient import TestClient
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = (ROOT / "docs/roadmap/EXTERNAL_DEPENDENCY_REGISTER.md").read_text(encoding="utf-8")
-EVIDENCE = (
-    ROOT / "docs/roadmap/evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md"
-).read_text(encoding="utf-8")
+EVIDENCE = (ROOT / "docs/roadmap/evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md").read_text(
+    encoding="utf-8"
+)
 READINESS = (
     ROOT
     / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md"

@@ -1,8 +1,8 @@
 # Early Access — legal reconciliation and production launch readiness
 
-**Date recorded:** 2026-09-10  
-**Audited `origin/main` SHA:** `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd`  
-**Scope:** Early Access acquisition / signup surface only  
+**Date recorded:** 2026-09-10
+**Audited `origin/main` SHA:** `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd`
+**Scope:** Early Access acquisition / signup surface only
 **Not in scope:** public shopping beta, Sprint 32 merchant certification, Shopee/Lazada integration, BuyWhere, live merchant/product research, Sprints 31–38 live research execution, affiliate monetization, public shopping Results launch
 
 **Authority:** [`EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md) · [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md) · [`../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md)
@@ -78,7 +78,7 @@ The External Dependency Register closed status set is:
 
 `not_started` | `applied` | `approved` | `provisioned` | `blocked` | `n_a_beta`
 
-There is **no** existing status for “written conditional approval.”  
+There is **no** existing status for “written conditional approval.”
 `approved` is reserved for access granted / published-scope written approval and is explicitly forbidden for a conditional “proceed after revisions” review.
 
 Closest truthful existing status: **`applied`**.
