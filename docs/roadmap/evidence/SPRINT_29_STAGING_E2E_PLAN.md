@@ -13,8 +13,9 @@
 | Sprint 29 merged closeout | PR #111 merged to `main` at `a8bd001` |
 | Sprint 29 staging E2E package | [`SPRINT_29_STAGING_CC01_EVIDENCE.md`](SPRINT_29_STAGING_CC01_EVIDENCE.md) — **partial**; live research still Sprint 38 |
 | Sprint 28.2 export/delete HTTP | re-proven on Deploy #27 with synthetic `@example.invalid` accounts |
-| Identity email adapter on that host | not claimed ready; reset/verify pages do not display demo tokens |
+| Identity email adapter on that host | Sprint 27 is now COMPLETE / CLOSED. Reset/verify pages still must not display demo tokens. Inbox readiness on a later Sprint 29 digest must be re-observed, not inferred from Sprint 27 Deploy #32. |
 | `/privacy` `/terms` | 404 |
+| Current remaining-closeout audit | [`SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) — current `main` `6666bb26` is newer than this staging package |
 
 ## Preconditions
 
@@ -44,7 +45,7 @@
 | Item | Owner |
 |---|---|
 | Live research execution / updated Results | Sprint 38 |
-| Real inbox reset/verify | Sprint 27 |
+| Real inbox reset/verify on a later Sprint 29 digest | Re-observe after Deploy Staging of the merged SHA. Sprint 27 itself is COMPLETE / CLOSED. |
 | Published Privacy/Terms | Sprint 28 / 44 / 45 |
 | Support ticket backend | Sprint 39 |
 | Search Console | Sprint 39 / 45 |

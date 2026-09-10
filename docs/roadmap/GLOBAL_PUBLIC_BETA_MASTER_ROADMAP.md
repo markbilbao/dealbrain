@@ -380,9 +380,10 @@ Sprint 29 is **no longer adequately described** as only “Production Consumer W
 | 29.4C `propose_research` | **merged** | Proposal + confirmation only; research execution remains unimplemented and owned by Sprints 31–38 |
 | Research Authorization / Execution Handoff Contract | **merged** | Server-authoritative confirmation artifact; Sprint 31 planning is separate; live research execution remains unimplemented and owned by Sprints 31–38 |
 | Live research execution | **not owned here** | Sprints 31–38 |
-| Full CC-01 staging proof on frozen launch candidate | **pending** | Required for EC-02 / EC-22 |
+| Remaining internal consumer/conversational contract | **documented 2026-09-10** | Current-`main` audit baseline `6666bb26`; verdict **INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT**. Evidence: [`evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) |
+| Full CC-01 staging proof on frozen launch candidate | **pending** | Required for EC-02 / EC-22. Last packaged Sprint 29 staging E2E is partial on `a8bd001`. |
 
-**Do not** mark Sprint 29 closed. Product Foundation and canonical presentation work do not certify live merchant research.
+**Do not** mark Sprint 29 closed. Internal contract completeness does not certify live merchant research, MarketContext policy, support backends, visual sign-off, or the immutable launch-candidate CC-01 journey.
 
 **Frontend architecture lock (reconcile stale wording):** production consumer frontend remains FastAPI-served semantic HTML, shared CSS, and native vanilla-JavaScript ES modules. Mandatory React, Next.js, Vite, TypeScript production build, SPA architecture, or Node production build is **not** required unless independently approved later.
 
@@ -688,8 +689,8 @@ Mock remains non-production only.
 | Auth register/login/logout | Yes | Yes | Yes (`79bd03f` Sprint 26 tech evidence; Sprint 26 COMPLETE / CLOSED 2026-09-08) | Pending (41/45) | Pending (44) |
 | Password reset / email verify | Partial | Partial | Pending (27) | Pending (41) | Pending (44) |
 | Privacy/deletion/legal | Internal engineering | Tests | 28.2 delete/export HTTP; 2026-09-10 fail-closed owner browser verification; publication pending | Pending (45) | Pending (44) |
-| Consumer decision web UI (Product Foundation) | Yes (merged) | Yes (merged suite) | Pending (29 staging journey on later candidate) | Pending (45) | Pending (44) |
-| Conversational Continuity / Ask PiqSavi | Partial (29.0–29.4C merged) | Partial | Pending (29; support 31/37/38/39/40/43) | Pending (44/45) | Pending (45 via CC-01) |
+| Consumer decision web UI (Product Foundation) | Yes (merged) | Yes (merged suite) | Partial (`a8bd001`); current-main re-proof pending | Pending (45) | Pending (44) |
+| Conversational Continuity / Ask PiqSavi | Yes (Sprint 29 contract); live execution later | Yes (29 CC suites) | Partial (`a8bd001`; current-main re-proof pending) | Pending (44/45) | Pending (45 via CC-01) |
 | Canonical snapshots / economics / presentation contract | Yes (merged through schema 1.2) | Yes | Pending on launch candidate | Pending (45) | Pending (44) |
 | Live owner-bound decision creation | No | No | Pending (29/31/38) | Pending (44/45) | Pending (45) |
 | DealScore / Recommendation | Yes | Yes | Yes (26 tech evidence; mocked-data disclosure observed) | Pending (45) | Certify (44) |
@@ -985,7 +986,7 @@ Historical 2026-08-25 snapshot after PR #96: Sprint 31 closure evidence implemen
 
 ### Strict gates (cannot be skipped)
 
-1. **Finish remaining Sprint 29 launch proof** — CC-01 staging E2E on the frozen candidate; SEO technical foundation; persistent Ask lock. 29.4B and 29.4C contracts are merged; live research remains later.
+1. **Sprint 29 remaining launch proof** — internal consumer/conversational contract is complete on current `main`. Remaining Sprint 29 launch proof is the frozen-candidate CC-01 staging journey after live research exists. SEO technical foundation and persistent Ask are merged. Live research remains Sprints 31–38. Sprint 29 is **not** closed.
 2. **Sprint 26** — **COMPLETE / CLOSED** (2026-09-08). EXT-01 PH product-data access application/request is `applied`. EXT-02…05 and EXT-07 do not block Sprint 26 close. Later SHAs still need their own staging proof before launch (EC-01). Sprint 32 still requires a certified PH product-data path.
 3. **Sprint 27** — **COMPLETE / CLOSED.** Real transactional email, sender auth, verify/reset/email-change, token lifecycle, enumeration-safe errors, session rotation, staging E2E, production cutover **path** recorded. Staging inbox E2E and EXT-09 Resend **Verified** passed 2026-09-08. PR #121 merged the readiness gate at `a5468ecf65be40bb36a053a97869cec97e3a529c`; Deploy Staging #32 succeeded; live `/health` reported `identity_email_adapter=resend` / `identity_email_ready=true`. Production `RESEND_API_KEY` attach and production email live remain Sprint 41.
 4. **Sprint 28** — INTERNAL ENGINEERING + STAGING VERIFICATION COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN. ToS/Privacy/cookie/consent/deletion/export/retention/PII/vendor register/contacts/age-notice placeholders; search-index privacy; counsel package; consent/audit inspection. 2026-09-10 owner browser verification recorded for deployed SHA `fc8be5fe2abb0c73e5db7389ce41c4d348f4ffa0`. Final publication/approval in 44/45. Not COMPLETE/CLOSED.

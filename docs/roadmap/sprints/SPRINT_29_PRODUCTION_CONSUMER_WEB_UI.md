@@ -2,11 +2,11 @@
 
 **Filename retained** for link stability: `SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`
 
-**Status:** In progress — 29.0–29.4B, Product Foundation, economics, UUID presentation, and schema 1.2 are **merged**. Phase 29.4C `propose_research` is **implemented**. The Research Authorization / Execution Handoff Contract is **implemented**; research execution remains unimplemented and owned by Sprints 31–38. Staging E2E on Deploy Staging #27 (`a8bd001`) is **partial** — live research remains later. Sprint 29 is **not closed**.
+**Status:** **SPRINT 29 INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT.** 29.0–29.4C, Product Foundation, economics, UUID presentation, schema 1.2, research authorization handoff, account/auth/export/delete UI, market-selection shell, SEO foundation, and consumer a11y engineering are **merged**. Remaining acceptance that needs live research, MarketContext policy, support backends, visual sign-off, or the immutable launch-candidate journey is **dependent**, not missing Sprint 29 contract code. Staging E2E on Deploy Staging #27 (`a8bd001`) remains **partial** and older than current `main`. Sprint 29 is **not** COMPLETE/CLOSED.
 **Primary owner / domain:** Frontend / product / conversational continuity
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-6 (public UX); CC-01; persistent Ask; SEO technical foundation
-**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). This is not the final launch candidate and does not prove live merchant research.
+**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). Historical schema 1.2 suite evidence only. Current remaining-closeout audit baseline is `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd`. Neither SHA is the final launch candidate, and neither proves live merchant research.
 
 ## Objective
 
@@ -37,6 +37,7 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | SEO technical foundation | implemented | `robots.txt`, `sitemap.xml`, canonical/JSON-LD on public landing, staging noindex, UUID/account noindex. Search Console remains Sprint 39/45. Staging noindex re-proven on Deploy #27. |
 | Consumer a11y closeout slice | implemented | Escape/close, focus trap/restore, `aria-live`, safe-area, keyboard-open dock. Browser matrix recorded; not a signed a11y audit. Live HTML/CSS/JS locks verified on staging; not a third-party cert. |
 | Full CC-01 staging E2E on current-main | partial | Deploy Staging #27 proved SHA `a8bd001`. Package: `docs/roadmap/evidence/SPRINT_29_STAGING_CC01_EVIDENCE.md`. Live research / canonical UUID creation remain Sprint 38. |
+| Remaining internal closeout audit | documented | [`../evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](../evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) — no additional consumer feature invented; 29.0 freeze preserved; live research not claimed. |
 
 **Truthfulness rules already locked for presentation:**
 
