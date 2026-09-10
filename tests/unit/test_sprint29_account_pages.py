@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from app.privacy.consent_audit import CONSUMER_EMPTY_NOTE
 from httpx import AsyncClient
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -90,6 +91,9 @@ async def test_account_settings_expose_export_delete_and_sign_out(client: AsyncC
     assert "Watch is not available yet" in page.text
     assert "does not watch prices" in page.text
     assert "Your policy acknowledgements will appear here when applicable." in page.text
+    assert page.text.count(CONSUMER_EMPTY_NOTE) == 1
+    assert CONSUMER_EMPTY_NOTE not in ACCOUNT_JS
+    assert 'setStatus("", "consent")' in ACCOUNT_JS
     assert "complete legal DSAR" not in page.text
     assert "vendor erasure" not in ACCOUNT_JS
 
