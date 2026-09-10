@@ -666,3 +666,19 @@ This addendum does **not** rewrite earlier snapshots. It records owner-observed 
 | EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` remain 404 |
 | EXT-22 | Unchanged: `not_started` — no CMP/banner |
 | Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md); [`evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md`](evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md) |
+
+---
+
+## 2026-09-10 Sprint 29 remaining internal closeout addendum
+
+This addendum does **not** rewrite the 2026-08-06 §A snapshot. It records the current-`main` Sprint 29 remaining-closeout audit. It does **not** close Sprint 29 and does **not** claim live merchant research.
+
+| Field | Value |
+|-------|-------|
+| Audit baseline | `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd` |
+| Sprint 29 | **INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT.** Not COMPLETE/CLOSED. |
+| §A historical rows | “Only `demo.html` / UI pending / no a11y program” remain historical 2026-08-06 wording. Current consumer surfaces live under `app/consumer/` and `app/static/consumer/` |
+| Internally complete | 29.0–29.4C, Product Foundation, economics, UUID presentation, schema 1.2, research authorization handoff, account/auth/export/delete UI, market shell, SEO foundation, a11y engineering, guest continuity/claim, public brand, ≥20 CC tests |
+| Still dependent | Live research / updated Results (31–38); MarketContext policy (37); support/analytics backends (39); visual pixel sign-off (44); immutable-candidate CC-01 journey (45) |
+| Staging | Last packaged Sprint 29 E2E is **partial** on Deploy Staging #27 / SHA `a8bd001`. Current `main` needs its own later deploy to refresh non-live journey evidence |
+| Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) |

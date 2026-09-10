@@ -68,3 +68,9 @@ This audit was produced by reading the locked sprint definition against the live
 - Support ticket backend (Sprint 39)
 - Security program (Sprint 40)
 - New frontend framework
+
+---
+
+## 2026-09-10 remaining-closeout pointer
+
+This 2026-09-05 audit remains valid for SHA `a8bd001`. Current `origin/main` at the later remaining-closeout audit is `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd`. Successor status and matrix: [`SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md). The Phase 29.0 `planned_not_implemented` freeze is unchanged and must not be read as current implementation status.
