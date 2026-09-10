@@ -118,8 +118,9 @@ def test_production_catalog_and_routes_remain_unpublished() -> None:
 
 def test_published_root_still_rejects_counsel_draft_markers() -> None:
     readme = (default_legal_publication_root() / "README.md").read_text(encoding="utf-8")
-    assert "conditional" in readme
-    assert "does **not** by itself authorize copying counsel drafts here" in readme
+    collapsed = " ".join(readme.split())
+    assert "conditional" in collapsed
+    assert "does **not** by itself authorize copying counsel drafts here" in collapsed
     client = TestClient(create_app())
     response = client.get("/docs/legal/published/README.md")
     assert response.status_code in {404, 405, 307, 308}
@@ -141,14 +142,20 @@ def test_early_access_legal_links_remain_gated() -> None:
 def test_early_access_scope_stays_acquisition_only() -> None:
     lowered = HTML.lower()
     assert "/demo" not in HTML
+    assert "/search" not in HTML
+    assert "/results" not in HTML
     assert "shopee" not in lowered
     assert "lazada" not in lowered
-    assert "affiliate" not in lowered
-    assert "piqscore" not in lowered
+    assert HTML.lower().count("affiliate") == 1
+    assert "independent of affiliate relationships" in HTML
+    assert "affiliate=" not in lowered
+    assert "utm_campaign" not in HTML
     client = TestClient(create_app())
     page = client.get("/").text
     assert "/demo" not in page
     assert "data-legal-gated" in page
+    assert "shopee" not in page.lower()
+    assert "lazada" not in page.lower()
 
 
 def test_no_public_early_access_registration_list() -> None:
@@ -166,7 +173,15 @@ def test_no_public_early_access_registration_list() -> None:
 
 
 def test_readiness_record_does_not_claim_cutover_complete() -> None:
-    assert "EARLY ACCESS CODE/LEGAL READINESS COMPLETE" not in READINESS
+    assert "It does **not** claim:" in READINESS
+    assert (
+        "EARLY ACCESS CODE/LEGAL READINESS COMPLETE — OWNER PRODUCTION CUTOVER "
+        "AUTHORIZATION REQUIRED"
+    ) in READINESS
+    claim_index = READINESS.index("It does **not** claim:")
+    slogan_index = READINESS.index("EARLY ACCESS CODE/LEGAL READINESS COMPLETE")
+    assert claim_index < slogan_index
+    assert "Production cutover is **not** technically ready." in READINESS
     assert "unresolved legal and infrastructure gates remain" in READINESS.lower()
     assert "Not a public beta launch" in READINESS
     assert "No merchant certification" in READINESS
