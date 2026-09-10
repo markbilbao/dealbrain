@@ -17,7 +17,7 @@
 | Cookie CMP / analytics activation (EXT-22) | **Open** — `not_started`; owned with Sprint 39 for activation |
 | Production launch acceptance | Sprint 44/45 |
 
-Do **not** treat internal engineering complete as legal compliance, publication, or P0-4 launch closure.
+Do **not** treat internal engineering complete or 2026-09-10 staging verification as legal compliance, publication, or P0-4 launch closure.
 
 ## 28.1 record (owner slice)
 
