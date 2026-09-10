@@ -7,6 +7,15 @@ from pathlib import Path
 import pytest
 from httpx import AsyncClient
 
+from tests.unit.test_phase_29_4b_refine_session_recommendation import (
+    DECISION_ID,
+    _owner,
+)
+from tests.unit.test_phase_29_4b_refine_session_recommendation import (
+    _service as refine_service,
+)
+from tests.unit.test_phase_29_4c_propose_research import _service as propose_service
+
 ROOT = Path(__file__).resolve().parents[2]
 CONSUMER_JS = (ROOT / "app/static/consumer/js/consumer.js").read_text(encoding="utf-8")
 ACCOUNT_JS = (ROOT / "app/static/consumer/js/account.js").read_text(encoding="utf-8")
@@ -45,13 +54,6 @@ def test_conversational_actions_remain_affiliate_neutral() -> None:
         assert '"affiliate_influence": False' in source
         assert '"affiliate_influence": True' not in source
         assert "commission_influenced" not in source
-
-    from tests.unit.test_phase_29_4b_refine_session_recommendation import (
-        DECISION_ID,
-        _owner,
-        _service as refine_service,
-    )
-    from tests.unit.test_phase_29_4c_propose_research import _service as propose_service
 
     refine, _, _, refine_snapshot = refine_service()
     refined = refine.refine(
