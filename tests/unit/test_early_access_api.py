@@ -38,6 +38,7 @@ def _payload(**overrides: object) -> dict[str, object]:
         "email": "ada@example.com",
         "country": "PH",
         "shopping_interest": "phones",
+        "policies_acknowledged": True,
     }
     body.update(overrides)
     return body

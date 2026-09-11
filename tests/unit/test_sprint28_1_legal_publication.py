@@ -25,17 +25,19 @@ PRIVACY_DRAFT = ROOT / "docs/legal/PIQSAVI_PRIVACY_POLICY_COUNSEL_DRAFT.md"
 TERMS_DRAFT = ROOT / "docs/legal/PIQSAVI_TERMS_OF_SERVICE_COUNSEL_DRAFT.md"
 
 
-def test_production_catalog_has_no_published_versions() -> None:
-    from app.core.config import Settings
-
-    catalog = catalog_from_settings(Settings())
+def test_empty_settings_catalog_has_no_published_versions() -> None:
+    catalog = catalog_from_settings(_MappedSettings())
     assert catalog.published("terms") is None
     assert catalog.published("privacy") is None
     assert unpublished_catalog().published("terms") is None
 
 
 def test_privacy_and_terms_are_404_when_unpublished() -> None:
-    client = TestClient(create_app())
+    from app.core.dependencies import get_legal_publication_catalog
+
+    app = create_app()
+    app.dependency_overrides[get_legal_publication_catalog] = unpublished_catalog
+    client = TestClient(app)
     privacy = client.get("/privacy")
     terms = client.get("/terms")
     assert privacy.status_code == 404
@@ -44,6 +46,7 @@ def test_privacy_and_terms_are_404_when_unpublished() -> None:
         for marker in COUNSEL_DRAFT_CONTENT_MARKERS:
             assert marker not in body
         assert "[COUNSEL TO CONFIRM]" not in body
+    app.dependency_overrides.clear()
 
 
 def test_counsel_draft_files_are_not_publicly_routed() -> None:

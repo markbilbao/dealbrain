@@ -80,7 +80,7 @@ def test_exactly_approved_form_fields() -> None:
 def test_privacy_and_terms_footer_links() -> None:
     assert 'href="/privacy"' in HTML
     assert 'href="/terms"' in HTML
-    assert "data-legal-gated" in HTML
+    assert "data-legal-gated" not in HTML
 
 
 def test_no_pricing_merchant_logos_or_fake_social_proof() -> None:
@@ -165,6 +165,8 @@ def test_field_error_describedby_and_live_regions() -> None:
     assert 'aria-describedby="err-email"' in HTML
     assert 'id="ea-country"' in HTML
     assert 'aria-describedby="err-country"' in HTML
+    assert 'id="ea-policies-acknowledged"' in HTML
+    assert 'aria-describedby="err-policies-acknowledged"' in HTML
     assert 'id="ea-interest"' in HTML
     interest_block = HTML.split('id="ea-interest"', 1)[1].split("</div>", 1)[0]
     assert "aria-describedby" not in interest_block
@@ -260,8 +262,9 @@ def test_locked_landing_architecture() -> None:
     assert "search" not in HTML.lower()
     assert 'href="/privacy"' in HTML
     assert 'href="/terms"' in HTML
-    assert 'data-legal-gated="true"' in HTML
-    assert 'aria-disabled="true"' in HTML
+    assert "data-legal-gated" not in HTML
+    assert 'aria-disabled="true"' not in HTML
+    assert 'name="policies_acknowledged"' in HTML
 
 
 def test_final_hero_source_is_served() -> None:

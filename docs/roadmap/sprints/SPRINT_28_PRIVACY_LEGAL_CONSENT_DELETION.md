@@ -1,6 +1,6 @@
 # Sprint 28 — Privacy, Legal, Consent & Account Deletion
 
-**Status:** **SPRINT 28 INTERNAL ENGINEERING + STAGING VERIFICATION COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN.** 28.1 engineering foundations and 28.2 staging export/delete HTTP evidence remain in force. Remaining internally controllable readiness (consent/audit inspection, engineering retention map, essential-only tracking hook, eligibility placeholders, provisioned contact wiring, publication-status mechanics) is implemented. Owner-observed browser verification of the fail-closed legal/privacy state on `https://staging.piqsavi.com` is recorded for deployed SHA `fc8be5fe2abb0c73e5db7389ce41c4d348f4ffa0` (2026-09-10). Sprint 28 is **not** COMPLETE/CLOSED. Counsel drafts remain unpublished. EXT-19 written **conditional** approval is recorded ([`../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md)); written unconditional published-scope approval is absent. Register status remains `applied`. EXT-20 / EXT-21 publication remains `not_started`. EXT-22 remains `not_started` (no CMP/banner; Sprint 39 owns analytics activation). Sprint 44/45 publication gates remain open. Evidence: [`../evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md`](../evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md); counsel record [`../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md); Early Access re-audit [`../evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](../evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md); 2026-09-11 publication-activation block [`../evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](../evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md).
+**Status:** **SPRINT 28 INTERNAL ENGINEERING + STAGING VERIFICATION COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN.** 28.1 engineering foundations and 28.2 staging export/delete HTTP evidence remain in force. Remaining internally controllable readiness (consent/audit inspection, engineering retention map, essential-only tracking hook, eligibility placeholders, provisioned contact wiring, publication-status mechanics) is implemented. Owner-observed browser verification of the fail-closed legal/privacy state on `https://staging.piqsavi.com` is recorded for deployed SHA `fc8be5fe2abb0c73e5db7389ce41c4d348f4ffa0` (2026-09-10). Sprint 28 is **not** COMPLETE/CLOSED. Counsel drafts remain unpublished as counsel drafts. EXT-19 written **conditional** approval is recorded ([`../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md)); written unconditional published-scope approval is absent. Register status remains `applied`. A later owner-authorized Early Access content-layer publication is recorded at [`../evidence/EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md`](../evidence/EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md) and advances EXT-20 / EXT-21 to `applied` without claiming new counsel approval. EXT-22 remains `not_started` (no CMP/banner; Sprint 39 owns analytics activation). Sprint 44/45 publication gates remain open. Evidence: [`../evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md`](../evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md); counsel record [`../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](../evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md); Early Access re-audit [`../evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](../evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md); 2026-09-11 publication-activation block [`../evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](../evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md).
 **Primary owner / domain:** Legal + privacy engineering
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-4
@@ -11,9 +11,9 @@
 |-------|--------|
 | Internal engineering | **Complete** for currently controllable Sprint 28 requirements |
 | Internal staging verification | **Complete** 2026-09-10 — owner-observed browser checks on `https://staging.piqsavi.com`, distinct from automated host `staging_ok` evidence |
-| Staging engineering evidence | 28.2 export/delete HTTP recorded. Fail-closed empty consent state owner-verified 2026-09-10. Populated consent-audit rows **cannot** be recorded until a published policy version exists |
+| Staging engineering evidence | 28.2 export/delete HTTP recorded. Fail-closed empty consent state owner-verified 2026-09-10. Later owner-authorized publication now allows populated consent-audit rows; staging re-verification is still required |
 | Counsel approval (EXT-19 `approved`) | **Open** — written **conditional** 2026-08-19 review recorded; written unconditional published-scope approval absent; status remains `applied` |
-| Policy publication (EXT-20 / EXT-21) | **Open** — `not_started` |
+| Policy publication (EXT-20 / EXT-21) | **Applied as owner-authorized content layer** — `applied`; staging deploy and production live URL remain |
 | Cookie CMP / analytics activation (EXT-22) | **Open** — `not_started`; owned with Sprint 39 for activation |
 | Production launch acceptance | Sprint 44/45 |
 
@@ -23,7 +23,7 @@ Do **not** treat internal engineering complete or 2026-09-10 staging verificatio
 
 | Area | Status |
 |------|--------|
-| Legal publication gate (`/privacy`, `/terms` fail closed) | implemented — no published production versions |
+| Legal publication gate (`/privacy`, `/terms` fail closed when unpublished) | implemented — owner-authorized `privacy-2026-09-11` / `terms-2026-09-11` now published; unpublished configs still 404 |
 | Counsel markdown never auto-served as public HTML | implemented |
 | Policy-version model (type, version, status, timestamps, acceptance-required) | implemented |
 | Consent / policy-version persistence | implemented — records only when a published version exists |
@@ -37,8 +37,8 @@ Do **not** treat internal engineering complete or 2026-09-10 staging verificatio
 | Private UUID Results/Compare/Why noindex | implemented (`X-Robots-Tag` + meta robots) |
 | Public landing indexability | unchanged (not noindex) |
 | EXT-19 legal review | `applied` — written **conditional** approval recorded; not `approved` |
-| EXT-20 Privacy Policy publication | `not_started` |
-| EXT-21 Terms publication | `not_started` |
+| EXT-20 Privacy Policy publication | `applied` — owner-authorized content layer; not new counsel approval |
+| EXT-21 Terms publication | `applied` — owner-authorized content layer; not new counsel approval |
 | EXT-22 cookie-consent / CMP | `not_started` — banner **not** implemented; essential-only fail-closed hook only |
 | Analytics providers | **not** added |
 | Age gate / minimum age | **not** activated — fail-closed placeholder only; no invented age / no DOB |
@@ -55,7 +55,7 @@ Do **not** treat internal engineering complete or 2026-09-10 staging verificatio
 
 | Area | Status |
 |------|--------|
-| Legal publication gate (`/privacy`, `/terms` fail closed) | implemented — no published production versions |
+| Legal publication gate (`/privacy`, `/terms` fail closed when unpublished) | implemented — owner-authorized `privacy-2026-09-11` / `terms-2026-09-11` now published; unpublished configs still 404 |
 | Counsel markdown never auto-served as public HTML | implemented |
 | Policy-version model (type, version, status, timestamps, acceptance-required) | implemented |
 | Consent / policy-version persistence | implemented — records only when a published version exists |
@@ -69,8 +69,8 @@ Do **not** treat internal engineering complete or 2026-09-10 staging verificatio
 | Private UUID Results/Compare/Why noindex | implemented (`X-Robots-Tag` + meta robots) |
 | Public landing indexability | unchanged (not noindex) |
 | EXT-19 legal review | `applied` — written **conditional** approval recorded; not `approved` |
-| EXT-20 Privacy Policy publication | `not_started` |
-| EXT-21 Terms publication | `not_started` |
+| EXT-20 Privacy Policy publication | `applied` — owner-authorized content layer; not new counsel approval |
+| EXT-21 Terms publication | `applied` — owner-authorized content layer; not new counsel approval |
 | EXT-22 cookie-consent / CMP | `not_started` — banner **not** implemented |
 | Analytics providers | **not** added |
 | Age gate / minimum age | **not** activated |
