@@ -180,15 +180,30 @@ select:focus-visible {
   height: 36px;
   width: 148px;
   object-fit: cover;
-  object-position: 50% 42%;
+  object-position: 50% 38%;
+}
+
+.brand-compact,
+.footer-lockup {
+  overflow: hidden;
+}
+
+.brand-compact {
+  height: 28px;
+}
+
+.footer-lockup {
+  height: auto;
+  overflow: visible;
 }
 
 .brand-compact .brand-logo,
 .footer-lockup .brand-logo {
-  height: 36px;
-  width: 148px;
+  height: 46px;
+  width: 168px;
   object-fit: cover;
-  object-position: 50% 42%;
+  object-position: 50% 28%;
+  margin-top: -8px;
 }
 
 .site-header {
@@ -339,10 +354,10 @@ select:focus-visible {
 .hero {
   position: relative;
   isolation: isolate;
-  min-height: 452px;
+  min-height: 420px;
   display: flex;
   align-items: center;
-  padding: 2.4rem var(--hero-copy-pad) 2.6rem;
+  padding: 1.8rem var(--hero-copy-pad) 2rem;
   overflow: hidden;
 }
 
@@ -427,7 +442,7 @@ select:focus-visible {
 .trust {
   width: 100%;
   margin: 0;
-  padding: 2.15rem var(--page-pad) 2.4rem;
+  padding: 1.65rem var(--page-pad) 1.85rem;
 }
 
 .section-intro {
@@ -471,12 +486,30 @@ select:focus-visible {
   .how-step:not(:last-child)::after {
     content: "";
     position: absolute;
-    top: 26px;
-    right: -1.15rem;
-    width: 10px;
+    top: 22px;
+    right: -1.35rem;
+    width: 18px;
     height: 10px;
-    border-right: 2px solid var(--blue);
-    border-top: 2px solid var(--blue);
+    border-right: 0;
+    border-top: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    background-image: linear-gradient(var(--blue), var(--blue));
+    background-size: 12px 1.5px;
+    background-repeat: no-repeat;
+    background-position: left center;
+  }
+
+  .how-step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 18px;
+    right: -1.05rem;
+    width: 8px;
+    height: 8px;
+    border-right: 1.6px solid var(--blue);
+    border-top: 1.6px solid var(--blue);
     transform: rotate(45deg);
   }
 }
@@ -729,9 +762,12 @@ select:focus-visible {
 }
 
 .field.is-invalid input:not([type="checkbox"]),
-.field.is-invalid select {
+.field.is-invalid select,
+.field.is-invalid input:not([type="checkbox"]):focus,
+.field.is-invalid select:focus {
   border-color: var(--error);
   background: #fff;
+  box-shadow: 0 0 0 1px var(--error);
 }
 
 .field-error {
@@ -947,7 +983,8 @@ select:focus-visible {
     margin: 0;
   }
 
-  .how-step:not(:last-child)::after {
+  .how-step:not(:last-child)::after,
+  .how-step:not(:last-child)::before {
     content: none;
   }
 

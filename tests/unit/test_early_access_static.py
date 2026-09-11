@@ -51,11 +51,11 @@ def test_approved_headline_and_copy() -> None:
     assert "Know what’s worth buying." in page or "Know what's worth buying." in page
     assert "Be one of the first to try PiqSavi." in page
     assert (
-        "We’re preparing PiqSavi for its first group of users. Join the early-access list and we’ll "
-        "let you know when it’s ready for you to try."
+        "We’re preparing PiqSavi for its first group of users. "
+        "Join the early-access list and we’ll let you know when it’s ready for you to try."
     ) in page or (
-        "We're preparing PiqSavi for its first group of users. Join the early-access list and we'll "
-        "let you know when it's ready for you to try."
+        "We're preparing PiqSavi for its first group of users. "
+        "Join the early-access list and we'll let you know when it's ready for you to try."
     ) in page
     assert "You’re on the list." in page or "You're on the list." in page
     assert "Something went wrong." in page
@@ -342,17 +342,17 @@ def test_legal_acknowledgement_is_present_and_unchecked() -> None:
     assert 'href="/terms">Terms of Service</a>' in HTML
     assert 'href="/privacy">Privacy Policy</a>' in HTML
     form_html = HTML.split('id="early-access-form"', 1)[1].split("</form>", 1)[0]
-    assert form_html.index("policies_acknowledged") < form_html.index("Join Early Access — Free")
-    assert form_html.index("policies_acknowledged") < form_html.index(
-        "No spam. Just important PiqSavi early-access updates."
-    )
+    submit_label = "Join Early Access — Free"
+    note = "No spam. Just important PiqSavi early-access updates."
+    assert form_html.index("policies_acknowledged") < form_html.index(submit_label)
+    assert form_html.index("policies_acknowledged") < form_html.index(note)
 
 
 def test_modal_and_mobile_state_classes_are_managed() -> None:
     assert "function syncVisualState()" in JS
     assert "dataset.signupState" in JS
     assert "dataset.signupView" in JS
-    assert 'is-signup-mobile' in JS
+    assert "is-signup-mobile" in JS
     assert "closed" in JS
     assert "focused" in JS
     assert "loading" in JS
