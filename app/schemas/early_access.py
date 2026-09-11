@@ -23,6 +23,9 @@ EarlyAccessEventName = Literal[
     "how_it_works_viewed",
 ]
 EarlyAccessEventSource = Literal["header", "hero"]
+_POLICIES_ACKNOWLEDGED_DESCRIPTION = (
+    "Required acknowledgement of the published Terms of Service and Privacy Policy."
+)
 
 
 class EarlyAccessRegisterRequest(BaseModel):
@@ -39,7 +42,7 @@ class EarlyAccessRegisterRequest(BaseModel):
     referrer: str | None = Field(default=None, max_length=MAX_REFERRER)
     policies_acknowledged: bool = Field(
         ...,
-        description="Required acknowledgement of the published Terms of Service and Privacy Policy.",
+        description=_POLICIES_ACKNOWLEDGED_DESCRIPTION,
     )
 
 

@@ -27,9 +27,7 @@ ROOT = Path(__file__).resolve().parents[2]
 HTML = (ROOT / "app/static/early_access/index.html").read_text(encoding="utf-8")
 JS = (ROOT / "app/static/early_access/early-access.js").read_text(encoding="utf-8")
 CSS = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
-PRIVACY_HTML = (
-    ROOT / "docs/legal/published/privacy-2026-09-11.html"
-).read_text(encoding="utf-8")
+PRIVACY_HTML = (ROOT / "docs/legal/published/privacy-2026-09-11.html").read_text(encoding="utf-8")
 TERMS_HTML = (ROOT / "docs/legal/published/terms-2026-09-11.html").read_text(encoding="utf-8")
 EVIDENCE = (
     ROOT / "docs/roadmap/evidence/EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md"
@@ -307,10 +305,7 @@ def test_evidence_records_owner_authorization_not_new_counsel_approval() -> None
     assert "does **not** mean counsel gave new unconditional approval" in EVIDENCE
     assert OWNER_AUTHORIZED_PRIVACY_VERSION_ID in EVIDENCE
     assert OWNER_AUTHORIZED_TERMS_VERSION_ID in EVIDENCE
-    assert (
-        "EARLY ACCESS LEGAL/CONTENT LAYER READY — STAGING VERIFICATION REQUIRED"
-        in EVIDENCE
-    )
+    assert "EARLY ACCESS LEGAL/CONTENT LAYER READY — STAGING VERIFICATION REQUIRED" in EVIDENCE
     assert "PRODUCTION INFRASTRUCTURE CUTOVER REMAINS" in EVIDENCE
     assert "No production deploy" in EVIDENCE
     assert "Do **not** merge" in EVIDENCE
