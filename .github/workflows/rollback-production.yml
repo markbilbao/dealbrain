@@ -1,0 +1,499 @@
+# Early Access Phase 1 — Production rollback to a previously approved immutable release.
+# Manual dispatch only. Digest authority from Build Image release-manifest.
+# No image rebuild, no Terraform apply, no static AWS keys, no SSH,
+# no secrets from GitHub, no staging path, no database downgrade, no RDS mutation/delete.
+# Authoritative rollback_ok evidence is host-written and S3-uploaded only —
+# this workflow never fabricates success evidence.
+# Does not create GitHub Environment production. Does not apply Terraform. Does not change DNS.
+# Must not modify or delete RDS. Early Access signup rows remain in the durable store.
+name: Rollback Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_workflow_run_id:
+        description: GitHub Actions run ID of the successful Build Image for the rollback target
+        required: true
+        type: string
+      release_id:
+        description: Optional release_id cross-check (must match target manifest if set)
+        required: false
+        type: string
+
+concurrency:
+  # Shared with deploy-production.yml so deploy and rollback cannot overlap unsafely.
+  group: production-release-mutation
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+  packages: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  AWS_ROLE_SESSION_PREFIX: gha
+
+jobs:
+  rollback:
+    name: Rollback production to immutable target release
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.repository.fork == false
+    environment: production
+    steps:
+      - name: Assert main ref and reject forks
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.repository.fork }}" = "true" ]; then
+            echo "Fork repositories cannot rollback production." >&2
+            exit 1
+          fi
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "Rollback Production must run from refs/heads/main (got ${{ github.ref }})." >&2
+            exit 1
+          fi
+
+      - name: Checkout production rollback tooling (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install validation dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install 'jsonschema>=4.26.0'
+
+      - name: Fetch and validate target Build Image release manifest
+        id: manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_workflow_run_id }}
+          OPTIONAL_RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          set -euo pipefail
+          ARTIFACT_DEST=".deploy-work/artifact"
+          mkdir -p .deploy-work "$ARTIFACT_DEST"
+          python scripts/deploy/fetch_release_artifact.py \
+            --build-workflow-run-id "$BUILD_RUN_ID" \
+            --dest "$ARTIFACT_DEST" \
+            --assert-only > .deploy-work/build-run.json
+
+          BUILD_SHA="$(jq -r '.headSha' .deploy-work/build-run.json)"
+          BUILD_NAME="$(jq -r '.workflowName' .deploy-work/build-run.json)"
+          BUILD_STATUS="$(jq -r '.status' .deploy-work/build-run.json)"
+          BUILD_CONCLUSION="$(jq -r '.conclusion' .deploy-work/build-run.json)"
+          BUILD_BRANCH="$(jq -r '.headBranch' .deploy-work/build-run.json)"
+
+          test "$BUILD_NAME" = "Build Image"
+          test "$BUILD_STATUS" = "completed"
+          test "$BUILD_CONCLUSION" = "success"
+          test "$BUILD_BRANCH" = "main"
+          [[ "$BUILD_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+          MANIFEST_PATH="$(
+            python scripts/deploy/fetch_release_artifact.py \
+              --build-workflow-run-id "$BUILD_RUN_ID" \
+              --dest "$ARTIFACT_DEST"
+          )"
+          echo "manifest_path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
+
+          EXTRA_ARGS=(
+            --build-workflow-run-id "$BUILD_RUN_ID"
+            --git-sha "$BUILD_SHA"
+            --image-repository "ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          )
+          if [ -n "${OPTIONAL_RELEASE_ID}" ]; then
+            EXTRA_ARGS+=(--release-id "$OPTIONAL_RELEASE_ID")
+          fi
+          python -m scripts.deploy.validate_staging_release "$MANIFEST_PATH" "${EXTRA_ARGS[@]}"
+
+          RELEASE_ID="$(jq -r '.release_id' "$MANIFEST_PATH")"
+          IMAGE_REPO="$(jq -r '.image_repository' "$MANIFEST_PATH")"
+          IMAGE_DIGEST="$(jq -r '.image_digest' "$MANIFEST_PATH")"
+          GIT_SHA="$(jq -r '.git_sha' "$MANIFEST_PATH")"
+          TEST_RUN_ID="$(jq -r '.test_workflow_run_id' "$MANIFEST_PATH")"
+          MANIFEST_SHA="$(jq -r '.manifest_sha256' "$MANIFEST_PATH")"
+
+          # Reject mutable-tag authority — digest from manifest only.
+          case "$IMAGE_REPO" in
+            *:latest|*:ci-latest|*:staging|*:production|*:main|*@*|*:* )
+              echo "FAIL: mutable tag authority forbidden in image_repository" >&2
+              exit 1
+              ;;
+          esac
+          [[ "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+          CI_JSON="$(gh run view "$TEST_RUN_ID" --json conclusion,headSha,workflowName,status,headBranch)"
+          echo "$CI_JSON" | jq -e '.status=="completed" and .conclusion=="success"' >/dev/null
+          CI_SHA="$(echo "$CI_JSON" | jq -r '.headSha')"
+          test "$CI_SHA" = "$GIT_SHA"
+          test "$GIT_SHA" = "$BUILD_SHA"
+
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker buildx imagetools inspect "${IMAGE_REPO}@${IMAGE_DIGEST}" >/dev/null
+
+          {
+            echo "release_id=$RELEASE_ID"
+            echo "image_repository=$IMAGE_REPO"
+            echo "image_digest=$IMAGE_DIGEST"
+            echo "git_sha=$GIT_SHA"
+            echo "test_workflow_run_id=$TEST_RUN_ID"
+            echo "manifest_sha256=$MANIFEST_SHA"
+            echo "manifest_path=$MANIFEST_PATH"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (production OIDC only)
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gha-${{ github.run_id }}-production-rollback
+          role-duration-seconds: 3600
+          audience: sts.amazonaws.com
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+
+      - name: Assert production role identity
+        env:
+          EXPECTED_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          IDENTITY="$(aws sts get-caller-identity --output json)"
+          ACCOUNT="$(echo "$IDENTITY" | jq -r '.Account')"
+          ARN="$(echo "$IDENTITY" | jq -r '.Arn')"
+          test "$ACCOUNT" = "$EXPECTED_ACCOUNT"
+          echo "$ARN" | grep -q 'dealbrain-production-gha-deploy'
+          echo "$ARN" | grep -qv 'dealbrain-staging-gha-deploy'
+          echo "$ARN" | grep -qv 'staging'
+          echo "$IDENTITY" > .deploy-work/identity.json
+
+      - name: Resolve production targets from AWS
+        id: targets
+        env:
+          PRODUCTION_TARGET_GROUP_ARN: ${{ vars.PRODUCTION_TARGET_GROUP_ARN }}
+        run: |
+          set -euo pipefail
+          INSTANCE_IDS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=dealbrain" \
+                "Name=tag:Environment,Values=production" \
+                "Name=tag:Role,Values=api-compose-host" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[].Instances[].InstanceId' \
+              --output text
+          )"
+          COUNT="$(echo "$INSTANCE_IDS" | wc -w | tr -d ' ')"
+          test "$COUNT" = "1"
+          INSTANCE_ID="$(echo "$INSTANCE_IDS" | awk '{print $1}')"
+          echo "$INSTANCE_ID" | grep -qv staging
+
+          TG_ARN="${PRODUCTION_TARGET_GROUP_ARN:-}"
+          test -n "$TG_ARN"
+          [[ "$TG_ARN" =~ ^arn:aws:elasticloadbalancing:[a-z0-9-]+:[0-9]{12}:targetgroup/.+ ]]
+          echo "$TG_ARN" | grep -q production
+          echo "$TG_ARN" | grep -qv staging
+
+          ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
+          BUCKET="dealbrain-production-release-artifacts-${ACCOUNT}"
+
+          {
+            echo "instance_id=$INSTANCE_ID"
+            echo "target_group_arn=$TG_ARN"
+            echo "bundle_bucket=$BUCKET"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Verify target release bundle and prior production approval
+        id: bundle
+        env:
+          BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+          IMAGE_DIGEST: ${{ steps.manifest.outputs.image_digest }}
+          MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
+          EXPECTED_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
+          EXPECTED_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          mkdir -p .deploy-work/prior .deploy-work/bundle
+          KEY_PREFIX="releases/${RELEASE_ID}"
+
+          # Target release must already exist in the production artifacts bucket
+          # (previously deployed). Do not rebuild; fail closed if missing.
+          for obj in bundle.tar.gz bundle.sha256 bundle-meta.json; do
+            if ! aws s3api head-object --bucket "$BUCKET" --key "${KEY_PREFIX}/${obj}" >/dev/null 2>&1; then
+              echo "FAIL: missing target release object s3://${BUCKET}/${KEY_PREFIX}/${obj}" >&2
+              exit 1
+            fi
+          done
+
+          aws s3 cp "s3://${BUCKET}/${KEY_PREFIX}/bundle.sha256" .deploy-work/bundle/bundle.sha256
+          aws s3 cp "s3://${BUCKET}/${KEY_PREFIX}/bundle-meta.json" .deploy-work/bundle/bundle-meta.json
+          CHECKSUM="$(awk '{print $1}' .deploy-work/bundle/bundle.sha256)"
+          [[ "$CHECKSUM" =~ ^[0-9a-f]{64}$ ]]
+
+          META_RELEASE="$(jq -r '.release_id' .deploy-work/bundle/bundle-meta.json)"
+          META_DIGEST="$(jq -r '.image_digest' .deploy-work/bundle/bundle-meta.json)"
+          META_MANIFEST_SHA="$(jq -r '.source_manifest_sha256' .deploy-work/bundle/bundle-meta.json)"
+          test "$META_RELEASE" = "$RELEASE_ID"
+          test "$META_DIGEST" = "$IMAGE_DIGEST"
+          test "$META_MANIFEST_SHA" = "${{ steps.manifest.outputs.manifest_sha256 }}"
+
+          # Prior production_ok evidence: download JSON + required SHA-256 sidecar for
+          # every candidate. Selection requires checksum + exact account/region/
+          # instance/release/digest bindings (no first-lexicographic match).
+          aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "evidence/${RELEASE_ID}/" \
+            --query "Contents[?ends_with(Key, 'production-deploy-evidence.json')].Key" \
+            --output text | tr '\t' '\n' | grep -v '^$' | sort -u \
+            > .deploy-work/prior-keys.txt
+          test -s .deploy-work/prior-keys.txt
+
+          mkdir -p .deploy-work/prior-candidates
+          while IFS= read -r key; do
+            run_id="$(basename "$(dirname "$key")")"
+            mkdir -p ".deploy-work/prior-candidates/${run_id}"
+            aws s3 cp "s3://${BUCKET}/${key}" \
+              ".deploy-work/prior-candidates/${run_id}/production-deploy-evidence.json" \
+              --only-show-errors
+            if ! aws s3 cp "s3://${BUCKET}/${key}.sha256" \
+              ".deploy-work/prior-candidates/${run_id}/production-deploy-evidence.json.sha256" \
+              --only-show-errors; then
+              echo "FAIL: missing prior evidence checksum sidecar for ${key}" >&2
+              rm -rf ".deploy-work/prior-candidates/${run_id}"
+              continue
+            fi
+          done < .deploy-work/prior-keys.txt
+          test -n "$(find .deploy-work/prior-candidates -name 'production-deploy-evidence.json' | head -1)"
+
+          python -m scripts.deploy.validate_production_rollback_eligibility \
+            --manifest "$MANIFEST_PATH" \
+            --build-workflow-run-id "${{ inputs.build_workflow_run_id }}" \
+            --release-id "$RELEASE_ID" \
+            --git-sha "${{ steps.manifest.outputs.git_sha }}" \
+            --image-repository "${{ steps.manifest.outputs.image_repository }}" \
+            --image-digest "$IMAGE_DIGEST" \
+            --manifest-sha256 "${{ steps.manifest.outputs.manifest_sha256 }}" \
+            --aws-account-id "$EXPECTED_ACCOUNT" \
+            --expected-account-id "$EXPECTED_ACCOUNT" \
+            --aws-region "$EXPECTED_REGION" \
+            --expected-region "$EXPECTED_REGION" \
+            --ec2-instance-id "${{ steps.targets.outputs.instance_id }}" \
+            --bundle-bucket "$BUCKET" \
+            --prior-candidates-dir .deploy-work/prior-candidates \
+            --eligibility-out .deploy-work/prior/eligibility.json
+
+          # Host tooling capability preflight hint (host re-validates before mutation).
+          echo "expected_tooling_version=ea-p1" >> "$GITHUB_OUTPUT"
+          echo "checksum=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          echo "bundle_key=${KEY_PREFIX}/bundle.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Send production SSM rollback command
+        id: ssm
+        env:
+          INSTANCE_ID: ${{ steps.targets.outputs.instance_id }}
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+          GIT_SHA: ${{ steps.manifest.outputs.git_sha }}
+          IMAGE_REPO: ${{ steps.manifest.outputs.image_repository }}
+          IMAGE_DIGEST: ${{ steps.manifest.outputs.image_digest }}
+          BUNDLE_CHECKSUM: ${{ steps.bundle.outputs.checksum }}
+          BUNDLE_BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
+          BUNDLE_KEY: ${{ steps.bundle.outputs.bundle_key }}
+          MANIFEST_SHA: ${{ steps.manifest.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          # Custom rollback document only — never AWS-RunShellScript, never deploy doc for rollback.
+          COMMAND_ID="$(
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name DealBrain-ProductionRollback \
+              --timeout-seconds 2400 \
+              --parameters "$(jq -n \
+                --arg ReleaseId "$RELEASE_ID" \
+                --arg GitSha "$GIT_SHA" \
+                --arg ImageRepository "$IMAGE_REPO" \
+                --arg ImageDigest "$IMAGE_DIGEST" \
+                --arg BundleChecksum "$BUNDLE_CHECKSUM" \
+                --arg DeployRunId "${{ github.run_id }}" \
+                --arg BundleBucket "$BUNDLE_BUCKET" \
+                --arg BundleKey "$BUNDLE_KEY" \
+                --arg SourceManifestSha256 "$MANIFEST_SHA" \
+                '{
+                  ReleaseId:[$ReleaseId],
+                  GitSha:[$GitSha],
+                  ImageRepository:[$ImageRepository],
+                  ImageDigest:[$ImageDigest],
+                  BundleChecksum:[$BundleChecksum],
+                  DeployRunId:[$DeployRunId],
+                  BundleBucket:[$BundleBucket],
+                  BundleKey:[$BundleKey],
+                  SourceManifestSha256:[$SourceManifestSha256]
+                }')" \
+              --query 'Command.CommandId' \
+              --output text
+          )"
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+          mkdir -p .deploy-work/ssm
+          printf '%s\n' "$COMMAND_ID" > .deploy-work/ssm/ssm-command-id.txt
+          aws s3 cp .deploy-work/ssm/ssm-command-id.txt \
+            "s3://${BUNDLE_BUCKET}/evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt"
+
+          DEADLINE=$((SECONDS + 2400))
+          STATUS="Pending"
+          while [ "$SECONDS" -lt "$DEADLINE" ]; do
+            STATUS="$(
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID" \
+                --query 'Status' \
+                --output text 2>/dev/null || echo Pending
+            )"
+            case "$STATUS" in
+              Success) break ;;
+              Failed|Cancelled|TimedOut) echo "SSM rollback command failed: $STATUS" >&2; exit 1 ;;
+            esac
+            sleep 10
+          done
+          test "$STATUS" = "Success"
+
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --output json > .deploy-work/ssm/invocation.json
+
+      - name: Collect and validate authoritative host production rollback evidence
+        id: evidence
+        env:
+          BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+          EXPECTED_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
+          EXPECTED_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          mkdir -p .deploy-work/evidence
+          EVIDENCE_PATH=".deploy-work/evidence/production-rollback-evidence.json"
+          EVIDENCE_KEY="evidence/${RELEASE_ID}/${{ github.run_id }}/production-rollback-evidence.json"
+          COMMAND_ID_KEY="evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt"
+          COMMAND_ID_FILE="${RUNNER_TEMP}/ssm-command-id.txt"
+
+          if ! aws s3api head-object --bucket "$BUCKET" --key "$EVIDENCE_KEY" >/dev/null 2>&1; then
+            echo "FAIL: authoritative host rollback evidence missing at s3://${BUCKET}/${EVIDENCE_KEY}" >&2
+            echo "Refusing to fabricate rollback_ok." >&2
+            exit 1
+          fi
+          aws s3 cp \
+            "s3://${BUCKET}/${EVIDENCE_KEY}" \
+            "$EVIDENCE_PATH" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors
+
+          # Mandatory checksum sidecar — never optional, never synthesized in GHA.
+          if ! aws s3 cp \
+            "s3://${BUCKET}/${EVIDENCE_KEY}.sha256" \
+            "${EVIDENCE_PATH}.sha256" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors; then
+            echo "FAIL: rollback evidence checksum sidecar missing or download failed at s3://${BUCKET}/${EVIDENCE_KEY}.sha256" >&2
+            exit 1
+          fi
+
+          # Checksum gate before any semantic validation or artifact upload.
+          python -m scripts.deploy.verify_rollback_evidence_sidecar \
+            --evidence "$EVIDENCE_PATH" \
+            --sidecar "${EVIDENCE_PATH}.sha256"
+
+          aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "evidence/${RELEASE_ID}/${{ github.run_id }}/" \
+            --query 'Contents[].Key' --output text | tr '\t' '\n' | grep -v '^$' | sort -u \
+            > .deploy-work/evidence-keys.txt
+          while IFS= read -r key; do
+            case "$key" in
+              "evidence/${RELEASE_ID}/${{ github.run_id }}/production-rollback-evidence.json") ;;
+              "evidence/${RELEASE_ID}/${{ github.run_id }}/production-rollback-evidence.json.sha256") ;;
+              "evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt") ;;
+              "") ;;
+              *)
+                echo "FAIL: unexpected evidence key: $key" >&2
+                exit 1
+                ;;
+            esac
+          done < .deploy-work/evidence-keys.txt
+
+          aws s3 cp \
+            "s3://${BUCKET}/${COMMAND_ID_KEY}" \
+            "$COMMAND_ID_FILE" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors
+
+          COMMAND_ID="$(
+            python - "$COMMAND_ID_FILE" <<'PY'
+          import sys
+          import uuid
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          raw = path.read_bytes()
+          if not raw:
+              print("FAIL: ssm-command-id.txt is empty", file=sys.stderr)
+              raise SystemExit(1)
+          try:
+              text = raw.decode("ascii")
+          except UnicodeDecodeError:
+              print("FAIL: ssm-command-id.txt is not ASCII", file=sys.stderr)
+              raise SystemExit(1)
+          if text.endswith("\r\n"):
+              body = text[:-2]
+          elif text.endswith("\n"):
+              body = text[:-1]
+          else:
+              body = text
+          if not body:
+              print("FAIL: ssm-command-id.txt empty after newline trim", file=sys.stderr)
+              raise SystemExit(1)
+          if any(ch in body for ch in " \t\r\n\v\f"):
+              print("FAIL: ssm-command-id.txt must be exactly one canonical UUID line", file=sys.stderr)
+              raise SystemExit(1)
+          if any(ord(ch) < 32 for ch in body):
+              print("FAIL: ssm-command-id.txt contains control characters", file=sys.stderr)
+              raise SystemExit(1)
+          try:
+              parsed = uuid.UUID(body)
+          except ValueError:
+              print("FAIL: ssm-command-id.txt is not a valid UUID", file=sys.stderr)
+              raise SystemExit(1)
+          canonical = str(parsed)
+          if body != canonical:
+              print("FAIL: ssm-command-id.txt is not canonical UUID form", file=sys.stderr)
+              raise SystemExit(1)
+          sys.stdout.write(canonical)
+          PY
+          )"
+          echo "ssm_command_id_validated=1"
+
+          python -m scripts.deploy.write_gha_production_rollback_evidence \
+            --evidence "$EVIDENCE_PATH" \
+            --target-release-id "$RELEASE_ID" \
+            --target-git-sha "${{ steps.manifest.outputs.git_sha }}" \
+            --target-image-repository "${{ steps.manifest.outputs.image_repository }}" \
+            --target-image-digest "${{ steps.manifest.outputs.image_digest }}" \
+            --target-manifest-sha256 "${{ steps.manifest.outputs.manifest_sha256 }}" \
+            --rollback-run-id "${{ github.run_id }}" \
+            --aws-account-id "$EXPECTED_ACCOUNT" \
+            --aws-region "$EXPECTED_REGION" \
+            --ec2-instance-id "${{ steps.targets.outputs.instance_id }}" \
+            --ssm-command-id "$COMMAND_ID"
+
+          python -m scripts.deploy.validate_production_rollback_evidence "$EVIDENCE_PATH"
+
+      - name: Upload production rollback evidence GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-rollback-evidence-${{ steps.manifest.outputs.release_id }}-${{ github.run_id }}
+          path: .deploy-work/evidence/production-rollback-evidence.json
+          retention-days: 90
+          if-no-files-found: error
