@@ -59,6 +59,7 @@
       document.body.classList.toggle("is-signup-open", isMobile());
     }
     syncSignupAriaModal();
+    syncVisualState();
   }
 
   if (typeof mobileQuery.addEventListener === "function") {
@@ -77,6 +78,17 @@
     navQuery.addListener(onNavBreakpointChange);
   }
   syncSignupAriaModal();
+
+  function syncVisualState() {
+    const signupState = layer.hidden ? "closed" : state.result || state.form;
+    const signupView = layer.hidden ? "landing" : state.view;
+    layer.dataset.signupState = signupState;
+    layer.dataset.signupView = signupView;
+    sheet.dataset.signupState = signupState;
+    document.body.dataset.signupState = signupState;
+    document.body.dataset.signupView = signupView;
+    document.body.classList.toggle("is-signup-mobile", Boolean(!layer.hidden && isMobile()));
+  }
 
   function focusables() {
     return [...sheet.querySelectorAll("a, button, input, select, textarea")]
@@ -105,6 +117,7 @@
       const input = wrap.querySelector("input, select");
       input.setAttribute("aria-invalid", invalid ? "true" : "false");
     });
+    syncVisualState();
   }
 
   function validate() {
@@ -172,6 +185,7 @@
     window.requestAnimationFrame(() => {
       document.getElementById("ea-full-name").focus();
     });
+    syncVisualState();
   }
 
   function closeSignup() {
@@ -181,6 +195,7 @@
     state.result = null;
     const restore = state.lastCta;
     state.lastCta = null;
+    syncVisualState();
     if (restore) restore.focus();
   }
 
@@ -190,6 +205,7 @@
     showPanel(kind);
     const action = sheet.querySelector(`[data-panel="${kind}"] .btn`);
     if (action) action.focus();
+    syncVisualState();
   }
 
   function setLoading(loading) {
@@ -200,12 +216,17 @@
     submitBtn.querySelector(".btn-label").textContent = loading
       ? "Joining Early Access..."
       : "Join Early Access — Free";
+    syncVisualState();
   }
 
   form.addEventListener("focusin", () => {
     if (!state.formStarted) {
       state.formStarted = true;
       track("early_access_form_started");
+    }
+    if (!state.result && state.form === "default") {
+      state.form = "focused";
+      syncVisualState();
     }
   });
 
@@ -364,6 +385,8 @@
     window.visualViewport.addEventListener("resize", onViewport);
     window.visualViewport.addEventListener("scroll", onViewport);
   }
+
+  syncVisualState();
 
   if (how && "IntersectionObserver" in window) {
     const observer = new IntersectionObserver(

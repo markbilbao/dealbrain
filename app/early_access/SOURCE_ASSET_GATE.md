@@ -31,5 +31,6 @@ Hero photography:
 Logo:
   The exact approved PiqSavi master lockup is installed at
   app/static/early_access/assets/piqsavi-logo.png
-  (copied from the supplied master PNG; not redrawn or approximated).
-  SHA-256 916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97
+  (copied from the owner-supplied master PNG for the approved-design
+  reconciliation; not redrawn or approximated).
+  SHA-256 5189150b27fbd6a374ce8cc023ef735e5a5c752e667d45d716fdaa8900dfb42f

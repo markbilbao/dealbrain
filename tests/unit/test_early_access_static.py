@@ -51,11 +51,11 @@ def test_approved_headline_and_copy() -> None:
     assert "Know what’s worth buying." in page or "Know what's worth buying." in page
     assert "Be one of the first to try PiqSavi." in page
     assert (
-        "We’re getting PiqSavi ready for its first users. Join the Early Access list and we’ll "
-        "let you know when it’s ready to try."
+        "We’re preparing PiqSavi for its first group of users. Join the early-access list and we’ll "
+        "let you know when it’s ready for you to try."
     ) in page or (
-        "We're getting PiqSavi ready for its first users. Join the Early Access list and we'll "
-        "let you know when it's ready to try."
+        "We're preparing PiqSavi for its first group of users. Join the early-access list and we'll "
+        "let you know when it's ready for you to try."
     ) in page
     assert "You’re on the list." in page or "You're on the list." in page
     assert "Something went wrong." in page
@@ -113,7 +113,7 @@ def test_signup_states_keep_locked_master_proportions() -> None:
     assert "padding: 2.6rem 3.4rem 1.25rem" in css
     assert "max-width: 18.5rem" in css
     assert "margin: 0.75rem auto 3.25rem" in css
-    assert "min-height: 42px" in css
+    assert "min-height: 44px" in css
     assert "min-height: 25.9rem" in css
     assert "max-width: 260px" in css
     assert "padding: 1rem 1.5rem 2rem" in css
@@ -121,10 +121,13 @@ def test_signup_states_keep_locked_master_proportions() -> None:
     assert "max-width: 300px" in css
     assert "margin-bottom: 4rem" in css
     assert ".signup-sheet:has(.result-body:not([hidden]))" in css
-    assert ".signup-sheet:has(.field-error:not([hidden]))" in css
+    assert "border-radius: 999px" in css
+    assert "rgba(11, 18, 36, 0.48)" in css
+    assert ".signup-sheet:has(.field-error:not([hidden]))" not in css
 
 
-APPROVED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
+APPROVED_LOGO_SHA256 = "5189150b27fbd6a374ce8cc023ef735e5a5c752e667d45d716fdaa8900dfb42f"
+REJECTED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
 
 
 def test_approved_master_logo_is_used() -> None:
@@ -132,7 +135,9 @@ def test_approved_master_logo_is_used() -> None:
     assert logo.is_file()
     raw = logo.read_bytes()
     assert raw[:8] == b"\x89PNG\r\n\x1a\n"
-    assert hashlib.sha256(raw).hexdigest() == APPROVED_LOGO_SHA256
+    digest = hashlib.sha256(raw).hexdigest()
+    assert digest == APPROVED_LOGO_SHA256
+    assert digest != REJECTED_LOGO_SHA256
     assert "/static/early_access/assets/piqsavi-logo.png" in HTML
     assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 3
     assert 'alt="PiqSavi"' in HTML
@@ -198,8 +203,8 @@ def test_mobile_signup_logo_links_home_and_is_larger() -> None:
     assert '<a class="signup-brand" href="/" aria-label="Back to PiqSavi home">' in HTML
     assert '<img\n              class="brand-logo"' in HTML
     assert "PiqSavi home" in HTML
-    assert ".site-header .brand-logo {\n    height: 72px;" in mobile_css
-    assert ".signup-brand .brand-logo {\n    height: 72px;" in mobile_css
+    assert ".site-header .brand-logo {\n    height: 32px;" in mobile_css
+    assert ".signup-brand .brand-logo {\n    height: 44px;" in mobile_css
     assert ".signup-brand:focus-visible" in css
 
 
@@ -315,3 +320,59 @@ def test_registration_endpoints_remain_in_client() -> None:
     assert 'fetch("/api/v1/early-access"' in JS
     assert 'fetch("/api/v1/early-access/events"' in JS
     assert 'method: "POST"' in JS
+
+
+def test_exactly_two_main_page_ctas() -> None:
+    assert HTML.count("js-open-signup") == 2
+    assert 'data-cta-source="header"' in HTML
+    assert 'data-cta-source="hero"' in HTML
+    header_block = HTML.split('data-cta-source="header"', 1)[1].split("</button>", 1)[0]
+    hero_block = HTML.split('data-cta-source="hero"', 1)[1].split("</button>", 1)[0]
+    assert "Join Early Access" in header_block
+    assert "—" not in header_block
+    assert "Join Early Access — Free" in hero_block
+
+
+def test_legal_acknowledgement_is_present_and_unchecked() -> None:
+    assert 'name="policies_acknowledged"' in HTML
+    assert 'id="ea-policies-acknowledged"' in HTML
+    opening = HTML.split('id="ea-policies-acknowledged"', 1)[1].split(">", 1)[0]
+    assert "checked" not in opening
+    assert "I agree to the" in HTML
+    assert 'href="/terms">Terms of Service</a>' in HTML
+    assert 'href="/privacy">Privacy Policy</a>' in HTML
+    assert HTML.index("policies_acknowledged") < HTML.index("Join Early Access — Free")
+    assert HTML.index("policies_acknowledged") < HTML.index(
+        "No spam. Just important PiqSavi early-access updates."
+    )
+
+
+def test_modal_and_mobile_state_classes_are_managed() -> None:
+    assert "function syncVisualState()" in JS
+    assert "dataset.signupState" in JS
+    assert "dataset.signupView" in JS
+    assert 'is-signup-mobile' in JS
+    assert "closed" in JS
+    assert "focused" in JS
+    assert "loading" in JS
+
+
+def test_no_old_incorrect_logo_or_css_mark() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    assert "piq-grad" not in HTML
+    assert "brand-mark" not in HTML
+    assert "brand-mark" not in css
+    assert REJECTED_LOGO_SHA256 not in (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(
+        encoding="utf-8"
+    )
+    assert APPROVED_LOGO_SHA256 in (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_approved_desktop_how_and_trust_stack_icons_above_copy() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    assert "flex-direction: column" in css
+    assert "align-items: center" in css
+    assert "text-align: center" in css
+    assert ".how-step:not(:last-child)::after" in css

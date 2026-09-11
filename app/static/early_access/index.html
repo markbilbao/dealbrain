@@ -26,7 +26,7 @@
         >
           <span class="nav-toggle-icon" aria-hidden="true"></span>
         </button>
-        <a class="brand" href="/">
+        <a class="brand brand-compact" href="/">
           <img
             class="brand-logo"
             src="/static/early_access/assets/piqsavi-logo.png"
@@ -234,7 +234,7 @@
       </footer>
     </div>
 
-    <div class="signup-layer" id="signup-layer" hidden>
+    <div class="signup-layer" id="signup-layer" hidden data-signup-state="closed" data-signup-view="landing">
       <div class="signup-backdrop" data-close-signup></div>
       <div
         class="signup-sheet"
@@ -242,6 +242,7 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="signup-title"
+        data-signup-state="closed"
       >
         <header class="signup-header">
           <a class="signup-brand" href="/" aria-label="Back to PiqSavi home">
@@ -262,7 +263,7 @@
           <p class="eyebrow">EARLY ACCESS</p>
           <h2 id="signup-title">Be one of the first to try PiqSavi.</h2>
           <p class="signup-lede">
-            We’re getting PiqSavi ready for its first users. Join the Early Access list and we’ll let you know when it’s ready to try.
+            We’re preparing PiqSavi for its first group of users. Join the early-access list and we’ll let you know when it’s ready for you to try.
           </p>
           <form id="early-access-form" novalidate>
             <div class="field" data-field="full_name">
