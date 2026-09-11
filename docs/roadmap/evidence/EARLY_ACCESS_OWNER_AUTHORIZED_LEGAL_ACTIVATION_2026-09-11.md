@@ -179,3 +179,20 @@ A **staging deploy is required** to verify the published pages and Early Access 
 - No production deploy
 - No new unconditional counsel approval
 - Do **not** merge from the agent — owner controls merges
+
+---
+
+## 10. Verification gates (this revision)
+
+| Gate | Result |
+|------|--------|
+| Focused Early Access / legal publication / persistence suite | Passed |
+| OpenAPI contracts | Passed after documenting `policies_acknowledged` on `EarlyAccessRegisterRequest` |
+| Protected architecture suites | Passed |
+| Full pytest | **3440 passed, 4 skipped** |
+| Ruff baseline | Passed (no new lint/format regressions) |
+| Secret scan (`scripts/secret_scan_25a.py`) | OK |
+| `git diff --check` | Clean |
+| Production deploy from this agent | **Not performed** |
+| Affiliate activation | **Not performed** |
+| PR merge from this agent | **Not performed** |
