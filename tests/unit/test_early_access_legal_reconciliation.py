@@ -22,8 +22,7 @@ READINESS = (
     / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md"
 ).read_text(encoding="utf-8")
 ACTIVATION = (
-    ROOT
-    / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md"
+    ROOT / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md"
 ).read_text(encoding="utf-8")
 HTML = (ROOT / "app/static/early_access/index.html").read_text(encoding="utf-8")
 JS = (ROOT / "app/static/early_access/early-access.js").read_text(encoding="utf-8")
@@ -98,8 +97,7 @@ def test_reconciliation_matrix_covers_all_eight_documents() -> None:
 def test_publication_activation_record_stays_blocked() -> None:
     assert "efa430c4962dee90e325fffbf84f475dc1883f12" in ACTIVATION
     assert (
-        "EARLY ACCESS LEGAL ACTIVATION BLOCKED — COUNSEL CONDITION REMAINS UNRESOLVED"
-        in ACTIVATION
+        "EARLY ACCESS LEGAL ACTIVATION BLOCKED — COUNSEL CONDITION REMAINS UNRESOLVED" in ACTIVATION
     )
     ready_slogan = (
         "EARLY ACCESS LEGAL PUBLICATION READY — PRODUCTION INFRASTRUCTURE CUTOVER REMAINS"
