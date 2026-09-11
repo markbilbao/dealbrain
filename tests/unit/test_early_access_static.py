@@ -107,7 +107,7 @@ def test_responsive_breakpoint_present() -> None:
     assert "object-position: 60% 47%" in css
     assert "min-height: 414px" in css
     assert "min-height: 480px" in css
-    assert "min-height: 200px" in css
+    assert "min-height: 196px" in css
     assert "font-size: 3.5rem" in css
     assert "font-size: 1.7rem" in css
     assert "object-view-box" not in css
