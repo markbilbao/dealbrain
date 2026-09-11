@@ -59,6 +59,7 @@ async def register_early_access(
             utm_content=body.utm_content,
             utm_term=body.utm_term,
             referrer=body.referrer,
+            policies_acknowledged=body.policies_acknowledged,
             request_id=request_id,
         )
     except EarlyAccessValidationError as exc:

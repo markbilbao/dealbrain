@@ -37,6 +37,10 @@ class EarlyAccessRegisterRequest(BaseModel):
     utm_content: str | None = Field(default=None, max_length=MAX_UTM)
     utm_term: str | None = Field(default=None, max_length=MAX_UTM)
     referrer: str | None = Field(default=None, max_length=MAX_REFERRER)
+    policies_acknowledged: bool = Field(
+        ...,
+        description="Required acknowledgement of the published Terms of Service and Privacy Policy.",
+    )
 
 
 class EarlyAccessRegisterResponse(BaseModel):
