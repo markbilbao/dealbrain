@@ -489,10 +489,7 @@ def test_production_disables_demo_search_and_shopping(monkeypatch: pytest.Monkey
         catalog = catalog_from_settings(Settings(_env_file=None))
         assert catalog.published("terms") is not None
         assert catalog.published("privacy") is not None
-        paths = {getattr(route, "path", "") for route in client.app.routes}
-        assert "/api/v1/early-access" in paths or any(
-            path.endswith("/early-access") for path in paths
-        )
+        assert "/api/v1/early-access" in client.app.openapi()["paths"]
 
 
 def test_development_demo_and_search_remain_available() -> None:
