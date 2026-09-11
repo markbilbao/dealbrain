@@ -2,8 +2,8 @@
 
 Fail closed: a policy is public or enforceable only when a version is
 ``published``, has a non-empty version id, and approved public HTML can be
-loaded. Counsel drafts under ``docs/legal/`` are never treated as published
-product documents.
+loaded. Counsel drafts and working-draft markdown under ``docs/legal/`` are
+never treated as published product documents.
 """
 
 from __future__ import annotations
@@ -25,9 +25,18 @@ PUBLIC_PATHS: dict[PolicyType, str] = {
 
 COUNSEL_DRAFT_CONTENT_MARKERS: tuple[str, ...] = (
     "DRAFT — COUNSEL REVIEW REQUIRED",
+    "WORKING DRAFT",
     "Not for publication",
+    "Not a published policy",
     "Not evidence of legal approval",
+    "[COUNSEL TO CONFIRM]",
 )
+
+OWNER_AUTHORIZED_TERMS_VERSION_ID = "terms-2026-09-11"
+OWNER_AUTHORIZED_PRIVACY_VERSION_ID = "privacy-2026-09-11"
+OWNER_AUTHORIZED_TERMS_HTML = "terms-2026-09-11.html"
+OWNER_AUTHORIZED_PRIVACY_HTML = "privacy-2026-09-11.html"
+OWNER_AUTHORIZED_PUBLICATION_DATE = "2026-09-11"
 _BLOCKED_PATH_FRAGMENTS: tuple[str, ...] = ("_counsel_draft",)
 _UNSAFE_VERSION_ID_MARKERS: tuple[str, ...] = ("/", "\\", "..", "\x00")
 
@@ -64,8 +73,10 @@ def _is_within(path: Path, root: Path) -> bool:
 class PolicyVersion:
     """Typed, server-owned policy version.
 
-    Production catalog stays empty until counsel-approved documents exist.
-    ``draft`` and ``approved`` rows are never served or enforced.
+    Unpublished rows are never served or enforced. ``draft`` and
+    ``approved`` statuses are never served. Owner-authorized published
+    versions are loaded only when the version id is usable and approved
+    HTML exists under the publication root.
     """
 
     policy_type: PolicyType
@@ -111,9 +122,8 @@ def published_policy(
 class LegalPublicationCatalog:
     """Immutable catalog of policy versions.
 
-    The production catalog is empty until EXT-20 / EXT-21 publication occurs.
     Tests construct a *separate* catalog instance; they must not mutate a
-    process-global production catalog.
+    process-global production catalog. Empty version ids stay unpublished.
     """
 
     def __init__(
@@ -191,6 +201,8 @@ def catalog_from_settings(settings: object) -> LegalPublicationCatalog:
                 policy_type=POLICY_TERMS,
                 version_id=terms_version,
                 html_path=terms_html,
+                published_at=OWNER_AUTHORIZED_PUBLICATION_DATE,
+                effective_at=OWNER_AUTHORIZED_PUBLICATION_DATE,
             )
         )
     if privacy_version and is_usable_version_id(privacy_version):
@@ -199,6 +211,8 @@ def catalog_from_settings(settings: object) -> LegalPublicationCatalog:
                 policy_type=POLICY_PRIVACY,
                 version_id=privacy_version,
                 html_path=privacy_html,
+                published_at=OWNER_AUTHORIZED_PUBLICATION_DATE,
+                effective_at=OWNER_AUTHORIZED_PUBLICATION_DATE,
             )
         )
     return LegalPublicationCatalog(tuple(versions))

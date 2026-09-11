@@ -3,23 +3,26 @@
 This directory is the **only** location the application may load as public
 `/privacy` or `/terms` HTML.
 
-**It is empty by design.**
+Current owner-authorized published files:
 
-Do **not** copy counsel drafts from `docs/legal/` into this folder.
+- `privacy-2026-09-11.html` — version `privacy-2026-09-11`
+- `terms-2026-09-11.html` — version `terms-2026-09-11`
+
+Those HTML files are generated from the August 25 working-draft package with
+only owner-authorized factual-currentness corrections. They are **not** a new
+counsel approval.
+
+Do **not** copy counsel drafts or working-draft markdown from `docs/legal/`
+into this folder as a substitute for approved HTML.
 Do **not** place markdown drafts here and treat them as approved.
-Do **not** set `LEGAL_*_PUBLISHED_VERSION_ID` until written approval of the
-**published** consumer documents exists and EXT-20 / EXT-21 publication is an
-explicit owner action. The 2026-08-19 signed counsel record is written
-**conditional** approval only (EXT-19 remains `applied`) and does **not** by
-itself authorize copying counsel drafts here.
 
 Until an approved HTML file exists here **and** the matching env version id is
 set, `/privacy` and `/terms` fail closed with HTTP 404.
 
-The 2026-09-11 publication-activation attempt
-([`../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md))
-reconfirmed this directory is empty of approved HTML. August 25 working drafts
-were still absent from the agent workspace. Assent remains counsel-ambiguous.
-Do **not** treat that attempt as publication.
+Historical records that preceded this publication:
 
-Sprint 44/45 remain the publication/approval gates.
+- [`../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md)
+  — earlier activation attempt remained blocked because the August 25 package
+  was absent and assent was still counsel-ambiguous.
+- [`../../roadmap/evidence/EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md`](../../roadmap/evidence/EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md)
+  — owner-authorized Early Access legal/content-layer publication.
