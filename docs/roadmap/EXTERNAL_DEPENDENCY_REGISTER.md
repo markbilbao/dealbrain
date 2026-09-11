@@ -2,7 +2,7 @@
 
 **Status:** Authoritative register for Global Public Beta
 **Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close; **2026-09-10** EXT-19 written conditional counsel-review record sanitized (status remains `applied`); **2026-09-11** Early Access legal publication-activation attempt remains blocked as history; later **2026-09-11** owner-authorized content-layer publication advances EXT-20 / EXT-21 to `applied` (EXT-19 remains `applied`).
+**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close; **2026-09-10** EXT-19 written conditional counsel-review record sanitized (status remains `applied`); **2026-09-11** Early Access legal publication-activation attempt remains blocked as history; later **2026-09-11** owner-authorized content-layer publication advances EXT-20 / EXT-21 to `applied` (EXT-19 remains `applied`); **2026-09-11** Early Access production-cutover re-audit re-verified EXT-11…14 as not applied / not live (statuses unchanged) and recorded staging live `/privacy` `/terms` on Deploy Staging #35.
 **Historical inventory HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
 **Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` (historical suite evidence; later `main` including PR #114 does **not** invalidate packaged Sprint 26 staging proof)
 **Owner target:** Controlled Global Public Beta Launch no later than September 30, 2026
@@ -71,8 +71,8 @@ Derived from current evidence only. Do not mark external approvals green without
 | EXT-17 | Support email inbox | Ops + support | 28 / 39 | global launch | 2026-08-09 | 1–3 days | `provisioned` | **GREEN** for bootstrap reachability | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png`](evidence/external/EXT-17_SUPPORT_INBOX_RECEIPT_2026-08-09.png) (see EXT-17 notes); public address `support@piqsavi.com` monitored | Delay public launch | Support obligation |
 | EXT-18 | Privacy contact | Legal / DPO-equivalent | 28 | global launch | 2026-08-09 | 1–3 days | `provisioned` | **GREEN** for bootstrap reachability | Sanitized Gmail inbound receipt proof retained at [`evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png`](evidence/external/EXT-18_PRIVACY_CONTACT_RECEIPT_2026-08-09.png) (see EXT-18 notes); public address `privacy@piqsavi.com` designated and reachable | Delay public launch | Legal |
 | EXT-19 | Legal review (ToS/Privacy/disclosures) | Legal counsel | 28 / 44 | global launch | 2026-08-10 | 2–6 weeks | `applied` | **AMBER** | Sanitized counsel engagement + schedule confirmation retained at [`evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_ENGAGEMENT_2026-08-10.png) and [`evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png`](evidence/external/EXT-19_LEGAL_COUNSEL_SCHEDULE_CONFIRMATION_2026-08-10.png). Signed comprehensive review (2026-08-19) is sanitized at [`evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md) (see EXT-19 notes). Disposition: **cleared to proceed only after specified revisions / implementation conditions**. This is written **conditional** approval, **not** unconditional written approval of published consumer documents. Register taxonomy has no status for written conditional approval; closest truthful status remains `applied`. Do **not** use `approved` until published-version approval evidence exists. | Delay public launch | Entire launch |
-| EXT-20 | Privacy Policy publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `applied` | **AMBER** | Live URL | Delay public launch | Entire launch. Content-layer `/privacy` is published as `privacy-2026-09-11`; staging deploy still required; production live URL remains cutover. |
-| EXT-21 | Terms of Service publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `applied` | **AMBER** | Live URL | Delay public launch | Entire launch. Content-layer `/terms` is published as `terms-2026-09-11`; staging deploy still required; production live URL remains cutover. |
+| EXT-20 | Privacy Policy publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `applied` | **AMBER** | Live URL | Delay public launch | Entire launch. Content-layer `/privacy` is published as `privacy-2026-09-11`. Staging live URL verified 2026-09-11 (`https://staging.piqsavi.com/privacy` 200, Deploy Staging #35). Production live URL remains cutover. |
+| EXT-21 | Terms of Service publication | Legal + eng | 28 / 45 | global launch | After EXT-19 | 1–3 days | `applied` | **AMBER** | Live URL | Delay public launch | Entire launch. Content-layer `/terms` is published as `terms-2026-09-11`. Staging live URL verified 2026-09-11 (`https://staging.piqsavi.com/terms` 200, Deploy Staging #35). Production live URL remains cutover. |
 | EXT-22 | Cookie-consent solution | Product + legal | 28 / 39 | optional beta capability | Sprint 28 | 1–3 weeks | `not_started` | **AMBER** (optional) | Consent gate before non-essential analytics | First-party essential-only cookies; no third-party analytics | Analytics / tracking claims |
 | EXT-23 | FX provider | Marketplace eng | 37 | optional beta capability | Sprint 31 | 1–3 weeks | `not_started` | **AMBER** (optional) | Rates + timestamps; fail-closed tests | No cross-currency compare; disclose | Multi-currency compare |
 | EXT-24 | Monitoring / paging destination | Ops / on-call | 42 | production infrastructure | Sprint 41 | 3–10 days | `not_started` | **AMBER** | Page + ack ≤15m evidence | Delay production launch | Entire production launch |
@@ -105,7 +105,7 @@ Technical current-main staging proof does **not** advance any EXT row and is **n
 
 - EXT-08 — remains `applied` (account-establishment screenshot). Staging identity delivery evidenced 2026-09-08. Production attach remains Sprint 41
 - EXT-11 / EXT-12 / EXT-13 / EXT-14 — public DNS/TLS/production AWS/secrets not applied
-- EXT-19 / EXT-20 / EXT-21 — counsel engaged; conditional review is not unconditional approval. EXT-19 remains `applied`. EXT-20 / EXT-21 are `applied` for owner-authorized content-layer publication (`/privacy` `/terms` 200 in this revision). Staging deploy and production live URL remain separate.
+- EXT-19 / EXT-20 / EXT-21 — counsel engaged; conditional review is not unconditional approval. EXT-19 remains `applied`. EXT-20 / EXT-21 are `applied` for owner-authorized content-layer publication. Staging `/privacy` `/terms` 200 verified 2026-09-11 on Deploy Staging #35. Production live URL remains cutover.
 - EXT-24 — paging destination not started
 - EXT-29 — Search Console not started
 - EXT-15 / EXT-16 / EXT-22 / EXT-23 / EXT-25 — optional; reduce claims rather than delay launch. **EXT-07 is not a September launch blocker** (2026-09-07): public beta launches without affiliate monetization; EXT-07 is `n_a_beta` / GREEN for September.
@@ -210,6 +210,30 @@ This addendum does **not** replace the EXT-09 Verified notes above.
 | Brand policy | [`PIQSAVI_PUBLIC_BRAND_POLICY.md`](PIQSAVI_PUBLIC_BRAND_POLICY.md) |
 
 **EXT-11 and EXT-12 status remain `not_started` and are unchanged by this evidence.**
+
+### EXT-11 / EXT-12 / EXT-13 / EXT-14 2026-09-11 Early Access production-cutover re-audit
+
+This addendum does **not** apply production Terraform, change Cloudflare DNS, populate secrets, or deploy production. Evidence: [`evidence/EARLY_ACCESS_PRODUCTION_CUTOVER_READINESS_2026-09-11.md`](evidence/EARLY_ACCESS_PRODUCTION_CUTOVER_READINESS_2026-09-11.md).
+
+| ID | Status after re-audit | Live evidence 2026-09-11 |
+|----|-----------------------|--------------------------|
+| EXT-11 | remains `not_started` | `piqsavi.com` still Cloudflare-proxied static page (`104.21.66.117` / `172.67.159.152`); `/health` `/privacy` `/terms` 404. Staging CNAME to staging ALB is unchanged and is not production DNS |
+| EXT-12 | remains `not_started` | Apex TLS is Cloudflare / Google Trust Services `WE1`, not a production ALB ACM listener. No production HTTP→HTTPS ALB redirect. Staging ACM covers `staging.piqsavi.com` only; staging HTTP still 200 |
+| EXT-13 | remains Partial TF only; not applied | Production Terraform exists under `infra/terraform/environments/production/`. This audit did not run AWS inventory (no AWS CLI/credentials). Public hostname is not the PiqSavi app. GitHub Environment `production` absent. No `deploy-production.yml` |
+| EXT-14 | remains `not_started` | Production secret containers are Terraform-only. Staging host assembler still refuses a production secrets prefix. No production secret values were read or written |
+
+Do **not** mark these rows `applied` / `approved` / `provisioned` from this re-audit. Do **not** mark public-beta or merchant readiness.
+
+### EXT-20 / EXT-21 2026-09-11 staging live-URL addendum
+
+Statuses remain **`applied`**. Production live URL remains cutover.
+
+| Field | Value |
+|-------|-------|
+| Staging Privacy | `https://staging.piqsavi.com/privacy` HTTP 200; published id `privacy-2026-09-11` |
+| Staging Terms | `https://staging.piqsavi.com/terms` HTTP 200; published id `terms-2026-09-11` |
+| Staging deploy | Deploy Staging #35, run `34573790133`, SHA `c4135859663a482b078da6959af746fd2d5dc098` |
+| Production Privacy/Terms | Apex `/privacy` `/terms` still 404 on the Cloudflare static site |
 
 ### EXT-17 notes (support email inbox — provisioned)
 
@@ -322,8 +346,8 @@ This addendum does **not** rewrite the 2026-08-10 engagement notes, the 2026-08-
 | Assent | Owner-authorized Early Access checkbox: “I agree to the Terms of Service and acknowledge the Privacy Policy.” |
 | Legal/content ready | **Yes for staging verification** — `/privacy` and `/terms` return 200 from published HTML |
 | Production infrastructure ready | **No** — separate from legal/content. PR #128 infrastructure blockers remain open |
-| EXT-20 | **`applied`** — Privacy published as `privacy-2026-09-11`. Staging deploy still required. Production live URL remains cutover. |
-| EXT-21 | **`applied`** — Terms published as `terms-2026-09-11`. Staging deploy still required. Production live URL remains cutover. |
+| EXT-20 | **`applied`** — Privacy published as `privacy-2026-09-11`. Staging live URL verified 2026-09-11 (Deploy Staging #35). Production live URL remains cutover. |
+| EXT-21 | **`applied`** — Terms published as `terms-2026-09-11`. Staging live URL verified 2026-09-11 (Deploy Staging #35). Production live URL remains cutover. |
 | EXT-22 | remains `not_started` — no CMP / banner |
 | Resulting state | `EARLY ACCESS LEGAL/CONTENT LAYER READY — STAGING VERIFICATION REQUIRED — PRODUCTION INFRASTRUCTURE CUTOVER REMAINS` |
 | Explicit non-claims | Does **not** prove new unconditional counsel approval; public-beta launch; merchant certification; live shopping; affiliate monetization; or production cutover |
