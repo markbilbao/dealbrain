@@ -123,6 +123,18 @@ def test_production_rejects_non_postgres_dsn() -> None:
     assert any("PostgreSQL" in e or "DATABASE_URL" in e for e in result.errors)
 
 
+def test_production_rejects_localhost_ephemeral_database() -> None:
+    result = validate_settings(
+        _prod_settings(
+            DATABASE_URL="postgresql+asyncpg://dealbrain:Str0ngProdPass!99@localhost:5432/dealbrain"
+        )
+    )
+    assert result.ok is False
+    assert any("durable" in e.lower() or "localhost" in e.lower() for e in result.errors)
+    joined = " ".join(result.errors).lower()
+    assert "str0ngprodpass" not in joined
+
+
 def test_strict_startup_raises_on_invalid_production() -> None:
     cfg = _prod_settings(APP_DEBUG="true", LAUNCH_STRICT_STARTUP="true")
     with pytest.raises(ConfigurationValidationError):
@@ -262,7 +274,7 @@ def test_terraform_environments_exist() -> None:
         path = ROOT / "infra/terraform/environments" / env / "main.tf"
         assert path.is_file(), path
         text = path.read_text(encoding="utf-8")
-        assert 'health_check_path = "/ready"' in text
+        assert re.search(r'health_check_path\s*=\s*"/ready"', text)
         assert 'module "rds"' in text
         assert 'module "alb"' in text
         assert 'module "secrets"' in text

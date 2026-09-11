@@ -305,18 +305,20 @@ def test_runbook_declares_combined_apply_gate() -> None:
 
 
 def test_production_untouched_by_user_data_isolation() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").exists()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
     prod_main = PROD_TF / "main.tf"
     assert prod_main.is_file()
     prod = _read(prod_main)
-    assert "user_data" not in prod
-    assert "user_data_base64" not in prod
-    assert "ssm_rollback" not in prod
+    assert "production_user_data_base64" in prod
+    assert "user_data_base64" in prod
+    assert "ec2/user_data/production.sh" in prod
+    assert "ec2/user_data/staging.sh" not in prod
+    assert 'source = "../../modules/ssm_rollback_document"' not in prod
     for path in PROD_TF.rglob("*.tf"):
         text = path.read_text(encoding="utf-8")
         assert "dealbrain-staging-rollback" not in text
         assert "staging-host-tooling" not in text
-        assert "ssm_rollback" not in text
+        assert 'source = "../../modules/ssm_rollback_document"' not in text
 
 
 def test_bash_syntax_user_data_and_host_scripts() -> None:

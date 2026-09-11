@@ -121,8 +121,9 @@ def test_staging_workflow_exists() -> None:
 
 
 def test_production_workflow_absent_rollback_present() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
-    # Sprint 25b.5 adds staging-only rollback.yml; production rollback remains absent.
+    # Phase 1 adds production deploy/rollback; staging rollback.yml stays staging-only.
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
+    assert (WORKFLOWS / "rollback-production.yml").is_file()
     assert (WORKFLOWS / "rollback.yml").is_file()
     assert "environment: staging" in (WORKFLOWS / "rollback.yml").read_text(encoding="utf-8")
     assert "environment: production" not in (WORKFLOWS / "rollback.yml").read_text(encoding="utf-8")
@@ -249,9 +250,12 @@ def test_no_aws_run_shell_script_staging_allow() -> None:
     # Sprint 25b.5: deploy + rollback custom documents only (never empty → RunShellScript).
     assert "ssm_rollback_document.document_arn" in staging_main
     assert "AWS-RunShellScript" not in staging_main
-    # Production root must not wire the staging custom documents in this sprint.
-    assert "ssm_deploy_document" not in _read(PROD_TF / "main.tf")
-    assert "ssm_rollback_document" not in _read(PROD_TF / "main.tf")
+    # Production must not wire the *staging* custom SSM modules.
+    prod_main = _read(PROD_TF / "main.tf")
+    assert 'source = "../../modules/ssm_deploy_document"' not in prod_main
+    assert 'source = "../../modules/ssm_rollback_document"' not in prod_main
+    assert 'source = "../../modules/ssm_production_deploy_document"' in prod_main
+    assert 'source = "../../modules/ssm_production_rollback_document"' in prod_main
 
 
 def test_no_ssh() -> None:
@@ -278,7 +282,9 @@ def test_s3_staging_only_bundle_modeled() -> None:
     staging = _read(STAGING_TF / "main.tf")
     assert 'module "release_artifacts"' in staging
     prod = _read(PROD_TF / "main.tf")
-    assert "release_artifacts" not in prod
+    assert 'module "release_artifacts"' in prod
+    assert "environment = local.environment" in prod
+    assert "dealbrain-staging-release-artifacts" not in prod
 
 
 def test_production_overlay_excluded_from_bundle() -> None:
@@ -1165,14 +1171,15 @@ def test_bootstrap_signed_compose_plugin_path() -> None:
     assert "/opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
     assert "chmod 0755 /opt/dealbrain/bin/dealbrain-staging-deploy.sh" in ud
 
-    # Production must not gain user_data / compose installer wiring.
+    # Production uses a dedicated production.sh bootstrap, not staging user_data.
     prod = _read(PROD_TF / "main.tf")
     assert "staging_user_data" not in prod
     assert "staging_user_data_base64" not in prod
     assert "install-compose-plugin" not in prod
-    assert "user_data" not in prod
-    assert "user_data_base64" not in prod
-    assert "base64gzip" not in prod
+    assert "production_user_data_base64" in prod
+    assert "ec2/user_data/production.sh" in prod
+    assert "ec2/user_data/staging.sh" not in prod
+    assert "base64gzip" in prod
 
     # Deploy orchestrator still fail-closes without Compose (defense in depth).
     orch = _read(HOST_SCRIPTS / "dealbrain-staging-deploy.sh")

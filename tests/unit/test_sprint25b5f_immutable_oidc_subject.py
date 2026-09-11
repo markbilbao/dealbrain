@@ -144,19 +144,18 @@ def test_staging_requires_immutable_ids_via_precondition() -> None:
     assert "immutable OIDC" in main or "immutable" in main.lower()
 
 
-def test_production_root_untouched_by_immutable_id_wiring() -> None:
+def test_production_root_requires_immutable_id_wiring() -> None:
     production_main = _read(PRODUCTION / "main.tf")
     production_vars = _read(PRODUCTION / "variables.tf")
     production_example = _read(PRODUCTION / "terraform.tfvars.example")
     for text in (production_main, production_vars, production_example):
-        assert "github_repository_owner_id" not in text
-        assert "github_repository_id" not in text
-        assert CONFIRMED_OWNER_ID not in text
-        assert CONFIRMED_REPO_ID not in text
-        assert IMMUTABLE_STAGING_SUB not in text
-    # Production still wires owner/name only (legacy sub path via empty ID defaults).
-    assert "github_repository_owner  = var.github_repository_owner" in production_main
-    assert "github_repository_name   = var.github_repository_name" in production_main
+        assert "github_repository_owner_id" in text
+        assert "github_repository_id" in text
+    assert CONFIRMED_OWNER_ID in production_vars or CONFIRMED_OWNER_ID in production_example
+    assert CONFIRMED_REPO_ID in production_vars or CONFIRMED_REPO_ID in production_example
+    assert IMMUTABLE_STAGING_SUB not in production_main
+    assert "github_repository_owner    = var.github_repository_owner" in production_main
+    assert "github_repository_name     = var.github_repository_name" in production_main
     assert 'environment = "production"' in production_main
 
 

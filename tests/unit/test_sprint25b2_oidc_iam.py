@@ -471,10 +471,13 @@ def test_no_real_token_like_values_in_terraform_tree() -> None:
 
 
 def test_no_production_or_rollback_deploy_workflows_exist() -> None:
-    """Staging deploy + rollback exist; production deploy remains deferred."""
+    """Staging deploy + rollback exist; production deploy is isolated in its own workflow."""
     assert (WORKFLOWS / "deploy-staging.yml").is_file()
     assert (WORKFLOWS / "rollback.yml").is_file()
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
+    staging = _read(WORKFLOWS / "deploy-staging.yml")
+    assert "environment: production" not in staging
+    assert "DealBrain-StagingDeploy" in staging
 
 
 def test_no_terraform_apply_in_github_actions() -> None:

@@ -318,9 +318,10 @@ def test_bash_syntax_maintenance_scripts() -> None:
 
 
 def test_no_production_authorization() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").exists()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
     prod_main = _read(PROD_TF / "main.tf")
-    assert "ssm_rollback" not in prod_main
+    assert 'source = "../../modules/ssm_rollback_document"' not in prod_main
+    assert "DealBrain-StagingRollback" not in prod_main
 
 
 # ---------------------------------------------------------------------------

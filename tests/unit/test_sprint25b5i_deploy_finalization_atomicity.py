@@ -1095,8 +1095,7 @@ def test_successful_deploy_order_in_host_script() -> None:
 
 
 def test_production_remains_untouched() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
-    # Sprint 25b.5 adds staging rollback.yml; production deploy/rollback remain absent.
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
     rb = WORKFLOWS / "rollback.yml"
     assert rb.is_file()
     assert "environment: production" not in rb.read_text(encoding="utf-8")

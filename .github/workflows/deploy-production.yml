@@ -20,7 +20,7 @@ on:
         type: string
 
 concurrency:
-  # Shared with rollback.yml so deploy and rollback cannot overlap unsafely.
+  # Shared with rollback-production.yml so deploy and rollback cannot overlap unsafely.
   group: production-release-mutation
   cancel-in-progress: false
 
