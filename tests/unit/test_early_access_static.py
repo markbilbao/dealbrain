@@ -109,7 +109,8 @@ def test_responsive_breakpoint_present() -> None:
     assert "min-height: 480px" in css
     assert "min-height: 222px" in css
     assert "font-size: 3.5rem" in css
-    assert "font-size: 1.85rem" in css
+    assert "font-size: 1.7rem" in css
+    assert "object-view-box" in css
     assert "min-height: 400px" not in css
     assert "font-size: 3rem" not in css.split("@media (max-width: 767px)", 1)[0]
 
