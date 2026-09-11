@@ -1,7 +1,7 @@
 # Production RDS backup and restore (Early Access)
 
-**Audience:** owner/ops after production Terraform is applied.  
-**Scope:** durable Early Access registration data on production RDS.  
+**Audience:** owner/ops after production Terraform is applied.
+**Scope:** durable Early Access registration data on production RDS.
 **This document does not claim a restore rehearsal occurred.** A future
 owner-controlled rehearsal remains required before public cutover.
 

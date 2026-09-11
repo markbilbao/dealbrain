@@ -15,7 +15,7 @@ accept metric filters later without redesigning the stack.
 | Compose `migrate` | CloudWatch Logs `/dealbrain/production/migrate` via Docker `awslogs` | 30 days |
 | Host bootstrap / SSM | Instance disk `/var/log/dealbrain/` (EBS). CloudWatch group `/dealbrain/production/host` is provisioned for a future agent; this phase does not install a CloudWatch agent | 30 days (CW group); disk until volume lifecycle |
 
-Terraform module: `infra/terraform/modules/logging/`.  
+Terraform module: `infra/terraform/modules/logging/`.
 Compose overlay: `infra/compose/docker-compose.production.yml` (`awslogs-create-group=false`; groups are Terraform-owned).
 
 IAM: production API host role may `CreateLogStream` / `PutLogEvents` on those
