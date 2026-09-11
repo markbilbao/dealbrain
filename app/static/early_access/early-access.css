@@ -472,9 +472,9 @@ select:focus-visible {
     content: "";
     position: absolute;
     top: 27px;
-    right: -1.45rem;
-    width: 22px;
-    height: 2px;
+    right: -1.35rem;
+    width: 18px;
+    height: 1.5px;
     background: var(--blue);
     border: 0;
     box-shadow: none;
@@ -484,12 +484,12 @@ select:focus-visible {
   .how-step:not(:last-child)::before {
     content: "";
     position: absolute;
-    top: 22px;
+    top: 23px;
     right: -1.15rem;
-    width: 10px;
-    height: 10px;
-    border-right: 2px solid var(--blue);
-    border-top: 2px solid var(--blue);
+    width: 8px;
+    height: 8px;
+    border-right: 1.5px solid var(--blue);
+    border-top: 1.5px solid var(--blue);
     transform: rotate(45deg);
   }
 }
@@ -573,14 +573,14 @@ select:focus-visible {
 
 .trust-icon {
   flex: 0 0 auto;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   margin-bottom: 0;
 }
 
 .trust-icon svg {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 
 .trust-grid p {
@@ -1036,7 +1036,7 @@ select:focus-visible {
 
   .site-header {
     padding: 0 1.15rem;
-    min-height: 56px;
+    min-height: 52px;
   }
 
   .site-header .brand-logo {
@@ -1217,9 +1217,9 @@ select:focus-visible {
   }
 
   .site-footer {
-    padding-top: 0.32rem;
-    padding-bottom: 0.35rem;
-    gap: 0.1rem 0.75rem;
+    padding-top: 0.48rem;
+    padding-bottom: 0.55rem;
+    gap: 0.12rem 0.75rem;
     min-height: 0;
   }
 

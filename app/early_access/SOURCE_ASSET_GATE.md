@@ -23,7 +23,7 @@ Hero photography:
   Crop / focal-point application (Hero_Crop_Focal_Point_Specification.txt):
     Desktop / 1440 / 1024: object-position 58% 42%
     Tablet portrait / 768: object-position 59% 42%
-    Mobile / 390: object-position 60% 42% plus the approved 4:5 crop
+    Mobile / 390: object-position 60% 47% plus the approved 4:5 crop
 
   The previous CSS gradient placeholder has been removed. The approved
   photographic source is what the landing page serves.
@@ -38,6 +38,10 @@ Logo:
 
   Header / footer / signup use a derived icon+wordmark lockup:
     app/static/early_access/assets/piqsavi-logo-lockup.png
-    1020 × 242, literal pixel crop of the master at (196, 318)–(1216, 560)
-    SHA-256 20afee9c07a0c720474b3a391d8a9f6c9a1d5c4347e2dd5bc5866c304615d452
-    No redraw, no CSS object-view-box / clip / negative positioning.
+    797 × 167 RGBA
+    Complete circular icon: literal pixels (197, 318)–(523, 669), uniformly
+    scaled to wordmark cap-height so the mark is not cropped.
+    Wordmark: literal pixels (594, 383)–(1216, 550). Tagline omitted.
+    20px transparent gap. Icon and wordmark aspect ratios unchanged.
+    SHA-256 f5d43f1d184b7a79fada0eedf2db61d3213a39acb02672cc4060c5f5638e47c2
+    No redraw, no CSS object-view-box / clip / overflow / negative positioning.

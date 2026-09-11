@@ -137,8 +137,10 @@ def test_signup_states_keep_locked_master_proportions() -> None:
 
 APPROVED_LOGO_SHA256 = "5189150b27fbd6a374ce8cc023ef735e5a5c752e667d45d716fdaa8900dfb42f"
 REJECTED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
-LOCKUP_SHA256 = "20afee9c07a0c720474b3a391d8a9f6c9a1d5c4347e2dd5bc5866c304615d452"
-LOCKUP_BOX = (196, 318, 1216, 560)
+LOCKUP_SHA256 = "f5d43f1d184b7a79fada0eedf2db61d3213a39acb02672cc4060c5f5638e47c2"
+LOCKUP_SIZE = (797, 167)
+ICON_BOX = (197, 318, 523, 669)
+WORDMARK_BOX = (594, 383, 1216, 550)
 
 
 def test_approved_master_logo_is_used() -> None:
@@ -164,17 +166,21 @@ def test_header_footer_use_derived_lockup_not_css_crop() -> None:
     raw = lockup_path.read_bytes()
     assert raw[:8] == b"\x89PNG\r\n\x1a\n"
     assert hashlib.sha256(raw).hexdigest() == LOCKUP_SHA256
-    assert raw[16:24] == (1020).to_bytes(4, "big") + (242).to_bytes(4, "big")
+    assert raw[16:24] == LOCKUP_SIZE[0].to_bytes(4, "big") + LOCKUP_SIZE[1].to_bytes(4, "big")
+    assert raw[25] == 6  # RGBA — transparent canvas, no presentation background
     assert HTML.count("/static/early_access/assets/piqsavi-logo-lockup.png") == 3
     assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 0
+    assert 'width="797"' in HTML
+    assert 'height="167"' in HTML
     assert "object-view-box" not in css
     assert "clip-path" not in css
     assert "clip:" not in css
     assert "margin-top: -" not in css
     assert ".brand-logo {\n  height: 38px;\n  width: auto;" in css
     gate = (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(encoding="utf-8")
-    assert "literal pixel crop of the master at (196, 318)–(1216, 560)" in gate
-    assert str(LOCKUP_BOX[0]) in gate
+    assert "Complete circular icon: literal pixels (197, 318)–(523, 669)" in gate
+    assert str(ICON_BOX[0]) in gate
+    assert str(WORDMARK_BOX[0]) in gate
 
 
 def test_approximating_logo_svg_is_gone() -> None:
@@ -408,4 +414,4 @@ def test_approved_desktop_how_and_trust_stack_icons_above_copy() -> None:
     assert "text-align: center" in css
     assert ".how-step:not(:last-child)::after" in css
     assert "flex-direction: row" in css
-    assert ".trust-icon {\n  flex: 0 0 auto;\n  width: 48px;" in css
+    assert ".trust-icon {\n  flex: 0 0 auto;\n  width: 56px;" in css
