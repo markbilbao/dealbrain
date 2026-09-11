@@ -104,13 +104,14 @@ def test_responsive_breakpoint_present() -> None:
     assert "SOURCE-ASSET-GATE" not in css
     assert "object-position: 58% 42%" in css
     assert "object-position: 59% 42%" in css
-    assert "object-position: 60% 42%" in css
+    assert "object-position: 60% 47%" in css
     assert "min-height: 414px" in css
     assert "min-height: 480px" in css
-    assert "min-height: 222px" in css
+    assert "min-height: 206px" in css
     assert "font-size: 3.5rem" in css
     assert "font-size: 1.7rem" in css
-    assert "object-view-box" in css
+    assert "object-view-box" not in css
+    assert "--logo-view" not in css
     assert "min-height: 400px" not in css
     assert "font-size: 3rem" not in css.split("@media (max-width: 767px)", 1)[0]
 
@@ -136,6 +137,8 @@ def test_signup_states_keep_locked_master_proportions() -> None:
 
 APPROVED_LOGO_SHA256 = "5189150b27fbd6a374ce8cc023ef735e5a5c752e667d45d716fdaa8900dfb42f"
 REJECTED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
+LOCKUP_SHA256 = "20afee9c07a0c720474b3a391d8a9f6c9a1d5c4347e2dd5bc5866c304615d452"
+LOCKUP_BOX = (196, 318, 1216, 560)
 
 
 def test_approved_master_logo_is_used() -> None:
@@ -146,14 +149,32 @@ def test_approved_master_logo_is_used() -> None:
     digest = hashlib.sha256(raw).hexdigest()
     assert digest == APPROVED_LOGO_SHA256
     assert digest != REJECTED_LOGO_SHA256
-    assert "/static/early_access/assets/piqsavi-logo.png" in HTML
-    assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 3
     assert 'alt="PiqSavi"' in HTML
     assert "piq-grad" not in HTML
     assert "brand-mark" not in HTML
     assert "brand-mark" not in (ROOT / "app/static/early_access/early-access.css").read_text(
         encoding="utf-8"
     )
+
+
+def test_header_footer_use_derived_lockup_not_css_crop() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    lockup_path = ROOT / "app/static/early_access/assets/piqsavi-logo-lockup.png"
+    assert lockup_path.is_file()
+    raw = lockup_path.read_bytes()
+    assert raw[:8] == b"\x89PNG\r\n\x1a\n"
+    assert hashlib.sha256(raw).hexdigest() == LOCKUP_SHA256
+    assert raw[16:24] == (1020).to_bytes(4, "big") + (242).to_bytes(4, "big")
+    assert HTML.count("/static/early_access/assets/piqsavi-logo-lockup.png") == 3
+    assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 0
+    assert "object-view-box" not in css
+    assert "clip-path" not in css
+    assert "clip:" not in css
+    assert "margin-top: -" not in css
+    assert ".brand-logo {\n  height: 38px;\n  width: auto;" in css
+    gate = (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(encoding="utf-8")
+    assert "literal pixel crop of the master at (196, 318)–(1216, 560)" in gate
+    assert str(LOCKUP_BOX[0]) in gate
 
 
 def test_approximating_logo_svg_is_gone() -> None:
@@ -387,4 +408,4 @@ def test_approved_desktop_how_and_trust_stack_icons_above_copy() -> None:
     assert "text-align: center" in css
     assert ".how-step:not(:last-child)::after" in css
     assert "flex-direction: row" in css
-    assert ".trust-icon {\n  flex: 0 0 auto;\n  width: 44px;" in css
+    assert ".trust-icon {\n  flex: 0 0 auto;\n  width: 48px;" in css

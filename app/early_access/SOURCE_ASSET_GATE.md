@@ -29,8 +29,15 @@ Hero photography:
   photographic source is what the landing page serves.
 
 Logo:
-  The exact approved PiqSavi master lockup is installed at
+  The exact approved PiqSavi master is installed at
   app/static/early_access/assets/piqsavi-logo.png
   (copied from the owner-supplied master PNG for the approved-design
   reconciliation; not redrawn or approximated).
   SHA-256 5189150b27fbd6a374ce8cc023ef735e5a5c752e667d45d716fdaa8900dfb42f
+  The master file is kept intact and is not CSS-cropped at render time.
+
+  Header / footer / signup use a derived icon+wordmark lockup:
+    app/static/early_access/assets/piqsavi-logo-lockup.png
+    1020 × 242, literal pixel crop of the master at (196, 318)–(1216, 560)
+    SHA-256 20afee9c07a0c720474b3a391d8a9f6c9a1d5c4347e2dd5bc5866c304615d452
+    No redraw, no CSS object-view-box / clip / negative positioning.
