@@ -113,7 +113,7 @@ def test_publication_activation_record_stays_blocked() -> None:
     assert "Legal/content ready: No" in ACTIVATION
     assert "Production infrastructure ready: No" in ACTIVATION
     assert "condition not explicitly documented in sanitized record" in ACTIVATION
-    assert "August 25 working-draft package is **still not**" in ACTIVATION
+    assert "August 25 revised working-draft package is **still not**" in ACTIVATION
     assert "By joining Early Access, you agree to the Terms" not in HTML
     for document in EIGHT_DOCUMENTS:
         assert document in ACTIVATION
