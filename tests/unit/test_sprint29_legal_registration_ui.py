@@ -78,7 +78,12 @@ async def test_live_register_route_uses_published_production_catalog(
     assert response.status_code == 200
     assert 'name="terms_accepted"' in response.text
     assert 'name="privacy_acknowledged"' in response.text
-    assert "I accept the Terms of Service" in response.text
+    assert "I accept the" in response.text
+    assert "Terms of Service" in response.text
+    assert "I acknowledge the" in response.text
+    assert "Privacy Policy" in response.text
+    assert 'href="/terms"' in response.text
+    assert 'href="/privacy"' in response.text
     assert 'data-legal-unpublished="true"' not in response.text
 
 

@@ -326,7 +326,9 @@ async def test_account_consents_ignores_foreign_user_id(client: AsyncClient) -> 
     body = response.json()
     assert body["user_id"] == created.json()["user"]["user_id"]
     assert body["user_id"] != other_id
-    assert body["records"] == []
+    assert body["records"]
+    assert all(record["user_id"] == body["user_id"] for record in body["records"])
+    assert all(record["user_id"] != other_id for record in body["records"])
 
 
 @pytest.mark.asyncio
@@ -348,7 +350,7 @@ async def test_support_page_uses_provisioned_contacts_only(client: AsyncClient) 
 async def test_register_does_not_invent_age_or_dob(client: AsyncClient) -> None:
     page = await client.get("/register")
     assert page.status_code == 200
-    assert 'data-eligibility-unpublished="true"' in page.text
+    assert 'data-eligibility-unpublished="true"' not in page.text
     assert "Legal policies are not yet available for this beta." not in page.text
     assert 'name="terms_accepted"' in page.text
     assert 'name="privacy_acknowledged"' in page.text

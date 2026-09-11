@@ -9,8 +9,9 @@ Current owner-authorized published files:
 - `terms-2026-09-11.html` — version `terms-2026-09-11`
 
 Those HTML files are generated from the August 25 working-draft package with
-only owner-authorized factual-currentness corrections. They are **not** a new
-counsel approval.
+only owner-authorized factual-currentness corrections. They are **not a new counsel approval**
+and they do **not** replace the 2026-08-19 **conditional** counsel review record.
+The 2026-08-19 record remains conditional and does **not** by itself authorize copying counsel drafts here.
 
 Do **not** copy counsel drafts or working-draft markdown from `docs/legal/`
 into this folder as a substitute for approved HTML.
