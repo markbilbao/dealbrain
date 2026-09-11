@@ -239,7 +239,10 @@ def test_concurrent_deploy_and_rollback_share_group() -> None:
 
 
 def test_production_remains_untouched() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
+    prod_main = _read(PROD_TF / "main.tf")
+    assert 'source = "../../modules/ssm_rollback_document"' not in prod_main
+    assert "DealBrain-StagingRollback" not in prod_main
+    assert 'source = "../../modules/ssm_production_rollback_document"' in prod_main
     assert not (PROD_TF / "rollback").exists()
     rollback_tf = _read(SSM_ROLLBACK / "variables.tf")
     assert 'var.environment == "staging"' in rollback_tf
@@ -247,10 +250,10 @@ def test_production_remains_untouched() -> None:
     assert "ssm_rollback_document" in staging_main
     assert "DealBrain-StagingRollback" in _read(SSM_ROLLBACK / "variables.tf")
     assert "dealbrain-staging-rollback.sh" in _read(SSM_ROLLBACK / "main.tf")
-    # No production terraform references rollback module.
     for path in PROD_TF.rglob("*.tf"):
-        assert "ssm_rollback" not in path.read_text(encoding="utf-8")
-        assert "DealBrain-StagingRollback" not in path.read_text(encoding="utf-8")
+        text = path.read_text(encoding="utf-8")
+        assert 'source = "../../modules/ssm_rollback_document"' not in text
+        assert "DealBrain-StagingRollback" not in text
 
 
 # ---------------------------------------------------------------------------

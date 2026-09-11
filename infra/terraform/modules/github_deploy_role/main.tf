@@ -19,7 +19,8 @@ locals {
   # Both IDs required together. Staging must set them (precondition below).
   # Format matches GitHub Actions use_default immutable subjects:
   #   repo:<owner>@<owner_id>/<repo>@<repo_id>:environment:<env>
-  # Empty IDs keep legacy name-only sub (production until migrated).
+  # Empty IDs keep legacy name-only sub (module tests only).
+  # Staging and production roots must set both IDs (preconditions below).
   use_immutable_oidc_sub = local.owner_id != "" && local.repo_id != ""
   github_repository_sub = (
     local.use_immutable_oidc_sub
@@ -89,6 +90,11 @@ resource "aws_iam_role" "gha_deploy" {
       # Staging trust must match GitHub use_default immutable subjects exactly.
       condition     = var.environment != "staging" || local.use_immutable_oidc_sub
       error_message = "Staging deploy role requires numeric github_repository_owner_id and github_repository_id for the immutable OIDC sub claim."
+    }
+    precondition {
+      # Production Early Access also requires immutable OIDC subjects.
+      condition     = var.environment != "production" || local.use_immutable_oidc_sub
+      error_message = "Production deploy role requires numeric github_repository_owner_id and github_repository_id for the immutable OIDC sub claim."
     }
   }
 

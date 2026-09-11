@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Assemble staging Compose runtime env from Secrets Manager (host-side only).
+"""Assemble Compose runtime env from Secrets Manager (host-side only).
 
-Never prints secret values. Writes atomically to a 0600 env file.
+Supports staging and production. Never prints secret values. Writes atomically
+to a 0600 env file. Fail closed on missing production configuration.
 """
 
 from __future__ import annotations
@@ -15,7 +16,30 @@ import sys
 import tempfile
 from contextlib import suppress
 from pathlib import Path
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
+
+STAGING_PUBLIC_BASE_URL = "https://staging.piqsavi.com"
+PRODUCTION_PUBLIC_BASE_URL = "https://piqsavi.com"
+PRODUCTION_TRUSTED_HOSTS = "piqsavi.com,www.piqsavi.com"
+PRODUCTION_LEGAL_PRIVACY_VERSION = "privacy-2026-09-11"
+PRODUCTION_LEGAL_TERMS_VERSION = "terms-2026-09-11"
+PUBLIC_SUPPORT_EMAIL = "support@piqsavi.com"
+PUBLIC_PRIVACY_EMAIL = "privacy@piqsavi.com"
+TRANSACTIONAL_EMAIL_FROM = "no-reply@piqsavi.com"
+TRANSACTIONAL_EMAIL_FROM_NAME = "PiqSavi"
+
+_LOCAL_DB_HOSTS = frozenset(
+    {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+        "0.0.0.0",
+        "postgres",
+        "db",
+        "database",
+        "host.docker.internal",
+    }
+)
 
 
 class SecretAssemblyError(RuntimeError):
@@ -113,9 +137,22 @@ def build_database_url(
     return f"postgresql+asyncpg://{user_q}:{pass_q}@{host}:{port}/{database}"
 
 
-def _atomic_write_env(path: Path, mapping: dict[str, str]) -> None:
+def _database_host_is_ephemeral_or_local(host: str) -> bool:
+    normalized = (host or "").strip().lower().rstrip(".")
+    if not normalized:
+        return True
+    if normalized in _LOCAL_DB_HOSTS:
+        return True
+    if normalized.endswith(".local"):
+        return True
+    return False
+
+
+def _atomic_write_env(
+    path: Path, mapping: dict[str, str], *, tmp_prefix: str = ".staging.env."
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(prefix=".staging.env.", dir=str(path.parent))
+    fd, tmp_name = tempfile.mkstemp(prefix=tmp_prefix, dir=str(path.parent))
     tmp_path = Path(tmp_name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
@@ -143,9 +180,23 @@ def assemble(
     region: str,
     rds_nonsecret: Path,
     secrets_prefix: str = "dealbrain/staging",
+    environment: str = "staging",
 ) -> None:
-    if "production" in secrets_prefix:
-        raise SecretAssemblyError("refusing to read production secrets on staging host")
+    environment = (environment or "staging").strip().lower()
+    if environment not in {"staging", "production"}:
+        raise SecretAssemblyError("environment must be staging or production")
+
+    prefix = secrets_prefix.strip().rstrip("/")
+    if environment == "staging":
+        if "production" in prefix:
+            raise SecretAssemblyError("refusing to read production secrets on staging host")
+        if prefix != "dealbrain/staging":
+            raise SecretAssemblyError("staging secrets prefix must be dealbrain/staging")
+    else:
+        if "staging" in prefix:
+            raise SecretAssemblyError("refusing to read staging secrets on production host")
+        if prefix != "dealbrain/production":
+            raise SecretAssemblyError("production secrets prefix must be dealbrain/production")
 
     with rds_nonsecret.open(encoding="utf-8") as handle:
         rds_meta = json.load(handle)
@@ -157,6 +208,11 @@ def assemble(
     )
     if not rds_secret_arn:
         raise SecretAssemblyError("rds-nonsecret.json missing master_user_secret_arn")
+
+    if environment == "production" and _database_host_is_ephemeral_or_local(str(host)):
+        raise SecretAssemblyError(
+            "production DATABASE_URL host must be durable RDS (not localhost/ephemeral)"
+        )
 
     rds_secret = _get_json_secret(rds_secret_arn, region)
     username = rds_secret.get("username")
@@ -171,17 +227,29 @@ def assemble(
         port=port,
         database=db_name,
     )
+    parsed = urlparse(database_url.replace("postgresql+asyncpg", "postgresql", 1))
+    if environment == "production":
+        db_host = (parsed.hostname or "").lower()
+        if _database_host_is_ephemeral_or_local(db_host):
+            raise SecretAssemblyError(
+                "production cannot start with an ephemeral/local Early Access store"
+            )
+        scheme = (parsed.scheme or "").lower()
+        if "postgres" not in scheme:
+            raise SecretAssemblyError("production DATABASE_URL must be PostgreSQL")
 
     # Required application secrets
-    app_secret_key = _get_plain_secret(f"{secrets_prefix}/app_secret_key", region)
-    cors_origins = _get_plain_secret(f"{secrets_prefix}/cors_origins", region)
+    app_secret_key = _get_plain_secret(f"{prefix}/app_secret_key", region)
+    cors_origins = _get_plain_secret(f"{prefix}/cors_origins", region)
     if not app_secret_key.strip():
         raise SecretAssemblyError("app_secret_key is empty")
+    if environment == "production" and len(app_secret_key.strip()) < 32:
+        raise SecretAssemblyError("production app_secret_key must be at least 32 characters")
     if not cors_origins.strip():
         raise SecretAssemblyError("cors_origins is empty")
 
     mapping: dict[str, str] = {
-        "APP_ENV": "staging",
+        "APP_ENV": environment,
         "DATABASE_URL": database_url,
         "CORS_ORIGINS": cors_origins,
         "APP_SECRET_KEY": app_secret_key,
@@ -198,29 +266,47 @@ def assemble(
         ("resend_api_key", "RESEND_API_KEY"),
     ):
         try:
-            mapping[env_name] = _get_plain_secret(f"{secrets_prefix}/{leaf}", region)
+            mapping[env_name] = _get_plain_secret(f"{prefix}/{leaf}", region)
         except SecretAssemblyError:
             mapping[env_name] = ""
 
     # Sprint 27.3 non-secret identity-email contract. The Resend API key is
-    # injected only from Secrets Manager leaf `{prefix}/resend_api_key`
-    # (staging default: dealbrain/staging/resend_api_key). Never write a
-    # placeholder that could pass startup validation. Provider stays null
-    # until a usable key is present so current staging does not construct
-    # ResendEmailSender without credentials.
+    # injected only from Secrets Manager leaf `{prefix}/resend_api_key`.
+    # Never write a placeholder that could pass startup validation.
     mapping["ALLOW_DEMO_RESET_TOKENS"] = "false"
-    mapping["TRANSACTIONAL_EMAIL_FROM"] = "no-reply@piqsavi.com"
-    mapping["TRANSACTIONAL_EMAIL_FROM_NAME"] = "PiqSavi"
-    mapping["PUBLIC_APP_BASE_URL"] = "https://staging.piqsavi.com"
+    mapping["TRANSACTIONAL_EMAIL_FROM"] = TRANSACTIONAL_EMAIL_FROM
+    mapping["TRANSACTIONAL_EMAIL_FROM_NAME"] = TRANSACTIONAL_EMAIL_FROM_NAME
     resend_key = mapping.get("RESEND_API_KEY", "")
-    if _usable_resend_api_key(resend_key):
+    if environment == "staging":
+        mapping["PUBLIC_APP_BASE_URL"] = STAGING_PUBLIC_BASE_URL
+        if _usable_resend_api_key(resend_key):
+            mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "resend"
+            mapping["RESEND_API_KEY"] = resend_key.strip()
+        else:
+            mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "null"
+            mapping["RESEND_API_KEY"] = ""
+    else:
+        mapping["PUBLIC_APP_BASE_URL"] = PRODUCTION_PUBLIC_BASE_URL
+        mapping["TRUSTED_HOSTS"] = PRODUCTION_TRUSTED_HOSTS
+        mapping["LEGAL_PRIVACY_PUBLISHED_VERSION_ID"] = PRODUCTION_LEGAL_PRIVACY_VERSION
+        mapping["LEGAL_TERMS_PUBLISHED_VERSION_ID"] = PRODUCTION_LEGAL_TERMS_VERSION
+        mapping["PUBLIC_SUPPORT_EMAIL"] = PUBLIC_SUPPORT_EMAIL
+        mapping["PUBLIC_PRIVACY_EMAIL"] = PUBLIC_PRIVACY_EMAIL
+        mapping["APP_DEBUG"] = "false"
+        mapping["LAUNCH_STRICT_STARTUP"] = "true"
+        mapping["PERSISTENCE_BACKEND"] = "sqlalchemy"
+        mapping["SEED_DEMO_DATA"] = "false"
+        mapping["DEMO_LAUNCHER_ENABLED"] = "false"
+        mapping["AWS_REGION"] = region
+        if not _usable_resend_api_key(resend_key):
+            raise SecretAssemblyError(
+                "production requires a usable Resend API key in dealbrain/production/resend_api_key"
+            )
         mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "resend"
         mapping["RESEND_API_KEY"] = resend_key.strip()
-    else:
-        mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "null"
-        mapping["RESEND_API_KEY"] = ""
 
-    _atomic_write_env(env_file, mapping)
+    tmp_prefix = f".{environment}.env."
+    _atomic_write_env(env_file, mapping, tmp_prefix=tmp_prefix)
     mode = stat.S_IMODE(env_file.stat().st_mode)
     if mode != 0o600:
         raise SecretAssemblyError(f"env file mode is {oct(mode)}, expected 0o600")
@@ -231,14 +317,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--env-file", type=Path, required=True)
     parser.add_argument("--rds-endpoint-file", type=Path, required=True)
     parser.add_argument("--region", required=True)
-    parser.add_argument("--secrets-prefix", default="dealbrain/staging")
+    parser.add_argument("--environment", default="staging", choices=("staging", "production"))
+    parser.add_argument("--secrets-prefix", default=None)
     args = parser.parse_args(argv)
+    prefix = args.secrets_prefix or f"dealbrain/{args.environment}"
     try:
         assemble(
             env_file=args.env_file,
             region=args.region,
             rds_nonsecret=args.rds_endpoint_file,
-            secrets_prefix=args.secrets_prefix,
+            secrets_prefix=prefix,
+            environment=args.environment,
         )
     except SecretAssemblyError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

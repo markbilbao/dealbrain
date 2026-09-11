@@ -236,5 +236,6 @@ def test_readiness_record_does_not_claim_cutover_complete() -> None:
 
 
 def test_production_deploy_workflow_remains_absent() -> None:
-    assert not (ROOT / ".github/workflows/deploy-production.yml").exists()
+    # Historical legal reconciliation recorded absence. Phase 1 adds the workflow.
     assert (ROOT / ".github/workflows/deploy-staging.yml").is_file()
+    assert (ROOT / ".github/workflows/deploy-production.yml").is_file()

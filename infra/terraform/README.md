@@ -35,17 +35,18 @@ perform `terraform apply` unless an operator explicitly runs it.
   lockfiles** (`use_lockfile = true`). DynamoDB lock tables are obsolete and must not be
   created for new backends.
 - ACM certificate ARN (optional until TLS cutover; leave empty for HTTP bootstrap)
-- GitHub repository owner/name for OIDC trust variables (25b.2); staging also
-  requires numeric `github_repository_owner_id` / `github_repository_id` for the
-  immutable OIDC `sub` (25b.5f; see `environments/staging/terraform.tfvars.example`)
+- GitHub repository owner/name for OIDC trust variables (25b.2); staging **and
+  production** require numeric `github_repository_owner_id` / `github_repository_id`
+  for the immutable OIDC `sub` (confirmed `309556720` / `1314423275` for
+  `markbilbao/dealbrain`; see `terraform.tfvars.example` in each environment)
 
 ## Remote state locking (Sprint 25b.4b)
 
 | Concern | Current | Obsolete |
 |---------|---------|----------|
 | Locking | S3 native lockfiles (`use_lockfile = true`) | S3 + DynamoDB lock table |
-| Roots modernized | `account/`, `environments/staging` | — |
-| Production | Intentionally deferred (see below) | Commented DynamoDB-era backend remains until production rollout |
+| Roots modernized | `account/`, `environments/staging`, `environments/production` | — |
+| Production | Partial S3 backend + `use_lockfile = true` (same pattern as staging). **Not applied.** | DynamoDB lock tables must not be created |
 
 ## Backend initialization
 
@@ -105,19 +106,37 @@ terraform validate
 
 It is **not** a substitute for a real backend when applying shared infrastructure.
 
-## Production status (intentionally deferred)
+## Production status (foundation in-repo; not applied)
 
-Production backend modernization is **deferred** until the production rollout sprint.
+Production uses the same **partial S3 backend** as staging:
 
-| Item | Status |
-|------|--------|
-| `environments/production` `required_version` | Still `>= 1.5.0` |
-| Production S3 backend block | Still commented (legacy DynamoDB-era comments) |
-| Action this sprint | **None** — do not migrate production state or enable `use_lockfile` here |
+```hcl
+backend "s3" {
+  use_lockfile = true
+}
+```
 
-When production is rolled out, migrate it to the same partial S3 backend pattern as staging
-(`use_lockfile = true` + `-backend-config` for bucket/key/region). Until then, operators
-must not assume production shares the modernized locking model.
+`bucket`, `key` (`production/terraform.tfstate`), and `region` are supplied at
+`terraform init` via `-backend-config`. Do **not** apply from CI or a deploy
+workflow. Owner/ops apply out-of-band after GitHub Environment hard gates exist.
+
+### Production backend
+
+```bash
+cd infra/terraform/environments/production
+cp terraform.tfvars.example terraform.tfvars
+# Set github_oidc_provider_arn from account output. Do NOT set a database password.
+terraform init \
+  -backend-config="bucket=dealbrain-terraform-state-<ACCOUNT_OR_SUFFIX>" \
+  -backend-config="key=production/terraform.tfstate" \
+  -backend-config="region=us-east-1"
+terraform validate
+# Operator only — not this PR: terraform apply
+```
+
+Owner UI after merge: [`docs/runbooks/GITHUB_PRODUCTION_ENVIRONMENT.md`](../../docs/runbooks/GITHUB_PRODUCTION_ENVIRONMENT.md).
+Backup/restore: [`docs/runbooks/PRODUCTION_RDS_BACKUP_RESTORE.md`](../../docs/runbooks/PRODUCTION_RDS_BACKUP_RESTORE.md).
+Logging: [`docs/runbooks/PRODUCTION_LOGGING.md`](../../docs/runbooks/PRODUCTION_LOGGING.md).
 
 ## Apply order
 
@@ -125,7 +144,8 @@ must not assume production shares the modernized locking model.
 2. **`account/`** — init with backend config, then create (or import) the single GitHub OIDC provider
 3. **`environments/staging`** — init with backend config; pass `github_oidc_provider_arn` from
    the account output (or remote state)
-4. **`environments/production`** — deferred backend migration; follow production rollout sprint
+4. **`environments/production`** — init with backend config (distinct state key);
+   pass `github_oidc_provider_arn` and immutable owner/repo IDs. **Do not apply from this PR.**
 
 ## Environment isolation
 
@@ -136,12 +156,13 @@ must not assume production shares the modernized locking model.
 | GHCR pull secret | `dealbrain/staging/ghcr_pull` | `dealbrain/production/ghcr_pull` |
 | RDS master secret | AWS-managed (staging instance) | Separate AWS-managed ARN |
 | GHA deploy role | `dealbrain-staging-gha-deploy` | `dealbrain-production-gha-deploy` |
-| OIDC subject | immutable `repo:…@owner_id/…@repo_id:environment:staging` (25b.5f) | legacy name-only `…:environment:production` until migrated |
-| SSM document | `DealBrain-StagingDeploy` only | Interim `AWS-RunShellScript` (until 25b.4) |
-| Release artifacts bucket | `dealbrain-staging-release-artifacts-<account>` | none (25b.3) |
+| OIDC subject | immutable `repo:…@owner_id/…@repo_id:environment:staging` (25b.5f) | immutable `repo:…@owner_id/…@repo_id:environment:production` |
+| SSM document | `DealBrain-StagingDeploy` + `DealBrain-StagingRollback` | `DealBrain-ProductionDeploy` + `DealBrain-ProductionRollback` |
+| Release artifacts bucket | `dealbrain-staging-release-artifacts-<account>` | `dealbrain-production-release-artifacts-<account>` |
 | State key | `staging/terraform.tfstate` | `production/terraform.tfstate` |
 | Account OIDC state | `account/terraform.tfstate` | (shared account root) |
-| State locking | S3 native lockfile | Deferred (see Production status) |
+| State locking | S3 native lockfile | S3 native lockfile (not applied) |
+| CloudWatch / ALB logs | not wired in staging root | `/dealbrain/production/{api,host,migrate}` + ALB S3 logs (30d) |
 
 ## Secrets model
 
@@ -153,21 +174,24 @@ must not assume production shares the modernized locking model.
    Classic PAT with `read:packages` only; populate out-of-band. **No**
    `aws_secretsmanager_secret_version` in Terraform.
 4. **No conflicting `database_url` Terraform secret.**
-5. **Runtime `DATABASE_URL`:** assembled on the staging host during deploy (25b.3).
+5. **Runtime `DATABASE_URL`:** assembled on the staging or production host during deploy.
 6. **Deploy roles never read secret values** — hosts do.
 
 ## OIDC / deploy IAM (Sprint 25b.2 + 25b.3 staging refinement)
 
 - Exactly one `aws_iam_openid_connect_provider` (account root)
 - Trust pins exact repository + exact GitHub Environment name
-- Staging SendCommand allowlist: custom `DealBrain-StagingDeploy` ARN only
-  (`AWS-RunShellScript` removed for staging once 25b.3 is applied)
+- Staging SendCommand allowlist: custom `DealBrain-StagingDeploy` + `DealBrain-StagingRollback`
+- Production SendCommand allowlist: custom `DealBrain-ProductionDeploy` + `DealBrain-ProductionRollback` (never `AWS-RunShellScript`)
 - Staging deploy role: S3 Put/Get on release + evidence prefixes
+- Production deploy role: S3 Put/Get on the **production** artifacts bucket only
 - Staging host: S3 Get on `releases/*` only
 - Explicitly denied: IAM admin, PassRole, Secrets Manager values, `rds:CreateDBSnapshot`,
   opposite-environment SSM targets, Terraform state writes
 - Host roles attach `AmazonSSMManagedInstanceCore`
-- Host bootstrap: `infra/ec2/user_data/staging.sh` (Amazon Docker + AWS CLI/jq; Compose via signed Docker Inc plugin only — Sprint 25b.5a; no secrets). Staging submits this script as gzip-compressed `user_data_base64` (`base64gzip(file(...))`) so the EC2 raw payload stays within the 16,384-byte limit; cloud-init executes the original decompressed script (Sprint 25b.5b).
+- Host bootstrap: `infra/ec2/user_data/staging.sh` and `infra/ec2/user_data/production.sh`
+  (Amazon Docker + AWS CLI/jq; Compose via signed Docker Inc plugin only — Sprint 25b.5a; no secrets).
+  Each root submits gzip-compressed `user_data_base64` (`base64gzip(file(...))`).
 
 ### GitHub Environment hard gates (live; not Terraform)
 
@@ -179,9 +203,12 @@ Roles are **not operationally approved** until:
 | `production` | `main` only | required | disabled or audited |
 
 Staging Environment vars required for `deploy-staging.yml`:
-`AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUNT_ID`.
+`AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUNT_ID`, `STAGING_TARGET_GROUP_ARN`.
 
-See [docs/SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md](../../docs/SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md).
+Production Environment vars required for `deploy-production.yml` / `rollback-production.yml`
+(owner creates the Environment in GitHub UI — see
+[`docs/runbooks/GITHUB_PRODUCTION_ENVIRONMENT.md`](../../docs/runbooks/GITHUB_PRODUCTION_ENVIRONMENT.md)):
+`AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUNT_ID`, `PRODUCTION_TARGET_GROUP_ARN`.
 
 ## Cost-sensitive resources
 
@@ -199,11 +226,10 @@ See [docs/SPRINT_25B3_STAGING_DEPLOYMENT_IMPLEMENTATION.md](../../docs/SPRINT_25
 
 ## Deferred
 
-- Production backend modernization (`use_lockfile` + partial S3 backend) → production rollout sprint
-- Production deploy workflow / approval / snapshot gate → 25b.4
-- Automated rollback → 25b.5
-- CloudWatch dashboards / synthetics → 25c
-- Production custom SSM document (remove RunShellScript) → with production deploy
+- Production Terraform **apply** / live RDS / live deploy → owner after merge
+- Public DNS cutover (`piqsavi.com`) → owner; not Terraform
+- CloudWatch alarms / paging / synthetics → EXT-16 / EXT-24 (log groups exist)
+- Restore rehearsal against a throwaway RDS instance → owner
 
 ## Validation (no apply)
 

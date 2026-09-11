@@ -529,7 +529,7 @@ def test_no_terraform_ssm_or_auto_rollback_path_introduced() -> None:
         assert "boto3" not in src
         assert "SendCommand" not in src
         assert "terraform" not in src.lower()
-    assert not (WORKFLOWS / "deploy-production.yml").exists()
+    assert (WORKFLOWS / "deploy-production.yml").exists()
     assert PROD_TF.is_dir()
     # No new workflow files in this sprint scope.
     assert (WORKFLOWS / "rollback.yml").is_file()

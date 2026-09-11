@@ -124,7 +124,7 @@ def test_production_isolation_preserved() -> None:
         # Production role string may appear only inside negative grep assertions.
         assert "grep -qv 'dealbrain-production-gha-deploy'" in text
         assert text.count("dealbrain-production-gha-deploy") == 1
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
 
 
 def test_staging_concurrency_controls_preserved() -> None:

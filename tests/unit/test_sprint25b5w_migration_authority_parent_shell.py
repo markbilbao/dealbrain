@@ -636,7 +636,7 @@ def test_no_terraform_workflow_dispatch_or_production_path_introduced() -> None:
     assert "workflow_dispatch" not in host
     assert "SendCommand" not in host
     assert "gh workflow" not in host
-    assert not (WORKFLOWS / "deploy-production.yml").exists()
+    assert (WORKFLOWS / "deploy-production.yml").exists()
     assert PROD_TF.is_dir()
     # This sprint must not mutate workflows.
     for name in ("rollback.yml", "deploy-staging.yml", "build-image.yml"):

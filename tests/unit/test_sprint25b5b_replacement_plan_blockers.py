@@ -153,10 +153,12 @@ def test_security_group_descriptions_are_ascii_hyphen_only() -> None:
 
 def test_production_untouched_by_compressed_user_data() -> None:
     prod = _read(PROD_TF / "main.tf")
-    assert "user_data" not in prod
-    assert "user_data_base64" not in prod
-    assert "base64gzip" not in prod
+    assert "production_user_data_base64" in prod
+    assert "user_data_base64" in prod
+    assert "base64gzip" in prod
     assert "staging_user_data" not in prod
+    assert "ec2/user_data/staging.sh" not in prod
+    assert "ec2/user_data/production.sh" in prod
     assert "install-compose-plugin" not in prod
     assert 'module "security_groups"' in prod
     assert "../../modules/security_groups" in prod

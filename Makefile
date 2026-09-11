@@ -1,4 +1,4 @@
-.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra validate-oidc validate-staging-deploy validate-pre-live
+.PHONY: install dev run test lint migrate docker-up docker-down format validate-infra validate-oidc validate-staging-deploy validate-pre-live validate-production-foundation
 
 install:
 	uv sync
@@ -118,3 +118,16 @@ validate-pre-live:
 	bash -n scripts/deploy/staging_maintenance_pre_apply_capture.sh
 	bash -n scripts/deploy/staging_maintenance_controlled_apply.sh
 	python3 -m py_compile scripts/deploy/staging_maintenance_assert.py
+
+# Early Access Phase 1 production foundation (no terraform apply)
+validate-production-foundation:
+	uv run pytest tests/unit/test_early_access_production_foundation_phase1.py \
+		tests/unit/test_sprint25a_infrastructure.py \
+		tests/unit/test_sprint25b2_oidc_iam.py \
+		tests/unit/test_sprint25b3_staging_deploy.py \
+		tests/unit/test_sprint25b5f_immutable_oidc_subject.py -q
+	bash -n infra/ec2/user_data/production.sh
+	bash -n scripts/deploy/host/dealbrain-production-deploy.sh
+	bash -n scripts/deploy/host/dealbrain-production-rollback.sh
+	bash -n scripts/deploy/host/verify-production.sh
+	bash scripts/validate_infra_25a.sh

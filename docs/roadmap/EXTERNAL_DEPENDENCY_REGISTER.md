@@ -64,7 +64,7 @@ Derived from current evidence only. Do not mark external approvals green without
 | EXT-10 | Domain registration (`piqsavi.com`) | Ops | 41 | production infrastructure | evidence verified 2026-08-08 | 1–3 days | `approved` | **GREEN** for ownership | Sanitized Cloudflare registration/control proof retained at [`evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png`](evidence/external/EXT-10_PIQSAVI_DOMAIN_OWNERSHIP_2026-08-08.png) (see EXT-10 notes) | Delay public hostname | Public web access |
 | EXT-11 | DNS for public hostname | Ops | 41 | production infrastructure | After EXT-10 | 1–3 days | `not_started` | **AMBER** | Records resolving to ALB | Delay public access | Public web access |
 | EXT-12 | TLS certificate (ACM or equivalent) | Ops | 41 | production infrastructure | After DNS | 1–7 days | `not_started` | **AMBER** | HTTPS synthetics green | Delay public access | Public web access |
-| EXT-13 | AWS production account/resources | Ops | 41 | production infrastructure | Ongoing | Continuous | Partial TF only; not applied | **AMBER** | Applied TF + live `/ready` | Cannot launch production | Entire production launch |
+| EXT-13 | AWS production account/resources | Ops | 41 | production infrastructure | Ongoing | Continuous | In-repo TF complete; not applied | **AMBER** | Applied TF + live `/ready` | Cannot launch production | Entire production launch |
 | EXT-14 | Production secrets populated | Ops | 41 | production infrastructure | With EXT-13 | 1–5 days | `not_started` | **AMBER** | Redacted env dump; deploy fail-closed test | Cannot deploy prod | Entire production launch |
 | EXT-15 | Analytics provider | Product eng | 39 | optional beta capability | Sprint 28 | 3–14 days | `not_started` | **AMBER** (optional) | Consent-gated events in staging | Privacy-safe first-party minimal events only; disclose limited learning | Beta learning (not whole launch) |
 | EXT-16 | Error-tracking provider | Ops | 42 | optional beta capability | Sprint 39 | 3–10 days | `not_started` | **AMBER** (optional) | Sample error event + PII-safe config | CloudWatch logs-only (weaker) | Ops quality (launch if CW paging OK) |
@@ -223,6 +223,10 @@ This addendum does **not** apply production Terraform, change Cloudflare DNS, po
 | EXT-14 | remains `not_started` | Production secret containers are Terraform-only. Staging host assembler still refuses a production secrets prefix. No production secret values were read or written |
 
 Do **not** mark these rows `applied` / `approved` / `provisioned` from this re-audit. Do **not** mark public-beta or merchant readiness.
+
+### EXT-13 2026-09-11 Early Access production foundation Phase 1
+
+In-repo production Terraform, deploy/rollback workflows, host assembler, logging, and backup runbook are now complete. **Not applied. No live RDS. No production deploy. No DNS change.** Evidence: [`evidence/EARLY_ACCESS_PRODUCTION_FOUNDATION_PHASE1_2026-09-11.md`](evidence/EARLY_ACCESS_PRODUCTION_FOUNDATION_PHASE1_2026-09-11.md). Current EXT-13 status: `In-repo TF complete; not applied`. EXT-11 / EXT-12 / EXT-14 remain `not_started`.
 
 ### EXT-20 / EXT-21 2026-09-11 staging live-URL addendum
 

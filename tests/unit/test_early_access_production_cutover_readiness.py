@@ -36,10 +36,12 @@ def test_locked_staging_identities_are_recorded() -> None:
 
 
 def test_production_workflow_and_environment_remain_absent_claims() -> None:
-    assert not (ROOT / ".github/workflows/deploy-production.yml").exists()
+    # Historical audit recorded absence at cutover-audit time. Phase 1 adds the
+    # workflow in-repo; the GitHub Environment is still owner-created.
+    assert "deploy-production.yml" in EVIDENCE
     assert "GitHub Environment `production`" in EVIDENCE
     assert "Absent" in EVIDENCE or "absent" in EVIDENCE
-    assert "deploy-production.yml" in EVIDENCE
+    assert (ROOT / ".github/workflows/deploy-production.yml").is_file()
 
 
 def test_runbook_does_not_authorize_cutover() -> None:
@@ -61,8 +63,9 @@ def test_register_ext_rows_not_advanced_by_cutover_audit() -> None:
 
     assert status("EXT-11") == "`not_started`"
     assert status("EXT-12") == "`not_started`"
-    assert "Partial TF only; not applied" in status("EXT-13")
+    assert "In-repo TF complete; not applied" in status("EXT-13")
     assert status("EXT-14") == "`not_started`"
     assert status("EXT-20") == "`applied`"
     assert status("EXT-21") == "`applied`"
     assert "EARLY_ACCESS_PRODUCTION_CUTOVER_READINESS_2026-09-11.md" in REGISTER
+    assert "EARLY_ACCESS_PRODUCTION_FOUNDATION_PHASE1_2026-09-11.md" in REGISTER

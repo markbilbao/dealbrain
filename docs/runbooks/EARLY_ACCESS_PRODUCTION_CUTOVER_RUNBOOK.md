@@ -33,8 +33,8 @@ Legend: **SAFE / READ-ONLY** · **OWNER ACTION REQUIRED** · **IRREVERSIBLE OR P
 
 - Confirm `origin/main` still equals the locked SHA, or record a new lock.
 - Confirm staging `/health` `/ready` `/privacy` `/terms` still 200 on that digest.
-- Confirm GitHub Environment `production` exists (today: **absent** — stop).
-- Confirm `.github/workflows/deploy-production.yml` exists and deploys by digest (today: **absent** — stop).
+- Confirm GitHub Environment `production` exists (today: **absent until owner UI** — stop). See [`GITHUB_PRODUCTION_ENVIRONMENT.md`](GITHUB_PRODUCTION_ENVIRONMENT.md).
+- Confirm `.github/workflows/deploy-production.yml` exists and deploys by digest (in-repo as of Phase 1; dispatch still owner-only after Environment + apply).
 - Confirm production AWS inventory shows isolated `dealbrain-production-*` VPC/ALB/TG/EC2/RDS (today: **not live** — stop).
 - Confirm this is Early Access only. Do not enable shopping, `/demo` links, merchants, or affiliate tracking.
 
@@ -46,7 +46,7 @@ Owner records in writing: SHA, release ID, digest, Build Image run, staging run.
 
 Today this step fails closed. Owner/ops (not this agent) must apply isolated production Terraform when authorized:
 
-- Backend: encrypted S3 state key `production/terraform.tfstate` with `use_lockfile = true` (production backend is still deferred in-repo).
+- Backend: encrypted S3 state key `production/terraform.tfstate` with `use_lockfile = true`.
 - VPC `10.20.0.0/16`, private API host, public ALB, private RDS, secrets containers, OIDC deploy role.
 - Do **not** use the staging ALB as production.
 - ACM (or Cloudflare origin TLS) covering `piqsavi.com` and `www.piqsavi.com`.

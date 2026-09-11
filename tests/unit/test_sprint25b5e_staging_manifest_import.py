@@ -222,7 +222,7 @@ def test_deploy_staging_keeps_digest_and_release_id_gates() -> None:
 
 
 def test_production_paths_untouched() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
     rb = WORKFLOWS / "rollback.yml"
     assert rb.is_file()
     assert "environment: production" not in rb.read_text(encoding="utf-8")
@@ -235,8 +235,9 @@ def test_production_paths_untouched() -> None:
     prod_tf = ROOT / "infra/terraform/environments/production/main.tf"
     assert prod_tf.is_file()
     prod = _read(prod_tf)
-    assert "ssm_deploy_document" not in prod
-    assert "release_artifacts" not in prod
+    assert 'source = "../../modules/ssm_deploy_document"' not in prod
+    assert "dealbrain-staging-release-artifacts" not in prod
+    assert 'module "release_artifacts"' in prod
 
 
 def test_validator_script_documents_module_invocation() -> None:

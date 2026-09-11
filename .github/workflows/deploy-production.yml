@@ -1,0 +1,499 @@
+# Early Access Phase 1 — Production deployment of an immutable GHCR image.
+# Manual dispatch only. Digest authority from Build Image release-manifest.
+# No image rebuild, no Terraform apply, no static AWS keys, no SSH,
+# no secrets from GitHub, no staging path. Does not apply Terraform or change DNS.
+# Does not create the GitHub Environment named production — owner creates that in UI.
+# Authoritative production_ok evidence is host-written and S3-uploaded only —
+# this workflow never fabricates success evidence.
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_workflow_run_id:
+        description: GitHub Actions run ID of a successful Build Image workflow
+        required: true
+        type: string
+      release_id:
+        description: Optional release_id cross-check (must match manifest if set)
+        required: false
+        type: string
+
+concurrency:
+  # Shared with rollback-production.yml so deploy and rollback cannot overlap unsafely.
+  group: production-release-mutation
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+  packages: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  AWS_ROLE_SESSION_PREFIX: gha
+
+jobs:
+  deploy:
+    name: Deploy immutable image to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.repository.fork == false
+    environment: production
+    steps:
+      - name: Assert main ref and reject forks
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.repository.fork }}" = "true" ]; then
+            echo "Fork repositories cannot deploy production." >&2
+            exit 1
+          fi
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "Deploy Production must run from refs/heads/main (got ${{ github.ref }})." >&2
+            exit 1
+          fi
+
+      - name: Checkout production deploy tooling (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install validation dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install 'jsonschema>=4.26.0'
+
+      - name: Fetch and validate Build Image release manifest
+        id: manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_workflow_run_id }}
+          OPTIONAL_RELEASE_ID: ${{ inputs.release_id }}
+        run: |
+          set -euo pipefail
+          # Deterministic workspace path for release-manifest download (--dest required).
+          ARTIFACT_DEST=".deploy-work/artifact"
+          mkdir -p .deploy-work "$ARTIFACT_DEST"
+          python scripts/deploy/fetch_release_artifact.py \
+            --build-workflow-run-id "$BUILD_RUN_ID" \
+            --dest "$ARTIFACT_DEST" \
+            --assert-only > .deploy-work/build-run.json
+
+          BUILD_SHA="$(jq -r '.headSha' .deploy-work/build-run.json)"
+          BUILD_NAME="$(jq -r '.workflowName' .deploy-work/build-run.json)"
+          BUILD_STATUS="$(jq -r '.status' .deploy-work/build-run.json)"
+          BUILD_CONCLUSION="$(jq -r '.conclusion' .deploy-work/build-run.json)"
+          BUILD_BRANCH="$(jq -r '.headBranch' .deploy-work/build-run.json)"
+
+          test "$BUILD_NAME" = "Build Image"
+          test "$BUILD_STATUS" = "completed"
+          test "$BUILD_CONCLUSION" = "success"
+          test "$BUILD_BRANCH" = "main"
+          [[ "$BUILD_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+          MANIFEST_PATH="$(
+            python scripts/deploy/fetch_release_artifact.py \
+              --build-workflow-run-id "$BUILD_RUN_ID" \
+              --dest "$ARTIFACT_DEST"
+          )"
+          echo "manifest_path=$MANIFEST_PATH" >> "$GITHUB_OUTPUT"
+
+          EXTRA_ARGS=(
+            --build-workflow-run-id "$BUILD_RUN_ID"
+            --git-sha "$BUILD_SHA"
+            --image-repository "ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          )
+          if [ -n "${OPTIONAL_RELEASE_ID}" ]; then
+            EXTRA_ARGS+=(--release-id "$OPTIONAL_RELEASE_ID")
+          fi
+          # Module form keeps the repository root on sys.path for scripts.* imports.
+          python -m scripts.deploy.validate_staging_release "$MANIFEST_PATH" "${EXTRA_ARGS[@]}"
+
+          RELEASE_ID="$(jq -r '.release_id' "$MANIFEST_PATH")"
+          IMAGE_REPO="$(jq -r '.image_repository' "$MANIFEST_PATH")"
+          IMAGE_DIGEST="$(jq -r '.image_digest' "$MANIFEST_PATH")"
+          GIT_SHA="$(jq -r '.git_sha' "$MANIFEST_PATH")"
+          TEST_RUN_ID="$(jq -r '.test_workflow_run_id' "$MANIFEST_PATH")"
+          MANIFEST_SHA="$(jq -r '.manifest_sha256' "$MANIFEST_PATH")"
+
+          # Verify successful CI workflow for the same SHA.
+          CI_JSON="$(gh run view "$TEST_RUN_ID" --json conclusion,headSha,workflowName,status,headBranch)"
+          echo "$CI_JSON" | jq -e '.status=="completed" and .conclusion=="success"' >/dev/null
+          CI_SHA="$(echo "$CI_JSON" | jq -r '.headSha')"
+          test "$CI_SHA" = "$GIT_SHA"
+          test "$GIT_SHA" = "$BUILD_SHA"
+
+          # Digest must exist in GHCR (packages:read).
+          echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker buildx imagetools inspect "${IMAGE_REPO}@${IMAGE_DIGEST}" >/dev/null
+
+          {
+            echo "release_id=$RELEASE_ID"
+            echo "image_repository=$IMAGE_REPO"
+            echo "image_digest=$IMAGE_DIGEST"
+            echo "git_sha=$GIT_SHA"
+            echo "test_workflow_run_id=$TEST_RUN_ID"
+            echo "manifest_sha256=$MANIFEST_SHA"
+            echo "manifest_path=$MANIFEST_PATH"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (production OIDC only)
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gha-${{ github.run_id }}-production
+          role-duration-seconds: 3600
+          audience: sts.amazonaws.com
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+
+      - name: Assert production role identity
+        env:
+          EXPECTED_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          IDENTITY="$(aws sts get-caller-identity --output json)"
+          ACCOUNT="$(echo "$IDENTITY" | jq -r '.Account')"
+          ARN="$(echo "$IDENTITY" | jq -r '.Arn')"
+          test "$ACCOUNT" = "$EXPECTED_ACCOUNT"
+          echo "$ARN" | grep -q 'dealbrain-production-gha-deploy'
+          echo "$ARN" | grep -qv 'dealbrain-staging-gha-deploy'
+          echo "$ARN" | grep -qv 'staging'
+          echo "$IDENTITY" > .deploy-work/identity.json
+
+      - name: Resolve production targets from AWS
+        id: targets
+        env:
+          PRODUCTION_TARGET_GROUP_ARN: ${{ vars.PRODUCTION_TARGET_GROUP_ARN }}
+        run: |
+          set -euo pipefail
+          # Exactly one production Compose API host.
+          INSTANCE_IDS="$(
+            aws ec2 describe-instances \
+              --filters \
+                "Name=tag:Project,Values=dealbrain" \
+                "Name=tag:Environment,Values=production" \
+                "Name=tag:Role,Values=api-compose-host" \
+                "Name=instance-state-name,Values=running" \
+              --query 'Reservations[].Instances[].InstanceId' \
+              --output text
+          )"
+          COUNT="$(echo "$INSTANCE_IDS" | wc -w | tr -d ' ')"
+          test "$COUNT" = "1"
+          INSTANCE_ID="$(echo "$INSTANCE_IDS" | awk '{print $1}')"
+          echo "$INSTANCE_ID" | grep -qv staging
+
+          # Exact production target-group ARN from GitHub Environment (Terraform output).
+          TG_ARN="${PRODUCTION_TARGET_GROUP_ARN:-}"
+          test -n "$TG_ARN"
+          [[ "$TG_ARN" =~ ^arn:aws:elasticloadbalancing:[a-z0-9-]+:[0-9]{12}:targetgroup/.+ ]]
+          echo "$TG_ARN" | grep -q production
+          echo "$TG_ARN" | grep -qv staging
+
+          # Bucket name pattern from Terraform: dealbrain-production-release-artifacts-<account>
+          # No bucket-existence preflight: ListBucket is prefix-conditioned; exact
+          # object Put/Get/Head under releases/* and evidence/* are the checks.
+          ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
+          BUCKET="dealbrain-production-release-artifacts-${ACCOUNT}"
+
+          # Non-secret RDS metadata for host DATABASE_URL assembly.
+          RDS_JSON="$(
+            aws rds describe-db-instances \
+              --query "DBInstances[?contains(DBInstanceIdentifier, 'dealbrain-production')].[Endpoint.Address,Endpoint.Port,DBName,MasterUserSecret.SecretArn] | [0]" \
+              --output json
+          )"
+          RDS_ENDPOINT="$(echo "$RDS_JSON" | jq -r '.[0]')"
+          RDS_PORT="$(echo "$RDS_JSON" | jq -r '.[1]')"
+          RDS_DB="$(echo "$RDS_JSON" | jq -r '.[2]')"
+          RDS_SECRET="$(echo "$RDS_JSON" | jq -r '.[3]')"
+          test -n "$RDS_ENDPOINT"
+          test -n "$RDS_SECRET"
+          echo "$RDS_ENDPOINT" | grep -qv staging
+          echo "$RDS_ENDPOINT" | grep -qv localhost
+
+          mkdir -p .deploy-work
+          jq -n \
+            --arg endpoint "$RDS_ENDPOINT" \
+            --argjson port "$RDS_PORT" \
+            --arg db_name "$RDS_DB" \
+            --arg master_user_secret_arn "$RDS_SECRET" \
+            '{endpoint:$endpoint, port:$port, db_name:$db_name, master_user_secret_arn:$master_user_secret_arn}' \
+            > .deploy-work/rds-nonsecret.json
+
+          jq -n --arg target_group_arn "$TG_ARN" '{target_group_arn:$target_group_arn}' \
+            > .deploy-work/alb-nonsecret.json
+
+          {
+            echo "instance_id=$INSTANCE_ID"
+            echo "target_group_arn=$TG_ARN"
+            echo "bundle_bucket=$BUCKET"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and verify production release bundle
+        id: bundle
+        env:
+          MANIFEST_PATH: ${{ steps.manifest.outputs.manifest_path }}
+        run: |
+          set -euo pipefail
+          mkdir -p .deploy-work/bundle
+          python scripts/deploy/build_production_bundle.py \
+            --manifest "$MANIFEST_PATH" \
+            --out-dir .deploy-work/bundle \
+            --rds-nonsecret .deploy-work/rds-nonsecret.json \
+            --alb-nonsecret .deploy-work/alb-nonsecret.json
+          CHECKSUM="$(awk '{print $1}' .deploy-work/bundle/bundle.sha256)"
+          python scripts/deploy/verify_production_bundle.py \
+            .deploy-work/bundle/bundle.tar.gz \
+            --checksum "$CHECKSUM" \
+            --release-id "${{ steps.manifest.outputs.release_id }}" \
+            --image-digest "${{ steps.manifest.outputs.image_digest }}"
+          # Fail closed if staging overlay is packed; require production overlay.
+          python - <<'PY'
+          import tarfile, sys
+          names = []
+          with tarfile.open(".deploy-work/bundle/bundle.tar.gz", "r:gz") as tar:
+              names = tar.getnames()
+          for name in names:
+              if "docker-compose.staging.yml" in name:
+                  sys.exit("staging overlay present in production bundle")
+          if "compose/docker-compose.production.yml" not in names:
+              sys.exit("production overlay missing from production bundle")
+          print("ok: production overlay present; no staging overlay")
+          PY
+          echo "checksum=$CHECKSUM" >> "$GITHUB_OUTPUT"
+          echo "bundle_key=releases/${{ steps.manifest.outputs.release_id }}/bundle.tar.gz" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release bundle to production S3
+        env:
+          BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+        run: |
+          set -euo pipefail
+          KEY_PREFIX="releases/${RELEASE_ID}"
+          aws s3 cp .deploy-work/bundle/bundle.tar.gz "s3://${BUCKET}/${KEY_PREFIX}/bundle.tar.gz"
+          aws s3 cp .deploy-work/bundle/bundle.sha256 "s3://${BUCKET}/${KEY_PREFIX}/bundle.sha256"
+          aws s3 cp .deploy-work/bundle/bundle-meta.json "s3://${BUCKET}/${KEY_PREFIX}/bundle-meta.json"
+
+      - name: Send production SSM deploy command
+        id: ssm
+        env:
+          INSTANCE_ID: ${{ steps.targets.outputs.instance_id }}
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+          GIT_SHA: ${{ steps.manifest.outputs.git_sha }}
+          IMAGE_REPO: ${{ steps.manifest.outputs.image_repository }}
+          IMAGE_DIGEST: ${{ steps.manifest.outputs.image_digest }}
+          BUNDLE_CHECKSUM: ${{ steps.bundle.outputs.checksum }}
+          BUNDLE_BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
+          BUNDLE_KEY: ${{ steps.bundle.outputs.bundle_key }}
+        run: |
+          set -euo pipefail
+          # Custom document only — never AWS-RunShellScript.
+          COMMAND_ID="$(
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name DealBrain-ProductionDeploy \
+              --timeout-seconds 2400 \
+              --parameters "$(jq -n \
+                --arg ReleaseId "$RELEASE_ID" \
+                --arg GitSha "$GIT_SHA" \
+                --arg ImageRepository "$IMAGE_REPO" \
+                --arg ImageDigest "$IMAGE_DIGEST" \
+                --arg BundleChecksum "$BUNDLE_CHECKSUM" \
+                --arg DeployRunId "${{ github.run_id }}" \
+                --arg BundleBucket "$BUNDLE_BUCKET" \
+                --arg BundleKey "$BUNDLE_KEY" \
+                '{
+                  ReleaseId:[$ReleaseId],
+                  GitSha:[$GitSha],
+                  ImageRepository:[$ImageRepository],
+                  ImageDigest:[$ImageDigest],
+                  BundleChecksum:[$BundleChecksum],
+                  DeployRunId:[$DeployRunId],
+                  BundleBucket:[$BundleBucket],
+                  BundleKey:[$BundleKey]
+                }')" \
+              --query 'Command.CommandId' \
+              --output text
+          )"
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+          # Publish command id for host evidence binding (assigned only after SendCommand).
+          mkdir -p .deploy-work/ssm
+          printf '%s\n' "$COMMAND_ID" > .deploy-work/ssm/ssm-command-id.txt
+          aws s3 cp .deploy-work/ssm/ssm-command-id.txt \
+            "s3://${BUNDLE_BUCKET}/evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt"
+
+          # Wait for completion (poll).
+          DEADLINE=$((SECONDS + 2400))
+          STATUS="Pending"
+          while [ "$SECONDS" -lt "$DEADLINE" ]; do
+            STATUS="$(
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID" \
+                --query 'Status' \
+                --output text 2>/dev/null || echo Pending
+            )"
+            case "$STATUS" in
+              Success) break ;;
+              Failed|Cancelled|TimedOut) echo "SSM command failed: $STATUS" >&2; exit 1 ;;
+            esac
+            sleep 10
+          done
+          test "$STATUS" = "Success"
+
+          # Capture stdout for diagnostics (redacted by host script).
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --output json > .deploy-work/ssm/invocation.json
+
+      - name: Collect and validate authoritative host evidence
+        id: evidence
+        env:
+          BUCKET: ${{ steps.targets.outputs.bundle_bucket }}
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+          EXPECTED_ACCOUNT: ${{ vars.AWS_ACCOUNT_ID }}
+          EXPECTED_REGION: ${{ vars.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          mkdir -p .deploy-work/evidence
+          EVIDENCE_PATH=".deploy-work/evidence/production-deploy-evidence.json"
+          EVIDENCE_KEY="evidence/${RELEASE_ID}/${{ github.run_id }}/production-deploy-evidence.json"
+          COMMAND_ID_KEY="evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt"
+          COMMAND_ID_FILE="${RUNNER_TEMP}/ssm-command-id.txt"
+
+          # Fail closed: host must have uploaded checksummed evidence to the exact key.
+          if ! aws s3api head-object --bucket "$BUCKET" --key "$EVIDENCE_KEY" >/dev/null 2>&1; then
+            echo "FAIL: authoritative host evidence missing at s3://${BUCKET}/${EVIDENCE_KEY}" >&2
+            echo "Refusing to fabricate production_ok." >&2
+            exit 1
+          fi
+          aws s3 cp \
+            "s3://${BUCKET}/${EVIDENCE_KEY}" \
+            "$EVIDENCE_PATH" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors
+
+          # Reject unexpected keys under the run prefix (allow evidence + optional sidecar + command-id binder).
+          aws s3api list-objects-v2 --bucket "$BUCKET" --prefix "evidence/${RELEASE_ID}/${{ github.run_id }}/" \
+            --query 'Contents[].Key' --output text | tr '\t' '\n' | grep -v '^$' | sort -u \
+            > .deploy-work/evidence-keys.txt
+          while IFS= read -r key; do
+            case "$key" in
+              "evidence/${RELEASE_ID}/${{ github.run_id }}/production-deploy-evidence.json") ;;
+              "evidence/${RELEASE_ID}/${{ github.run_id }}/production-deploy-evidence.json.sha256") ;;
+              "evidence/${RELEASE_ID}/${{ github.run_id }}/ssm-command-id.txt") ;;
+              "") ;;
+              *)
+                echo "FAIL: unexpected evidence key: $key" >&2
+                exit 1
+                ;;
+            esac
+          done < .deploy-work/evidence-keys.txt
+
+          # Optional sidecar checksum check when present.
+          if aws s3api head-object --bucket "$BUCKET" \
+            --key "${EVIDENCE_KEY}.sha256" >/dev/null 2>&1; then
+            aws s3 cp \
+              "s3://${BUCKET}/${EVIDENCE_KEY}.sha256" \
+              "${EVIDENCE_PATH}.sha256" \
+              --region "$EXPECTED_REGION" \
+              --only-show-errors
+            EXPECTED_SHA="$(awk '{print $1}' "${EVIDENCE_PATH}.sha256")"
+            ACTUAL_SHA="$(jq -r '.evidence_sha256' "$EVIDENCE_PATH")"
+            test "$EXPECTED_SHA" = "$ACTUAL_SHA"
+          fi
+
+          # Defense-in-depth (Sprint 25b.5k): re-download the binder and parse
+          # strictly so GitHub expected COMMAND_ID cannot be polluted by AWS CLI
+          # progress. Primary remediation is host discover_ssm_command_id;
+          # authoritative binder key selection is unchanged.
+          aws s3 cp \
+            "s3://${BUCKET}/${COMMAND_ID_KEY}" \
+            "$COMMAND_ID_FILE" \
+            --region "$EXPECTED_REGION" \
+            --only-show-errors
+
+          # Read exclusively from the downloaded file; strip only a single
+          # trailing CR/LF terminator; accept exactly one canonical UUID.
+          # Heredoc keeps Python indented as YAML block content; after YAML
+          # strips the common indent, the PY terminator is at column 1 for shell.
+          COMMAND_ID="$(
+            python - "$COMMAND_ID_FILE" <<'PY'
+          import sys
+          import uuid
+          from pathlib import Path
+
+          path = Path(sys.argv[1])
+          raw = path.read_bytes()
+          if not raw:
+              print("FAIL: ssm-command-id.txt is empty", file=sys.stderr)
+              raise SystemExit(1)
+          try:
+              text = raw.decode("ascii")
+          except UnicodeDecodeError:
+              print("FAIL: ssm-command-id.txt is not ASCII", file=sys.stderr)
+              raise SystemExit(1)
+          if text.endswith("\r\n"):
+              body = text[:-2]
+          elif text.endswith("\n"):
+              body = text[:-1]
+          else:
+              body = text
+          if not body:
+              print("FAIL: ssm-command-id.txt empty after newline trim", file=sys.stderr)
+              raise SystemExit(1)
+          if any(ch in body for ch in " \t\r\n\v\f"):
+              print("FAIL: ssm-command-id.txt must be exactly one canonical UUID line", file=sys.stderr)
+              raise SystemExit(1)
+          if any(ord(ch) < 32 for ch in body):
+              print("FAIL: ssm-command-id.txt contains control characters", file=sys.stderr)
+              raise SystemExit(1)
+          try:
+              parsed = uuid.UUID(body)
+          except ValueError:
+              print("FAIL: ssm-command-id.txt is not a valid UUID", file=sys.stderr)
+              raise SystemExit(1)
+          canonical = str(parsed)
+          if body != canonical:
+              print("FAIL: ssm-command-id.txt is not canonical UUID form", file=sys.stderr)
+              raise SystemExit(1)
+          sys.stdout.write(canonical)
+          PY
+          )"
+          echo "ssm_command_id_validated=1"
+
+          # Module form keeps the repository root on sys.path for scripts.* imports.
+          python -m scripts.deploy.write_gha_production_evidence \
+            --evidence "$EVIDENCE_PATH" \
+            --release-id "$RELEASE_ID" \
+            --git-sha "${{ steps.manifest.outputs.git_sha }}" \
+            --image-repository "${{ steps.manifest.outputs.image_repository }}" \
+            --image-digest "${{ steps.manifest.outputs.image_digest }}" \
+            --source-manifest-sha256 "${{ steps.manifest.outputs.manifest_sha256 }}" \
+            --deploy-run-id "${{ github.run_id }}" \
+            --aws-account-id "$EXPECTED_ACCOUNT" \
+            --aws-region "$EXPECTED_REGION" \
+            --ec2-instance-id "${{ steps.targets.outputs.instance_id }}" \
+            --ssm-command-id "$COMMAND_ID"
+
+          python -m scripts.deploy.validate_production_evidence "$EVIDENCE_PATH"
+
+          # Do not re-upload synthetic evidence — host object is authoritative.
+          # Re-upload only if we need GitHub artifact packaging (same bytes).
+
+      - name: Upload production evidence GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-evidence-${{ steps.manifest.outputs.release_id }}-${{ github.run_id }}
+          path: .deploy-work/evidence/production-deploy-evidence.json
+          retention-days: 90
+          if-no-files-found: error

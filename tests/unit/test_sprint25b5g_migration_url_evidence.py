@@ -533,7 +533,7 @@ def test_failed_evidence_has_sanitized_reason_and_no_credentials() -> None:
 
 
 def test_no_production_workflow_or_compose_in_staging_paths() -> None:
-    assert not (WORKFLOWS / "deploy-production.yml").exists()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
     text = _read(DEPLOY_SH)
     assert "docker-compose.production.yml" in text  # forbidden check
     assert "production overlay forbidden" in text or "production compose" in text.lower()

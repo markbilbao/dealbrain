@@ -1,10 +1,10 @@
 variable "environment" {
-  description = "DealBrain environment. Staging-only for Sprint 25b.3."
+  description = "DealBrain environment. Isolated per-environment release/evidence bucket."
   type        = string
 
   validation {
-    condition     = var.environment == "staging"
-    error_message = "release_artifacts module is staging-only in Sprint 25b.3."
+    condition     = contains(["staging", "production"], var.environment)
+    error_message = "release_artifacts environment must be staging or production."
   }
 }
 

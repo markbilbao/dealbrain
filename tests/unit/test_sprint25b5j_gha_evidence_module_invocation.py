@@ -365,7 +365,7 @@ def test_workflow_keeps_main_checkout_and_staging_isolation() -> None:
     assert "ref: main" in text
     assert "environment: staging" in text
     assert "environment: production" not in text
-    assert not (WORKFLOWS / "deploy-production.yml").is_file()
+    assert (WORKFLOWS / "deploy-production.yml").is_file()
     # Sprint 25b.5: staging rollback workflow exists; must remain staging-only.
     assert (WORKFLOWS / "rollback.yml").is_file()
     assert "environment: production" not in (WORKFLOWS / "rollback.yml").read_text(encoding="utf-8")

@@ -177,12 +177,21 @@ async def sitemap_document() -> Response:
     )
 
 
-@router.get("/search")
+def _production_early_access_home() -> RedirectResponse | None:
+    if not consumer_mode.unfinished_html_surfaces_enabled():
+        return RedirectResponse(url="/", status_code=303)
+    return None
+
+
+@router.get("/search", response_model=None)
 async def consumer_search(
     request: Request,
     q: str | None = Query(default=None),
     catalog: str = Query(default=DEFAULT_CATALOG_ID),
 ) -> RedirectResponse:
+    blocked = _production_early_access_home()
+    if blocked is not None:
+        return blocked
     if not consumer_mode.fixture_catalogs_permitted():
         logger.info(
             "consumer_search",
@@ -201,14 +210,17 @@ async def consumer_search(
     return RedirectResponse(url=f"/results/{decision_id}", status_code=303)
 
 
-@router.get("/results/{decision_id}", response_class=HTMLResponse)
+@router.get("/results/{decision_id}", response_class=HTMLResponse, response_model=None)
 async def results_page(
     request: Request,
     decision_id: str,
     prompt: int = Query(default=0),
     recalculating: int = Query(default=0),
     snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
-) -> HTMLResponse:
+) -> HTMLResponse | RedirectResponse:
+    blocked = _production_early_access_home()
+    if blocked is not None:
+        return blocked
     location = _location_from_request(request)
     view = _page_view(
         request,
@@ -221,12 +233,15 @@ async def results_page(
     return _html(view, request)
 
 
-@router.get("/compare/{decision_id}", response_class=HTMLResponse)
+@router.get("/compare/{decision_id}", response_class=HTMLResponse, response_model=None)
 async def compare_page(
     request: Request,
     decision_id: str,
     snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
-) -> HTMLResponse:
+) -> HTMLResponse | RedirectResponse:
+    blocked = _production_early_access_home()
+    if blocked is not None:
+        return blocked
     view = _page_view(
         request,
         decision_id=decision_id,
@@ -236,12 +251,15 @@ async def compare_page(
     return _html(view, request)
 
 
-@router.get("/why-best-piq/{decision_id}", response_class=HTMLResponse)
+@router.get("/why-best-piq/{decision_id}", response_class=HTMLResponse, response_model=None)
 async def why_page(
     request: Request,
     decision_id: str,
     snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
-) -> HTMLResponse:
+) -> HTMLResponse | RedirectResponse:
+    blocked = _production_early_access_home()
+    if blocked is not None:
+        return blocked
     view = _page_view(
         request,
         decision_id=decision_id,
@@ -253,6 +271,9 @@ async def why_page(
 
 @router.api_route("/consumer/location", methods=["GET", "POST"], response_model=None)
 async def save_location(request: Request) -> HTMLResponse | RedirectResponse:
+    blocked = _production_early_access_home()
+    if blocked is not None:
+        return blocked
     payload = await _location_payload(request)
     action = str(payload.get("action") or "save")
     decision_id = str(payload.get("decision_id") or DEFAULT_CATALOG_ID)
@@ -299,6 +320,8 @@ async def destination_reevaluation_state(
 ) -> JSONResponse:
     """Server-owned destination-change assessment. Does not reprice or mutate."""
 
+    if not consumer_mode.unfinished_html_surfaces_enabled():
+        return JSONResponse({"detail": "Not found"}, status_code=404)
     if not is_canonical_uuid(decision_id):
         return JSONResponse({"detail": "Not found"}, status_code=404)
     owner = _owner_from_request(request)
@@ -316,6 +339,9 @@ async def destination_reevaluation_state(
 
 @router.api_route("/consumer/shopping-market", methods=["GET", "POST"], response_model=None)
 async def save_shopping_market(request: Request) -> RedirectResponse:
+    blocked = _production_early_access_home()
+    if blocked is not None:
+        return blocked
     payload = await _location_payload(request)
     decision_id = str(payload.get("decision_id") or DEFAULT_CATALOG_ID)
     if not consumer_mode.fixture_catalogs_permitted() and decision_id == DEFAULT_CATALOG_ID:
