@@ -2,7 +2,7 @@
 
 **Status:** Authoritative register for Global Public Beta
 **Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close; **2026-09-10** EXT-19 written conditional counsel-review record sanitized (status remains `applied`); **2026-09-11** Early Access legal publication-activation attempt remains blocked (EXT-19/20/21 statuses unchanged).
+**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close; **2026-09-10** EXT-19 written conditional counsel-review record sanitized (status remains `applied`); **2026-09-11** Early Access legal publication-activation attempt remains blocked; later same-day August 25 working-draft intake still leaves EXT-19/20/21 statuses unchanged.
 **Historical inventory HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
 **Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` (historical suite evidence; later `main` including PR #114 does **not** invalidate packaged Sprint 26 staging proof)
 **Owner target:** Controlled Global Public Beta Launch no later than September 30, 2026
@@ -302,6 +302,25 @@ This addendum does **not** rewrite the 2026-08-10 engagement notes, the 2026-08-
 | Exact written conditions | remain **condition not explicitly documented in sanitized record** |
 | Assent / consent | **ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS** — no Early Access clickwrap, acknowledgement copy, or consent persistence added |
 | Legal/content ready | **No** — Privacy and Terms not published |
+| Production infrastructure ready | **No** — separate from legal/content. PR #128 infrastructure blockers remain open (EXT-11…14, no `deploy-production.yml`, no founder GO) |
+| EXT-20 / EXT-21 | remain `not_started` |
+| Early Access publication | `/privacy` and `/terms` remain fail-closed 404. Footer links remain gated. |
+| Resulting state | `EARLY ACCESS LEGAL ACTIVATION BLOCKED — COUNSEL CONDITION REMAINS UNRESOLVED` |
+| Explicit non-claims | Does **not** prove published Privacy/Terms; Early Access legal activation; unrestricted public launch; public-beta launch; merchant certification; live shopping; affiliate monetization; or production cutover |
+
+### EXT-19 2026-09-11 working-draft intake addendum
+
+This addendum does **not** rewrite the 2026-09-10 sanitized conditional-approval record or the earlier 2026-09-11 publication-activation block. It records that the August 25 working-draft package later arrived and was transcribed as review-only markdown.
+
+| Field | Value |
+|-------|-------|
+| Current status | remains **`applied`** |
+| Evidence path | [`evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md`](evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md) |
+| Audited main | `5eadebda0ea6952ab37d6fb34825beff0e6c2ea7` |
+| August 25 working drafts | **Present** as review-only `docs/legal/*_WORKING_DRAFT.md` transcriptions. Not approved HTML. Not copied into `docs/legal/published/`. |
+| Exact written conditions | remain **condition not explicitly documented in sanitized record** |
+| Assent / consent | **ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS** — no Early Access clickwrap, acknowledgement copy, or consent persistence added |
+| Legal/content ready | **No** — Privacy and Terms not published. Working-draft cookie/storage and delete/export wording is factually stale vs current main. |
 | Production infrastructure ready | **No** — separate from legal/content. PR #128 infrastructure blockers remain open (EXT-11…14, no `deploy-production.yml`, no founder GO) |
 | EXT-20 / EXT-21 | remain `not_started` |
 | Early Access publication | `/privacy` and `/terms` remain fail-closed 404. Footer links remain gated. |

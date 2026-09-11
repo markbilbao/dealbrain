@@ -704,3 +704,23 @@ This addendum does **not** rewrite earlier snapshots. It records that the August
 | Legal/content ready | **No** |
 | Production infrastructure ready | **No** — separate HOLD; production AWS/secrets/DNS/TLS/deploy workflow remain open |
 | Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md); [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) |
+
+---
+
+## 2026-09-11 Early Access working-draft intake addendum
+
+This addendum does **not** rewrite earlier snapshots. It records that the August 25 revised legal package later arrived and was transcribed as review-only markdown. Privacy/Terms were still **not** published and Early Access legal links were still **not** activated. It does **not** close P0-4 and does **not** mark Sprint 32 / public beta complete.
+
+| Field | Value |
+|-------|-------|
+| Sprint 28 | **INTERNAL ENGINEERING + STAGING VERIFICATION COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN.** Not COMPLETE/CLOSED. |
+| Result | `EARLY ACCESS LEGAL ACTIVATION BLOCKED — COUNSEL CONDITION REMAINS UNRESOLVED` |
+| EXT-19 | Remains `applied`. Written **conditional** approval unchanged. Not `approved`. |
+| Evidence | [`evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md`](evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md) |
+| EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` remain 404 |
+| EXT-22 | Unchanged: `not_started` — no CMP/banner |
+| Early Access legal links | Remain gated (`aria-disabled` / `data-legal-gated`) |
+| Early Access signup assent | **ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS** |
+| Legal/content ready | **No** |
+| Production infrastructure ready | **No** — separate HOLD; production AWS/secrets/DNS/TLS/deploy workflow remain open |
+| Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md); [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) |

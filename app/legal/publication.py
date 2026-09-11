@@ -28,7 +28,7 @@ COUNSEL_DRAFT_CONTENT_MARKERS: tuple[str, ...] = (
     "Not for publication",
     "Not evidence of legal approval",
 )
-_BLOCKED_PATH_FRAGMENTS: tuple[str, ...] = ("_counsel_draft",)
+_BLOCKED_PATH_FRAGMENTS: tuple[str, ...] = ("_counsel_draft", "_working_draft")
 _UNSAFE_VERSION_ID_MARKERS: tuple[str, ...] = ("/", "\\", "..", "\x00")
 
 

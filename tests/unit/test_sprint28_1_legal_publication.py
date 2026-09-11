@@ -23,6 +23,8 @@ from fastapi.testclient import TestClient
 ROOT = Path(__file__).resolve().parents[2]
 PRIVACY_DRAFT = ROOT / "docs/legal/PIQSAVI_PRIVACY_POLICY_COUNSEL_DRAFT.md"
 TERMS_DRAFT = ROOT / "docs/legal/PIQSAVI_TERMS_OF_SERVICE_COUNSEL_DRAFT.md"
+PRIVACY_WORKING_DRAFT = ROOT / "docs/legal/PIQSAVI_PRIVACY_POLICY_WORKING_DRAFT.md"
+TERMS_WORKING_DRAFT = ROOT / "docs/legal/PIQSAVI_TERMS_OF_SERVICE_WORKING_DRAFT.md"
 
 
 def test_production_catalog_has_no_published_versions() -> None:
@@ -57,6 +59,9 @@ def test_counsel_draft_files_are_not_publicly_routed() -> None:
         "/static/consumer/PIQSAVI_TERMS_OF_SERVICE_COUNSEL_DRAFT.md",
         "/docs/legal/PIQSAVI_PRIVACY_POLICY_COUNSEL_DRAFT.md",
         "/legal/PIQSAVI_PRIVACY_POLICY_COUNSEL_DRAFT.md",
+        "/docs/legal/PIQSAVI_PRIVACY_POLICY_WORKING_DRAFT.md",
+        "/docs/legal/PIQSAVI_TERMS_OF_SERVICE_WORKING_DRAFT.md",
+        "/legal/PIQSAVI_PRIVACY_POLICY_WORKING_DRAFT.md",
     ):
         response = client.get(path)
         assert response.status_code in {404, 405, 307, 308}
@@ -76,6 +81,27 @@ def test_counsel_draft_path_cannot_be_published() -> None:
     )
     assert catalog.published("privacy") is None
     assert looks_like_counsel_draft(PRIVACY_DRAFT.read_text(encoding="utf-8"))
+
+
+def test_working_draft_path_cannot_be_published() -> None:
+    catalog = LegalPublicationCatalog(
+        (
+            published_policy(
+                policy_type="privacy",
+                version_id="should-not-publish-working-draft",
+                html_path=str(PRIVACY_WORKING_DRAFT),
+            ),
+            published_policy(
+                policy_type="terms",
+                version_id="should-not-publish-working-terms",
+                html_path=str(TERMS_WORKING_DRAFT),
+            ),
+        )
+    )
+    assert catalog.published("privacy") is None
+    assert catalog.published("terms") is None
+    assert looks_like_counsel_draft(PRIVACY_WORKING_DRAFT.read_text(encoding="utf-8"))
+    assert looks_like_counsel_draft(TERMS_WORKING_DRAFT.read_text(encoding="utf-8"))
 
 
 def test_approved_but_not_published_is_not_served(tmp_path: Path) -> None:
