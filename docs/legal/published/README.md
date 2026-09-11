@@ -18,8 +18,11 @@ set, `/privacy` and `/terms` fail closed with HTTP 404.
 
 The 2026-09-11 publication-activation attempt
 ([`../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md))
-reconfirmed this directory is empty of approved HTML. August 25 working drafts
-were still absent from the agent workspace. Assent remains counsel-ambiguous.
-Do **not** treat that attempt as publication.
+reconfirmed this directory is empty of approved HTML. A later same-day
+working-draft intake
+([`../../roadmap/evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md`](../../roadmap/evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md))
+transcribed the August 25 package under `docs/legal/` as review-only markdown.
+Those working drafts are **not** approved HTML. Assent remains counsel-ambiguous.
+Do **not** treat either attempt as publication.
 
 Sprint 44/45 remain the publication/approval gates.

@@ -24,6 +24,18 @@ READINESS = (
 ACTIVATION = (
     ROOT / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md"
 ).read_text(encoding="utf-8")
+WORKING_DRAFT_INTAKE = (
+    ROOT / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md"
+).read_text(encoding="utf-8")
+WORKING_DRAFT_FILES = (
+    ROOT / "docs/legal/PIQSAVI_PRIVACY_POLICY_WORKING_DRAFT.md",
+    ROOT / "docs/legal/PIQSAVI_TERMS_OF_SERVICE_WORKING_DRAFT.md",
+    ROOT / "docs/legal/PIQSAVI_COOKIE_TRACKING_NOTICE_WORKING_DRAFT.md",
+    ROOT / "docs/legal/PIQSAVI_AI_RECOMMENDATION_DISCLOSURE_WORKING_DRAFT.md",
+    ROOT / "docs/legal/PIQSAVI_AFFILIATE_ADVERTISING_DISCLOSURE_WORKING_DRAFT.md",
+    ROOT / "docs/legal/PIQSAVI_ACCOUNT_DELETION_DATA_EXPORT_RETENTION_POLICY_WORKING_DRAFT.md",
+    ROOT / "docs/legal/PIQSAVI_CONSUMER_MARKETPLACE_DISCLAIMER_WORKING_DRAFT.md",
+)
 HTML = (ROOT / "app/static/early_access/index.html").read_text(encoding="utf-8")
 JS = (ROOT / "app/static/early_access/early-access.js").read_text(encoding="utf-8")
 PUBLISHED = ROOT / "docs/legal/published"
@@ -126,21 +138,62 @@ def test_publication_activation_record_stays_blocked() -> None:
 
 def test_register_addendum_keeps_legal_and_infra_separate() -> None:
     assert "EXT-19 2026-09-11 publication-activation addendum" in REGISTER
+    assert "EXT-19 2026-09-11 working-draft intake addendum" in REGISTER
     assert "Legal/content ready" in REGISTER
     assert "Production infrastructure ready" in REGISTER
     assert "EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md" in REGISTER
+    assert "EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md" in REGISTER
     assert "ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS" in REGISTER
     assert _status_cell("EXT-19") == "`applied`"
     assert _status_cell("EXT-20") == "`not_started`"
     assert _status_cell("EXT-21") == "`not_started`"
 
 
-def test_august_25_working_drafts_are_not_in_the_repository() -> None:
-    legal = ROOT / "docs/legal"
-    unexpected = list(legal.rglob("*WORKING_DRAFT*"))
-    assert unexpected == []
+def test_august_25_working_drafts_are_review_only_and_unpublished() -> None:
+    for path in WORKING_DRAFT_FILES:
+        assert path.is_file()
+        text = path.read_text(encoding="utf-8")
+        assert "Not for publication" in text
+        assert "Not evidence of legal approval" in text
+        assert "WORKING DRAFT" in text
+        assert "Last Updated: August 25, 2026" in text
     html_files = list(PUBLISHED.glob("*.html"))
     assert html_files == []
+    assert not (PUBLISHED / "PIQSAVI_PRIVACY_POLICY_WORKING_DRAFT.md").exists()
+    assert not (PUBLISHED / "PIQSAVI_TERMS_OF_SERVICE_WORKING_DRAFT.md").exists()
+
+
+def test_working_draft_intake_record_stays_blocked() -> None:
+    assert "5eadebda0ea6952ab37d6fb34825beff0e6c2ea7" in WORKING_DRAFT_INTAKE
+    assert (
+        "EARLY ACCESS LEGAL ACTIVATION BLOCKED — COUNSEL CONDITION REMAINS UNRESOLVED"
+        in WORKING_DRAFT_INTAKE
+    )
+    ready_slogan = (
+        "EARLY ACCESS LEGAL PUBLICATION READY — PRODUCTION INFRASTRUCTURE CUTOVER REMAINS"
+    )
+    assert ready_slogan in WORKING_DRAFT_INTAKE
+    assert WORKING_DRAFT_INTAKE.index("This is **not**:") < WORKING_DRAFT_INTAKE.index(ready_slogan)
+    assert "ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS" in WORKING_DRAFT_INTAKE
+    assert "Privacy published?" in WORKING_DRAFT_INTAKE
+    assert "Terms published?" in WORKING_DRAFT_INTAKE
+    assert "**No** — no version id" in WORKING_DRAFT_INTAKE
+    assert "Legal/content ready: No" in WORKING_DRAFT_INTAKE
+    assert "Production infrastructure ready: No" in WORKING_DRAFT_INTAKE
+    assert "condition not explicitly documented in sanitized record" in WORKING_DRAFT_INTAKE
+    assert "Factual update required before publication" in WORKING_DRAFT_INTAKE
+    assert "localStorage" in WORKING_DRAFT_INTAKE
+    assert "POST /api/v1/auth/account/delete" in WORKING_DRAFT_INTAKE
+    assert "By joining Early Access, you agree to the Terms" not in HTML
+    for document in EIGHT_DOCUMENTS:
+        assert document in WORKING_DRAFT_INTAKE
+    assert "owner controls merges" in WORKING_DRAFT_INTAKE.lower()
+    assert "Not a public beta launch" in WORKING_DRAFT_INTAKE
+    assert "No shopping launch" in WORKING_DRAFT_INTAKE
+    assert "No merchant certification" in WORKING_DRAFT_INTAKE
+    assert "No live research" in WORKING_DRAFT_INTAKE
+    assert "No affiliate monetization" in WORKING_DRAFT_INTAKE
+    assert "No production deploy" in WORKING_DRAFT_INTAKE
 
 
 def test_production_catalog_and_routes_remain_unpublished() -> None:

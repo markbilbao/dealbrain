@@ -5,7 +5,7 @@
 **Date recorded:** 2026-09-10
 **Counsel-review date:** 2026-08-19
 **Register authority:** [`../EXTERNAL_DEPENDENCY_REGISTER.md`](../EXTERNAL_DEPENDENCY_REGISTER.md)
-**Related:** [`EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md) · [`EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md) · [`../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md)
+**Related:** [`EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md) · [`EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md) · [`EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md`](EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md) · [`../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](../sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md)
 
 **Source of this sanitized record:** owner-supplied signed counsel record, verified outside repository.
 
@@ -99,7 +99,7 @@ The owner states that revised working documents dated **2026-08-25** exist outsi
 - `PIQSAVI_CONSUMER_MARKETPLACE_DISCLAIMER_WORKING_DRAFT`
 - `PIQSAVI_DATA_PROCESSING_PRODUCT_BEHAVIOR_SPEC_COUNSEL_DRAFT`
 
-Those August 25 working-draft artifacts were **not** present in the agent workspace and are **not** committed here. Repository copies under `docs/legal/` remain the earlier counsel-draft markdown versions.
+Those August 25 working-draft artifacts were **not** present when this sanitized record was first written. A later 2026-09-11 intake transcribed the owner-supplied DOCX package under `docs/legal/` as review-only `*_WORKING_DRAFT.md` files. That intake does **not** change the dispositions above, does **not** publish Privacy/Terms, and does **not** convert this record into published-scope approval. See [`EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md`](EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md).
 
 ---
 

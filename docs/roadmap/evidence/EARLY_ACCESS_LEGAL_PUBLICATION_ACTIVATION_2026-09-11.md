@@ -11,6 +11,8 @@ This record does **not** rewrite the 2026-09-10 reconciliation. PR #128 remains 
 
 This 2026-09-11 attempt was the publication + activation step. It searched again for the August 25 revised package and compared available texts against current main. It does **not** infer privileged advice.
 
+**Follow-up (does not rewrite this record):** [`EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md`](EARLY_ACCESS_LEGAL_WORKING_DRAFT_RECONCILIATION_2026-09-11.md) — August 25 package later arrived and was transcribed as review-only markdown; publication/activation still not performed.
+
 ---
 
 ## Resulting state
