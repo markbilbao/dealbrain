@@ -50,8 +50,8 @@ def _status_cell(row_id: str) -> str:
 
 def test_ext19_remains_applied_not_approved() -> None:
     assert _status_cell("EXT-19") == "`applied`"
-    assert _status_cell("EXT-20") == "`not_started`"
-    assert _status_cell("EXT-21") == "`not_started`"
+    assert _status_cell("EXT-20") == "`applied`"
+    assert _status_cell("EXT-21") == "`applied`"
     assert _status_cell("EXT-22") == "`not_started`"
     assert "EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md" in REGISTER
     assert "written **conditional** approval" in REGISTER
@@ -131,29 +131,31 @@ def test_register_addendum_keeps_legal_and_infra_separate() -> None:
     assert "EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md" in REGISTER
     assert "ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS" in REGISTER
     assert _status_cell("EXT-19") == "`applied`"
-    assert _status_cell("EXT-20") == "`not_started`"
-    assert _status_cell("EXT-21") == "`not_started`"
+    assert "EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md" in REGISTER
 
 
-def test_august_25_working_drafts_are_not_in_the_repository() -> None:
+def test_august_25_working_drafts_are_review_sources_not_public_html() -> None:
     legal = ROOT / "docs/legal"
-    unexpected = list(legal.rglob("*WORKING_DRAFT*"))
-    assert unexpected == []
-    html_files = list(PUBLISHED.glob("*.html"))
-    assert html_files == []
+    drafts = list(legal.glob("*WORKING_DRAFT.md"))
+    assert drafts
+    html_files = {path.name for path in PUBLISHED.glob("*.html")}
+    assert html_files == {"privacy-2026-09-11.html", "terms-2026-09-11.html"}
+    client = TestClient(create_app())
+    leaked = client.get("/docs/legal/PIQSAVI_PRIVACY_POLICY_WORKING_DRAFT.md")
+    assert leaked.status_code in {404, 405, 307, 308}
 
 
-def test_production_catalog_and_routes_remain_unpublished() -> None:
+def test_production_catalog_and_routes_are_published() -> None:
     from app.core.config import Settings
 
     catalog = catalog_from_settings(Settings())
-    assert catalog.published("terms") is None
-    assert catalog.published("privacy") is None
+    assert catalog.published("terms") is not None
+    assert catalog.published("privacy") is not None
     client = TestClient(create_app())
     privacy = client.get("/privacy")
     terms = client.get("/terms")
-    assert privacy.status_code == 404
-    assert terms.status_code == 404
+    assert privacy.status_code == 200
+    assert terms.status_code == 200
     for body in (privacy.text, terms.text):
         for marker in COUNSEL_DRAFT_CONTENT_MARKERS:
             assert marker not in body
@@ -170,17 +172,16 @@ def test_published_root_still_rejects_counsel_draft_markers() -> None:
     assert response.status_code in {404, 405, 307, 308}
 
 
-def test_early_access_legal_links_remain_gated() -> None:
+def test_early_access_legal_links_are_active_for_published_policies() -> None:
     assert 'href="/privacy"' in HTML
     assert 'href="/terms"' in HTML
-    assert 'aria-disabled="true"' in HTML
-    assert 'data-legal-gated="true"' in HTML
-    assert "event.preventDefault()" in JS
+    assert 'aria-disabled="true"' not in HTML
+    assert "data-legal-gated" not in HTML
     assert "No spam. Just important PiqSavi early-access updates." in HTML
+    assert 'name="policies_acknowledged"' in HTML
+    assert "I agree to the" in HTML
     assert 'name="terms_accepted"' not in HTML
     assert 'name="privacy_acknowledged"' not in HTML
-    assert "I accept the" not in HTML
-    assert "I acknowledge the" not in HTML
 
 
 def test_early_access_scope_stays_acquisition_only() -> None:
@@ -197,7 +198,7 @@ def test_early_access_scope_stays_acquisition_only() -> None:
     client = TestClient(create_app())
     page = client.get("/").text
     assert "/demo" not in page
-    assert "data-legal-gated" in page
+    assert 'href="/privacy"' in page
     assert "shopee" not in page.lower()
     assert "lazada" not in page.lower()
 

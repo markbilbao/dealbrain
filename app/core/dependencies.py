@@ -1285,7 +1285,10 @@ def get_early_access_service():
     if _EARLY_ACCESS_SERVICE is None:
         from app.services.early_access_service import EarlyAccessService
 
-        _EARLY_ACCESS_SERVICE = EarlyAccessService(get_early_access_repository())
+        _EARLY_ACCESS_SERVICE = EarlyAccessService(
+            get_early_access_repository(),
+            legal_catalog=get_legal_publication_catalog(),
+        )
     return _EARLY_ACCESS_SERVICE
 
 

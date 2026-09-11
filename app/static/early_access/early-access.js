@@ -59,6 +59,7 @@
       document.body.classList.toggle("is-signup-open", isMobile());
     }
     syncSignupAriaModal();
+    syncVisualState();
   }
 
   if (typeof mobileQuery.addEventListener === "function") {
@@ -78,6 +79,17 @@
   }
   syncSignupAriaModal();
 
+  function syncVisualState() {
+    const signupState = layer.hidden ? "closed" : state.result || state.form;
+    const signupView = layer.hidden ? "landing" : state.view;
+    layer.dataset.signupState = signupState;
+    layer.dataset.signupView = signupView;
+    sheet.dataset.signupState = signupState;
+    document.body.dataset.signupState = signupState;
+    document.body.dataset.signupView = signupView;
+    document.body.classList.toggle("is-signup-mobile", Boolean(!layer.hidden && isMobile()));
+  }
+
   function focusables() {
     return [...sheet.querySelectorAll("a, button, input, select, textarea")]
       .filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
@@ -94,6 +106,7 @@
       full_name: "err-full-name",
       email: "err-email",
       country: "err-country",
+      policies_acknowledged: "err-policies-acknowledged",
     };
     Object.keys(map).forEach((field) => {
       const wrap = form.querySelector(`[data-field="${field}"]`);
@@ -104,6 +117,7 @@
       const input = wrap.querySelector("input, select");
       input.setAttribute("aria-invalid", invalid ? "true" : "false");
     });
+    syncVisualState();
   }
 
   function validate() {
@@ -112,16 +126,19 @@
     if (!values.full_name) errors.full_name = true;
     if (!values.email || !EMAIL_RE.test(values.email)) errors.email = true;
     if (!values.country) errors.country = true;
+    if (!values.policies_acknowledged) errors.policies_acknowledged = true;
     return errors;
   }
 
   function readForm() {
     const data = new FormData(form);
+    const acknowledgement = document.getElementById("ea-policies-acknowledged");
     return {
       full_name: String(data.get("full_name") || "").trim(),
       email: String(data.get("email") || "").trim(),
       country: String(data.get("country") || "").trim(),
       shopping_interest: String(data.get("shopping_interest") || "").trim() || null,
+      policies_acknowledged: Boolean(acknowledgement && acknowledgement.checked),
     };
   }
 
@@ -168,6 +185,7 @@
     window.requestAnimationFrame(() => {
       document.getElementById("ea-full-name").focus();
     });
+    syncVisualState();
   }
 
   function closeSignup() {
@@ -177,6 +195,7 @@
     state.result = null;
     const restore = state.lastCta;
     state.lastCta = null;
+    syncVisualState();
     if (restore) restore.focus();
   }
 
@@ -186,6 +205,7 @@
     showPanel(kind);
     const action = sheet.querySelector(`[data-panel="${kind}"] .btn`);
     if (action) action.focus();
+    syncVisualState();
   }
 
   function setLoading(loading) {
@@ -196,12 +216,17 @@
     submitBtn.querySelector(".btn-label").textContent = loading
       ? "Joining Early Access..."
       : "Join Early Access — Free";
+    syncVisualState();
   }
 
   form.addEventListener("focusin", () => {
     if (!state.formStarted) {
       state.formStarted = true;
       track("early_access_form_started");
+    }
+    if (!state.result && state.form === "default") {
+      state.form = "focused";
+      syncVisualState();
     }
   });
 
@@ -234,16 +259,29 @@
         if (response.status === 400 || response.status === 422) {
           setLoading(false);
           state.form = "validation";
-          const next = { full_name: false, email: false, country: false };
+          const next = {
+            full_name: false,
+            email: false,
+            country: false,
+            policies_acknowledged: false,
+          };
           const details = payload.details;
           const blob = JSON.stringify(payload).toLowerCase();
           if (blob.includes("full_name") || blob.includes("full name")) next.full_name = true;
           if (blob.includes("email")) next.email = true;
           if (blob.includes("country")) next.country = true;
-          if (!next.full_name && !next.email && !next.country) {
+          if (
+            blob.includes("policies_acknowledged")
+            || blob.includes("terms of service")
+            || blob.includes("privacy policy")
+          ) {
+            next.policies_acknowledged = true;
+          }
+          if (!next.full_name && !next.email && !next.country && !next.policies_acknowledged) {
             next.full_name = !readForm().full_name;
             next.email = true;
             next.country = !readForm().country;
+            next.policies_acknowledged = !readForm().policies_acknowledged;
           }
           setFormErrors(next);
           return;
@@ -347,6 +385,8 @@
     window.visualViewport.addEventListener("resize", onViewport);
     window.visualViewport.addEventListener("scroll", onViewport);
   }
+
+  syncVisualState();
 
   if (how && "IntersectionObserver" in window) {
     const observer = new IntersectionObserver(

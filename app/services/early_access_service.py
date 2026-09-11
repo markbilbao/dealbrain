@@ -16,6 +16,7 @@ from app.core.logging import log_extra
 from app.domain.entities.early_access import EarlyAccessRegistration
 from app.domain.exceptions import EarlyAccessValidationError
 from app.domain.interfaces.early_access_repository import EarlyAccessRepository
+from app.legal.publication import LegalPublicationCatalog, catalog_from_settings
 
 logger = logging.getLogger(__name__)
 
@@ -76,11 +77,13 @@ class EarlyAccessService:
         email_sender: EmailSender | None = None,
         clock: Callable[[], datetime] | None = None,
         id_factory: Callable[[], str] | None = None,
+        legal_catalog: LegalPublicationCatalog | None = None,
     ) -> None:
         self._repository = repository
         self._email = email_sender or NullEmailSender()
         self._clock = clock or _now
         self._id_factory = id_factory or (lambda: str(uuid4()))
+        self._legal_catalog = legal_catalog
 
     def register(
         self,
@@ -96,8 +99,14 @@ class EarlyAccessService:
         utm_content: str | None = None,
         utm_term: str | None = None,
         referrer: str | None = None,
+        policies_acknowledged: bool = False,
         request_id: str | None = None,
     ) -> EarlyAccessRegisterResult:
+        if not policies_acknowledged:
+            raise EarlyAccessValidationError(
+                "Please agree to the Terms of Service and acknowledge the Privacy Policy."
+            )
+        terms_version_id, privacy_version_id = self._published_policy_versions()
         cleaned_name = self._validate_full_name(full_name)
         cleaned_email = self._validate_email(email)
         cleaned_country = self._validate_country(country)
@@ -124,6 +133,9 @@ class EarlyAccessService:
             email_confirmation_sent_at=None,
             created_at=now,
             updated_at=now,
+            terms_version_id=terms_version_id,
+            privacy_version_id=privacy_version_id,
+            policies_acknowledged_at=now,
         )
         stored, created = self._repository.create_if_absent(pending)
         outcome: RegisterOutcome = "success" if created else "already_registered"
@@ -180,6 +192,20 @@ class EarlyAccessService:
                     )
                 },
             )
+
+    def _published_policy_versions(self) -> tuple[str, str]:
+        catalog = self._legal_catalog
+        if catalog is None:
+            from app.core.config import get_settings
+
+            catalog = catalog_from_settings(get_settings())
+        terms = catalog.published("terms")
+        privacy = catalog.published("privacy")
+        if terms is None or privacy is None:
+            raise EarlyAccessValidationError(
+                "Please agree to the Terms of Service and acknowledge the Privacy Policy."
+            )
+        return terms.version_id, privacy.version_id
 
     @staticmethod
     def _validate_full_name(full_name: str) -> str:

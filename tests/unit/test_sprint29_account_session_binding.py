@@ -181,8 +181,8 @@ async def _register(client: AsyncClient, email: str) -> dict:
             "email": email,
             "password": PASSWORD,
             "display_name": email.split("@", 1)[0],
-            "terms_accepted": False,
-            "privacy_acknowledged": False,
+            "terms_accepted": True,
+            "privacy_acknowledged": True,
         },
     )
     assert registered.status_code == 201

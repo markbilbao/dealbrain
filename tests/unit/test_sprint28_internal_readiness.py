@@ -145,10 +145,10 @@ def test_eligibility_placeholders_do_not_invent_an_age() -> None:
     assert country_notices_published() is False
 
 
-def test_production_publication_status_is_unpublished() -> None:
+def test_production_publication_status_is_published() -> None:
     payload = publication_status_payload(catalog_from_settings(Settings()))
-    assert payload["terms_published"] is False
-    assert payload["privacy_published"] is False
+    assert payload["terms_published"] is True
+    assert payload["privacy_published"] is True
     assert payload["cookie_notice_published"] is False
     assert payload["support_contact"] == PUBLIC_SUPPORT_EMAIL
     assert payload["privacy_contact"] == PUBLIC_PRIVACY_EMAIL
@@ -161,14 +161,14 @@ def test_production_publication_status_is_unpublished() -> None:
     assert operator["counsel_owned"] is True
 
 
-def test_published_directory_has_no_public_html() -> None:
+def test_published_directory_has_owner_authorized_html_only() -> None:
     root = default_legal_publication_root()
     assert root.is_dir()
-    html_files = list(root.glob("*.html"))
-    assert html_files == []
+    html_files = {path.name for path in root.glob("*.html")}
+    assert html_files == {"privacy-2026-09-11.html", "terms-2026-09-11.html"}
     readme = (root / "README.md").read_text(encoding="utf-8")
-    assert "empty by design" in readme.lower()
     assert "counsel drafts" in readme.lower()
+    assert "not a new counsel approval" in readme.lower()
 
 
 def test_unpublished_inspect_consent_does_not_fabricate_records() -> None:
@@ -238,12 +238,12 @@ def test_published_inspect_consent_shows_owner_records_only(tmp_path: Path) -> N
 
 
 @pytest.mark.asyncio
-async def test_publication_status_api_is_unpublished(client: AsyncClient) -> None:
+async def test_publication_status_api_is_published(client: AsyncClient) -> None:
     response = await client.get("/api/v1/legal/publication-status")
     assert response.status_code == 200
     body = response.json()
-    assert body["terms_published"] is False
-    assert body["privacy_published"] is False
+    assert body["terms_published"] is True
+    assert body["privacy_published"] is True
     assert body["non_essential_tracking_allowed"] is False
     assert body["banner_implemented"] is False
     assert body["support_contact"] == PUBLIC_SUPPORT_EMAIL
@@ -254,14 +254,14 @@ async def test_publication_status_api_is_unpublished(client: AsyncClient) -> Non
 
 
 @pytest.mark.asyncio
-async def test_health_reports_unpublished_legal_and_essential_only(
+async def test_health_reports_published_legal_and_essential_only(
     client: AsyncClient,
 ) -> None:
     response = await client.get("/health")
     assert response.status_code == 200
     checks = response.json()["checks"]
-    assert checks["legal_terms_published"] is False
-    assert checks["legal_privacy_published"] is False
+    assert checks["legal_terms_published"] is True
+    assert checks["legal_privacy_published"] is True
     assert checks["tracking_mode"] == "essential_only"
     assert checks["non_essential_tracking_allowed"] is False
     assert checks["minimum_age_policy_published"] is False
@@ -274,7 +274,7 @@ async def test_account_consents_requires_auth(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_account_consents_empty_when_unpublished(client: AsyncClient) -> None:
+async def test_account_consents_record_published_acceptance(client: AsyncClient) -> None:
     created = await client.post(
         "/api/v1/auth/register",
         json={
@@ -295,9 +295,9 @@ async def test_account_consents_empty_when_unpublished(client: AsyncClient) -> N
     assert response.status_code == 200
     body = response.json()
     assert body["user_id"] == created.json()["user"]["user_id"]
-    assert body["unpublished"] is True
-    assert body["records"] == []
-    assert CONSUMER_EMPTY_NOTE in body["notes"]
+    assert body["unpublished"] is False
+    assert {record["policy_type"] for record in body["records"]} == {"terms", "privacy"}
+    assert CONSUMER_EMPTY_NOTE not in body["notes"]
     assert all("DSAR" not in note for note in body["notes"])
     assert all("must not be fabricated" not in note for note in body["notes"])
 
@@ -310,8 +310,8 @@ async def test_account_consents_ignores_foreign_user_id(client: AsyncClient) -> 
             "email": "sprint28-consents-http@example.invalid",
             "password": "Password123",
             "display_name": "HTTP Consents",
-            "terms_accepted": False,
-            "privacy_acknowledged": False,
+            "terms_accepted": True,
+            "privacy_acknowledged": True,
         },
     )
     assert created.status_code == 201
@@ -326,7 +326,9 @@ async def test_account_consents_ignores_foreign_user_id(client: AsyncClient) -> 
     body = response.json()
     assert body["user_id"] == created.json()["user"]["user_id"]
     assert body["user_id"] != other_id
-    assert body["records"] == []
+    assert body["records"]
+    assert all(record["user_id"] == body["user_id"] for record in body["records"])
+    assert all(record["user_id"] != other_id for record in body["records"])
 
 
 @pytest.mark.asyncio
@@ -348,8 +350,10 @@ async def test_support_page_uses_provisioned_contacts_only(client: AsyncClient) 
 async def test_register_does_not_invent_age_or_dob(client: AsyncClient) -> None:
     page = await client.get("/register")
     assert page.status_code == 200
-    assert 'data-eligibility-unpublished="true"' in page.text
-    assert "Legal policies are not yet available for this beta." in page.text
+    assert 'data-eligibility-unpublished="true"' not in page.text
+    assert "Legal policies are not yet available for this beta." not in page.text
+    assert 'name="terms_accepted"' in page.text
+    assert 'name="privacy_acknowledged"' in page.text
     assert "terms_accepted=false" not in page.text
     assert "privacy_acknowledged=false" not in page.text
     assert 'name="date_of_birth"' not in page.text
@@ -374,17 +378,19 @@ async def test_account_settings_expose_consent_audit_surface(client: AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_private_pages_keep_fail_closed_legal_routes(client: AsyncClient) -> None:
+async def test_private_pages_keep_published_legal_routes_without_drafts(
+    client: AsyncClient,
+) -> None:
     privacy = await client.get("/privacy")
     terms = await client.get("/terms")
-    assert privacy.status_code == 404
-    assert terms.status_code == 404
+    assert privacy.status_code == 200
+    assert terms.status_code == 200
     for body in (privacy.text, terms.text):
         for marker in COUNSEL_DRAFT_CONTENT_MARKERS:
             assert marker not in body
 
 
-def test_publication_status_script_prints_unpublished_json() -> None:
+def test_publication_status_script_prints_published_json() -> None:
     script = ROOT / "scripts/privacy/inspect_publication_status.py"
     result = subprocess.run(
         [sys.executable, str(script)],
@@ -394,8 +400,8 @@ def test_publication_status_script_prints_unpublished_json() -> None:
         cwd=ROOT,
     )
     payload = json.loads(result.stdout)
-    assert payload["terms_published"] is False
-    assert payload["privacy_published"] is False
+    assert payload["terms_published"] is True
+    assert payload["privacy_published"] is True
     assert payload["non_essential_tracking_allowed"] is False
     assert payload["counsel_drafts_are_not_public"] is True
     assert payload["ext_22_status"] == "not_started"

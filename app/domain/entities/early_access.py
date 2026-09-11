@@ -35,3 +35,6 @@ class EarlyAccessRegistration:
     email_confirmation_sent_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    terms_version_id: str | None = None
+    privacy_version_id: str | None = None
+    policies_acknowledged_at: datetime | None = None

@@ -1,5 +1,7 @@
 # Early Access — legal publication activation attempt
 
+**Follow-up (does not rewrite this record):** [`EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md`](EARLY_ACCESS_OWNER_AUTHORIZED_LEGAL_ACTIVATION_2026-09-11.md) — later owner-authorized content-layer publication from the August 25 working-draft package.
+
 **Date recorded:** 2026-09-11
 **Audited `origin/main` SHA:** `efa430c4962dee90e325fffbf84f475dc1883f12`
 **Scope:** Early Access acquisition / signup legal publication + link activation only

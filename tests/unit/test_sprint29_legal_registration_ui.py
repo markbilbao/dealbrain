@@ -71,35 +71,52 @@ def test_unpublished_register_html_has_no_required_acceptance() -> None:
 
 
 @pytest.mark.asyncio
-async def test_live_register_route_uses_unpublished_production_catalog(
+async def test_live_register_route_uses_published_production_catalog(
     client: AsyncClient,
 ) -> None:
     response = await client.get("/register")
     assert response.status_code == 200
-    assert 'name="terms_accepted"' not in response.text
-    assert 'name="privacy_acknowledged"' not in response.text
-    assert "I accept the Terms of Service" not in response.text
-    assert 'data-legal-unpublished="true"' in response.text
+    assert 'name="terms_accepted"' in response.text
+    assert 'name="privacy_acknowledged"' in response.text
+    assert "I accept the" in response.text
+    assert "Terms of Service" in response.text
+    assert "I acknowledge the" in response.text
+    assert "Privacy Policy" in response.text
+    assert 'href="/terms"' in response.text
+    assert 'href="/privacy"' in response.text
+    assert 'data-legal-unpublished="true"' not in response.text
 
 
 @pytest.mark.asyncio
-async def test_unpublished_registration_succeeds_with_false_acceptance(
+async def test_published_registration_requires_acceptance(
     client: AsyncClient,
 ) -> None:
+    refused = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "sprint29-published-legal-refuse@example.invalid",
+            "password": "Password123",
+            "display_name": "Published Legal Refuse",
+            "terms_accepted": False,
+            "privacy_acknowledged": False,
+        },
+    )
+    assert refused.status_code == 400
     created = await client.post(
         "/api/v1/auth/register",
         json={
-            "email": "sprint29-unpublished-legal@example.invalid",
+            "email": "sprint29-published-legal@example.invalid",
             "password": "Password123",
-            "display_name": "Unpublished Legal",
-            "terms_accepted": False,
-            "privacy_acknowledged": False,
+            "display_name": "Published Legal",
+            "terms_accepted": True,
+            "privacy_acknowledged": True,
         },
     )
     assert created.status_code == 201
     user_id = created.json()["user"]["user_id"]
     store = get_user_platform_store()
-    assert store.consents.list_for_user(user_id) == []
+    records = store.consents.list_for_user(user_id)
+    assert {record.policy_type for record in records} == {"terms", "privacy"}
 
 
 def test_unpublished_true_flags_still_create_no_consent_record() -> None:

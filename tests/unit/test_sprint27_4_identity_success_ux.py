@@ -240,8 +240,8 @@ async def test_email_change_request_does_not_mutate_account_email(
             "email": email,
             "password": "Password123",
             "display_name": "Sprint 27.4",
-            "terms_accepted": False,
-            "privacy_acknowledged": False,
+            "terms_accepted": True,
+            "privacy_acknowledged": True,
         },
     )
     assert created.status_code == 201

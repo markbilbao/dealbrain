@@ -51,11 +51,11 @@ def test_approved_headline_and_copy() -> None:
     assert "Know what’s worth buying." in page or "Know what's worth buying." in page
     assert "Be one of the first to try PiqSavi." in page
     assert (
-        "We’re getting PiqSavi ready for its first users. Join the Early Access list and we’ll "
-        "let you know when it’s ready to try."
+        "We’re preparing PiqSavi for its first group of users. "
+        "Join the early-access list and we’ll let you know when it’s ready for you to try."
     ) in page or (
-        "We're getting PiqSavi ready for its first users. Join the Early Access list and we'll "
-        "let you know when it's ready to try."
+        "We're preparing PiqSavi for its first group of users. "
+        "Join the early-access list and we'll let you know when it's ready for you to try."
     ) in page
     assert "You’re on the list." in page or "You're on the list." in page
     assert "Something went wrong." in page
@@ -80,7 +80,7 @@ def test_exactly_approved_form_fields() -> None:
 def test_privacy_and_terms_footer_links() -> None:
     assert 'href="/privacy"' in HTML
     assert 'href="/terms"' in HTML
-    assert "data-legal-gated" in HTML
+    assert "data-legal-gated" not in HTML
 
 
 def test_no_pricing_merchant_logos_or_fake_social_proof() -> None:
@@ -104,7 +104,16 @@ def test_responsive_breakpoint_present() -> None:
     assert "SOURCE-ASSET-GATE" not in css
     assert "object-position: 58% 42%" in css
     assert "object-position: 59% 42%" in css
-    assert "object-position: 60% 42%" in css
+    assert "object-position: 60% 47%" in css
+    assert "min-height: 414px" in css
+    assert "min-height: 480px" in css
+    assert "min-height: 196px" in css
+    assert "font-size: 3.5rem" in css
+    assert "font-size: 1.7rem" in css
+    assert "object-view-box" not in css
+    assert "--logo-view" not in css
+    assert "min-height: 400px" not in css
+    assert "font-size: 3rem" not in css.split("@media (max-width: 767px)", 1)[0]
 
 
 def test_signup_states_keep_locked_master_proportions() -> None:
@@ -113,7 +122,7 @@ def test_signup_states_keep_locked_master_proportions() -> None:
     assert "padding: 2.6rem 3.4rem 1.25rem" in css
     assert "max-width: 18.5rem" in css
     assert "margin: 0.75rem auto 3.25rem" in css
-    assert "min-height: 42px" in css
+    assert "min-height: 44px" in css
     assert "min-height: 25.9rem" in css
     assert "max-width: 260px" in css
     assert "padding: 1rem 1.5rem 2rem" in css
@@ -121,10 +130,17 @@ def test_signup_states_keep_locked_master_proportions() -> None:
     assert "max-width: 300px" in css
     assert "margin-bottom: 4rem" in css
     assert ".signup-sheet:has(.result-body:not([hidden]))" in css
-    assert ".signup-sheet:has(.field-error:not([hidden]))" in css
+    assert "border-radius: 999px" in css
+    assert "rgba(11, 18, 36, 0.48)" in css
+    assert ".signup-sheet:has(.field-error:not([hidden]))" not in css
 
 
-APPROVED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
+APPROVED_LOGO_SHA256 = "5189150b27fbd6a374ce8cc023ef735e5a5c752e667d45d716fdaa8900dfb42f"
+REJECTED_LOGO_SHA256 = "916a1f5165e7b8e6b8390221b040717ef8a22cf24ce5a26cb0c9a621d9d5dd97"
+LOCKUP_SHA256 = "f5d43f1d184b7a79fada0eedf2db61d3213a39acb02672cc4060c5f5638e47c2"
+LOCKUP_SIZE = (797, 167)
+ICON_BOX = (197, 318, 523, 669)
+WORDMARK_BOX = (594, 383, 1216, 550)
 
 
 def test_approved_master_logo_is_used() -> None:
@@ -132,15 +148,46 @@ def test_approved_master_logo_is_used() -> None:
     assert logo.is_file()
     raw = logo.read_bytes()
     assert raw[:8] == b"\x89PNG\r\n\x1a\n"
-    assert hashlib.sha256(raw).hexdigest() == APPROVED_LOGO_SHA256
-    assert "/static/early_access/assets/piqsavi-logo.png" in HTML
-    assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 3
+    digest = hashlib.sha256(raw).hexdigest()
+    assert digest == APPROVED_LOGO_SHA256
+    assert digest != REJECTED_LOGO_SHA256
     assert 'alt="PiqSavi"' in HTML
     assert "piq-grad" not in HTML
     assert "brand-mark" not in HTML
     assert "brand-mark" not in (ROOT / "app/static/early_access/early-access.css").read_text(
         encoding="utf-8"
     )
+
+
+def test_header_footer_use_derived_lockup_not_css_crop() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    lockup_path = ROOT / "app/static/early_access/assets/piqsavi-logo-lockup.png"
+    assert lockup_path.is_file()
+    raw = lockup_path.read_bytes()
+    assert raw[:8] == b"\x89PNG\r\n\x1a\n"
+    assert hashlib.sha256(raw).hexdigest() == LOCKUP_SHA256
+    assert raw[16:24] == LOCKUP_SIZE[0].to_bytes(4, "big") + LOCKUP_SIZE[1].to_bytes(4, "big")
+    assert raw[25] == 6  # RGBA — transparent canvas, no presentation background
+    assert HTML.count("/static/early_access/assets/piqsavi-logo-lockup.png") == 3
+    assert HTML.count("/static/early_access/assets/piqsavi-logo.png") == 0
+    assert 'width="797"' in HTML
+    assert 'height="167"' in HTML
+    assert "object-view-box" not in css
+    assert "clip-path" not in css
+    assert "clip:" not in css
+    assert "margin-top: -" not in css
+    assert (
+        ".brand-logo {\n"
+        "  display: block;\n"
+        "  height: 38px;\n"
+        "  width: auto;\n"
+        "  overflow: visible;\n"
+        "  object-fit: contain;"
+    ) in css
+    gate = (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(encoding="utf-8")
+    assert "Complete circular icon: literal pixels (197, 318)–(523, 669)" in gate
+    assert str(ICON_BOX[0]) in gate
+    assert str(WORDMARK_BOX[0]) in gate
 
 
 def test_approximating_logo_svg_is_gone() -> None:
@@ -165,6 +212,8 @@ def test_field_error_describedby_and_live_regions() -> None:
     assert 'aria-describedby="err-email"' in HTML
     assert 'id="ea-country"' in HTML
     assert 'aria-describedby="err-country"' in HTML
+    assert 'id="ea-policies-acknowledged"' in HTML
+    assert 'aria-describedby="err-policies-acknowledged"' in HTML
     assert 'id="ea-interest"' in HTML
     interest_block = HTML.split('id="ea-interest"', 1)[1].split("</div>", 1)[0]
     assert "aria-describedby" not in interest_block
@@ -196,8 +245,9 @@ def test_mobile_signup_logo_links_home_and_is_larger() -> None:
     assert '<a class="signup-brand" href="/" aria-label="Back to PiqSavi home">' in HTML
     assert '<img\n              class="brand-logo"' in HTML
     assert "PiqSavi home" in HTML
-    assert ".site-header .brand-logo {\n    height: 72px;" in mobile_css
-    assert ".signup-brand .brand-logo {\n    height: 72px;" in mobile_css
+    assert ".site-header .brand-logo {\n    height: 26px;" in mobile_css
+    assert ".signup-brand .brand-logo {\n    height: 44px;" in mobile_css
+    assert ".footer-lockup .brand-logo {\n    height: 18px;" in mobile_css
     assert ".signup-brand:focus-visible" in css
 
 
@@ -260,8 +310,9 @@ def test_locked_landing_architecture() -> None:
     assert "search" not in HTML.lower()
     assert 'href="/privacy"' in HTML
     assert 'href="/terms"' in HTML
-    assert 'data-legal-gated="true"' in HTML
-    assert 'aria-disabled="true"' in HTML
+    assert "data-legal-gated" not in HTML
+    assert 'aria-disabled="true"' not in HTML
+    assert 'name="policies_acknowledged"' in HTML
 
 
 def test_final_hero_source_is_served() -> None:
@@ -312,3 +363,62 @@ def test_registration_endpoints_remain_in_client() -> None:
     assert 'fetch("/api/v1/early-access"' in JS
     assert 'fetch("/api/v1/early-access/events"' in JS
     assert 'method: "POST"' in JS
+
+
+def test_exactly_two_main_page_ctas() -> None:
+    assert HTML.count("js-open-signup") == 2
+    assert 'data-cta-source="header"' in HTML
+    assert 'data-cta-source="hero"' in HTML
+    header_block = HTML.split('data-cta-source="header"', 1)[1].split("</button>", 1)[0]
+    hero_block = HTML.split('data-cta-source="hero"', 1)[1].split("</button>", 1)[0]
+    assert "Join Early Access" in header_block
+    assert "—" not in header_block
+    assert "Join Early Access — Free" in hero_block
+
+
+def test_legal_acknowledgement_is_present_and_unchecked() -> None:
+    assert 'name="policies_acknowledged"' in HTML
+    assert 'id="ea-policies-acknowledged"' in HTML
+    opening = HTML.split('id="ea-policies-acknowledged"', 1)[1].split(">", 1)[0]
+    assert "checked" not in opening
+    assert "I agree to the" in HTML
+    assert 'href="/terms">Terms of Service</a>' in HTML
+    assert 'href="/privacy">Privacy Policy</a>' in HTML
+    form_html = HTML.split('id="early-access-form"', 1)[1].split("</form>", 1)[0]
+    submit_label = "Join Early Access — Free"
+    note = "No spam. Just important PiqSavi early-access updates."
+    assert form_html.index("policies_acknowledged") < form_html.index(submit_label)
+    assert form_html.index("policies_acknowledged") < form_html.index(note)
+
+
+def test_modal_and_mobile_state_classes_are_managed() -> None:
+    assert "function syncVisualState()" in JS
+    assert "dataset.signupState" in JS
+    assert "dataset.signupView" in JS
+    assert "is-signup-mobile" in JS
+    assert "closed" in JS
+    assert "focused" in JS
+    assert "loading" in JS
+
+
+def test_no_old_incorrect_logo_or_css_mark() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    assert "piq-grad" not in HTML
+    assert "brand-mark" not in HTML
+    assert "brand-mark" not in css
+    assert REJECTED_LOGO_SHA256 not in (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(
+        encoding="utf-8"
+    )
+    assert APPROVED_LOGO_SHA256 in (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_approved_desktop_how_and_trust_stack_icons_above_copy() -> None:
+    css = (ROOT / "app/static/early_access/early-access.css").read_text(encoding="utf-8")
+    assert "flex-direction: column" in css
+    assert "align-items: center" in css
+    assert "text-align: center" in css
+    assert ".how-step:not(:last-child)::after" in css
+    assert "flex-direction: row" in css
+    assert ".trust-icon {\n  flex: 0 0 auto;\n  width: 56px;" in css

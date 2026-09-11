@@ -5997,6 +5997,11 @@
             "title": "Full Name",
             "type": "string"
           },
+          "policies_acknowledged": {
+            "description": "Required acknowledgement of the published Terms of Service and Privacy Policy.",
+            "title": "Policies Acknowledged",
+            "type": "boolean"
+          },
           "referrer": {
             "anyOf": [
               {
@@ -6097,7 +6102,8 @@
         "required": [
           "full_name",
           "email",
-          "country"
+          "country",
+          "policies_acknowledged"
         ],
         "title": "EarlyAccessRegisterRequest",
         "type": "object"

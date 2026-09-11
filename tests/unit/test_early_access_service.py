@@ -34,9 +34,15 @@ def _valid(**overrides: object) -> dict[str, object]:
         "utm_term": "shopper",
         "referrer": "https://example.com/ref",
         "source": "early_access_landing",
+        "policies_acknowledged": True,
     }
     payload.update(overrides)
     return payload
+
+
+def test_acknowledgement_is_required() -> None:
+    with pytest.raises(EarlyAccessValidationError, match="Terms of Service"):
+        _service().register(**_valid(policies_acknowledged=False))
 
 
 def test_successful_registration() -> None:

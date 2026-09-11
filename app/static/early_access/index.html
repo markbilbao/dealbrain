@@ -26,13 +26,13 @@
         >
           <span class="nav-toggle-icon" aria-hidden="true"></span>
         </button>
-        <a class="brand" href="/">
+        <a class="brand brand-compact" href="/">
           <img
             class="brand-logo"
-            src="/static/early_access/assets/piqsavi-logo.png"
+            src="/static/early_access/assets/piqsavi-logo-lockup.png"
             alt="PiqSavi"
-            width="1536"
-            height="1024"
+            width="797"
+            height="167"
           />
         </a>
         <nav class="header-nav" aria-label="Primary">
@@ -218,23 +218,23 @@
           <span class="brand footer-lockup">
             <img
               class="brand-logo"
-              src="/static/early_access/assets/piqsavi-logo.png"
+              src="/static/early_access/assets/piqsavi-logo-lockup.png"
               alt=""
-              width="1536"
-              height="1024"
+              width="797"
+              height="167"
             />
             <span class="footer-tag">Know what’s worth buying.</span>
           </span>
         </div>
         <nav class="footer-legal" aria-label="Legal">
-          <a href="/privacy" class="legal-gated" aria-disabled="true" data-legal-gated="true">Privacy</a>
-          <a href="/terms" class="legal-gated" aria-disabled="true" data-legal-gated="true">Terms</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
         </nav>
         <p class="footer-copy">© 2026 PiqSavi. All rights reserved.</p>
       </footer>
     </div>
 
-    <div class="signup-layer" id="signup-layer" hidden>
+    <div class="signup-layer" id="signup-layer" hidden data-signup-state="closed" data-signup-view="landing">
       <div class="signup-backdrop" data-close-signup></div>
       <div
         class="signup-sheet"
@@ -242,15 +242,16 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="signup-title"
+        data-signup-state="closed"
       >
         <header class="signup-header">
           <a class="signup-brand" href="/" aria-label="Back to PiqSavi home">
             <img
               class="brand-logo"
-              src="/static/early_access/assets/piqsavi-logo.png"
+              src="/static/early_access/assets/piqsavi-logo-lockup.png"
               alt="PiqSavi"
-              width="1536"
-              height="1024"
+              width="797"
+              height="167"
             />
           </a>
           <button type="button" class="icon-close" data-close-signup aria-label="Close">
@@ -262,7 +263,7 @@
           <p class="eyebrow">EARLY ACCESS</p>
           <h2 id="signup-title">Be one of the first to try PiqSavi.</h2>
           <p class="signup-lede">
-            We’re getting PiqSavi ready for its first users. Join the Early Access list and we’ll let you know when it’s ready to try.
+            We’re preparing PiqSavi for its first group of users. Join the early-access list and we’ll let you know when it’s ready for you to try.
           </p>
           <form id="early-access-form" novalidate>
             <div class="field" data-field="full_name">
@@ -309,6 +310,26 @@
                 maxlength="500"
                 placeholder="e.g. phone, laptop, appliance, shoes..."
               />
+            </div>
+            <div class="field field-ack" data-field="policies_acknowledged">
+              <label class="ack-label" for="ea-policies-acknowledged">
+                <input
+                  id="ea-policies-acknowledged"
+                  name="policies_acknowledged"
+                  type="checkbox"
+                  value="true"
+                  aria-describedby="err-policies-acknowledged"
+                />
+                <span>
+                  I agree to the
+                  <a href="/terms">Terms of Service</a>
+                  and acknowledge the
+                  <a href="/privacy">Privacy Policy</a>.
+                </span>
+              </label>
+              <p class="field-error" id="err-policies-acknowledged" hidden aria-live="polite">
+                Please agree to the Terms of Service and acknowledge the Privacy Policy.
+              </p>
             </div>
             <button type="submit" class="btn btn-submit" id="ea-submit">
               <span class="btn-spinner" aria-hidden="true"></span>

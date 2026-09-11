@@ -41,6 +41,9 @@ FIELDS = (
     "email_confirmation_sent_at",
     "created_at",
     "updated_at",
+    "terms_version_id",
+    "privacy_version_id",
+    "policies_acknowledged_at",
 )
 
 

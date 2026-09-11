@@ -1,11 +1,13 @@
 """Legal publication gate for consumer Terms and Privacy documents.
 
-Production has no published policy versions. Counsel drafts under ``docs/legal/``
-are never public HTML.
+Counsel drafts and working drafts under ``docs/legal/`` are never public HTML.
+Empty version ids stay unpublished.
 """
 
 from app.legal.publication import (
     COUNSEL_DRAFT_CONTENT_MARKERS,
+    OWNER_AUTHORIZED_PRIVACY_VERSION_ID,
+    OWNER_AUTHORIZED_TERMS_VERSION_ID,
     POLICY_PRIVACY,
     POLICY_TERMS,
     LegalPublicationCatalog,
@@ -17,6 +19,8 @@ from app.legal.publication import (
 
 __all__ = [
     "COUNSEL_DRAFT_CONTENT_MARKERS",
+    "OWNER_AUTHORIZED_PRIVACY_VERSION_ID",
+    "OWNER_AUTHORIZED_TERMS_VERSION_ID",
     "POLICY_PRIVACY",
     "POLICY_TERMS",
     "LegalPublicationCatalog",
