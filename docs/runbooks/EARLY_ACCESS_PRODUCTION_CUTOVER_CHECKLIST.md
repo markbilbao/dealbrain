@@ -1,8 +1,13 @@
-# Early Access production cutover checklist — document only
+# Early Access production cutover checklist — historical document only
 
 **HOLD:** Do not execute this checklist. Early Access remains staging-only.
-Privacy/Terms approval and separate launch authorization are mandatory. This
-document does not start Sprint 27 or advance Sprints 41–45.
+This 2026-08-18 document is historical. The current-main re-audit is
+[`../roadmap/evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](../roadmap/evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md).
+
+Privacy/Terms publication and separate launch authorization remain mandatory.
+The 2026-08-19 signed counsel record is written **conditional** approval only
+and is not unrestricted public-launch approval. This document does not start
+Sprint 27, does not close Sprint 28, and does not advance Sprints 41–45.
 
 ## Authorization and release identity
 

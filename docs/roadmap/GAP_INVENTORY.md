@@ -666,3 +666,21 @@ This addendum does **not** rewrite earlier snapshots. It records owner-observed 
 | EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` remain 404 |
 | EXT-22 | Unchanged: `not_started` — no CMP/banner |
 | Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md); [`evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md`](evidence/SPRINT_28_INTERNAL_STAGING_VERIFICATION_2026-09-10.md) |
+
+---
+
+## 2026-09-10 Early Access counsel-reconciliation addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the signed 2026-08-19 comprehensive counsel review now sanitized in-repo. It does **not** publish counsel drafts, does **not** close P0-4, and does **not** mark Sprint 32 / public beta complete.
+
+| Field | Value |
+|-------|-------|
+| Sprint 28 | **INTERNAL ENGINEERING + STAGING VERIFICATION COMPLETE — EXTERNAL LEGAL/PUBLICATION GATES REMAIN.** Not COMPLETE/CLOSED. |
+| EXT-19 | Remains `applied`. Written **conditional** approval recorded. Not `approved`. Conditional comprehensive counsel review is not unconditional legal approval. |
+| Evidence | [`evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md`](evidence/EXT-19_COUNSEL_APPROVAL_RECORD_2026-08-19.md); [`evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md`](evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md) |
+| EXT-20 / EXT-21 | Unchanged: `not_started` — production published catalog empty; `/privacy` and `/terms` remain 404 |
+| EXT-22 | Unchanged: `not_started` — no CMP/banner |
+| Early Access legal links | Remain gated (`aria-disabled` / `data-legal-gated`) |
+| Early Access signup assent | Unresolved — sanitized record does not specify the required mechanism |
+| Production cutover | **HOLD** — production AWS/secrets/DNS/TLS/deploy workflow remain open |
+| Authority | [`sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md`](sprints/SPRINT_28_PRIVACY_LEGAL_CONSENT_DELETION.md); [`EXTERNAL_DEPENDENCY_REGISTER.md`](EXTERNAL_DEPENDENCY_REGISTER.md) |

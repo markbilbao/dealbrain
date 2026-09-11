@@ -7,8 +7,11 @@ This directory is the **only** location the application may load as public
 
 Do **not** copy counsel drafts from `docs/legal/` into this folder.
 Do **not** place markdown drafts here and treat them as approved.
-Do **not** set `LEGAL_*_PUBLISHED_VERSION_ID` until EXT-19 written approval
-exists and EXT-20 / EXT-21 publication is an explicit owner action.
+Do **not** set `LEGAL_*_PUBLISHED_VERSION_ID` until written approval of the
+**published** consumer documents exists and EXT-20 / EXT-21 publication is an
+explicit owner action. The 2026-08-19 signed counsel record is written
+**conditional** approval only (EXT-19 remains `applied`) and does **not** by
+itself authorize copying counsel drafts here.
 
 Until an approved HTML file exists here **and** the matching env version id is
 set, `/privacy` and `/terms` fail closed with HTTP 404.
