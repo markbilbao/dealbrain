@@ -105,6 +105,13 @@ def test_responsive_breakpoint_present() -> None:
     assert "object-position: 58% 42%" in css
     assert "object-position: 59% 42%" in css
     assert "object-position: 60% 42%" in css
+    assert "min-height: 414px" in css
+    assert "min-height: 480px" in css
+    assert "min-height: 222px" in css
+    assert "font-size: 3.5rem" in css
+    assert "font-size: 1.85rem" in css
+    assert "min-height: 400px" not in css
+    assert "font-size: 3rem" not in css.split("@media (max-width: 767px)", 1)[0]
 
 
 def test_signup_states_keep_locked_master_proportions() -> None:
@@ -203,8 +210,9 @@ def test_mobile_signup_logo_links_home_and_is_larger() -> None:
     assert '<a class="signup-brand" href="/" aria-label="Back to PiqSavi home">' in HTML
     assert '<img\n              class="brand-logo"' in HTML
     assert "PiqSavi home" in HTML
-    assert ".site-header .brand-logo {\n    height: 32px;" in mobile_css
+    assert ".site-header .brand-logo {\n    height: 26px;" in mobile_css
     assert ".signup-brand .brand-logo {\n    height: 44px;" in mobile_css
+    assert ".footer-lockup .brand-logo {\n    height: 18px;" in mobile_css
     assert ".signup-brand:focus-visible" in css
 
 
@@ -377,3 +385,5 @@ def test_approved_desktop_how_and_trust_stack_icons_above_copy() -> None:
     assert "align-items: center" in css
     assert "text-align: center" in css
     assert ".how-step:not(:last-child)::after" in css
+    assert "flex-direction: row" in css
+    assert ".trust-icon {\n  flex: 0 0 auto;\n  width: 44px;" in css
