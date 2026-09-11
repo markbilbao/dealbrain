@@ -176,7 +176,14 @@ def test_header_footer_use_derived_lockup_not_css_crop() -> None:
     assert "clip-path" not in css
     assert "clip:" not in css
     assert "margin-top: -" not in css
-    assert ".brand-logo {\n  height: 38px;\n  width: auto;\n  overflow: visible;\n  object-fit: contain;" in css
+    assert (
+        ".brand-logo {\n"
+        "  display: block;\n"
+        "  height: 38px;\n"
+        "  width: auto;\n"
+        "  overflow: visible;\n"
+        "  object-fit: contain;"
+    ) in css
     gate = (ROOT / "app/early_access/SOURCE_ASSET_GATE.md").read_text(encoding="utf-8")
     assert "Complete circular icon: literal pixels (197, 318)–(523, 669)" in gate
     assert str(ICON_BOX[0]) in gate
