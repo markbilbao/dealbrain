@@ -59,9 +59,7 @@ async def test_auth_register_login_me_logout_roundtrip(app_client) -> None:
     me = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me.status_code == 200
 
-    logout = await client.post(
-        "/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"}
-    )
+    logout = await client.post("/api/v1/auth/logout", headers={"Authorization": f"Bearer {token}"})
     assert logout.status_code in {200, 204}
 
 
@@ -115,9 +113,7 @@ async def test_products_bare_list_and_skip_offset_alias(app_client) -> None:
     assert isinstance(with_offset.json(), list)
     mock.list_products.assert_awaited_with(skip=3, limit=5)
 
-    conflict = await client.get(
-        "/api/v1/products", params={"skip": 1, "offset": 2, "limit": 5}
-    )
+    conflict = await client.get("/api/v1/products", params={"skip": 1, "offset": 2, "limit": 5})
     assert conflict.status_code == 422
 
 
@@ -397,9 +393,7 @@ async def test_persistence_backed_affiliate_link_survives_restart(app_client, tm
         connect_args={"check_same_thread": False},
     )
     OperationalEntityModel.__table__.create(engine)
-    factory = sessionmaker(
-        bind=engine, autoflush=False, autocommit=False, expire_on_commit=False
-    )
+    factory = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
     try:
         repo = SqlAlchemyAffiliateRepository(session_factory=factory, seed=True)
