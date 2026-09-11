@@ -7,6 +7,15 @@ resource "aws_lb" "this" {
 
   drop_invalid_header_fields = true
 
+  dynamic "access_logs" {
+    for_each = trimspace(var.access_logs_bucket) != "" ? [1] : []
+    content {
+      enabled = true
+      bucket  = var.access_logs_bucket
+      prefix  = var.access_logs_prefix
+    }
+  }
+
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-alb"
   })

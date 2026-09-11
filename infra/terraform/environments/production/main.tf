@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.11.0"
 
   required_providers {
     aws = {
@@ -8,18 +8,9 @@ terraform {
     }
   }
 
-  # Production backend modernization is INTENTIONALLY DEFERRED (Sprint 25b.4b).
-  # Account + staging use a partial S3 backend with native lockfiles:
-  #
-  #   backend "s3" {
-  #     use_lockfile = true
-  #   }
-  #
-  # …then: terraform init -backend-config="bucket=..." -backend-config="key=..."
-  #         -backend-config="region=..."
-  #
-  # Do not enable that pattern here until the production rollout sprint.
-  # DynamoDB lock tables are obsolete; do not create dealbrain-terraform-locks.
+  backend "s3" {
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
@@ -46,6 +37,10 @@ locals {
     ManagedBy   = "terraform"
     Sprint      = "25a"
   })
+
+  # Gzip+base64 at the Terraform boundary so the EC2 raw user-data payload stays
+  # under the 16,384-byte limit; cloud-init decompresses to production.sh bytes.
+  production_user_data_base64 = base64gzip(file("${path.module}/../../../ec2/user_data/production.sh"))
 }
 
 module "networking" {
@@ -78,16 +73,30 @@ module "secrets" {
   tags        = local.common_tags
 }
 
+module "logging" {
+  source = "../../modules/logging"
+
+  environment        = local.environment
+  name_prefix        = local.name_prefix
+  aws_region         = var.aws_region
+  log_retention_days = var.log_retention_days
+  tags = merge(local.common_tags, {
+    Role = "logging-baseline"
+  })
+}
+
 module "alb" {
   source = "../../modules/alb"
 
-  name_prefix       = local.name_prefix
-  vpc_id            = module.networking.vpc_id
-  public_subnet_ids = module.networking.public_subnet_ids
-  security_group_id = module.security_groups.alb_security_group_id
-  certificate_arn   = var.alb_certificate_arn
-  health_check_path = "/ready"
-  tags              = local.common_tags
+  name_prefix        = local.name_prefix
+  vpc_id             = module.networking.vpc_id
+  public_subnet_ids  = module.networking.public_subnet_ids
+  security_group_id  = module.security_groups.alb_security_group_id
+  certificate_arn    = var.alb_certificate_arn
+  health_check_path  = "/ready"
+  access_logs_bucket = module.logging.alb_logs_bucket_name
+  access_logs_prefix = module.logging.alb_logs_prefix
+  tags               = local.common_tags
 }
 
 module "rds" {
@@ -109,13 +118,43 @@ module "rds" {
   tags                  = local.common_tags
 }
 
+module "release_artifacts" {
+  source = "../../modules/release_artifacts"
+
+  environment = local.environment
+  name_prefix = local.name_prefix
+  tags = merge(local.common_tags, {
+    Role = "release-artifacts"
+  })
+}
+
+module "ssm_production_deploy_document" {
+  source = "../../modules/ssm_production_deploy_document"
+
+  environment = local.environment
+  tags = merge(local.common_tags, {
+    Role = "ssm-deploy-document"
+  })
+}
+
+module "ssm_production_rollback_document" {
+  source = "../../modules/ssm_production_rollback_document"
+
+  environment = local.environment
+  tags = merge(local.common_tags, {
+    Role = "ssm-rollback-document"
+  })
+}
+
 # IAM after RDS so the instance role may read this env's application secrets
 # and the AWS-managed RDS master-user secret ARN only (no plaintext values).
 module "iam" {
   source = "../../modules/iam"
 
-  name_prefix = local.name_prefix
-  environment = local.environment
+  name_prefix                  = local.name_prefix
+  environment                  = local.environment
+  release_artifacts_bucket_arn = module.release_artifacts.bucket_arn
+  log_group_arns               = module.logging.log_group_arns
   secret_arns = compact(concat(
     values(module.secrets.secret_arns),
     [module.rds.master_user_secret_arn],
@@ -135,21 +174,31 @@ module "ec2" {
   target_group_arn          = module.alb.target_group_arn
   associate_public_ip       = false
   root_volume_size_gb       = var.root_volume_size_gb
+  user_data_base64          = local.production_user_data_base64
   tags                      = local.common_tags
 }
 
-# Sprint 25b.2 — GitHub Actions OIDC deploy role (orchestration only).
+# GitHub Actions OIDC deploy role.
+# Production: DealBrain-ProductionDeploy + DealBrain-ProductionRollback only
+# (no managed RunShellScript allow).
 # Operationally approved only after GitHub Environment hard gates are live.
-# Does not create deploy workflows or send SSM commands.
+# This root does not apply itself — owner/ops apply out-of-band.
 module "github_deploy_role" {
   source = "../../modules/github_deploy_role"
 
-  environment              = local.environment
-  github_repository_owner  = var.github_repository_owner
-  github_repository_name   = var.github_repository_name
-  github_oidc_provider_arn = var.github_oidc_provider_arn
-  aws_region               = var.aws_region
+  environment                = local.environment
+  github_repository_owner    = var.github_repository_owner
+  github_repository_name     = var.github_repository_name
+  github_repository_owner_id = var.github_repository_owner_id
+  github_repository_id       = var.github_repository_id
+  github_oidc_provider_arn   = var.github_oidc_provider_arn
+  aws_region                 = var.aws_region
+  allowed_ssm_document_arns = [
+    module.ssm_production_deploy_document.document_arn,
+    module.ssm_production_rollback_document.document_arn,
+  ]
+  release_artifacts_bucket_arn = module.release_artifacts.bucket_arn
   tags = merge(local.common_tags, {
-    Sprint = "25b.2"
+    Role = "gha-deploy"
   })
 }

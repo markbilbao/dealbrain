@@ -47,6 +47,18 @@ variable "enable_http_redirect" {
   default     = true
 }
 
+variable "access_logs_bucket" {
+  description = "S3 bucket name for ALB access logs. Empty disables access logging (staging default)."
+  type        = string
+  default     = ""
+}
+
+variable "access_logs_prefix" {
+  description = "S3 key prefix for ALB access logs when access_logs_bucket is set."
+  type        = string
+  default     = "alb"
+}
+
 variable "tags" {
   description = "Common tags."
   type        = map(string)

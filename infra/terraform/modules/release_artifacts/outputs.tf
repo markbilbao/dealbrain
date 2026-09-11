@@ -1,10 +1,10 @@
 output "bucket_name" {
-  description = "Staging release-artifacts bucket name."
+  description = "Environment release-artifacts bucket name."
   value       = aws_s3_bucket.artifacts.id
 }
 
 output "bucket_arn" {
-  description = "Staging release-artifacts bucket ARN."
+  description = "Release-artifacts bucket ARN."
   value       = aws_s3_bucket.artifacts.arn
 }
 
@@ -14,6 +14,6 @@ output "releases_prefix" {
 }
 
 output "evidence_prefix" {
-  description = "Object key prefix for staging deploy evidence."
+  description = "Object key prefix for deploy evidence."
   value       = "evidence/"
 }

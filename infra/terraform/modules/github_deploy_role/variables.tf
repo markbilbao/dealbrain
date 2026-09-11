@@ -33,8 +33,8 @@ variable "github_repository_owner_id" {
     Numeric GitHub owner (user/org) ID for the immutable OIDC sub claim.
     When set with github_repository_id, trust uses:
       repo:<owner>@<owner_id>/<repo>@<repo_id>:environment:<env>
-    Leave empty for legacy name-only sub (production until separately migrated).
-    Staging must supply a non-empty numeric ID (no wildcards).
+    Leave empty only for experimental local module tests.
+    Staging and production must supply a non-empty numeric ID (no wildcards).
   EOT
   type        = string
   default     = ""
@@ -96,8 +96,10 @@ variable "max_session_duration" {
 variable "allowed_ssm_document_arns" {
   description = <<-EOT
     SSM document ARNs the deploy role may invoke via SendCommand.
-    When empty, only AWS-RunShellScript is permitted (production interim default).
-    Staging (Sprint 25b.3) must set this to the custom DealBrain-StagingDeploy ARN only.
+    When empty, only AWS-RunShellScript is permitted (module fallback; unused by
+    current staging and production roots). Staging sets DealBrain-StagingDeploy
+    plus DealBrain-StagingRollback. Production sets DealBrain-ProductionDeploy
+    plus DealBrain-ProductionRollback. Never leave production empty.
   EOT
   type        = list(string)
   default     = []
@@ -105,9 +107,9 @@ variable "allowed_ssm_document_arns" {
 
 variable "release_artifacts_bucket_arn" {
   description = <<-EOT
-    Optional staging release-artifacts bucket ARN. When set, the deploy role may
+    Optional release-artifacts bucket ARN. When set, the deploy role may
     PutObject/GetObject under releases/* and evidence/*, plus ListBucket on those
-    prefixes. Production must leave this empty in Sprint 25b.3.
+    prefixes. Staging and production both wire their isolated buckets.
   EOT
   type        = string
   default     = ""

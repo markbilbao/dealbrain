@@ -77,6 +77,51 @@ output "gha_deploy_role_name" {
   value       = module.github_deploy_role.gha_deploy_role_name
 }
 
+output "release_artifacts_bucket_name" {
+  description = "Production release-artifacts S3 bucket name (bundles + evidence)."
+  value       = module.release_artifacts.bucket_name
+}
+
+output "release_artifacts_bucket_arn" {
+  description = "Production release-artifacts S3 bucket ARN."
+  value       = module.release_artifacts.bucket_arn
+}
+
+output "ssm_deploy_document_name" {
+  description = "Custom production SSM deploy document name."
+  value       = module.ssm_production_deploy_document.document_name
+}
+
+output "ssm_deploy_document_arn" {
+  description = "Custom production SSM deploy document ARN."
+  value       = module.ssm_production_deploy_document.document_arn
+}
+
+output "ssm_rollback_document_name" {
+  description = "Custom production SSM rollback document name."
+  value       = module.ssm_production_rollback_document.document_name
+}
+
+output "ssm_rollback_document_arn" {
+  description = "Custom production SSM rollback document ARN."
+  value       = module.ssm_production_rollback_document.document_arn
+}
+
+output "api_log_group_name" {
+  description = "CloudWatch log group for production API application logs."
+  value       = module.logging.api_log_group_name
+}
+
+output "host_log_group_name" {
+  description = "CloudWatch log group for production host/bootstrap logs."
+  value       = module.logging.host_log_group_name
+}
+
+output "alb_logs_bucket_name" {
+  description = "S3 bucket for production ALB access logs."
+  value       = module.logging.alb_logs_bucket_name
+}
+
 output "domain_name" {
   value = var.domain_name
 }

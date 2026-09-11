@@ -141,21 +141,26 @@ variable "alb_certificate_arn" {
 }
 
 variable "domain_name" {
-  description = "Public hostname placeholder (DNS cutover deferred)."
+  description = "Public canonical hostname (DNS cutover is owner-controlled and not performed by Terraform)."
   type        = string
-  default     = "api.dealbrain.example"
+  default     = "piqsavi.com"
 }
 
 variable "image_reference" {
-  description = "GHCR image digest placeholder (promote exact digest from staging)."
+  description = "GHCR image digest placeholder (promote exact digest from a successful Build Image)."
   type        = string
-  default     = "ghcr.io/EXAMPLE_ORG/dealbrain@sha256:REPLACE_ME"
+  default     = "ghcr.io/markbilbao/dealbrain@sha256:8140f6588bff07877885b6774767929c6561cfb6220c63ee4c2322931ebfbeaa"
 }
 
 variable "log_retention_days" {
-  description = "Intended CloudWatch log retention (log groups created in Sprint 25c)."
+  description = "CloudWatch Logs and ALB access-log retention (production ≥30)."
   type        = number
   default     = 30
+
+  validation {
+    condition     = var.log_retention_days >= 30
+    error_message = "Production log retention must be at least 30 days."
+  }
 }
 
 variable "github_repository_owner" {
@@ -175,6 +180,34 @@ variable "github_repository_name" {
   validation {
     condition     = length(trimspace(var.github_repository_name)) > 0
     error_message = "github_repository_name is required and must be non-empty."
+  }
+}
+
+variable "github_repository_owner_id" {
+  description = <<-EOT
+    Numeric GitHub owner ID for the immutable production OIDC sub claim.
+    Confirmed for markbilbao/dealbrain: 309556720.
+    Required — production trust must not use name-only subjects.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+$", trimspace(var.github_repository_owner_id)))
+    error_message = "github_repository_owner_id must be a numeric GitHub owner ID (digits only)."
+  }
+}
+
+variable "github_repository_id" {
+  description = <<-EOT
+    Numeric GitHub repository ID for the immutable production OIDC sub claim.
+    Confirmed for markbilbao/dealbrain: 1314423275.
+    Required — production trust must not use name-only subjects.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]+$", trimspace(var.github_repository_id)))
+    error_message = "github_repository_id must be a numeric GitHub repository ID (digits only)."
   }
 }
 
