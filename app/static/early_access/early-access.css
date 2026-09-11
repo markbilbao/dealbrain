@@ -179,6 +179,8 @@ select:focus-visible {
   display: block;
   height: 38px;
   width: auto;
+  overflow: visible;
+  object-fit: contain;
 }
 
 .brand-compact .brand-logo {
