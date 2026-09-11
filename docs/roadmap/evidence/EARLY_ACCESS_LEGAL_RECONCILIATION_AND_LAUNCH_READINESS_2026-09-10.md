@@ -2,6 +2,7 @@
 
 **Date recorded:** 2026-09-10
 **Audited `origin/main` SHA:** `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd`
+**Follow-up (does not rewrite this record):** [`EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md) — August 25 package still absent; publication/activation not performed.
 **Scope:** Early Access acquisition / signup surface only
 **Not in scope:** public shopping beta, Sprint 32 merchant certification, Shopee/Lazada integration, BuyWhere, live merchant/product research, Sprints 31–38 live research execution, affiliate monetization, public shopping Results launch
 

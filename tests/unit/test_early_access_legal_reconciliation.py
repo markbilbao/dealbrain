@@ -21,6 +21,10 @@ READINESS = (
     ROOT
     / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_RECONCILIATION_AND_LAUNCH_READINESS_2026-09-10.md"
 ).read_text(encoding="utf-8")
+ACTIVATION = (
+    ROOT
+    / "docs/roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md"
+).read_text(encoding="utf-8")
 HTML = (ROOT / "app/static/early_access/index.html").read_text(encoding="utf-8")
 JS = (ROOT / "app/static/early_access/early-access.js").read_text(encoding="utf-8")
 PUBLISHED = ROOT / "docs/legal/published"
@@ -89,6 +93,48 @@ def test_reconciliation_matrix_covers_all_eight_documents() -> None:
     assert "Cannot compare. August 25 package is not in the agent workspace." in READINESS
     assert "condition not explicitly documented in sanitized record" in READINESS
     assert "6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd" in READINESS
+
+
+def test_publication_activation_record_stays_blocked() -> None:
+    assert "efa430c4962dee90e325fffbf84f475dc1883f12" in ACTIVATION
+    assert (
+        "EARLY ACCESS LEGAL ACTIVATION BLOCKED — COUNSEL CONDITION REMAINS UNRESOLVED"
+        in ACTIVATION
+    )
+    ready_slogan = (
+        "EARLY ACCESS LEGAL PUBLICATION READY — PRODUCTION INFRASTRUCTURE CUTOVER REMAINS"
+    )
+    assert ready_slogan in ACTIVATION
+    assert ACTIVATION.index("This is **not**:") < ACTIVATION.index(ready_slogan)
+    assert "ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS" in ACTIVATION
+    assert "Privacy published?" in ACTIVATION
+    assert "Terms published?" in ACTIVATION
+    assert "**No** — no version id" in ACTIVATION
+    assert "Legal/content ready: No" in ACTIVATION
+    assert "Production infrastructure ready: No" in ACTIVATION
+    assert "condition not explicitly documented in sanitized record" in ACTIVATION
+    assert "August 25 working-draft package is **still not**" in ACTIVATION
+    assert "By joining Early Access, you agree to the Terms" not in HTML
+    for document in EIGHT_DOCUMENTS:
+        assert document in ACTIVATION
+    assert "owner controls merges" in ACTIVATION.lower()
+    assert "Not a public beta launch" in ACTIVATION
+    assert "No shopping launch" in ACTIVATION
+    assert "No merchant certification" in ACTIVATION
+    assert "No live research" in ACTIVATION
+    assert "No affiliate monetization" in ACTIVATION
+    assert "No production deploy" in ACTIVATION
+
+
+def test_register_addendum_keeps_legal_and_infra_separate() -> None:
+    assert "EXT-19 2026-09-11 publication-activation addendum" in REGISTER
+    assert "Legal/content ready" in REGISTER
+    assert "Production infrastructure ready" in REGISTER
+    assert "EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md" in REGISTER
+    assert "ASSENT DECISION REMAINS COUNSEL-AMBIGUOUS" in REGISTER
+    assert _status_cell("EXT-19") == "`applied`"
+    assert _status_cell("EXT-20") == "`not_started`"
+    assert _status_cell("EXT-21") == "`not_started`"
 
 
 def test_august_25_working_drafts_are_not_in_the_repository() -> None:

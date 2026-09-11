@@ -16,4 +16,10 @@ itself authorize copying counsel drafts here.
 Until an approved HTML file exists here **and** the matching env version id is
 set, `/privacy` and `/terms` fail closed with HTTP 404.
 
+The 2026-09-11 publication-activation attempt
+([`../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md`](../../roadmap/evidence/EARLY_ACCESS_LEGAL_PUBLICATION_ACTIVATION_2026-09-11.md))
+reconfirmed this directory is empty of approved HTML. August 25 working drafts
+were still absent from the agent workspace. Assent remains counsel-ambiguous.
+Do **not** treat that attempt as publication.
+
 Sprint 44/45 remain the publication/approval gates.
