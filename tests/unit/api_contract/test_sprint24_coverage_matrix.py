@@ -36,7 +36,13 @@ async def test_auth_register_login_me_logout_roundtrip(app_client) -> None:
     password = "SecurePass1!"
     reg = await client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "display_name": "S24"},
+        json={
+            "email": email,
+            "password": password,
+            "display_name": "S24",
+            "terms_accepted": True,
+            "privacy_acknowledged": True,
+        },
     )
     assert reg.status_code in {200, 201}
     body = reg.json()
