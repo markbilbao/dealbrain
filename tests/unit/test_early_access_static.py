@@ -341,8 +341,9 @@ def test_legal_acknowledgement_is_present_and_unchecked() -> None:
     assert "I agree to the" in HTML
     assert 'href="/terms">Terms of Service</a>' in HTML
     assert 'href="/privacy">Privacy Policy</a>' in HTML
-    assert HTML.index("policies_acknowledged") < HTML.index("Join Early Access — Free")
-    assert HTML.index("policies_acknowledged") < HTML.index(
+    form_html = HTML.split('id="early-access-form"', 1)[1].split("</form>", 1)[0]
+    assert form_html.index("policies_acknowledged") < form_html.index("Join Early Access — Free")
+    assert form_html.index("policies_acknowledged") < form_html.index(
         "No spam. Just important PiqSavi early-access updates."
     )
 
