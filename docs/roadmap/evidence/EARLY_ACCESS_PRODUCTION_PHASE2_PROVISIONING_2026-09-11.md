@@ -30,9 +30,13 @@ Owner-controlled next actions are listed in §15. Public DNS cutover still requi
 | This workstation AWS | **No AWS CLI, no credentials, no IMDS role** | `aws` not installed; `env` has no `AWS_*`; IMDS `169.254.169.254` timed out |
 | This workstation Terraform | **Not installed** | `terraform` not on PATH |
 | CI pin Terraform version | `1.15.8` | `.github/workflows/ci.yml` `TERRAFORM_VERSION` |
+| CI (this SHA) | run `34580625340` **success** | `gh run view` |
+| Build Image (this SHA) | run `34581089637` **success** | `gh run view` |
+| Release ID | `rel-20260911T084953Z-37418968e233` | Build Image manifest |
+| Production image digest | `sha256:b8fd76d2e4ff69f94568097790a1dae5dd9de6ea598c6ae81d0ed001fb9f19e4` | Build Image GHCR publish; **not deployed** |
 
-CI and Build Image for this SHA: see §9 (CI was in progress at first inspection;
-Build Image had not started because it waits for successful CI on `main`).
+CI and Build Image for this SHA completed successfully during this phase (see §9).
+That image was **not** deployed to production.
 
 ## 1. GitHub Environment `production`
 
@@ -248,20 +252,23 @@ Locked **staging** digest (still valid for staging only; **not** this production
 
 ### Current main (`37418968e23320129020015d7e70f2a883672a0b`)
 
-| Workflow | Identity | Status at evidence time |
-|----------|----------|-------------------------|
-| CI | run `34580625340` | **in_progress** (push on `main`). Completed jobs: Terraform fmt/validate **success**; Docker image build (validate only) **success**; Docker Compose config **success**. Lint/contracts/pytest still running |
-| Build Image | — | **Not started.** `workflow_run` after successful CI on `main`. Latest Build Image is still SHA `d886409d1282b31670b09dd04dd664d0dd2edb37` (pre-Phase-1-merge parent), run `34576682336` |
-| Release ID | — | None for this SHA yet |
-| Image digest | — | None for this SHA yet |
+| Workflow | Identity | Status |
+|----------|----------|--------|
+| CI | run `34580625340` | **success** (push on `main`). URL: https://github.com/markbilbao/dealbrain/actions/runs/34580625340 |
+| Build Image | run `34581089637` | **success** (`workflow_run` after CI). URL: https://github.com/markbilbao/dealbrain/actions/runs/34581089637 |
+| Release ID | `rel-20260911T084953Z-37418968e233` | Manifest artifact `release-manifest-rel-20260911T084953Z-37418968e233` |
+| Image repository | `ghcr.io/markbilbao/dealbrain` | Not ECR |
+| Image digest (deploy authority) | `sha256:b8fd76d2e4ff69f94568097790a1dae5dd9de6ea598c6ae81d0ed001fb9f19e4` | GHCR publish + digest verify in Build Image logs |
+| Immutable tag (pointer only) | `ghcr.io/markbilbao/dealbrain:sha-37418968e23320129020015d7e70f2a883672a0b` | Not deployment authority |
+| Manifest SHA-256 | `a20250ed9d9f88659b56ca22ee4fda4a26a9cf499402d3a8f8688da905303a00` | Build Image “Create release manifest” step |
 
-Production must wait for CI green **and** a successful Build Image for `37418968e23320129020015d7e70f2a883672a0b`, then deploy that immutable digest. The old staging digest is the wrong image for post-Phase-1 `main`.
+Production must deploy **this** digest, not the older staging digest `sha256:8140f6588bff07877885b6774767929c6561cfb6220c63ee4c2322931ebfbeaa`. Image selection is ready. Private Deploy Production is still blocked on Environment + AWS infra + secrets (§10).
 
 ## 10. Private production deploy
 
 **Not executed.**
 
-Prerequisites missing: GitHub Environment `production`, production AWS stack, secrets, (recommended) issued ACM, CI+Build Image for this SHA.
+Prerequisites missing: GitHub Environment `production`, production AWS stack, secrets, (recommended) issued ACM. CI + Build Image for this SHA **are ready** (§9). Dispatch input would be `build_workflow_run_id=34581089637` (optional `release_id=rel-20260911T084953Z-37418968e233`). **Not dispatched.**
 
 | Check | Result |
 |-------|--------|
@@ -313,13 +320,12 @@ Read-only DNS/HTTP at 2026-09-11 (this run). **No Cloudflare changes were made.*
 6. **ACM DNS validation** (owner adds Cloudflare CNAMEs only) and production ALB HTTPS listener + HTTP→HTTPS redirect. Do not repoint apex/www.
 7. **Live logging proof:** CW groups + ALB log bucket + release-artifacts bucket.
 8. **RDS backup/restore rehearsal** on a throwaway instance; destroy the throwaway; never delete `dealbrain-production-postgres`.
-9. **CI success + Build Image** for SHA `37418968e23320129020015d7e70f2a883672a0b`; record release ID + digest. Do not deploy `sha256:8140f6588bff07877885b6774767929c6561cfb6220c63ee4c2322931ebfbeaa` as this SHA.
-10. **Private Deploy Production** of that digest; ALB healthy; `/live` `/ready` `/health` (`environment=production`).
-11. **Private origin functional tests** (Host/SNI to ALB): `/` `/privacy` `/terms`, registration reject/success/duplicate, no shopping chrome, `/demo` `/search` fail closed.
-12. **Durability:** registration survives app/container restart without replacing RDS; duplicate detection still recognizes it.
-13. **Rollback rehearsal** after a second production digest exists (or document remaining limitation).
-14. **Separate owner GO** for public DNS cutover (EXT-11 / EXT-12). Not this phase.
-15. Alerts/paging (EXT-16 / EXT-24) remain later; not claimed.
+9. **Private Deploy Production** of digest `sha256:b8fd76d2e4ff69f94568097790a1dae5dd9de6ea598c6ae81d0ed001fb9f19e4` (Build Image `34581089637`, release `rel-20260911T084953Z-37418968e233`). Do **not** deploy the older staging digest. Dispatch only after Environment + infra + secrets exist. ALB healthy; `/live` `/ready` `/health` (`environment=production`).
+10. **Private origin functional tests** (Host/SNI to ALB): `/` `/privacy` `/terms`, registration reject/success/duplicate, no shopping chrome, `/demo` `/search` fail closed.
+11. **Durability:** registration survives app/container restart without replacing RDS; duplicate detection still recognizes it.
+12. **Rollback rehearsal** after a second production digest exists (or document remaining limitation).
+13. **Separate owner GO** for public DNS cutover (EXT-11 / EXT-12). Not this phase.
+14. Alerts/paging (EXT-16 / EXT-24) remain later; not claimed.
 
 ## Confirmations
 
