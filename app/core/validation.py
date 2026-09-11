@@ -11,6 +11,19 @@ from app.core.config import Settings, settings
 from app.domain.exceptions import ConfigurationValidationError
 from app.launch.redaction import redact_value
 
+_LOCAL_DB_HOSTS = frozenset(
+    {
+        "localhost",
+        "127.0.0.1",
+        "::1",
+        "0.0.0.0",
+        "postgres",
+        "db",
+        "database",
+        "host.docker.internal",
+    }
+)
+
 # Exact placeholder values only — never log matched secrets.
 _PLACEHOLDER_EXACT = frozenset(
     {
@@ -54,6 +67,29 @@ def _looks_like_placeholder(value: str) -> bool:
     if lowered.startswith("<") and lowered.endswith(">"):
         return True
     return lowered.startswith("${") and lowered.endswith("}")
+
+
+def _database_url_is_ephemeral_or_local(database_url: str) -> bool:
+    """Return True when DATABASE_URL is sqlite, localhost, or a compose alias.
+
+    Never returns or logs the password itself.
+    """
+    raw = (database_url or "").strip()
+    if not raw:
+        return True
+    lowered = raw.lower()
+    if lowered.startswith("sqlite"):
+        return True
+    try:
+        parsed = urlparse(raw)
+    except Exception:
+        return True
+    host = (parsed.hostname or "").strip().lower().rstrip(".")
+    if not host:
+        return True
+    if host in _LOCAL_DB_HOSTS:
+        return True
+    return host.endswith(".local")
 
 
 def _database_url_has_weak_secret(database_url: str) -> bool:
@@ -110,6 +146,11 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
     if not cfg.launch_strict_startup:
         errors.append("LAUNCH_STRICT_STARTUP must be true in production")
 
+    if _database_url_is_ephemeral_or_local(cfg.database_url):
+        errors.append(
+            "DATABASE_URL must be a durable PostgreSQL host in production "
+            "(localhost, sqlite, and compose aliases are forbidden)"
+        )
     if _database_url_has_weak_secret(cfg.database_url):
         errors.append(
             "DATABASE_URL must use a non-placeholder password in production "
