@@ -5,6 +5,7 @@ from __future__ import annotations
 import gzip
 import os
 import re
+import shutil
 import stat
 import subprocess
 import textwrap
@@ -105,26 +106,27 @@ def _run_ensure_gpg(
     if not dnf_ok:
         dnf_body += "exit 1\n"
     elif install_provides_gpg:
-        dnf_body += textwrap.dedent(
-            f"""
-            cat > "{bin_dir / "gpg"}" << 'GPG'
-            #!/bin/bash
-            exit 0
-            GPG
-            chmod 0755 "{bin_dir / "gpg"}"
-            exit 0
-            """
+        gpg_path = bin_dir / "gpg"
+        dnf_body += (
+            f'printf "%s\\n" "#!/bin/bash" "exit 0" > "{gpg_path}"\n'
+            f'chmod 0755 "{gpg_path}"\n'
+            "exit 0\n"
         )
     else:
         dnf_body += "exit 0\n"
     _write_exec(bin_dir / "dnf", dnf_body)
+    chmod_src = shutil.which("chmod")
+    assert chmod_src is not None
+    os.symlink(chmod_src, bin_dir / "chmod")
     if gpg_present:
         _write_exec(bin_dir / "gpg", "exit 0\n")
 
+    bash = shutil.which("bash")
+    assert bash is not None
     env = os.environ.copy()
     env["PATH"] = str(bin_dir)
     proc = subprocess.run(
-        ["bash", str(script)],
+        [bash, str(script)],
         cwd=tmp_path,
         capture_output=True,
         text=True,

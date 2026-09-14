@@ -50,8 +50,8 @@ dnf -y install \
 # --- BEGIN gpg prerequisite ---
 # Standard AL2023 already provides `gpg` via gnupg2-minimal. Prefer that
 # capability. Install gnupg2-minimal only when `gpg` is genuinely absent.
-# Forbidden: --allowerasing, package removal, rpm --nodeps, replacing
-# gnupg2-minimal with full gnupg2, disabled signature checking.
+# Forbidden: dnf allowerasing, package removal, rpm nodeps, replacing
+# gnupg2-minimal with full gnupg2, or disabled signature checking.
 ensure_gpg() {
   echo "[gpg] prerequisite start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   if command -v gpg >/dev/null 2>&1; then

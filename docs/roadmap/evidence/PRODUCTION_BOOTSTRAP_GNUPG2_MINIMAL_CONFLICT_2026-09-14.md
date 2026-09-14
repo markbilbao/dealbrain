@@ -19,8 +19,8 @@ exist. Docker is inactive.
 1. Standard AL2023 already has `gnupg2-minimal-2.3.7-1.amzn2023.0.9.x86_64`.
 2. Bootstrap requests full `gnupg2` in the fail-closed `dnf -y install` transaction.
 3. DNF aborts because `gnupg2-minimal` conflicts with `gnupg2`.
-4. The package transaction therefore stops **before** `systemctl enable docker` /
-   `systemctl start docker`.
+4. The package transaction therefore stops **before Docker** starts
+   (`systemctl enable docker` / `systemctl start docker` never run).
 5. `bootstrap.ok` is never written.
 
 This is a package-set conflict on standard AL2023, not a cloud-init, AMI-minimal,
