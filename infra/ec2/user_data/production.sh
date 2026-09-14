@@ -430,7 +430,7 @@ REQUIRED_MEMBERS = (
     "bin/ghcr-login.sh",
     "bin/verify-production.sh",
     "bin/alb_target_health.py",
-    "bin/evidence.py",
+    "bin/production_evidence.py",
     "bin/write-production-evidence.py",
     "bin/production-deploy-evidence.schema.json",
     "bin/log_redaction.py",

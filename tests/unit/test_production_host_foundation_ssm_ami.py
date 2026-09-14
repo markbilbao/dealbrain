@@ -400,6 +400,8 @@ def test_embedded_safeextract_no_longer_rejects_production_overlay() -> None:
     assert "production overlay must not be present" not in embedded
     assert "staging overlay must not be present" in embedded
     assert "docker-compose.staging.yml" in embedded
+    assert '"bin/production_evidence.py"' in embedded
+    assert '"bin/evidence.py"' not in embedded
     evidence = _read(EVIDENCE)
     assert "staging overlay" in evidence
     assert "PR #136" in evidence
