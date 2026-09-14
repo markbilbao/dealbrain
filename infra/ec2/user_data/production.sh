@@ -3,6 +3,10 @@
 # Derived from staging bootstrap; isolated production names only. No secrets.
 # Amazon Linux 2023 — idempotent, no secrets, no GitHub credentials.
 #
+# Early invariant: amazon-ssm-agent is installed, enabled, started, and verified
+# active before Docker/Compose/application setup. A later bootstrap failure must
+# still leave the host reachable through Systems Manager.
+#
 # Installs AL2023 packages, directory layout, signed Docker Compose plugin
 # (Sprint 25b.5a), and a thin fixed SSM entrypoint that acquires the deploy
 # lock, safely extracts the release bundle, then runs the release orchestrator.
@@ -18,6 +22,52 @@ mkdir -p /var/log/dealbrain
 exec >>"$LOG" 2>&1
 
 echo "=== dealbrain production bootstrap start $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+
+# --- BEGIN amazon-ssm-agent invariant ---
+# Systems Manager must be online before Docker/Compose/application setup so a
+# later bootstrap failure still leaves the host reachable for
+# /var/log/dealbrain/bootstrap.log inspection. Idempotent. Management remains
+# SSM-only; do not install an SSH daemon or open inbound management ports.
+ensure_amazon_ssm_agent() {
+  echo "[amazon-ssm-agent] invariant start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  if rpm -q amazon-ssm-agent >/dev/null 2>&1; then
+    echo "[amazon-ssm-agent] already installed: $(rpm -q amazon-ssm-agent)"
+  else
+    echo "[amazon-ssm-agent] package missing; installing from AL2023 repos"
+    if ! dnf -y install amazon-ssm-agent; then
+      echo "[amazon-ssm-agent] ERROR: dnf install failed" >&2
+      echo "[amazon-ssm-agent] invariant failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      return 1
+    fi
+  fi
+  if ! rpm -q amazon-ssm-agent >/dev/null 2>&1; then
+    echo "[amazon-ssm-agent] ERROR: package not installed" >&2
+    echo "[amazon-ssm-agent] invariant failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 1
+  fi
+  if ! systemctl enable amazon-ssm-agent; then
+    echo "[amazon-ssm-agent] ERROR: systemctl enable failed" >&2
+    echo "[amazon-ssm-agent] invariant failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 1
+  fi
+  if ! systemctl start amazon-ssm-agent; then
+    echo "[amazon-ssm-agent] ERROR: systemctl start failed" >&2
+    systemctl status amazon-ssm-agent --no-pager || true
+    echo "[amazon-ssm-agent] invariant failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 1
+  fi
+  if systemctl is-active --quiet amazon-ssm-agent; then
+    echo "[amazon-ssm-agent] ok: systemd unit is active"
+    echo "[amazon-ssm-agent] invariant ok $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 0
+  fi
+  echo "[amazon-ssm-agent] ERROR: systemd unit is not active" >&2
+  systemctl status amazon-ssm-agent --no-pager || true
+  echo "[amazon-ssm-agent] invariant failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  return 1
+}
+ensure_amazon_ssm_agent
+# --- END amazon-ssm-agent invariant ---
 
 # Directories
 install -d -o root -g root -m 0755 /opt/dealbrain
@@ -459,8 +509,8 @@ def extract_validated_bundle(tarball, dest_dir, *, expected_checksum, expected_r
         for rel in REQUIRED_MEMBERS:
             if not (tmp_root / rel).is_file():
                 raise BundleVerifyError(f"missing required member: {rel}")
-        if (tmp_root / "compose/docker-compose.production.yml").exists():
-            raise BundleVerifyError("production overlay must not be present")
+        if (tmp_root / "compose/docker-compose.staging.yml").exists():
+            raise BundleVerifyError("staging overlay must not be present")
         for path in tmp_root.rglob("*"):
             if path.is_symlink():
                 raise BundleVerifyError(f"symlink present after extract: {path}")

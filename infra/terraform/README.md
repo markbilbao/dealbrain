@@ -191,7 +191,13 @@ Logging: [`docs/runbooks/PRODUCTION_LOGGING.md`](../../docs/runbooks/PRODUCTION_
 - Host roles attach `AmazonSSMManagedInstanceCore`
 - Host bootstrap: `infra/ec2/user_data/staging.sh` and `infra/ec2/user_data/production.sh`
   (Amazon Docker + AWS CLI/jq; Compose via signed Docker Inc plugin only — Sprint 25b.5a; no secrets).
-  Each root submits gzip-compressed `user_data_base64` (`base64gzip(file(...))`).
+  Production bootstrap additionally installs/enables/starts `amazon-ssm-agent` as an early
+  invariant, before Docker/Compose, so a later cloud-init failure still leaves Systems Manager
+  reachable. Each root submits gzip-compressed `user_data_base64` (`base64gzip(file(...))`).
+- Default EC2 AMI (when `ami_id` is empty): official AWS public parameter
+  `/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64` (standard AL2023,
+  not `al2023-ami-minimal-*`). Explicit `var.ami_id` still overrides. Existing hosts are
+  not replaced by selector changes: `lifecycle { ignore_changes = [ami] }` is retained.
 
 ### GitHub Environment hard gates (live; not Terraform)
 

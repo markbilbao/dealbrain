@@ -53,7 +53,7 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "Optional AMI override. Empty = latest Amazon Linux 2023."
+  description = "Optional AMI override. Empty = official AWS public AL2023 standard/default x86_64 AMI (not minimal)."
   type        = string
   default     = ""
 }

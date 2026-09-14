@@ -20,7 +20,7 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "AMI ID. Empty uses the latest Amazon Linux 2023 x86_64."
+  description = "AMI ID. Empty uses the official AWS public AL2023 standard/default x86_64 AMI parameter (not minimal)."
   type        = string
   default     = ""
 }
