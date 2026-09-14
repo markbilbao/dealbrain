@@ -1,22 +1,22 @@
-data "aws_ami" "al2023" {
+# Default AMI: official AWS public parameter for standard (non-minimal)
+# Amazon Linux 2023 x86_64 with the default kernel.
+# https://docs.aws.amazon.com/linux/al2023/ug/ec2.html
+#
+# This cannot resolve al2023-ami-minimal-* images. The previous aws_ami name
+# filter `al2023-ami-*-x86_64` could select the latest *minimal* AMI because
+# that name also matches the glob.
+#
+# When var.ami_id is set, this lookup is skipped (explicit override).
+# Changing the selector does not replace an existing host: aws_instance.api
+# ignores AMI drift. Live replacement is owner-controlled and out-of-band
+# after review.
+data "aws_ssm_parameter" "al2023" {
   count = var.ami_id == "" ? 1 : 0
-
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["al2023-ami-*-x86_64"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+  name  = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
 
 locals {
-  ami_id = var.ami_id != "" ? var.ami_id : data.aws_ami.al2023[0].id
+  ami_id = var.ami_id != "" ? var.ami_id : data.aws_ssm_parameter.al2023[0].value
 }
 
 resource "aws_instance" "api" {
@@ -46,6 +46,9 @@ resource "aws_instance" "api" {
     Role = "api-compose-host"
   })
 
+  # AMI selector / AWS default-AMI updates must not replace a running host.
+  # Production replacement of a bad instance is an explicit owner-controlled
+  # out-of-band action after this change is reviewed and merged.
   lifecycle {
     ignore_changes = [ami]
   }
