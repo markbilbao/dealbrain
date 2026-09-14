@@ -123,6 +123,7 @@ validate-pre-live:
 validate-production-foundation:
 	uv run pytest tests/unit/test_early_access_production_foundation_phase1.py \
 		tests/unit/test_production_bundle_overlay_validation.py \
+		tests/unit/test_production_bootstrap_safeextract_evidence_contract.py \
 		tests/unit/test_sprint25a_infrastructure.py \
 		tests/unit/test_sprint25b2_oidc_iam.py \
 		tests/unit/test_sprint25b3_staging_deploy.py \
