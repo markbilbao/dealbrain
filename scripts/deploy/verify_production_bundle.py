@@ -350,8 +350,10 @@ def verify_release_directory(
         if not path.is_file():
             raise BundleVerifyError(f"missing required member: {rel}")
 
-    if (dest / "compose/docker-compose.production.yml").exists():
-        raise BundleVerifyError("production overlay must not be present")
+    # Production bundles must include the production overlay and must never
+    # include the staging overlay. FORBIDDEN also rejects staging in archives.
+    if (dest / "compose/docker-compose.staging.yml").exists():
+        raise BundleVerifyError("staging overlay must not be present")
 
     for path in dest.rglob("*"):
         if path.is_symlink():
@@ -360,9 +362,9 @@ def verify_release_directory(
     verify_file_checksums_map(dest, meta["file_checksums"])
 
     compose_base = dest / "compose/docker-compose.base.yml"
-    compose_staging = dest / "compose/docker-compose.production.yml"
-    if not compose_base.is_file() or not compose_staging.is_file():
-        raise BundleVerifyError("staging compose overlays missing")
+    compose_production = dest / "compose/docker-compose.production.yml"
+    if not compose_base.is_file() or not compose_production.is_file():
+        raise BundleVerifyError("production compose overlays missing")
 
     if require_deploy_version:
         dv = dest / "DEPLOY_VERSION"
