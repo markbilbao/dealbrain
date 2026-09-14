@@ -30,6 +30,9 @@ install -d -o root -g root -m 0755 /var/log/dealbrain
 dnf -y update || true
 # AL2023 ships curl-minimal; installing the full `curl` package conflicts and
 # aborts bootstrap (bootstrap.ok never written). Prefer the preinstalled curl.
+# AL2023 ships gnupg2-minimal, which provides `gpg` and conflicts with full
+# `gnupg2`. Requesting `gnupg2` here aborts the DNF transaction before Docker
+# starts; bootstrap.ok is never written. Keep the preinstalled provider.
 # Do NOT install docker-compose-plugin from AL2023 default repos (unavailable).
 # Compose plugin is installed later via the reviewed Docker Inc signed path
 # (install-compose-plugin.sh). Never install docker-ce / docker-ce-cli here.
@@ -42,8 +45,37 @@ dnf -y install \
   gzip \
   findutils \
   util-linux \
-  coreutils \
-  gnupg2
+  coreutils
+
+# --- BEGIN gpg prerequisite ---
+# Standard AL2023 already provides `gpg` via gnupg2-minimal. Prefer that
+# capability. Install gnupg2-minimal only when `gpg` is genuinely absent.
+# Forbidden: --allowerasing, package removal, rpm --nodeps, replacing
+# gnupg2-minimal with full gnupg2, disabled signature checking.
+ensure_gpg() {
+  echo "[gpg] prerequisite start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  if command -v gpg >/dev/null 2>&1; then
+    echo "[gpg] already present; keeping AL2023 provider package"
+    echo "[gpg] prerequisite ok $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 0
+  fi
+  echo "[gpg] missing; installing AL2023 gnupg2-minimal"
+  if ! dnf -y install gnupg2-minimal; then
+    echo "[gpg] ERROR: dnf install gnupg2-minimal failed" >&2
+    echo "[gpg] prerequisite failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 1
+  fi
+  if command -v gpg >/dev/null 2>&1; then
+    echo "[gpg] ok after gnupg2-minimal install"
+    echo "[gpg] prerequisite ok $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    return 0
+  fi
+  echo "[gpg] ERROR: gpg missing after prerequisite handling" >&2
+  echo "[gpg] prerequisite failed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  return 1
+}
+ensure_gpg
+# --- END gpg prerequisite ---
 
 systemctl enable docker
 systemctl start docker
@@ -200,9 +232,9 @@ extract_primary_fingerprints() {
 verify_and_import_docker_gpg() {
   command -v curl >/dev/null || die "curl missing"
   if ! command -v gpg >/dev/null 2>&1; then
-    log "installing gnupg2 from AL2023 default repos (fingerprint gate)"
-    dnf -y install gnupg2
-    command -v gpg >/dev/null || die "gpg missing after gnupg2 install"
+    log "gpg missing; installing AL2023 gnupg2-minimal (fingerprint gate)"
+    dnf -y install gnupg2-minimal
+    command -v gpg >/dev/null || die "gpg missing after gnupg2-minimal install"
   fi
 
   local tmp_key
