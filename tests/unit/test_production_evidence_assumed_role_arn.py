@@ -26,8 +26,8 @@ from scripts.deploy.production_evidence import (
     create_evidence,
     validate_evidence,
 )
-from scripts.deploy.production_rollback_evidence import create_rollback_evidence
 from scripts.deploy.production_rollback_evidence import (
+    create_rollback_evidence,
     validate_rollback_evidence,
 )
 
@@ -172,15 +172,18 @@ def test_production_token_in_non_identity_field_still_rejected() -> None:
 
 
 def test_allowlist_is_exact_schema_fields_only() -> None:
-    assert PRODUCTION_TOKEN_ALLOWED_FIELDS == frozenset(
-        {
-            "assumed_role_arn",
-            "role_session_name",
-            "final_status",
-            "evidence_type",
-        }
+    assert (
+        frozenset(
+            {
+                "assumed_role_arn",
+                "role_session_name",
+                "final_status",
+                "evidence_type",
+            }
+        )
+        == PRODUCTION_TOKEN_ALLOWED_FIELDS
     )
-    assert not any("role" == fragment for fragment in FORBIDDEN_FIELD_FRAGMENTS)
+    assert "role" not in FORBIDDEN_FIELD_FRAGMENTS
     # Arbitrary keys containing "role" or "arn" are not exempt.
     with pytest.raises(EvidenceError, match="production environment value forbidden"):
         validate_evidence(_valid_failed_evidence(aws_region="us-production-1"))
