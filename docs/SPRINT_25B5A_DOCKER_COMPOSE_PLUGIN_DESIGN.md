@@ -73,7 +73,7 @@ Once the installer intends to enable the Docker Inc repo:
 
 ## Bootstrap sequence
 
-1. AL2023 packages (`docker`, `awscli`, `jq`, `gnupg2`, …)
+1. AL2023 packages (`docker`, `awscli`, `jq`, …). Keep preinstalled `gpg` from `gnupg2-minimal`; do not install full `gnupg2` (conflicts on standard AL2023).
 2. `systemctl enable --now docker`; assert Amazon `docker`
 3. Idempotence short-circuit (compose OK + plugin RPM + Amazon docker + locked disabled repo)
 4. Fetch Docker GPG → exactly-one primary fingerprint gate → `rpm --import`

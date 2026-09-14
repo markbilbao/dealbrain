@@ -134,9 +134,9 @@ extract_primary_fingerprints() {
 verify_and_import_docker_gpg() {
   command -v curl >/dev/null || die "curl missing"
   if ! command -v gpg >/dev/null 2>&1; then
-    log "installing gnupg2 from AL2023 default repos (fingerprint gate)"
-    dnf -y install gnupg2
-    command -v gpg >/dev/null || die "gpg missing after gnupg2 install"
+    log "gpg missing; installing AL2023 gnupg2-minimal (fingerprint gate)"
+    dnf -y install gnupg2-minimal
+    command -v gpg >/dev/null || die "gpg missing after gnupg2-minimal install"
   fi
 
   local tmp_key

@@ -285,7 +285,7 @@ Do **not** add production Environment behavior in 25b.3.
 
 **Design:** Staging EC2 module receives cloud-init via gzip-compressed `user_data_base64` that decompresses to:
 
-1. `dnf` install docker, awscli, jq, gnupg2 (and other AL2023 default-repo tools; not full `curl` — use preinstalled `curl-minimal`)
+1. `dnf` install docker, awscli, jq, and other AL2023 default-repo tools; not full `curl` (use preinstalled `curl-minimal`) and not full `gnupg2` (standard AL2023 already provides `gpg` via `gnupg2-minimal`; installing full `gnupg2` conflicts and aborts bootstrap before Docker)
 2. Enable/start `docker`
 3. Install Compose via signed Docker Inc path only (`scripts/deploy/host/install-compose-plugin.sh` — Sprint 25b.5a): plugin RPM only, Amazon engine retained, no unsigned binaries, no `docker-ce` / `--allowerasing`
 4. Create directory layout + marker `/opt/dealbrain/bootstrap.ok` after Docker + Compose + tooling checks
