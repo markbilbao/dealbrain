@@ -97,8 +97,7 @@ def test_default_al2023_selector_cannot_select_minimal() -> None:
                 is False
             )
             assert (
-                default_al2023_parameter_selects_minimal(AL2023_MINIMAL_AMI_PARAMETER, name)
-                is True
+                default_al2023_parameter_selects_minimal(AL2023_MINIMAL_AMI_PARAMETER, name) is True
             )
         else:
             assert (
@@ -113,7 +112,7 @@ def test_explicit_ami_id_override_is_preserved() -> None:
     assert 'variable "ami_id"' in vars_text
     assert 'default     = ""' in vars_text
     assert 'count = var.ami_id == "" ? 1 : 0' in text
-    assert "var.ami_id != \"\" ? var.ami_id : data.aws_ssm_parameter.al2023[0].value" in text
+    assert 'var.ami_id != "" ? var.ami_id : data.aws_ssm_parameter.al2023[0].value' in text
     assert "ami_id                    = var.ami_id" in _read(PROD_TF)
     assert resolve_ec2_ami_id("ami-explicit123", "ami-from-ssm") == "ami-explicit123"
     assert resolve_ec2_ami_id("", "ami-from-ssm") == "ami-from-ssm"
@@ -287,9 +286,7 @@ def test_ssm_invariant_installs_when_missing(tmp_path: Path) -> None:
 
 
 def test_ssm_invariant_is_idempotent_when_already_installed(tmp_path: Path) -> None:
-    proc, dnf_log, enable_log, start_log = _run_extracted_ssm(
-        tmp_path, installed=True, active=True
-    )
+    proc, dnf_log, enable_log, start_log = _run_extracted_ssm(tmp_path, installed=True, active=True)
     assert proc.returncode == 0, proc.stderr + proc.stdout
     assert "already installed" in proc.stdout
     assert "ok: systemd unit is active" in proc.stdout
