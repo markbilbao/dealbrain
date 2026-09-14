@@ -162,9 +162,7 @@ def test_present_gpg_skips_package_replacement(tmp_path: Path, script: Path) -> 
 
 
 @pytest.mark.parametrize("script", BOOTSTRAP_SCRIPTS)
-def test_missing_gpg_installs_gnupg2_minimal_not_full_gnupg2(
-    tmp_path: Path, script: Path
-) -> None:
+def test_missing_gpg_installs_gnupg2_minimal_not_full_gnupg2(tmp_path: Path, script: Path) -> None:
     proc, dnf_log = _run_ensure_gpg(tmp_path, script, gpg_present=False, dnf_ok=True)
     assert proc.returncode == 0, proc.stderr + proc.stdout
     assert "installing AL2023 gnupg2-minimal" in proc.stdout
@@ -175,9 +173,7 @@ def test_missing_gpg_installs_gnupg2_minimal_not_full_gnupg2(
 
 
 @pytest.mark.parametrize("script", BOOTSTRAP_SCRIPTS)
-def test_gpg_prerequisite_fails_closed_when_still_missing(
-    tmp_path: Path, script: Path
-) -> None:
+def test_gpg_prerequisite_fails_closed_when_still_missing(tmp_path: Path, script: Path) -> None:
     proc, dnf_log = _run_ensure_gpg(
         tmp_path, script, gpg_present=False, dnf_ok=True, install_provides_gpg=False
     )
@@ -189,9 +185,7 @@ def test_gpg_prerequisite_fails_closed_when_still_missing(
 
 
 @pytest.mark.parametrize("script", BOOTSTRAP_SCRIPTS)
-def test_gpg_prerequisite_fails_closed_when_dnf_install_fails(
-    tmp_path: Path, script: Path
-) -> None:
+def test_gpg_prerequisite_fails_closed_when_dnf_install_fails(tmp_path: Path, script: Path) -> None:
     proc, dnf_log = _run_ensure_gpg(tmp_path, script, gpg_present=False, dnf_ok=False)
     assert proc.returncode != 0
     combined = proc.stdout + proc.stderr
@@ -250,8 +244,7 @@ def test_compose_gpg_security_contracts_unchanged() -> None:
     assert "gpgcheck=1" in installer
     assert "repo_gpgcheck=1" in installer
     assert (
-        "includepkgs=docker-compose-plugin" in installer
-        or "includepkgs=${PLUGIN_PKG}" in installer
+        "includepkgs=docker-compose-plugin" in installer or "includepkgs=${PLUGIN_PKG}" in installer
     )
     assert "enabled=0" in installer
     assert 'dnf -y install "$PLUGIN_PKG"' in installer
