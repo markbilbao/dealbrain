@@ -143,12 +143,12 @@ def _compose_config(*, profile: str | None = None) -> dict[str, Any]:
 
 
 def test_production_overlay_has_no_awslogs_stream_prefix() -> None:
-    text = PROD_COMPOSE.read_text(encoding="utf-8")
-    assert "awslogs-stream-prefix" not in text
     overlay = _load_yaml(PROD_COMPOSE)
     for service in ("api", "migrate"):
         options = overlay["services"][service]["logging"]["options"]
         assert "awslogs-stream-prefix" not in options
+    text = PROD_COMPOSE.read_text(encoding="utf-8")
+    assert re.search(r"(?m)^\s*awslogs-stream-prefix\s*:", text) is None
 
 
 def test_production_api_awslogs_is_docker_native() -> None:

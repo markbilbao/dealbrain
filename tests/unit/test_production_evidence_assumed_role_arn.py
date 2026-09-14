@@ -168,17 +168,22 @@ def test_create_evidence_accepts_live_identity_metadata() -> None:
 
 def test_production_token_in_non_identity_field_still_rejected() -> None:
     with pytest.raises(EvidenceError, match="production environment value forbidden"):
-        _valid_failed_evidence(failure_reason="leaked production env dump")
+        validate_evidence(_valid_failed_evidence(failure_reason="leaked production env dump"))
 
 
-def test_allowlist_is_exact_identity_fields_only() -> None:
+def test_allowlist_is_exact_schema_fields_only() -> None:
     assert PRODUCTION_TOKEN_ALLOWED_FIELDS == frozenset(
-        {"assumed_role_arn", "role_session_name"}
+        {
+            "assumed_role_arn",
+            "role_session_name",
+            "final_status",
+            "evidence_type",
+        }
     )
     assert not any("role" == fragment for fragment in FORBIDDEN_FIELD_FRAGMENTS)
     # Arbitrary keys containing "role" or "arn" are not exempt.
     with pytest.raises(EvidenceError, match="production environment value forbidden"):
-        _valid_failed_evidence(aws_region="us-production-1")
+        validate_evidence(_valid_failed_evidence(aws_region="us-production-1"))
 
 
 def test_secret_like_field_names_still_rejected() -> None:
@@ -211,31 +216,35 @@ def test_secret_bearing_values_still_rejected() -> None:
     for value in cases:
         assert SECRET_VALUE_RE.search(value)
         with pytest.raises(EvidenceError, match="secret-bearing"):
-            _valid_failed_evidence(failure_reason=value)
+            validate_evidence(_valid_failed_evidence(failure_reason=value))
 
 
 def test_assumed_role_arn_still_rejects_embedded_secrets() -> None:
     with pytest.raises(EvidenceError, match="secret-bearing"):
-        _valid_failed_evidence(
-            assumed_role_arn=f"{INTENDED_ROLE_ARN}?password=hunter2",
+        validate_evidence(
+            _valid_failed_evidence(
+                assumed_role_arn=f"{INTENDED_ROLE_ARN}?password=hunter2",
+            )
         )
     with pytest.raises(EvidenceError, match="secret-bearing"):
-        _valid_failed_evidence(
-            assumed_role_arn=f"{INTENDED_ROLE_ARN} access_key=AKIAexample",
+        validate_evidence(
+            _valid_failed_evidence(
+                assumed_role_arn=f"{INTENDED_ROLE_ARN} access_key=AKIAexample",
+            )
         )
 
 
 def test_schema_validation_still_enforced() -> None:
     with pytest.raises(EvidenceError, match="additional properties|schema"):
-        _valid_failed_evidence(extra_note="x")
+        validate_evidence(_valid_failed_evidence(extra_note="x"))
     payload = _valid_failed_evidence()
     del payload["aws_account_id"]
     with pytest.raises(EvidenceError, match="missing required|schema"):
         validate_evidence(payload)
     with pytest.raises(EvidenceError, match="pattern|invalid git_sha"):
-        _valid_failed_evidence(git_sha="not-a-sha")
+        validate_evidence(_valid_failed_evidence(git_sha="not-a-sha"))
     with pytest.raises(EvidenceError, match="enum|invalid final_status"):
-        _valid_failed_evidence(final_status="ok")
+        validate_evidence(_valid_failed_evidence(final_status="ok"))
     for key in REQUIRED_EVIDENCE_KEYS:
         missing = _valid_failed_evidence()
         del missing[key]

@@ -90,13 +90,19 @@ PRODUCTION_VALUE_RE: Final[re.Pattern[str]] = re.compile(
     r"(?i)(?:^|[^a-z0-9])production(?:[^a-z0-9]|$)"
 )
 
-# Schema-required identity metadata may include the token "production"
-# (dealbrain-production-gha-deploy, gha-<run>-production). These are not
-# environment dumps or secrets; SECRET_VALUE_RE still applies.
+# Schema-required fields whose contracted values may include the token
+# "production". These are identity/status metadata, not environment dumps.
+# SECRET_VALUE_RE still applies.
+# - assumed_role_arn: arn:aws:iam::<acct>:role/dealbrain-production-gha-deploy
+# - role_session_name: gha-<run>-production
+# - final_status: production_ok
+# - evidence_type: production_rollback (rollback evidence only)
 PRODUCTION_TOKEN_ALLOWED_FIELDS: Final[frozenset[str]] = frozenset(
     {
         "assumed_role_arn",
         "role_session_name",
+        "final_status",
+        "evidence_type",
     }
 )
 
