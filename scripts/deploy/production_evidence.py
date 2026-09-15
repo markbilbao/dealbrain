@@ -90,6 +90,22 @@ PRODUCTION_VALUE_RE: Final[re.Pattern[str]] = re.compile(
     r"(?i)(?:^|[^a-z0-9])production(?:[^a-z0-9]|$)"
 )
 
+# Schema-required fields whose contracted values may include the token
+# "production". These are identity/status metadata, not environment dumps.
+# SECRET_VALUE_RE still applies.
+# - assumed_role_arn: arn:aws:iam::<acct>:role/dealbrain-production-gha-deploy
+# - role_session_name: gha-<run>-production
+# - final_status: production_ok
+# - evidence_type: production_rollback (rollback evidence only)
+PRODUCTION_TOKEN_ALLOWED_FIELDS: Final[frozenset[str]] = frozenset(
+    {
+        "assumed_role_arn",
+        "role_session_name",
+        "final_status",
+        "evidence_type",
+    }
+)
+
 FORBIDDEN_FIELD_FRAGMENTS: Final[tuple[str, ...]] = (
     "password",
     "secret",
@@ -265,7 +281,7 @@ def _reject_secret_like_keys(obj: Any, path: str = "") -> None:
     elif isinstance(obj, str):
         if SECRET_VALUE_RE.search(obj):
             raise EvidenceError(f"secret-bearing value forbidden at {path or '<root>'}")
-        if PRODUCTION_VALUE_RE.search(obj):
+        if PRODUCTION_VALUE_RE.search(obj) and path not in PRODUCTION_TOKEN_ALLOWED_FIELDS:
             raise EvidenceError(f"production environment value forbidden at {path or '<root>'}")
 
 

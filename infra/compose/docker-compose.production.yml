@@ -35,8 +35,11 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-us-east-1}
         awslogs-group: /dealbrain/production/api
-        awslogs-stream-prefix: api
         awslogs-create-group: "false"
+        # Docker-native stream name. The ECS stream-prefix option is not a
+        # valid Docker awslogs log opt and is rejected at container create.
+        # {{.Name}} is unique per Compose container, including one-off migrate runs.
+        tag: "{{.Name}}"
     labels:
       dealbrain.environment: production
       dealbrain.service: api
@@ -49,8 +52,8 @@ services:
       options:
         awslogs-region: ${AWS_REGION:-us-east-1}
         awslogs-group: /dealbrain/production/migrate
-        awslogs-stream-prefix: migrate
         awslogs-create-group: "false"
+        tag: "{{.Name}}"
     labels:
       dealbrain.environment: production
       dealbrain.service: migrate

@@ -70,7 +70,11 @@ class PermanentAlbTargetHealthError(AlbTargetHealthError):
     retryable = False
 
 
-def validate_target_group_arn(target_group_arn: str) -> None:
+def validate_target_group_arn(
+    target_group_arn: str,
+    *,
+    environment: str = "staging",
+) -> None:
     if not target_group_arn or not str(target_group_arn).strip():
         raise PermanentAlbTargetHealthError("target group ARN is empty")
     arn = str(target_group_arn).strip()
@@ -78,11 +82,22 @@ def validate_target_group_arn(target_group_arn: str) -> None:
         raise PermanentAlbTargetHealthError("target group ARN is empty")
     if not TG_ARN_RE.fullmatch(arn):
         raise PermanentAlbTargetHealthError("target group ARN is malformed")
+    env = (environment or "").strip().lower()
+    if env not in {"staging", "production"}:
+        raise PermanentAlbTargetHealthError(
+            "ALB evaluator environment must be staging or production"
+        )
     lowered = arn.lower()
-    if "production" in lowered:
-        raise PermanentAlbTargetHealthError("production target group ARN rejected")
-    if "staging" not in lowered and "dealbrain-staging" not in lowered:
-        raise PermanentAlbTargetHealthError("target group ARN must identify staging")
+    if env == "staging":
+        if "production" in lowered:
+            raise PermanentAlbTargetHealthError("production target group ARN rejected")
+        if "staging" not in lowered and "dealbrain-staging" not in lowered:
+            raise PermanentAlbTargetHealthError("target group ARN must identify staging")
+        return
+    if "staging" in lowered:
+        raise PermanentAlbTargetHealthError("staging target group ARN rejected")
+    if "production" not in lowered and "dealbrain-production" not in lowered:
+        raise PermanentAlbTargetHealthError("target group ARN must identify production")
 
 
 def validate_instance_id(instance_id: str) -> None:
@@ -136,9 +151,10 @@ def evaluate_target_health(
     expected_instance_id: str,
     target_group_arn: str,
     expected_port: int = EXPECTED_TARGET_PORT,
+    environment: str = "staging",
 ) -> None:
     """Fail closed unless the expected instance is the only target and healthy."""
-    validate_target_group_arn(target_group_arn)
+    validate_target_group_arn(target_group_arn, environment=environment)
     validate_instance_id(expected_instance_id)
     expected = expected_instance_id.strip()
 
@@ -204,6 +220,7 @@ def evaluate_target_health_json(
     expected_instance_id: str,
     target_group_arn: str,
     expected_port: int = EXPECTED_TARGET_PORT,
+    environment: str = "staging",
 ) -> None:
     try:
         payload = json.loads(text)
@@ -214,6 +231,7 @@ def evaluate_target_health_json(
         expected_instance_id=expected_instance_id,
         target_group_arn=target_group_arn,
         expected_port=expected_port,
+        environment=environment,
     )
 
 
@@ -237,6 +255,12 @@ def main(argv: list[str] | None = None) -> int:
         default="-",
         help="Path to describe-target-health JSON, or '-' for stdin",
     )
+    parser.add_argument(
+        "--environment",
+        default="staging",
+        choices=("staging", "production"),
+        help="Target-group identity contract (default: staging)",
+    )
     args = parser.parse_args(argv)
     try:
         if args.input == "-":
@@ -247,13 +271,14 @@ def main(argv: list[str] | None = None) -> int:
             text,
             expected_instance_id=args.instance_id,
             target_group_arn=args.target_group_arn,
+            environment=args.environment,
         )
     except AlbTargetHealthError as exc:
         # Redacted: no raw AWS dumps beyond the short reason.
         kind = "transient" if getattr(exc, "retryable", False) else "permanent"
         print(f"ERROR: ALB target health rejected ({kind}: {exc})", file=sys.stderr)
         return classify_alb_rejection(exc)
-    print("ok: expected staging target healthy")
+    print(f"ok: expected {args.environment} target healthy")
     return EXIT_OK
 
 

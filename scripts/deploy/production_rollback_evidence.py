@@ -61,6 +61,7 @@ GHCR_REPO_RE = _deploy_evidence.GHCR_REPO_RE
 INSTANCE_ID_RE = _deploy_evidence.INSTANCE_ID_RE
 MIGRATION_REV_RE = _deploy_evidence.MIGRATION_REV_RE
 PRODUCTION_VALUE_RE = _deploy_evidence.PRODUCTION_VALUE_RE
+PRODUCTION_TOKEN_ALLOWED_FIELDS = _deploy_evidence.PRODUCTION_TOKEN_ALLOWED_FIELDS
 RELEASE_ID_RE = _deploy_evidence.RELEASE_ID_RE
 RUN_ID_RE = _deploy_evidence.RUN_ID_RE
 SECRET_VALUE_RE = _deploy_evidence.SECRET_VALUE_RE
@@ -210,7 +211,7 @@ def _reject_secret_like_keys(obj: Any, path: str = "") -> None:
     elif isinstance(obj, str):
         if SECRET_VALUE_RE.search(obj):
             raise EvidenceError(f"secret-bearing value forbidden at {path or '<root>'}")
-        if PRODUCTION_VALUE_RE.search(obj):
+        if PRODUCTION_VALUE_RE.search(obj) and path not in PRODUCTION_TOKEN_ALLOWED_FIELDS:
             raise EvidenceError(f"production environment value forbidden at {path or '<root>'}")
 
 
