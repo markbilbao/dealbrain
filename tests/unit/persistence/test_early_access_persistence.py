@@ -195,6 +195,8 @@ def test_confirmation_status_transitions_persist(
         sent_at=sent_at,
         updated_at=sent_at,
     )
+    assert sent.email_confirmation_status == "sent"
+    assert sent.email_confirmation_sent_at == sent_at
     loaded = repo.get_by_normalized_email("ada@example.com")
     assert loaded is not None
     assert loaded.email_confirmation_status == "sent"

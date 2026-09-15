@@ -50,9 +50,7 @@ class PendingObserver(EmailSender):
 
     def send(self, message: EmailMessage) -> None:
         loaded = self._repo.get_by_normalized_email(message.to_address)
-        self.pending_seen = (
-            loaded is not None and loaded.email_confirmation_status == "pending"
-        )
+        self.pending_seen = loaded is not None and loaded.email_confirmation_status == "pending"
         self.sent.append(message)
 
 
@@ -304,9 +302,8 @@ def test_api_reports_failed_without_http_500(
     app = create_app()
     service = EarlyAccessService(api_repo, email_sender=LeakyFailSender())
     app.dependency_overrides[get_early_access_service] = lambda: service
-    with caplog.at_level("WARNING"):
-        with TestClient(app) as client:
-            response = client.post("/api/v1/early-access", json=_valid())
+    with caplog.at_level("WARNING"), TestClient(app) as client:
+        response = client.post("/api/v1/early-access", json=_valid())
     app.dependency_overrides.clear()
     assert response.status_code == 200
     body = response.json()
@@ -356,9 +353,7 @@ def test_provider_source_uses_identity_email_factory() -> None:
 
 def test_production_factory_cannot_silently_use_null_sender() -> None:
     with pytest.raises(ConfigurationValidationError, match="NullEmailSender is not permitted"):
-        build_identity_email_sender(
-            _prod_settings(TRANSACTIONAL_EMAIL_PROVIDER="null")
-        )
+        build_identity_email_sender(_prod_settings(TRANSACTIONAL_EMAIL_PROVIDER="null"))
     sender = build_identity_email_sender(_prod_settings())
     assert isinstance(sender, ResendEmailSender)
     assert sender.from_header == "PiqSavi <no-reply@piqsavi.com>"
@@ -428,8 +423,8 @@ def test_production_runtime_email_contract_is_resend_piqsavi() -> None:
     example = (root / ".env.production.example").read_text(encoding="utf-8")
     assert 'TRANSACTIONAL_EMAIL_PROVIDER: "resend"' in compose
     assert 'TRANSACTIONAL_EMAIL_FROM_NAME: "PiqSavi"' in compose
-    assert "TRANSACTIONAL_EMAIL_FROM = \"no-reply@piqsavi.com\"" in assemble
-    assert "TRANSACTIONAL_EMAIL_FROM_NAME = \"PiqSavi\"" in assemble
+    assert 'TRANSACTIONAL_EMAIL_FROM = "no-reply@piqsavi.com"' in assemble
+    assert 'TRANSACTIONAL_EMAIL_FROM_NAME = "PiqSavi"' in assemble
     assert 'mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "resend"' in assemble
     assert '("resend_api_key", "RESEND_API_KEY")' in assemble
     assert "TRANSACTIONAL_EMAIL_FROM=no-reply@piqsavi.com" in example
