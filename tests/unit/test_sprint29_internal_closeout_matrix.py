@@ -10,9 +10,7 @@ from scripts.validate_sprint29_phase_29_0 import TRACEABILITY_PATH, validate_tra
 
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX_PATH = ROOT / "tests/contracts/fixtures/sprint29-internal-closeout-matrix.json"
-RECONCILIATION = (
-    ROOT / "docs/roadmap/evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md"
-)
+RECONCILIATION = ROOT / "docs/roadmap/evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md"
 SPRINT_29 = ROOT / "docs/roadmap/sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md"
 CC_SUITE_GLOBS = (
     "tests/unit/test_sprint29_*.py",
