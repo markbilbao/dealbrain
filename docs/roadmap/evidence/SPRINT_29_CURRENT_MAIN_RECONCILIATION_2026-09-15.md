@@ -163,7 +163,7 @@ PR #127 listed “Legal publication / counsel DSAR” as a Sprint 29 remaining d
 
 ## Explicit merchant / live-research non-claims
 
-- Live merchant research was **not** implemented or claimed.
+- Live merchant research was not implemented or claimed.
 - Merchants were **not** queried. No Shopee, Lazada, BuyWhere, or API Hub activation.
 - Fixture products were **not** injected into real UUID flows.
 - No production-certified PH merchant-data path exists. Sprint 32 is **not** complete.
