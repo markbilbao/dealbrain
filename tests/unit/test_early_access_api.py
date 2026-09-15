@@ -5,11 +5,25 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 import pytest
+from app.auth.email import EmailDeliveryError, EmailMessage, EmailSender
 from app.core.dependencies import get_early_access_service, get_rate_limiter
 from app.early_access.memory import InMemoryEarlyAccessRepository
 from app.main import create_app
 from app.services.early_access_service import EarlyAccessService
 from fastapi.testclient import TestClient
+
+
+class RecordingEmailSender(EmailSender):
+    def __init__(self) -> None:
+        self.sent: list[EmailMessage] = []
+
+    def send(self, message: EmailMessage) -> None:
+        self.sent.append(message)
+
+
+class BoomEmailSender(EmailSender):
+    def send(self, message: EmailMessage) -> None:
+        raise EmailDeliveryError("Transactional email delivery failed.")
 
 
 class BoomRepository(InMemoryEarlyAccessRepository):
@@ -70,6 +84,42 @@ def test_duplicate_response(client: TestClient) -> None:
     response = client.post("/api/v1/early-access", json=_payload(full_name="Other"))
     assert response.status_code == 200
     assert response.json()["outcome"] == "already_registered"
+    assert response.json()["email_confirmation_status"] == "not_sent"
+
+
+def test_success_with_live_sender_reports_sent(
+    repo: InMemoryEarlyAccessRepository,
+) -> None:
+    sender = RecordingEmailSender()
+    app = create_app()
+    service = EarlyAccessService(repo, email_sender=sender)
+    app.dependency_overrides[get_early_access_service] = lambda: service
+    with TestClient(app) as test_client:
+        response = test_client.post("/api/v1/early-access", json=_payload())
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    body = response.json()
+    assert body["outcome"] == "success"
+    assert body["email_confirmation_status"] == "sent"
+    assert body["message"] == "You're on the list."
+    assert len(sender.sent) == 1
+
+
+def test_failed_sender_stays_http_200(
+    repo: InMemoryEarlyAccessRepository,
+) -> None:
+    app = create_app()
+    service = EarlyAccessService(repo, email_sender=BoomEmailSender())
+    app.dependency_overrides[get_early_access_service] = lambda: service
+    with TestClient(app) as test_client:
+        response = test_client.post("/api/v1/early-access", json=_payload())
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    body = response.json()
+    assert body["outcome"] == "success"
+    assert body["email_confirmation_status"] == "failed"
+    assert body["message"] == "You're on the list."
+    assert len(repo.list_all()) == 1
 
 
 def test_invalid_country(client: TestClient) -> None:

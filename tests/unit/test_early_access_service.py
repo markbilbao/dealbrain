@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from app.auth.email import EmailMessage, EmailSender
+from app.auth.email import EmailMessage, EmailSender, NullEmailSender
 from app.domain.exceptions import EarlyAccessValidationError
 from app.early_access.memory import InMemoryEarlyAccessRepository
 from app.services.early_access_service import EarlyAccessService, normalize_email
@@ -104,10 +104,13 @@ def test_duplicate_and_case_whitespace_duplicate() -> None:
     assert len(service.list_registrations()) == 1
 
 
-def test_confirmation_status_remains_pending_without_live_sender() -> None:
-    result = _service().register(**_valid())
+def test_confirmation_status_remains_not_sent_with_null_sender() -> None:
+    """NullEmailSender records intent without delivery; do not fake ``sent``."""
+    sender = NullEmailSender()
+    result = _service(email_sender=sender).register(**_valid())
     assert result.email_confirmation_status == "not_sent"
     assert result.registration.email_confirmation_sent_at is None
+    assert sender.sent == []
 
 
 def test_email_failure_cannot_undo_registration() -> None:
@@ -115,7 +118,8 @@ def test_email_failure_cannot_undo_registration() -> None:
     result = service.register(**_valid())
     assert result.outcome == "success"
     assert len(service.list_registrations()) == 1
-    assert result.email_confirmation_status == "not_sent"
+    assert result.email_confirmation_status == "failed"
+    assert result.registration.email_confirmation_sent_at is None
 
 
 def test_user_account_is_not_created() -> None:

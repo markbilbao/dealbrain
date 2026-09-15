@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
-from app.domain.entities.early_access import EarlyAccessRegistration
+from app.domain.entities.early_access import EarlyAccessRegistration, EmailConfirmationStatus
 
 
 class EarlyAccessRepository(ABC):
@@ -24,6 +25,21 @@ class EarlyAccessRepository(ABC):
         normalized email, returns the existing entity and ``False`` without
         creating a second row. Uniqueness must be enforced by an atomic
         unique key, not check-then-insert alone.
+        """
+
+    @abstractmethod
+    def update_email_confirmation(
+        self,
+        registration_id: str,
+        *,
+        status: EmailConfirmationStatus,
+        sent_at: datetime | None,
+        updated_at: datetime,
+    ) -> EarlyAccessRegistration:
+        """Persist confirmation delivery status for an existing registration.
+
+        Does not create a row, change uniqueness identity, or rewrite
+        legal-acknowledgement fields. Returns the updated persisted entity.
         """
 
     @abstractmethod
