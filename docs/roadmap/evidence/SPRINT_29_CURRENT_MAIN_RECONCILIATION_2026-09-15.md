@@ -1,11 +1,11 @@
 # Sprint 29 — Current-main reconciliation (2026-09-15)
 
-**Starting `origin/main`:** `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`  
-(merge of PR #141, “Early Access: send and persist signup confirmation email”)  
-**Date (UTC):** 2026-09-15  
-**Authority:** [`../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md)  
-**Prior merged closeout:** [`SPRINT_29_CLOSEOUT_GAP_AUDIT.md`](SPRINT_29_CLOSEOUT_GAP_AUDIT.md) (SHA `a8bd001`, PR #111) — **not erased**  
-**Historical unmerged remaining-closeout:** [`SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) (PR #127, baseline `6666bb26`) — retained as history, not current authority  
+**Starting `origin/main`:** `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`
+(merge of PR #141, “Early Access: send and persist signup confirmation email”)
+**Date (UTC):** 2026-09-15
+**Authority:** [`../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md)
+**Prior merged closeout:** [`SPRINT_29_CLOSEOUT_GAP_AUDIT.md`](SPRINT_29_CLOSEOUT_GAP_AUDIT.md) (SHA `a8bd001`, PR #111) — **not erased**
+**Historical unmerged remaining-closeout:** [`SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) (PR #127, baseline `6666bb26`) — retained as history, not current authority
 **Prior staging package:** [`SPRINT_29_STAGING_CC01_EVIDENCE.md`](SPRINT_29_STAGING_CC01_EVIDENCE.md) (Deploy Staging #27 on `a8bd001`)
 
 This audit re-reads the locked Sprint 29 definition against **current** `main`. It does **not** close Sprint 29. It does **not** merge, rebase, or close PR #127. It does **not** claim live merchant research. It does **not** replace the Phase 29.0 contract freeze. It does **not** mutate production, staging, AWS, DNS, Resend, or merchants.

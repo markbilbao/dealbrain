@@ -8,10 +8,10 @@
 > (unpublished `/privacy` `/terms`, staging-only email, production as
 > unimplemented) were true of that baseline and are stale on current `main`.
 
-**Audit baseline:** `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd` (`origin/main` at start of this work)  
-**Date (UTC):** 2026-09-10  
-**Authority:** [`../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md)  
-**Prior closeout:** [`SPRINT_29_CLOSEOUT_GAP_AUDIT.md`](SPRINT_29_CLOSEOUT_GAP_AUDIT.md) (merged SHA `a8bd001`)  
+**Audit baseline:** `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd` (`origin/main` at start of this work)
+**Date (UTC):** 2026-09-10
+**Authority:** [`../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](../sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md)
+**Prior closeout:** [`SPRINT_29_CLOSEOUT_GAP_AUDIT.md`](SPRINT_29_CLOSEOUT_GAP_AUDIT.md) (merged SHA `a8bd001`)
 **Prior staging package:** [`SPRINT_29_STAGING_CC01_EVIDENCE.md`](SPRINT_29_STAGING_CC01_EVIDENCE.md) (Deploy Staging #27 on `a8bd001`)
 
 This audit re-reads the locked Sprint 29 definition against current `main`. It does **not** close Sprint 29. It does **not** claim live merchant research. It does **not** replace the Phase 29.0 contract freeze.
