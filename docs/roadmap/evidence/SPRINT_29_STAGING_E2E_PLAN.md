@@ -13,8 +13,9 @@
 | Sprint 29 merged closeout | PR #111 merged to `main` at `a8bd001` |
 | Sprint 29 staging E2E package | [`SPRINT_29_STAGING_CC01_EVIDENCE.md`](SPRINT_29_STAGING_CC01_EVIDENCE.md) — **partial**; live research still Sprint 38 |
 | Sprint 28.2 export/delete HTTP | re-proven on Deploy #27 with synthetic `@example.invalid` accounts |
-| Identity email adapter on that host | not claimed ready; reset/verify pages do not display demo tokens |
-| `/privacy` `/terms` | 404 |
+| Identity email adapter on that host | Sprint 27 is now COMPLETE / CLOSED. Reset/verify pages still must not display demo tokens. Inbox readiness on a later Sprint 29 digest must be re-observed, not inferred from Sprint 27 Deploy #32. |
+| `/privacy` `/terms` | **Historical for Deploy #27:** 404. **Current catalog:** owner-authorized `privacy-2026-09-11` / `terms-2026-09-11` are published; do not expect 404 on a later digest. |
+| Current-main reconciliation | [`SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) — current `main` `3c51494` is newer than this staging package. PR #127 is stale and superseded. |
 
 ## Preconditions
 
@@ -44,9 +45,9 @@
 | Item | Owner |
 |---|---|
 | Live research execution / updated Results | Sprint 38 |
-| Real inbox reset/verify | Sprint 27 |
-| Published Privacy/Terms | Sprint 28 / 44 / 45 |
-| Support ticket backend | Sprint 39 |
+| Real inbox reset/verify on a later Sprint 29 digest | Re-observe after Deploy Staging of the merged SHA. Sprint 27 itself is COMPLETE / CLOSED. Early Access confirmation email is implemented on current `main` (PR #141) and is not a Sprint 29 UI gap. |
+| Remaining legal program (unconditional counsel approval, CMP, DSAR certification) | Sprint 28 / 44 / 45. Early Access Privacy/Terms are already published as owner-authorized `privacy-2026-09-11` / `terms-2026-09-11`. That publication is **not** unconditional counsel approval and is **not** a Sprint 29 implementation gap. |
+| Support ticket backend | Sprint 39. `/support` remains a mailto/static contact page. |
 | Search Console | Sprint 39 / 45 |
 
 ## Evidence package to file after the deploy
