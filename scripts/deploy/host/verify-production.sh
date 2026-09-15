@@ -212,6 +212,7 @@ while [[ $elapsed -lt $ALB_STABILIZATION_TIMEOUT_SEC ]]; do
   printf '%s' "$HEALTH_JSON" | python3 "$ALB_EVAL" \
     --target-group-arn "$TG_ARN" \
     --instance-id "$INSTANCE_ID" \
+    --environment production \
     --input -
   ALB_RC=$?
   set -e
