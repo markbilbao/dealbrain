@@ -1283,10 +1283,12 @@ def get_early_access_service():
     """Provide the Early Access registration service."""
     global _EARLY_ACCESS_SERVICE
     if _EARLY_ACCESS_SERVICE is None:
+        from app.auth.email_factory import build_identity_email_sender
         from app.services.early_access_service import EarlyAccessService
 
         _EARLY_ACCESS_SERVICE = EarlyAccessService(
             get_early_access_repository(),
+            email_sender=build_identity_email_sender(settings),
             legal_catalog=get_legal_publication_catalog(),
         )
     return _EARLY_ACCESS_SERVICE

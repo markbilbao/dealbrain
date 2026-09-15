@@ -8,9 +8,12 @@ the uniqueness key.
 
 from __future__ import annotations
 
-from app.domain.entities.early_access import EarlyAccessRegistration
+from dataclasses import replace
+from datetime import datetime
+
+from app.domain.entities.early_access import EarlyAccessRegistration, EmailConfirmationStatus
 from app.domain.interfaces.early_access_repository import EarlyAccessRepository
-from app.infrastructure.persistence.errors import PersistenceConflictError
+from app.infrastructure.persistence.errors import PersistenceConflictError, PersistenceError
 from app.infrastructure.persistence.session_bound import SessionBound
 from app.infrastructure.persistence.stores import EARLY_ACCESS_REGISTRATIONS
 
@@ -43,6 +46,38 @@ class SqlAlchemyEarlyAccessRepository(EarlyAccessRepository, SessionBound):
             if existing is None:
                 raise
             return existing, False
+
+    def update_email_confirmation(
+        self,
+        registration_id: str,
+        *,
+        status: EmailConfirmationStatus,
+        sent_at: datetime | None,
+        updated_at: datetime,
+    ) -> EarlyAccessRegistration:
+        with self._ops() as ops:
+            current = ops.get(
+                EARLY_ACCESS_REGISTRATIONS,
+                registration_id,
+                EarlyAccessRegistration,
+            )
+            if current is None:
+                raise PersistenceError(
+                    "Early Access registration was not found for confirmation update."
+                )
+            updated = replace(
+                current,
+                email_confirmation_status=status,
+                email_confirmation_sent_at=sent_at,
+                updated_at=updated_at,
+            )
+            ops.upsert(
+                EARLY_ACCESS_REGISTRATIONS,
+                updated.id,
+                updated,
+                secondary_key=updated.normalized_email,
+            )
+            return updated
 
     def list_all(self) -> list[EarlyAccessRegistration]:
         with self._ops() as ops:

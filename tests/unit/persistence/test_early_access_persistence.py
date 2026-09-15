@@ -8,10 +8,12 @@ from pathlib import Path
 
 import pytest
 from app.domain.entities.early_access import EarlyAccessRegistration
+from app.early_access.memory import InMemoryEarlyAccessRepository
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.database.repositories.early_access_repository import (
     SqlAlchemyEarlyAccessRepository,
 )
+from app.infrastructure.persistence.errors import PersistenceError
 from app.infrastructure.persistence.session import reset_sync_engine
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -169,3 +171,84 @@ def test_concurrent_duplicate_attempts_cannot_create_two_records(
     assert results.count(True) == 1
     assert results.count(False) == 7
     assert len(repo.list_all()) == 1
+
+
+def test_confirmation_status_transitions_persist(
+    sqlite_factory: sessionmaker[Session],
+) -> None:
+    repo = SqlAlchemyEarlyAccessRepository(session_factory=sqlite_factory)
+    stored, created = repo.create_if_absent(_reg("ada@example.com", entity_id="r1"))
+    assert created is True
+    pending_at = _now()
+    pending = repo.update_email_confirmation(
+        stored.id,
+        status="pending",
+        sent_at=None,
+        updated_at=pending_at,
+    )
+    assert pending.email_confirmation_status == "pending"
+    assert pending.email_confirmation_sent_at is None
+    sent_at = _now()
+    sent = repo.update_email_confirmation(
+        stored.id,
+        status="sent",
+        sent_at=sent_at,
+        updated_at=sent_at,
+    )
+    assert sent.email_confirmation_status == "sent"
+    assert sent.email_confirmation_sent_at == sent_at
+    loaded = repo.get_by_normalized_email("ada@example.com")
+    assert loaded is not None
+    assert loaded.email_confirmation_status == "sent"
+    assert loaded.email_confirmation_sent_at == sent_at
+    assert loaded.updated_at == sent_at
+    assert loaded.full_name == "Ada"
+    failed = repo.update_email_confirmation(
+        stored.id,
+        status="failed",
+        sent_at=None,
+        updated_at=_now(),
+    )
+    assert failed.email_confirmation_status == "failed"
+    assert failed.email_confirmation_sent_at is None
+    assert len(repo.list_all()) == 1
+
+
+def test_confirmation_status_missing_id_raises(
+    sqlite_factory: sessionmaker[Session],
+) -> None:
+    repo = SqlAlchemyEarlyAccessRepository(session_factory=sqlite_factory)
+    with pytest.raises(PersistenceError):
+        repo.update_email_confirmation(
+            "missing",
+            status="sent",
+            sent_at=_now(),
+            updated_at=_now(),
+        )
+
+
+def test_in_memory_confirmation_status_matches_sqlalchemy() -> None:
+    repo = InMemoryEarlyAccessRepository()
+    stored, created = repo.create_if_absent(_reg("ada@example.com", entity_id="r1"))
+    assert created is True
+    sent_at = _now()
+    updated = repo.update_email_confirmation(
+        stored.id,
+        status="sent",
+        sent_at=sent_at,
+        updated_at=sent_at,
+    )
+    assert updated.email_confirmation_status == "sent"
+    assert updated.email_confirmation_sent_at == sent_at
+    again, created_again = repo.create_if_absent(_reg("ada@example.com", entity_id="r2"))
+    assert created_again is False
+    assert again.id == stored.id
+    assert again.email_confirmation_status == "sent"
+    assert len(repo.list_all()) == 1
+    with pytest.raises(KeyError):
+        repo.update_email_confirmation(
+            "missing",
+            status="failed",
+            sent_at=None,
+            updated_at=_now(),
+        )

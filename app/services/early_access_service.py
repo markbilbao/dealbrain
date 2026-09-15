@@ -10,12 +10,13 @@ from datetime import UTC, datetime
 from typing import Literal
 from uuid import uuid4
 
-from app.auth.email import EmailMessage, EmailSender, NullEmailSender
+from app.auth.email import EmailSender, NullEmailSender
 from app.core.countries import is_valid_country_code, normalize_country_code
 from app.core.logging import log_extra
 from app.domain.entities.early_access import EarlyAccessRegistration
 from app.domain.exceptions import EarlyAccessValidationError
 from app.domain.interfaces.early_access_repository import EarlyAccessRepository
+from app.early_access.confirmation_email import build_early_access_confirmation_message
 from app.legal.publication import LegalPublicationCatalog, catalog_from_settings
 
 logger = logging.getLogger(__name__)
@@ -154,7 +155,7 @@ class EarlyAccessService:
             },
         )
         if created:
-            self._attempt_confirmation(stored, request_id=request_id)
+            stored = self._attempt_confirmation(stored, request_id=request_id)
         return EarlyAccessRegisterResult(
             outcome=outcome,
             email_confirmation_status=stored.email_confirmation_status,
@@ -169,16 +170,31 @@ class EarlyAccessService:
         registration: EarlyAccessRegistration,
         *,
         request_id: str | None,
-    ) -> None:
-        """Best-effort confirmation. Never rolls back a successful registration."""
+    ) -> EarlyAccessRegistration:
+        """Best-effort confirmation. Never rolls back a successful registration.
+
+        ``NullEmailSender`` is the intentional development/test no-op. It
+        records intent without delivery, so status stays ``not_sent`` rather
+        than being faked as ``sent``. Live senders persist ``pending``
+        immediately before ``send()``, then ``sent`` or ``failed``.
+        """
         if isinstance(self._email, NullEmailSender):
-            return
+            return registration
+
+        current = (
+            self._persist_confirmation(
+                registration,
+                status="pending",
+                sent_at=None,
+                request_id=request_id,
+            )
+            or registration
+        )
         try:
             self._email.send(
-                EmailMessage(
+                build_early_access_confirmation_message(
                     to_address=registration.email,
-                    subject="PiqSavi Early Access",
-                    body_text="You are on the PiqSavi Early Access list.",
+                    full_name=registration.full_name,
                 )
             )
         except Exception:
@@ -192,6 +208,63 @@ class EarlyAccessService:
                     )
                 },
             )
+            return (
+                self._persist_confirmation(
+                    current,
+                    status="failed",
+                    sent_at=None,
+                    request_id=request_id,
+                )
+                or current
+            )
+        sent = self._persist_confirmation(
+            current,
+            status="sent",
+            sent_at=self._clock(),
+            request_id=request_id,
+        )
+        if sent is None:
+            return current
+        logger.info(
+            "early_access_confirmation_sent",
+            extra={
+                "structured": log_extra(
+                    event="early_access_confirmation_sent",
+                    country=registration.country,
+                    request_id=request_id,
+                )
+            },
+        )
+        return sent
+
+    def _persist_confirmation(
+        self,
+        registration: EarlyAccessRegistration,
+        *,
+        status: EmailConfirmationStatus,
+        sent_at: datetime | None,
+        request_id: str | None,
+    ) -> EarlyAccessRegistration | None:
+        try:
+            return self._repository.update_email_confirmation(
+                registration.id,
+                status=status,
+                sent_at=sent_at,
+                updated_at=self._clock(),
+            )
+        except Exception:
+            logger.warning(
+                "early_access_confirmation_status_persist_failed",
+                extra={
+                    "structured": log_extra(
+                        event="early_access_confirmation_status_persist_failed",
+                        country=registration.country,
+                        request_id=request_id,
+                        email_confirmation_status=status,
+                    )
+                },
+            )
+            return None
 
     def _published_policy_versions(self) -> tuple[str, str]:
         catalog = self._legal_catalog
