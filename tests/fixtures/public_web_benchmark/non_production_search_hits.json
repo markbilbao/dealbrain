@@ -1,0 +1,28 @@
+{
+  "fixture_marker": "NON_PRODUCTION_FIXTURE",
+  "test_fixture": true,
+  "production_certified": false,
+  "provider_key": "brave_search",
+  "notes": "Synthetic PH shopping search hits for harness tests only. Not a live Brave response. Not production evidence. Not certification.",
+  "results_by_intent": {
+    "ph-smartphones-001": [
+      {
+        "title": "iPhone 17 Pro Max 256GB - Power Mac Center",
+        "url": "https://www.powermaccenter.com/products/iphone-17-pro-max",
+        "snippet": "Buy iPhone 17 Pro Max in the Philippines. Price from PHP 89990. Free shipping on selected items."
+      },
+      {
+        "title": "iPhone 17 Pro Max - Shopee Philippines",
+        "url": "https://shopee.ph/iphone-17-pro-max-i.123.456",
+        "snippet": "iPhone 17 Pro Max PHP 87000 sold by third-party seller."
+      }
+    ],
+    "ph-headphones-002": [
+      {
+        "title": "Best wireless earbuds under 5000 - Unbox PH",
+        "url": "https://unbox.ph/best-wireless-earbuds-under-5000",
+        "snippet": "Editorial roundup of earbuds in the Philippines under PHP 5000."
+      }
+    ]
+  }
+}

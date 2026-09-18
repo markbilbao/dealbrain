@@ -2,7 +2,7 @@
 
 **Audience:** engineering and owner reviewers preparing a future merchant/provider for evidence-backed certification
 **Status:** Sprint 31 formally owner-closed. This runbook does **not** onboard any production provider.
-**Sprint 32 status:** In progress; **not complete**. Blocked on external merchant certification.
+**Sprint 32 status:** In progress; **not complete**. Blocked on external certification (merchant path and/or public-web live credentials + current-data validation).
 **Production certified research providers:** **zero**
 
 This is operational documentation only. No application, credential, or certification record is created by this document.
@@ -58,7 +58,7 @@ Not every provider has the same API model. Skip inapplicable mechanism steps hon
 | 2 | Define provider technical capabilities | Technical support is not permission |
 | 3 | Verify source identity | Shopee does not certify Amazon |
 | 4 | Identify requested PiqSavi capabilities | Pricing does not certify shipping |
-| 5 | Verify API / access mechanism | Official access only; scraping is not a default path |
+| 5 | Verify API / access mechanism | Official access only; scraping is not a default path. A public-web search API is a discovery provider, not a merchant. |
 | 6 | Review legal / contractual use (checklist below) | Engineering interpretation is not counsel approval |
 | 7 | Configure secrets **outside** the repository | Credentials ≠ certification |
 | 8 | Validate test / sandbox behavior | Sandbox success is not production evidence |
@@ -255,4 +255,6 @@ Affiliate permission is independent of product-data permission. Reduced modes re
 | 37 | MarketContext, currency, location / destination-sensitive behavior | Implement destination re-evaluation |
 | 38 | Live execution, runtime reliability, retries / circuit breakers, truthful degradation, populated execution traces | Execute research or add live HTTP |
 
-Sprint 32 is in progress and is **not complete**. This runbook still creates no production certifications.
+Sprint 32 is in progress and is **not complete**. This runbook still creates no production certifications. Public-web discovery descriptors may exist as incomplete documentary evidence; they are not production providers.
+
+For Sprint 32 public-web live testing, the owner supplies `BRAVE_SEARCH_API_KEY` and/or `TAVILY_API_KEY` (optional `EXA_API_KEY`) outside Git. See [`../roadmap/evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../roadmap/evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md).

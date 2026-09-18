@@ -368,6 +368,22 @@ Affiliate permission remains independent from product-data permission. Commissio
 
 Affiliate monetization is deferred for September public beta. Shopee and Lazada are no longer September affiliate launch dependencies. Product-data certification remains required. Ordinary outbound merchant links are valid launch behavior. Do not delete historical affiliate/network evidence in this inventory. Do not represent affiliate approval as product-data permission. Do not scrape merchants because monetization was removed.
 
+### 2026-09-18 public-web discovery candidates (do not rewrite historical rows)
+
+This addendum does **not** certify any provider. Shopee, Lazada, TikTok Shop, Amazon, and Temu remain **uncertified**. Brave, Tavily, and Exa remain **uncertified**. Search providers are not merchants.
+
+Documentary candidate identities (not production `provider_id` values): `ph-brave-search`, `ph-tavily-search`, `ph-exa-search`. Capability contemplated: `product_discovery` only, `source_agnostic`. Completeness: **incomplete**. Production catalogs remain empty.
+
+| Provider | Sprint 31 production `provider_id` | Credentials | Trusted certification | Blocker |
+|----------|------------------------------------|-------------|-----------------------|---------|
+| Brave Search API | none | none | none | owner credentials + live PH current-data + policy/certification review |
+| Tavily Search API | none | none | none | owner credentials + live PH current-data + shopper-facing terms review |
+| Exa Search API | none | none | none | comparison only unless later selected; credentials + PH coverage + terms review |
+
+Indexed Shopee/Lazada URLs, if later returned by a permitted search API, are discovery hits only. They do not certify those marketplaces and do not authorize scraping.
+
+Evidence: [`SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md), [`SPRINT_32_PH_PUBLIC_WEB_SHOPPING_BENCHMARK.json`](SPRINT_32_PH_PUBLIC_WEB_SHOPPING_BENCHMARK.json).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -376,4 +392,5 @@ Affiliate monetization is deferred for September public beta. Shopee and Lazada 
 - Shopee remains uncertified and fail-closed.
 - Lazada remains uncertified and fail-closed.
 - TikTok Shop remains uncertified and is not September-launch-critical.
+- Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
 - Sprint 32 is **not complete**.
