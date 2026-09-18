@@ -48,6 +48,7 @@ validate-oidc:
 validate-staging-deploy:
 	uv run pytest \
 		tests/unit/test_sprint25b3_staging_deploy.py \
+		tests/unit/test_staging_deploy_canonical_rds.py \
 		tests/unit/test_sprint25b5d_manifest_fetch.py \
 		tests/unit/test_sprint25b5e_staging_manifest_import.py \
 		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
@@ -80,12 +81,14 @@ validate-staging-deploy:
 	bash -n scripts/deploy/staging_maintenance_pre_apply_capture.sh
 	bash -n scripts/deploy/staging_maintenance_controlled_apply.sh
 	python3 -m py_compile scripts/deploy/staging_maintenance_assert.py
+	python3 -m py_compile scripts/deploy/select_canonical_staging_rds.py
 
 # Sprint 25b.4a pre-live refinements + staging deploy contract
 validate-pre-live:
 	uv run pytest \
 		tests/unit/test_sprint25b4a_pre_live_refinements.py \
 		tests/unit/test_sprint25b3_staging_deploy.py \
+		tests/unit/test_staging_deploy_canonical_rds.py \
 		tests/unit/test_sprint25b5d_manifest_fetch.py \
 		tests/unit/test_sprint25b5e_staging_manifest_import.py \
 		tests/unit/test_sprint25b5b_replacement_plan_blockers.py \
@@ -118,6 +121,7 @@ validate-pre-live:
 	bash -n scripts/deploy/staging_maintenance_pre_apply_capture.sh
 	bash -n scripts/deploy/staging_maintenance_controlled_apply.sh
 	python3 -m py_compile scripts/deploy/staging_maintenance_assert.py
+	python3 -m py_compile scripts/deploy/select_canonical_staging_rds.py
 
 # Early Access Phase 1 production foundation (no terraform apply)
 validate-production-foundation:
