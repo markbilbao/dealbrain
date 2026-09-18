@@ -106,6 +106,12 @@ S-1 architecture is PiqSavi → Shopify Global Catalog (no Tavily on this path).
 
 This audit performed no signup, application, email, payment, credential creation, merchant API call, Shopify live catalog call, scrape, or environment mutation. See [`../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md). Sprint 32 remains open.
 
+### 2026-09-18 Shopify Global Catalog PH coverage probe harness (does not close this sprint)
+
+A private-local Anonymous technical harness now exists so the owner can test whether Shopify Global Catalog returns genuinely useful Philippine shopping offers under documented PH localization (`ships_to.country=PH`, `context.address_country=PH`, `context.currency=PHP`, `view=offer` on search).
+
+This does **not** certify Shopify. It does **not** host a PiqSavi UCP profile. The Shopify-hosted agent-profile fixture is **TECHNICAL TEST ONLY**. Live mode may call only `https://catalog.shopify.com/api/ucp/mcp`, at most 12 `search_catalog` queries and 5 `get_product` validations, first page only, no bulk lookup, no crawl, no product index, no promoted placement. Live artifacts stay in `/tmp/piqsavi-shopify-global-ph` and must not be committed. This Cursor agent does **not** run the live catalog call. See [`../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md). Sprint 32 remains open.
+
 ### Closure blockers (current)
 
 - No merchant has a real approved product-data / API path
@@ -120,7 +126,7 @@ This audit performed no signup, application, email, payment, credential creation
 - A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
 - Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
 - Public-web discovery architecture/harness exists and is **not** a certified PH shopping-data path. No owner credentials. No live current-data response. Fixtures cannot close this sprint.
-- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. PH live coverage validation, agent profile, Sprint 31 policy rows, and remaining certification gates are still required.
+- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. PH live coverage validation, a production PiqSavi agent profile, Sprint 31 policy rows, and remaining certification gates are still required. The PH probe harness is evidence tooling only; owner live coverage remains unverified until the owner runs it.
 
 ### Production defaults
 

@@ -1,0 +1,464 @@
+"""Sprint 32 Shopify Global Catalog PH coverage probe — not certification."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import pytest
+from app.research.certification import production_research_provider_certification_catalog
+from app.research.certification_evidence import (
+    production_research_provider_certification_evidence_catalog,
+)
+from app.research.registry import production_research_provider_registry
+from app.research.routing import production_research_provider_routing_policy_catalog
+from app.research.shopify_global_catalog_ph_probe import (
+    AFFILIATE_FORBIDDEN_REQUEST_KEYS,
+    AGENT_PROFILE_NOT_PIQSAVI_IDENTITY,
+    AGENT_PROFILE_USAGE,
+    ANONYMOUS_AUTH_TIER,
+    CONTEXT_LANGUAGE,
+    DEFAULT_FIXTURE,
+    DEFAULT_OUTPUT_DIR,
+    FIRST_PAGE_LIMIT,
+    FORBIDDEN_LOOKUP_TOOL,
+    GET_PRODUCT_TOOL,
+    GLOBAL_CATALOG_ENDPOINT,
+    INFERRED_FIELD_PATHS,
+    LIVE_OUTPUT_INSIDE_REPO_MESSAGE,
+    MAX_GET_PRODUCT_VALIDATIONS,
+    MAX_SEARCH_CATALOG_QUERIES,
+    NO_USEFUL_PH_RESULT,
+    NON_PRODUCTION_FIXTURE_MARKER,
+    OFFER_VIEW,
+    PARTIAL_PH_RESULT,
+    PH_COUNTRY,
+    PHP_CURRENCY,
+    REPOSITORY_ROOT,
+    SEARCH_TOOL,
+    TECHNICAL_TEST_AGENT_PROFILE,
+    TECHNICAL_TEST_ONLY,
+    USEFUL_PH_OFFER,
+    LiveProbeOutputInsideRepositoryError,
+    ProbeContractError,
+    ProbeLimitError,
+    anonymous_http_headers,
+    assert_live_probe_output_outside_repository,
+    build_get_product_arguments,
+    build_jsonrpc_request,
+    build_search_catalog_arguments,
+    classify_query_offers,
+    fixture_transport_from_payload,
+    inferred_fields_observed,
+    live_probe_output_is_inside_repository,
+    load_ph_probe_intents,
+    load_probe_fixture,
+    minimize_offer_evidence,
+    offers_from_products,
+    resolve_live_probe_output_dir,
+    run_ph_coverage_probe,
+    select_promising_product_ids,
+    source_offer_fields_observed,
+)
+from scripts.shopify_global_catalog_ph_probe import main as probe_main
+
+ROOT = Path(__file__).resolve().parents[2]
+SPRINT32 = ROOT / "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md"
+PROBE_DOC = ROOT / "docs/roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md"
+RANKING_MODULES = (
+    "app/intelligence/dealscore/engine.py",
+    "app/intelligence/recommendation/engine.py",
+    "app/intelligence/shopping_assistant/recommendation.py",
+)
+EXPECTED_CLASSIFICATIONS = {
+    "wireless_earbuds": USEFUL_PH_OFFER,
+    "gaming_laptop": PARTIAL_PH_RESULT,
+    "mechanical_keyboard": NO_USEFUL_PH_RESULT,
+    "usb_c_charger": USEFUL_PH_OFFER,
+    "phone_case": PARTIAL_PH_RESULT,
+    "portable_power_bank": NO_USEFUL_PH_RESULT,
+    "skincare_serum": USEFUL_PH_OFFER,
+    "running_shoes": PARTIAL_PH_RESULT,
+    "backpack": USEFUL_PH_OFFER,
+    "air_fryer": NO_USEFUL_PH_RESULT,
+    "coffee_grinder": PARTIAL_PH_RESULT,
+    "home_office_chair": USEFUL_PH_OFFER,
+}
+
+
+def _fixture() -> dict:
+    payload = load_probe_fixture(DEFAULT_FIXTURE)
+    assert NON_PRODUCTION_FIXTURE_MARKER in payload["fixture_marker"]
+    return payload
+
+
+def _run_fixture_probe():
+    transport = fixture_transport_from_payload(_fixture())
+    report = run_ph_coverage_probe(transport=transport, live=False)
+    return transport, report
+
+
+def test_ph_request_shape_uses_documented_localization_and_offer_view() -> None:
+    arguments = build_search_catalog_arguments("wireless earbuds")
+    catalog = arguments["catalog"]
+    assert catalog["query"] == "wireless earbuds"
+    assert catalog["filters"]["ships_to"]["country"] == PH_COUNTRY
+    assert catalog["filters"]["available"] is True
+    assert catalog["context"]["address_country"] == PH_COUNTRY
+    assert catalog["context"]["currency"] == PHP_CURRENCY
+    assert catalog["context"]["language"] == CONTEXT_LANGUAGE
+    assert catalog["view"] == OFFER_VIEW
+    assert catalog["pagination"] == {"limit": FIRST_PAGE_LIMIT}
+    assert "cursor" not in catalog["pagination"]
+    assert arguments["meta"]["ucp-agent"]["profile"] == TECHNICAL_TEST_AGENT_PROFILE
+    for key in AFFILIATE_FORBIDDEN_REQUEST_KEYS:
+        assert key not in catalog
+    request = build_jsonrpc_request(SEARCH_TOOL, arguments, request_id=1)
+    assert request["params"]["name"] == SEARCH_TOOL
+    assert request["method"] == "tools/call"
+
+
+def test_get_product_is_single_id_with_ph_context_and_without_offer_view() -> None:
+    arguments = build_get_product_arguments("gid://shopify/p/fixture-ph-chair")
+    catalog = arguments["catalog"]
+    assert catalog["id"] == "gid://shopify/p/fixture-ph-chair"
+    assert "ids" not in catalog
+    assert catalog["filters"]["ships_to"]["country"] == PH_COUNTRY
+    assert catalog["context"]["address_country"] == PH_COUNTRY
+    assert catalog["context"]["currency"] == PHP_CURRENCY
+    assert catalog.get("view") != OFFER_VIEW
+    assert "pagination" not in catalog
+    with pytest.raises(ProbeContractError, match="exactly one product id"):
+        build_get_product_arguments("gid://a,gid://b")
+    with pytest.raises(ProbeContractError, match="lookup_catalog"):
+        build_jsonrpc_request(FORBIDDEN_LOOKUP_TOOL, arguments, request_id=2)
+
+
+def test_anonymous_mode_requires_no_credentials_and_marks_fixture_profile() -> None:
+    headers = anonymous_http_headers()
+    assert "Authorization" not in headers
+    assert AGENT_PROFILE_USAGE == TECHNICAL_TEST_ONLY
+    assert AGENT_PROFILE_NOT_PIQSAVI_IDENTITY is True
+    assert ANONYMOUS_AUTH_TIER == "Anonymous"
+    assert "valid-with-capabilities.json" in TECHNICAL_TEST_AGENT_PROFILE
+    assert "shopify.dev/ucp/agent-profiles" in TECHNICAL_TEST_AGENT_PROFILE
+    assert GLOBAL_CATALOG_ENDPOINT == "https://catalog.shopify.com/api/ucp/mcp"
+
+
+def test_query_set_is_twelve_ph_intents_without_apple_samsung_bias() -> None:
+    intents = load_ph_probe_intents()
+    assert len(intents) == MAX_SEARCH_CATALOG_QUERIES == 12
+    queries = [item.query for item in intents]
+    assert queries == [
+        "wireless earbuds",
+        "gaming laptop",
+        "mechanical keyboard",
+        "USB-C charger",
+        "phone case",
+        "portable power bank",
+        "skincare serum",
+        "running shoes",
+        "backpack",
+        "air fryer",
+        "coffee grinder",
+        "home office chair",
+    ]
+    blob = " ".join(queries).casefold()
+    assert "iphone" not in blob
+    assert "apple" not in blob
+    assert "samsung" not in blob
+    assert "galaxy" not in blob
+
+
+def test_fixture_probe_enforces_search_and_get_product_caps() -> None:
+    transport, report = _run_fixture_probe()
+    assert report.search_calls == 12
+    assert report.get_product_calls == 5
+    assert report.get_product_calls <= MAX_GET_PRODUCT_VALIDATIONS
+    assert report.lookup_catalog_calls == 0
+    assert report.pagination_followed is False
+    assert report.bulk_ids_used is False
+    tools = [name for name, _arguments in transport.calls]
+    assert tools.count(SEARCH_TOOL) == 12
+    assert tools.count(GET_PRODUCT_TOOL) == 5
+    assert FORBIDDEN_LOOKUP_TOOL not in tools
+    get_ids = [
+        arguments["catalog"]["id"]
+        for name, arguments in transport.calls
+        if name == GET_PRODUCT_TOOL
+    ]
+    assert len(get_ids) == len(set(get_ids)) == 5
+    assert "gid://shopify/p/fixture-ph-chair" in get_ids
+    assert "gid://shopify/p/7f3a2b8c1d9e" not in get_ids
+    for _name, arguments in transport.calls:
+        catalog = arguments["catalog"]
+        assert "cursor" not in (catalog.get("pagination") or {})
+        assert "ids" not in catalog
+        assert "catalog_id" not in catalog
+
+
+def test_classification_rules_and_inferred_field_distinction() -> None:
+    _transport, report = _run_fixture_probe()
+    by_id = {item.query_id: item for item in report.query_results}
+    assert {key: item.classification for key, item in by_id.items()} == EXPECTED_CLASSIFICATIONS
+    useful = by_id["wireless_earbuds"]
+    assert useful.identifiable_product is True
+    assert useful.price_present is True
+    assert useful.identifiable_seller is True
+    assert useful.destination_present is True
+    assert useful.usable_for_comparison is True
+    inferred = useful.offers[0].inferred_fields_observed
+    source = useful.offers[0].source_offer_fields_observed
+    assert "description" in inferred
+    assert "options" in inferred
+    assert "metadata.top_features" in inferred
+    assert "variants[].condition" in inferred
+    assert "product.id" in source
+    assert "variant.price" in source
+    assert "variant.seller" in source
+    assert set(inferred).isdisjoint(source)
+    assert set(inferred) <= set(INFERRED_FIELD_PATHS)
+    chair = by_id["home_office_chair"]
+    assert chair.get_product_used is True
+    assert chair.classification == USEFUL_PH_OFFER
+    placeholder = by_id["portable_power_bank"]
+    assert placeholder.classification == NO_USEFUL_PH_RESULT
+    assert placeholder.offers[0].placeholder_or_test is True
+    empty = by_id["mechanical_keyboard"]
+    assert empty.classification == NO_USEFUL_PH_RESULT
+    assert empty.product_returned is False
+
+
+def test_classify_does_not_fabricate_missing_offer_fields() -> None:
+    product = {"id": "gid://shopify/p/partial"}
+    offers = offers_from_products([product])
+    assert offers[0].price_present is False
+    assert offers[0].seller_identity is None
+    assert offers[0].currency is None
+    assert offers[0].usable_for_comparison is False
+    assert classify_query_offers(offers) == PARTIAL_PH_RESULT
+    assert classify_query_offers(()) == NO_USEFUL_PH_RESULT
+    useful = minimize_offer_evidence(
+        {
+            "id": "gid://shopify/p/ok",
+            "url": "https://fixture-ok.example.invalid/products/ok",
+        },
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 1000, "currency": "PHP"},
+            "checkout_url": "https://fixture-ok.example.invalid/cart/ok:1",
+            "availability": {"available": True, "status": "in_stock"},
+            "seller": {
+                "name": "Fixture OK",
+                "domain": "fixture-ok.example.invalid",
+                "url": "https://fixture-ok.example.invalid",
+            },
+        },
+    )
+    assert useful.usable_for_comparison is True
+    assert classify_query_offers((useful,)) == USEFUL_PH_OFFER
+
+
+def test_budget_rejects_thirteenth_search_and_sixth_get_product() -> None:
+    intents = load_ph_probe_intents() + load_ph_probe_intents()[:1]
+    transport = fixture_transport_from_payload(_fixture())
+    with pytest.raises(ProbeLimitError, match="at most 12"):
+        run_ph_coverage_probe(transport=transport, live=False, intents=intents)
+    products = {
+        f"q{index}": [{"id": f"gid://shopify/p/extra-{index}", "title": "item"}]
+        for index in range(8)
+    }
+    with pytest.raises(ProbeLimitError, match="at most 5"):
+        select_promising_product_ids(products, limit=6)
+
+
+def test_no_raw_response_persistence_by_default(tmp_path: Path) -> None:
+    exit_code = probe_main(["--fixture", str(DEFAULT_FIXTURE), "--output-dir", str(tmp_path)])
+    assert exit_code == 0
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    probe = json.loads((tmp_path / "ph_probe.json").read_text(encoding="utf-8"))
+    assert summary["raw_response_persisted"] is False
+    assert summary["production_certified"] is False
+    assert summary["closes_sprint_32"] is False
+    assert summary["credentials_required"] is False
+    assert summary["agent_profile_usage"] == TECHNICAL_TEST_ONLY
+    assert not (tmp_path / "raw").exists()
+    serialized = json.dumps(probe)
+    assert "cdn.example.invalid/earbuds.jpg" not in serialized
+    assert "Inferred marketing copy" not in serialized
+    assert "Inferred feature" not in serialized
+    assert probe["query_results"][0]["offers"][0]["product_id"] == (
+        "gid://shopify/p/fixture-ph-earbuds"
+    )
+
+
+def test_live_output_rejects_paths_inside_the_repository(monkeypatch) -> None:
+    monkeypatch.delenv("SHOPIFY_API_KEY", raising=False)
+    exit_code = probe_main(["--live", "--output-dir", str(ROOT)])
+    assert exit_code == 2
+    assert not (ROOT / "summary.json").exists()
+    nested = ROOT / "docs" / "live-shopify"
+    exit_code = probe_main(["--live", "--output-dir", str(nested)])
+    assert exit_code == 2
+    assert not nested.exists()
+
+
+def test_live_path_resolution_covers_relative_and_symlink_bypass(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.chdir(ROOT)
+    relative_inside = Path("./tmp-shopify-out")
+    assert live_probe_output_is_inside_repository(relative_inside) is True
+    with pytest.raises(LiveProbeOutputInsideRepositoryError):
+        assert_live_probe_output_outside_repository(relative_inside)
+    exit_code = probe_main(["--live", "--output-dir", str(relative_inside)])
+    assert exit_code == 2
+    assert not (ROOT / "tmp-shopify-out").exists()
+
+    link_into_repo = tmp_path / "link-into-docs"
+    link_into_repo.symlink_to(ROOT / "docs")
+    linked_live = link_into_repo / "live-shopify"
+    assert live_probe_output_is_inside_repository(linked_live) is True
+    resolved = resolve_live_probe_output_dir(linked_live)
+    assert ROOT.resolve() in resolved.parents
+    exit_code = probe_main(["--live", "--output-dir", str(linked_live)])
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not (ROOT / "docs" / "live-shopify").exists()
+    assert Path("/tmp/piqsavi-shopify-global-ph") == DEFAULT_OUTPUT_DIR
+    assert ROOT.resolve() == REPOSITORY_ROOT
+
+
+def test_live_anonymous_probe_does_not_require_credentials(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.delenv("SHOPIFY_API_KEY", raising=False)
+    monkeypatch.delenv("SHOPIFY_ACCESS_TOKEN", raising=False)
+
+    def fake_post(request, timeout):
+        del timeout
+        catalog = request["params"]["arguments"]["catalog"]
+        if "filters" in catalog:
+            assert catalog["filters"]["ships_to"]["country"] == "PH"
+        if request["params"]["name"] == SEARCH_TOOL:
+            return {
+                "result": {
+                    "structuredContent": {
+                        "products": [],
+                        "pagination": {"has_next_page": True, "cursor": "ignore-me"},
+                    }
+                }
+            }
+        return {"result": {"structuredContent": {"product": {}}}}
+
+    monkeypatch.setattr(
+        "scripts.shopify_global_catalog_ph_probe.post_anonymous_catalog",
+        fake_post,
+    )
+    outside = tmp_path / "piqsavi-shopify-global-ph"
+    exit_code = probe_main(["--live", "--output-dir", str(outside)])
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "TECHNICAL TEST ONLY" in captured.out
+    summary = json.loads((outside / "summary.json").read_text(encoding="utf-8"))
+    assert summary["credentials_required"] is False
+    assert summary["auth_tier"] == "Anonymous"
+    assert summary["search_calls"] == 12
+    assert summary["get_product_calls"] == 0
+    assert summary["pagination_followed"] is False
+    assert summary["raw_response_persisted"] is False
+    assert not (outside / "raw").exists()
+    assert "SHOPIFY_API_KEY" not in captured.out
+    headers = anonymous_http_headers()
+    assert "Authorization" not in headers
+
+
+def test_persist_raw_cannot_bypass_outside_repo_rule() -> None:
+    nested = ROOT / "artifacts" / "shopify"
+    exit_code = probe_main(["--live", "--persist-raw", "--output-dir", str(nested)])
+    assert exit_code == 2
+    assert not nested.exists()
+
+
+def test_module_has_no_live_http_and_script_is_catalog_only() -> None:
+    module = (ROOT / "app/research/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    assert "httpx" not in module
+    assert GLOBAL_CATALOG_ENDPOINT in module
+    assert "httpx.post(" in script
+    assert "Authorization" in script
+    assert FORBIDDEN_LOOKUP_TOOL in script
+    for host in ("shopee.", "lazada.", "powermaccenter.com", "abenson.com", "tiktok.com"):
+        assert host not in script
+    assert "catalog.shopify.com" in script
+
+
+def test_production_catalogs_stay_empty_and_sprint32_stays_open() -> None:
+    _transport, report = _run_fixture_probe()
+    assert report.production_certified is False
+    assert report.closes_sprint_32 is False
+    assert report.starts_sprint_38 is False
+    assert report.certifies_shopify is False
+    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_registry().list_providers() == ()
+    assert production_research_provider_routing_policy_catalog().list_records() == ()
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    assert "Sprint 32 is **not complete**" in sprint32
+    assert "In progress" in sprint32
+    assert PROBE_DOC.exists()
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    assert "SPRINT 32 REMAINS OPEN" in probe_doc
+    assert "no production certification" in probe_doc.lower()
+
+
+def test_affiliate_neutrality_remains_intact() -> None:
+    module = (ROOT / "app/research/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    assert "catalog_id" in module
+    assert "forbids catalog field" in module
+    assert "promoted" in module.casefold()
+    assert "affiliate" in script.casefold() or "promoted" in script.casefold()
+    _transport, report = _run_fixture_probe()
+    assert report.affiliate_or_promoted_placement is False
+    for relative in RANKING_MODULES:
+        text = (ROOT / relative).read_text(encoding="utf-8").casefold()
+        assert "commission" not in text
+        assert "affiliate" not in text
+
+
+def test_inferred_observation_helpers_do_not_treat_inferred_as_source() -> None:
+    product = {
+        "id": "gid://shopify/p/x",
+        "description": {"html": "n"},
+        "options": [{"name": "Size"}],
+        "metadata": {"attributes": {"Color": "Black"}, "tech_specs": ["spec"]},
+        "url": "https://fixture.example.invalid/p",
+        "variants": [
+            {
+                "id": "gid://shopify/ProductVariant/x",
+                "condition": ["new"],
+                "price": {"amount": 1, "currency": "PHP"},
+                "seller": {"name": "N"},
+            }
+        ],
+    }
+    variant = product["variants"][0]
+    inferred = inferred_fields_observed(product, variant)
+    source = source_offer_fields_observed(product, variant)
+    assert "description" in inferred
+    assert "metadata.attributes" in inferred
+    assert "variants[].condition" in inferred
+    assert "variant.price" in source
+    assert "description" not in source
+
+
+def test_fixture_cli_does_not_call_shopify(monkeypatch, tmp_path: Path) -> None:
+    def fail_post(*_args, **_kwargs):
+        raise AssertionError("fixture mode must not call Shopify")
+
+    monkeypatch.setattr("scripts.shopify_global_catalog_ph_probe.post_anonymous_catalog", fail_post)
+    exit_code = probe_main(["--fixture", str(DEFAULT_FIXTURE), "--output-dir", str(tmp_path)])
+    assert exit_code == 0
+    assert (tmp_path / "summary.json").exists()

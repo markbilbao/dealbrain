@@ -402,6 +402,12 @@ Reassessment outcome: **A** — Shopify Global Catalog UCP is a **rights survivo
 
 Evidence: [`SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md).
 
+### 2026-09-18 Shopify Global Catalog PH coverage probe harness (does not close this sprint)
+
+A private-local Anonymous PH coverage harness now exists (`scripts/shopify_global_catalog_ph_probe.py`). It is **not** a production connector. It does **not** populate production catalogs. The Shopify-hosted UCP fixture profile is **TECHNICAL TEST ONLY**. Owner live coverage remains **unverified** until the owner runs the live probe locally. This workspace did not call `catalog.shopify.com`. Sprint 32 is **not complete**.
+
+Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -412,4 +418,5 @@ Evidence: [`SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](SPRINT_32_PH_SOURCE
 - TikTok Shop remains uncertified and is not September-launch-critical.
 - Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
 - A Tavily Extract technical harness may later produce technical Level-B candidates. That is not offer evidence and does not convert source-site rights from unknown to allowed.
+- The Shopify Global Catalog PH probe harness is technical coverage tooling only. It does not certify Shopify or close Sprint 32.
 - Sprint 32 is **not complete**.

@@ -339,6 +339,12 @@ This audit does **not** mean:
 
 ---
 
+## 14. PH coverage harness follow-up (does not close this sprint)
+
+A later same-day slice prepared the private-local Anonymous PH coverage harness described in [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md). That harness is evidence tooling only. This audit still performed no Shopify live catalog call. **PH LIVE COVERAGE VALIDATION STILL REQUIRED.**
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE COVERAGE VALIDATION STILL REQUIRED —
