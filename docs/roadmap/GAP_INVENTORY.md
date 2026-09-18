@@ -806,3 +806,17 @@ This addendum does **not** rewrite earlier snapshots. It records a same-day reas
 | Production providers / certifications | Still **zero** |
 | External action from this reassessment | None. Live PH probe is a later owner-authorized step. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md) |
+
+## 2026-09-18 Shopify Global Catalog PH coverage probe harness addendum
+
+This addendum does **not** rewrite earlier snapshots. It records a private-local Anonymous technical harness for owner PH coverage testing. It does **not** certify Shopify, does **not** scrape merchants, does **not** run a live catalog probe from this agent, does **not** mutate production/staging/AWS, and does **not** close Sprint 32.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `af03dac771f48379e44c64a42bff9a846d4c07e7` (PR #147) |
+| Harness | `scripts/shopify_global_catalog_ph_probe.py` plus `app/research/shopify_global_catalog_ph_probe.py` |
+| Auth | Documented Anonymous catalog tools; Shopify-hosted UCP fixture profile; **TECHNICAL TEST ONLY**; no API key |
+| PH coverage | Request localization documented; actual live PH inventory **unverified until owner runs `--live`** |
+| Production providers / certifications | Still **zero** |
+| External action from this harness slice | Owner live probe after review/merge. No live `catalog.shopify.com` call from this agent. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |

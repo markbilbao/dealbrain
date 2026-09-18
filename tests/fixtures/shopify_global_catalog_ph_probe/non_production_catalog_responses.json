@@ -1,0 +1,251 @@
+{
+  "fixture_marker": "NON_PRODUCTION_FIXTURE",
+  "test_fixture": true,
+  "technical_test_only": true,
+  "production_certified": false,
+  "closes_sprint_32": false,
+  "certifies_shopify": false,
+  "notes": "Synthetic Shopify Global Catalog shapes for Sprint 32 PH coverage tests. Not a live catalog response. Not production evidence. Not a product index.",
+  "responses_by_query_id": {
+    "wireless_earbuds": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-earbuds",
+          "title": "Wireless Earbuds",
+          "description": {"html": "Inferred marketing copy must not be treated as a merchant fact."},
+          "url": "https://fixture-audio.example.invalid/products/wireless-earbuds",
+          "options": [{"name": "Color", "values": [{"label": "Black"}]}],
+          "metadata": {
+            "top_features": ["Inferred feature"],
+            "unique_selling_points": ["Inferred USP"]
+          },
+          "price_range": {
+            "min": {"amount": 249900, "currency": "PHP"},
+            "max": {"amount": 249900, "currency": "PHP"}
+          },
+          "media": [{"type": "image", "url": "https://cdn.example.invalid/earbuds.jpg"}],
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/fixture-earbuds-1",
+              "title": "Black",
+              "price": {"amount": 249900, "currency": "PHP"},
+              "checkout_url": "https://fixture-audio.example.invalid/cart/fixture-earbuds-1:1",
+              "condition": ["new"],
+              "availability": {"available": true, "status": "in_stock"},
+              "seller": {
+                "name": "Fixture Audio PH",
+                "id": "gid://shopify/Shop/fixture-audio",
+                "domain": "fixture-audio.example.invalid",
+                "url": "https://fixture-audio.example.invalid"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "gaming_laptop": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-laptop",
+          "title": "Gaming laptop",
+          "description": {"html": "Inferred laptop copy."}
+        }
+      ]
+    },
+    "mechanical_keyboard": {
+      "products": []
+    },
+    "usb_c_charger": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-usbc",
+          "url": "https://fixture-power.example.invalid/products/usb-c-charger",
+          "price_range": {
+            "min": {"amount": 89000, "currency": "PHP"}
+          },
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/fixture-usbc-1",
+              "price": {"amount": 89000, "currency": "PHP"},
+              "checkout_url": "https://fixture-power.example.invalid/cart/fixture-usbc-1:1",
+              "availability": {"available": true, "status": "in_stock"},
+              "seller": {
+                "name": "Fixture Power PH",
+                "domain": "fixture-power.example.invalid",
+                "url": "https://fixture-power.example.invalid"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "phone_case": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-case",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/fixture-case-1",
+              "price": {"amount": 59000, "currency": "PHP"}
+            }
+          ]
+        }
+      ]
+    },
+    "portable_power_bank": {
+      "products": [
+        {
+          "id": "gid://shopify/p/7f3a2b8c1d9e",
+          "title": "Trail Runner Pro",
+          "url": "https://example-running.myshopify.com/products/trail-runner-pro",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/12345678",
+              "price": {"amount": 8999, "currency": "USD"},
+              "checkout_url": "https://example-running.myshopify.com/cart/12345678:1",
+              "availability": {"available": true, "status": "in_stock"},
+              "seller": {
+                "name": "Example Running",
+                "id": "gid://shopify/Shop/987654321",
+                "domain": "example-running.myshopify.com",
+                "url": "https://example-running.myshopify.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "skincare_serum": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-serum",
+          "url": "https://fixture-skin.example.invalid/products/serum",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/fixture-serum-1",
+              "price": {"amount": 129000, "currency": "PHP"},
+              "checkout_url": "https://fixture-skin.example.invalid/cart/fixture-serum-1:1",
+              "availability": {"available": true, "status": "in_stock"},
+              "seller": {
+                "name": "Fixture Skin PH",
+                "domain": "fixture-skin.example.invalid",
+                "url": "https://fixture-skin.example.invalid"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "running_shoes": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-shoes",
+          "title": "Running shoes",
+          "description": {"html": "Inferred running-shoe copy."},
+          "metadata": {"tech_specs": ["Inferred spec"]}
+        }
+      ]
+    },
+    "backpack": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-backpack",
+          "url": "https://fixture-bags.example.invalid/products/backpack",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/fixture-backpack-1",
+              "price": {"amount": 199000, "currency": "PHP"},
+              "checkout_url": "https://fixture-bags.example.invalid/cart/fixture-backpack-1:1",
+              "availability": {"available": true, "status": "in_stock"},
+              "seller": {
+                "name": "Fixture Bags PH",
+                "domain": "fixture-bags.example.invalid",
+                "url": "https://fixture-bags.example.invalid"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "air_fryer": {
+      "products": []
+    },
+    "coffee_grinder": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-grinder",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/fixture-grinder-1",
+              "seller": {"name": "Fixture Kitchen PH"}
+            }
+          ]
+        }
+      ]
+    },
+    "home_office_chair": {
+      "products": [
+        {
+          "id": "gid://shopify/p/fixture-ph-chair",
+          "title": "Home office chair"
+        }
+      ]
+    }
+  },
+  "get_product_by_id": {
+    "gid://shopify/p/fixture-ph-laptop": {
+      "product": {
+        "id": "gid://shopify/p/fixture-ph-laptop",
+        "title": "Gaming laptop"
+      }
+    },
+    "gid://shopify/p/fixture-ph-case": {
+      "product": {
+        "id": "gid://shopify/p/fixture-ph-case",
+        "variants": [
+          {
+            "id": "gid://shopify/ProductVariant/fixture-case-1",
+            "price": {"amount": 59000, "currency": "PHP"}
+          }
+        ]
+      }
+    },
+    "gid://shopify/p/fixture-ph-shoes": {
+      "product": {
+        "id": "gid://shopify/p/fixture-ph-shoes",
+        "title": "Running shoes",
+        "description": {"html": "Still inferred."}
+      }
+    },
+    "gid://shopify/p/fixture-ph-grinder": {
+      "product": {
+        "id": "gid://shopify/p/fixture-ph-grinder",
+        "variants": [
+          {
+            "id": "gid://shopify/ProductVariant/fixture-grinder-1",
+            "seller": {"name": "Fixture Kitchen PH"}
+          }
+        ]
+      }
+    },
+    "gid://shopify/p/fixture-ph-chair": {
+      "product": {
+        "id": "gid://shopify/p/fixture-ph-chair",
+        "url": "https://fixture-home.example.invalid/products/chair",
+        "variants": [
+          {
+            "id": "gid://shopify/ProductVariant/fixture-chair-1",
+            "price": {"amount": 799000, "currency": "PHP"},
+            "checkout_url": "https://fixture-home.example.invalid/cart/fixture-chair-1:1",
+            "availability": {"available": true, "status": "in_stock"},
+            "seller": {
+              "name": "Fixture Home PH",
+              "domain": "fixture-home.example.invalid",
+              "url": "https://fixture-home.example.invalid"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
