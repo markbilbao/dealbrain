@@ -91,6 +91,19 @@ def test_inventory_and_gap_record_outcome_a_without_closing_sprint() -> None:
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in inventory
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in gap
     assert "actual PH inventory **unverified**" in gap
+    assert "PASSED TECHNICAL COVERAGE TEST" in inventory
+    assert "PASSED TECHNICAL COVERAGE TEST" in gap
+    assert "actual live PH inventory **unverified until owner runs `--live`**" in gap
+
+
+def test_owner_live_coverage_addendum_keeps_historical_unverified_strings() -> None:
+    text = _read(AUDIT)
+    assert "Actual PH merchant coverage is **unverified**" in text
+    assert "PH LIVE COVERAGE VALIDATION STILL REQUIRED" in text
+    assert "PASSED TECHNICAL COVERAGE TEST" in text
+    assert "## 15. Owner live 12-query PH coverage probe addendum" in text
+    assert "does **not** close Sprint 32" in text
+    assert "Sprint 38 remains unstarted" in text
 
 
 def test_audit_relative_links_resolve() -> None:

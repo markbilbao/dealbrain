@@ -5,9 +5,9 @@
 **Starting `origin/main`:** `af03dac771f48379e44c64a42bff9a846d4c07e7` (merge of PR #147)
 **Market:** PH
 **Trusted production certification records:** **zero**
-**Status:** Harness ready. **Owner live PH coverage test required.** This is **not** production-certified. Sprint 32 remains **OPEN**.
+**Status:** Owner live 12-query PH search coverage probe: **PASSED TECHNICAL COVERAGE TEST**. This is **not** production-certified. Deeper `get_product` cross-category validation must be rerun by the owner after the selector diversification fix. Sprint 32 remains **OPEN**. Sprint 38 remains unstarted.
 
-This document does **not** certify Shopify Global Catalog, any merchant, Shopee, Lazada, Tavily, or PiqSavi shopping beta. A successful later live probe would mean only that Global Catalog returned technically useful PH offers for the tested queries.
+This document does **not** certify Shopify Global Catalog, any merchant, Shopee, Lazada, Tavily, or PiqSavi shopping beta. The owner live 12-query result means only that Global Catalog returned technically useful PH offers for the tested queries. It is not production certification.
 
 Related:
 
@@ -75,6 +75,8 @@ Every `get_product` call sends one `catalog.id` plus the same PH `filters` / `co
 
 Maximum: **12** `search_catalog` queries and **5** `get_product` validations.
 
+`select_promising_product_ids()` diversifies those five `get_product` validations. When candidates exist across multiple query IDs, the first pass selects at most one candidate per query: incomplete evidence is preferred within a query, then incomplete-query representatives are taken in deterministic query order before complete-query representatives. Remaining eligible candidates fill leftover slots only after that distinct-query pass. Selection is not randomized and does not increase the network budget.
+
 ---
 
 ## Query set
@@ -131,6 +133,67 @@ Owner live diagnostic from the same Cursor environment, after PR #148 merged. Th
 
 ---
 
+## Owner live 12-query PH coverage probe (2026-09-18; technical coverage only)
+
+SHOPIFY GLOBAL CATALOG PH LIVE COVERAGE PROBE: **PASSED TECHNICAL COVERAGE TEST**
+
+Owner-supplied live evidence after PR #149. This agent did **not** call Shopify. This is **not** production certification. This does **not** close Sprint 32. Shopify remains a restricted query-time rights survivor / technical candidate. Sprint 38 remains unstarted. Production provider and certification registries remain empty.
+
+Observed probe facts:
+
+| Fact | Value |
+|------|-------|
+| `live` | `true` |
+| `auth_tier` | Anonymous |
+| `credentials_required` | `false` |
+| `search_calls` | 12 |
+| `get_product_calls` | 5 |
+| `lookup_catalog_calls` | 0 |
+| `pagination_followed` | `false` |
+| `bulk_ids_used` | `false` |
+| `raw_response_persisted` | `false` |
+| `production_certified` | `false` |
+| `certifies_shopify` | `false` |
+| `closes_sprint_32` | `false` |
+| `starts_sprint_38` | `false` |
+| `affiliate_or_promoted_placement` | `false` |
+| `scraping` | `false` |
+| `environment_mutation` | `false` |
+
+All 12 queries classified `USEFUL_PH_OFFER`:
+
+1. wireless earbuds
+2. gaming laptop
+3. mechanical keyboard
+4. USB-C charger
+5. phone case
+6. portable power bank
+7. skincare serum
+8. running shoes
+9. backpack
+10. air fryer
+11. coffee grinder
+12. home office chair
+
+First-page totals from owner output:
+
+- 120 products total
+- 122 offer records
+- every query had `usable_for_comparison`, `price_present`, `currency_present`, `identifiable_seller`, `destination_present`, and `availability_present` = `true`
+
+Returned currencies were mixed despite `context.currency=PHP`. Observed currencies across categories included PHP, USD, INR, GBP, SGD, AUD, EUR, and ZAR.
+
+Therefore:
+
+- `context.currency=PHP` MUST NOT be interpreted as guaranteed PHP output
+- preserve the returned offer currency; never fabricate PHP conversion
+- `ships_to.country=PH` MUST NOT be interpreted as seller location in the Philippines
+- a successful search result MUST NOT be interpreted as guaranteed checkout success
+- 12 tested intents do NOT equal complete PH retail coverage
+- this does NOT mean every Shopify merchant ships successfully to PH at checkout
+
+Harness issue observed in that live run: report showed `wireless earbuds` → `GET_PRODUCT True` and the remaining 11 queries → `GET_PRODUCT False`, yet `get_product_calls == 5`. The previous selector built global incomplete/complete lists in query order and sliced `(incomplete + complete)[:5]`. When first-query results are complete, all five `get_product` validations can come from the first query. That does **not** invalidate the 12-query search coverage evidence. It does mean those five deeper `get_product` validations are not diversified enough to use as representative cross-category evidence. The owner must rerun deeper `get_product` cross-category validation after this selector fix.
+
 ## Owner live command
 
 Credentials: **none**. Do not create a Partner account, Dev Dashboard token, or PiqSavi profile for this Anonymous probe.
@@ -166,7 +229,9 @@ This harness does **not** mean:
 
 ---
 
-SHOPIFY GLOBAL CATALOG PH PROBE HARNESS READY —
-OWNER LIVE PH COVERAGE TEST REQUIRED —
-NO PRODUCTION CERTIFICATION YET —
-SPRINT 32 REMAINS OPEN
+SHOPIFY GLOBAL CATALOG PH LIVE COVERAGE PROBE:
+PASSED TECHNICAL COVERAGE TEST —
+NOT PRODUCTION CERTIFICATION —
+DEEPER GET_PRODUCT CROSS-CATEGORY VALIDATION MUST BE RERUN BY OWNER —
+SPRINT 32 REMAINS OPEN —
+SPRINT 38 UNSTARTED

@@ -781,16 +781,24 @@ def select_promising_product_ids(
     *,
     limit: int = MAX_GET_PRODUCT_VALIDATIONS,
 ) -> tuple[tuple[str, str], ...]:
-    """Choose up to five non-placeholder products, preferring incomplete offers."""
+    """Choose up to five non-placeholder products across distinct queries.
+
+    First pass selects at most one candidate per query ID: incomplete evidence
+    is preferred within a query, then incomplete-query representatives are
+    taken in deterministic query order before complete-query representatives.
+    Remaining eligible candidates fill leftover slots only after that
+    distinct-query pass. Maximum remains five. Selection is not randomized.
+    """
 
     if limit > MAX_GET_PRODUCT_VALIDATIONS:
         raise ProbeLimitError(
             f"PH probe allows at most {MAX_GET_PRODUCT_VALIDATIONS} get_product validations"
         )
-    incomplete: list[tuple[str, str]] = []
-    complete: list[tuple[str, str]] = []
+    ranked_by_query: list[list[tuple[str, str, bool]]] = []
     seen: set[str] = set()
     for query_id, products in products_by_query.items():
+        incomplete: list[tuple[str, str, bool]] = []
+        complete: list[tuple[str, str, bool]] = []
         for product in products:
             product_id = _text(product.get("id"))
             if not product_id or product_id in seen:
@@ -800,12 +808,52 @@ def select_promising_product_ids(
                 continue
             evidence = minimize_offer_evidence(product, variant)
             seen.add(product_id)
-            pair = (query_id, product_id)
+            pair = (query_id, product_id, not evidence.usable_for_comparison)
             if evidence.usable_for_comparison:
                 complete.append(pair)
             else:
                 incomplete.append(pair)
-    selected = (incomplete + complete)[:limit]
+        ranked = incomplete + complete
+        if ranked:
+            ranked_by_query.append(ranked)
+
+    selected: list[tuple[str, str]] = []
+    selected_ids: set[str] = set()
+
+    def _take(candidate: tuple[str, str, bool]) -> None:
+        query_id, product_id, _incomplete = candidate
+        if product_id in selected_ids or len(selected) >= limit:
+            return
+        selected.append((query_id, product_id))
+        selected_ids.add(product_id)
+
+    for ranked in ranked_by_query:
+        if len(selected) >= limit:
+            break
+        representative = next((item for item in ranked if item[2]), None)
+        if representative is not None:
+            _take(representative)
+    for ranked in ranked_by_query:
+        if len(selected) >= limit:
+            break
+        if any(item[2] for item in ranked):
+            continue
+        _take(ranked[0])
+
+    leftover_incomplete: list[tuple[str, str, bool]] = []
+    leftover_complete: list[tuple[str, str, bool]] = []
+    for ranked in ranked_by_query:
+        for item in ranked:
+            if item[1] in selected_ids:
+                continue
+            if item[2]:
+                leftover_incomplete.append(item)
+            else:
+                leftover_complete.append(item)
+    for item in leftover_incomplete + leftover_complete:
+        if len(selected) >= limit:
+            break
+        _take(item)
     return tuple(selected)
 
 

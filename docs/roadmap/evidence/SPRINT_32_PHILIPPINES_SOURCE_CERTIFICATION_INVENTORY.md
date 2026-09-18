@@ -408,6 +408,12 @@ A private-local Anonymous PH coverage harness now exists (`scripts/shopify_globa
 
 Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 
+### 2026-09-18 owner live Shopify Global Catalog PH coverage probe (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. Owner-supplied live evidence after PR #149 recorded **PASSED TECHNICAL COVERAGE TEST** for the controlled 12-query first-page PH search probe: 12/12 `USEFUL_PH_OFFER`, 120 products / 122 offers, Anonymous, no credentials, no scraping, no pagination, no bulk lookup, no raw persistence. Mixed returned currencies despite PHP context. The five `get_product` validations in that run were concentrated in one query and are not representative cross-category evidence; the owner must rerun deeper `get_product` validation after the selector diversification fix. This is **not** production certification. Shopify remains a restricted query-time rights survivor / technical candidate. Production provider/certification catalogs remain empty. Sprint 38 remains unstarted. Sprint 32 is **not complete**.
+
+Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -418,5 +424,5 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 - TikTok Shop remains uncertified and is not September-launch-critical.
 - Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
 - A Tavily Extract technical harness may later produce technical Level-B candidates. That is not offer evidence and does not convert source-site rights from unknown to allowed.
-- The Shopify Global Catalog PH probe harness is technical coverage tooling only. It does not certify Shopify or close Sprint 32.
+- The Shopify Global Catalog PH probe harness is technical coverage tooling only. Owner live 12-query PH search coverage **PASSED TECHNICAL COVERAGE TEST**. That does not certify Shopify or close Sprint 32.
 - Sprint 32 is **not complete**.
