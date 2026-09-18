@@ -40,6 +40,16 @@ LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE = (
     "PiqSavi UCP profile is not yet deployed/publicly validated. "
     "Deploy and owner-validate the HTTPS profile before live Shopify negotiation."
 )
+PIQSAVI_PROFILE_LIFECYCLE_NOTE = (
+    "PiqSavi profile is implemented locally. "
+    "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. "
+    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
+)
+PIQSAVI_PROFILE_SELECTED_NOTE = (
+    "PiqSavi production-intended profile selected. "
+    "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. "
+    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
+)
 if PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL == TECHNICAL_TEST_AGENT_PROFILE:
     raise RuntimeError("PiqSavi production profile URL must not be Shopify's test fixture")
 ANONYMOUS_AUTH_TIER = "Anonymous"
@@ -301,7 +311,7 @@ class PhProbeReport:
     notes: tuple[str, ...] = (
         "Technical PH coverage probe only. Useful PH offers do not certify production.",
         "Anonymous Shopify-hosted fixture profile is TECHNICAL TEST ONLY.",
-        "PiqSavi profile is implemented locally. PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false.",
+        PIQSAVI_PROFILE_LIFECYCLE_NOTE,
         "Sprint 32 remains open.",
     )
 
@@ -1128,12 +1138,12 @@ def _probe_report_notes(profile: AgentProfileSelection) -> tuple[str, ...]:
     if profile.source == AGENT_PROFILE_SOURCE_PIQSAVI:
         return (
             "Technical PH coverage probe only. Useful PH offers do not certify production.",
-            "PiqSavi production-intended profile selected. PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false.",
+            PIQSAVI_PROFILE_SELECTED_NOTE,
             "Sprint 32 remains open.",
         )
     return (
         "Technical PH coverage probe only. Useful PH offers do not certify production.",
         "Anonymous Shopify-hosted fixture profile is TECHNICAL TEST ONLY.",
-        "PiqSavi profile is implemented locally. PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false.",
+        PIQSAVI_PROFILE_LIFECYCLE_NOTE,
         "Sprint 32 remains open.",
     )
