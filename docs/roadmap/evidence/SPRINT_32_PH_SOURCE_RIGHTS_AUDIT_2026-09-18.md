@@ -365,9 +365,32 @@ This is **not** production certification. This does **not** close Sprint 32. Sho
 
 ---
 
+## 17. PiqSavi UCP agent-profile foundation addendum (2026-09-18; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. PiqSavi now hosts its own least-privilege UCP agent-profile JSON in the existing FastAPI application. Status: **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED**. Proposed canonical URL: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. Route: `GET /ucp/agent-profiles/2026-08-25/piqsavi.json`. UCP version `2026-08-25`. Declared capabilities: catalog.search, catalog.lookup, and `dev.shopify.catalog.global`. The Shopify-hosted fixture remains **TECHNICAL TEST ONLY** and remains the PH probe default.
+
+This agent did **not** deploy. This agent did **not** call Shopify. Shopify has **not** fetched the PiqSavi profile. Production catalogs remain empty. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+---
+
+## 18. Live PiqSavi-profile fail-closed lifecycle addendum (2026-09-18; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots, including the owner live PH coverage evidence or section 17. It records a local fail-closed correction only.
+
+`PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED = False`. That means the public HTTPS profile is not deployed and has not been owner-validated. It does **not** mean Shopify validation.
+
+`SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. That is a later independent milestone. Deployment alone is not Shopify fetch/negotiation.
+
+Live `--agent-profile-source piqsavi` is **FAIL CLOSED** while undeployed: zero Shopify/network calls, non-zero exit. Offline fixture mode may still select `piqsavi`. Default live mode remains the Shopify technical fixture. No user/request/browser/env input can change either lifecycle constant. There is no `--agent-profile-url`.
+
+This agent did **not** deploy. This agent did **not** call Shopify live. Both states remain false. Production catalogs remain empty. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —
 5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
+PIQSAVI UCP AGENT PROFILE IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED —
 PRODUCTION CERTIFICATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN

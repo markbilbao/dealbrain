@@ -88,6 +88,16 @@ class Settings(BaseSettings):
         alias="TRANSACTIONAL_EMAIL_FROM_NAME",
     )
     public_app_base_url: str = Field(default="", alias="PUBLIC_APP_BASE_URL")
+    # Public, non-secret UCP agent-profile URL. Server-owned only. Not a secret.
+    # Production-intended default is the PiqSavi HTTPS document. Staging may
+    # override to the staging origin. Live --agent-profile-source=piqsavi is
+    # fail-closed until PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is true. That
+    # constant is independent of this URL and of SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE.
+    # Request/browser input cannot flip either lifecycle state.
+    piqsavi_ucp_agent_profile_url: str = Field(
+        default="https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json",
+        alias="PIQSAVI_UCP_AGENT_PROFILE_URL",
+    )
     # Seed demo users/merchants/affiliates when constructing stores.
     # Opt-in: development sets SEED_DEMO_DATA=true explicitly in .env.example.
     # Production validation rejects true.

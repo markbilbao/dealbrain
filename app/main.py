@@ -16,6 +16,7 @@ from app.api.early_access_page import mount_early_access_static
 from app.api.early_access_page import router as early_access_page_router
 from app.api.probes import router as probes_router
 from app.api.router import api_router
+from app.api.ucp import router as ucp_router
 from app.core.config import settings
 from app.core.errors import ErrorBody, register_exception_handlers
 from app.core.logging import get_logger, setup_logging
@@ -331,6 +332,7 @@ def create_app() -> FastAPI:
     app.include_router(legal_page_router)
     app.include_router(account_router)
     app.include_router(consumer_router)
+    app.include_router(ucp_router)
     app.include_router(probes_router)
     app.include_router(api_router)
     app.include_router(demo_router)

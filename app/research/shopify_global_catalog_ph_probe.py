@@ -15,16 +15,43 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
+
+from app.ucp.agent_profile import (
+    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+    PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
+    SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
+    SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL,
+    trusted_piqsavi_ucp_agent_profile_url,
+)
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 GLOBAL_CATALOG_ENDPOINT = "https://catalog.shopify.com/api/ucp/mcp"
 # Official Shopify-hosted UCP fixture. TECHNICAL TEST ONLY. Not a PiqSavi identity.
-TECHNICAL_TEST_AGENT_PROFILE = (
-    "https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"
-)
+TECHNICAL_TEST_AGENT_PROFILE = SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL
+AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE = "technical_test_fixture"
+AGENT_PROFILE_SOURCE_PIQSAVI = "piqsavi_production_intended"
+AgentProfileSource = Literal["technical_test_fixture", "piqsavi_production_intended"]
 AGENT_PROFILE_USAGE = "TECHNICAL_TEST_ONLY"
+AGENT_PROFILE_USAGE_PIQSAVI = "PIQSAVI_PRODUCTION_INTENDED_NOT_YET_DEPLOYED"
 AGENT_PROFILE_NOT_PIQSAVI_IDENTITY = True
+DEFAULT_AGENT_PROFILE_SOURCE: AgentProfileSource = AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE
+LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE = (
+    "PiqSavi UCP profile is not yet deployed/publicly validated. "
+    "Deploy and owner-validate the HTTPS profile before live Shopify negotiation."
+)
+PIQSAVI_PROFILE_LIFECYCLE_NOTE = (
+    "PiqSavi profile is implemented locally. "
+    "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. "
+    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
+)
+PIQSAVI_PROFILE_SELECTED_NOTE = (
+    "PiqSavi production-intended profile selected. "
+    "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. "
+    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
+)
+if PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL == TECHNICAL_TEST_AGENT_PROFILE:
+    raise RuntimeError("PiqSavi production profile URL must not be Shopify's test fixture")
 ANONYMOUS_AUTH_TIER = "Anonymous"
 ANONYMOUS_USER_AGENT = "PiqSavi-Sprint32-PH-Coverage-Probe/1.0"
 PH_COUNTRY = "PH"
@@ -100,6 +127,10 @@ class ProbeLimitError(ValueError):
 
 class ProbeContractError(ValueError):
     """The PH probe refused pagination, bulk lookup, or monetized catalog options."""
+
+
+class LivePiqsaviProfileNotDeployedError(ProbeContractError):
+    """Live Shopify calls cannot use the undeployed PiqSavi agent profile."""
 
 
 class ProbeResponseError(RuntimeError):
@@ -229,14 +260,37 @@ class QueryCoverageResult:
 
 
 @dataclass(frozen=True, slots=True)
+class AgentProfileSelection:
+    source: str
+    url: str
+    usage: str
+    not_piqsavi_identity: bool
+    piqsavi_profile_deployed: bool
+    shopify_has_fetched_profile: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "agent_profile_source": self.source,
+            "agent_profile": self.url,
+            "agent_profile_usage": self.usage,
+            "agent_profile_not_piqsavi_identity": self.not_piqsavi_identity,
+            "piqsavi_profile_deployed": self.piqsavi_profile_deployed,
+            "shopify_has_fetched_piqsavi_profile": self.shopify_has_fetched_profile,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class PhProbeReport:
     generated_at: str
     live: bool
     fixture: bool
     artifact_kind: str
     agent_profile: str
+    agent_profile_source: str
     agent_profile_usage: str
     agent_profile_not_piqsavi_identity: bool
+    piqsavi_profile_deployed: bool
+    shopify_has_fetched_piqsavi_profile: bool
     auth_tier: str
     credentials_required: bool
     endpoint: str
@@ -257,6 +311,7 @@ class PhProbeReport:
     notes: tuple[str, ...] = (
         "Technical PH coverage probe only. Useful PH offers do not certify production.",
         "Anonymous Shopify-hosted fixture profile is TECHNICAL TEST ONLY.",
+        PIQSAVI_PROFILE_LIFECYCLE_NOTE,
         "Sprint 32 remains open.",
     )
 
@@ -267,8 +322,11 @@ class PhProbeReport:
             "fixture": self.fixture,
             "artifact_kind": self.artifact_kind,
             "agent_profile": self.agent_profile,
+            "agent_profile_source": self.agent_profile_source,
             "agent_profile_usage": self.agent_profile_usage,
             "agent_profile_not_piqsavi_identity": self.agent_profile_not_piqsavi_identity,
+            "piqsavi_profile_deployed": self.piqsavi_profile_deployed,
+            "shopify_has_fetched_piqsavi_profile": self.shopify_has_fetched_piqsavi_profile,
             "auth_tier": self.auth_tier,
             "credentials_required": self.credentials_required,
             "endpoint": self.endpoint,
@@ -385,8 +443,59 @@ def assert_live_probe_output_outside_repository(
     return resolved
 
 
-def agent_profile_meta() -> dict[str, Any]:
-    return {"ucp-agent": {"profile": TECHNICAL_TEST_AGENT_PROFILE}}
+def select_agent_profile(source: str | None = None) -> AgentProfileSelection:
+    """Resolve the probe profile from an explicit source name only.
+
+    Request bodies, query strings, cookies, and shopper input cannot select
+    this URL. PiqSavi mode reads the server-owned settings constant.
+    """
+
+    selected = source or DEFAULT_AGENT_PROFILE_SOURCE
+    if selected == AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE:
+        return AgentProfileSelection(
+            source=AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE,
+            url=TECHNICAL_TEST_AGENT_PROFILE,
+            usage=AGENT_PROFILE_USAGE,
+            not_piqsavi_identity=True,
+            piqsavi_profile_deployed=PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+            shopify_has_fetched_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
+        )
+    if selected == AGENT_PROFILE_SOURCE_PIQSAVI:
+        url = trusted_piqsavi_ucp_agent_profile_url()
+        if url == TECHNICAL_TEST_AGENT_PROFILE:
+            raise ProbeContractError(
+                "PiqSavi profile source must not resolve to Shopify's test fixture"
+            )
+        return AgentProfileSelection(
+            source=AGENT_PROFILE_SOURCE_PIQSAVI,
+            url=url,
+            usage=AGENT_PROFILE_USAGE_PIQSAVI,
+            not_piqsavi_identity=False,
+            piqsavi_profile_deployed=PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+            shopify_has_fetched_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
+        )
+    raise ProbeContractError(f"unsupported agent profile source {selected}")
+
+
+def assert_live_piqsavi_profile_unlocked(profile: AgentProfileSelection) -> None:
+    """Fail closed: live PiqSavi profile use requires PROFILE DEPLOYED first.
+
+    Checks the server-owned ``PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED`` constant,
+    not a spoofable selection field. Request, browser, query, cookie, and env
+    input cannot flip this. ``SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`` is a
+    later independent milestone and does not unlock live calls.
+    """
+
+    if profile.source != AGENT_PROFILE_SOURCE_PIQSAVI:
+        return
+    if PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED:
+        return
+    raise LivePiqsaviProfileNotDeployedError(LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE)
+
+
+def agent_profile_meta(profile: AgentProfileSelection | None = None) -> dict[str, Any]:
+    selected = profile or select_agent_profile(DEFAULT_AGENT_PROFILE_SOURCE)
+    return {"ucp-agent": {"profile": selected.url}}
 
 
 def ph_catalog_context() -> dict[str, str]:
@@ -418,7 +527,9 @@ def _reject_monetized_or_bulk_catalog(catalog: dict[str, Any]) -> None:
         raise ProbeContractError("PH probe forbids image/similar-item catalog crawling")
 
 
-def build_search_catalog_arguments(query: str) -> dict[str, Any]:
+def build_search_catalog_arguments(
+    query: str, *, profile: AgentProfileSelection | None = None
+) -> dict[str, Any]:
     catalog = {
         "query": query,
         "filters": ph_catalog_filters(),
@@ -427,10 +538,12 @@ def build_search_catalog_arguments(query: str) -> dict[str, Any]:
         "pagination": {"limit": FIRST_PAGE_LIMIT},
     }
     _reject_monetized_or_bulk_catalog(catalog)
-    return {"meta": agent_profile_meta(), "catalog": catalog}
+    return {"meta": agent_profile_meta(profile), "catalog": catalog}
 
 
-def build_get_product_arguments(product_id: str) -> dict[str, Any]:
+def build_get_product_arguments(
+    product_id: str, *, profile: AgentProfileSelection | None = None
+) -> dict[str, Any]:
     if not product_id or "," in product_id:
         raise ProbeContractError("get_product requires exactly one product id")
     catalog = {
@@ -439,7 +552,7 @@ def build_get_product_arguments(product_id: str) -> dict[str, Any]:
         "context": ph_catalog_context(),
     }
     _reject_monetized_or_bulk_catalog(catalog)
-    return {"meta": agent_profile_meta(), "catalog": catalog}
+    return {"meta": agent_profile_meta(profile), "catalog": catalog}
 
 
 def build_jsonrpc_request(tool_name: str, arguments: dict[str, Any], *, request_id: int) -> dict:
@@ -918,19 +1031,26 @@ def run_ph_coverage_probe(
     live: bool,
     retrieved_at: datetime | None = None,
     intents: tuple[PhProbeIntent, ...] | None = None,
+    agent_profile_source: str | None = None,
+    agent_profile: AgentProfileSelection | None = None,
 ) -> PhProbeReport:
     selected_intents = intents or load_ph_probe_intents()
     if len(selected_intents) > MAX_SEARCH_CATALOG_QUERIES:
         raise ProbeLimitError(
             f"PH probe allows at most {MAX_SEARCH_CATALOG_QUERIES} search_catalog queries"
         )
+    profile = agent_profile or select_agent_profile(
+        agent_profile_source or DEFAULT_AGENT_PROFILE_SOURCE
+    )
+    if live:
+        assert_live_piqsavi_profile_unlocked(profile)
     budget = ProbeBudget()
     stamp = (retrieved_at or datetime.now(tz=UTC)).isoformat()
     products_by_query: dict[str, list[dict[str, Any]]] = {}
     query_notes: dict[str, list[str]] = {}
     for intent in selected_intents:
         budget.consume_search()
-        arguments = build_search_catalog_arguments(intent.query)
+        arguments = build_search_catalog_arguments(intent.query, profile=profile)
         payload = transport.call_tool(SEARCH_TOOL, arguments)
         products_by_query[intent.query_id] = products_from_catalog_payload(payload)
         query_notes[intent.query_id] = []
@@ -945,7 +1065,7 @@ def run_ph_coverage_probe(
     get_product_queries: set[str] = set()
     for query_id, product_id in selected:
         budget.consume_get_product()
-        arguments = build_get_product_arguments(product_id)
+        arguments = build_get_product_arguments(product_id, profile=profile)
         payload = transport.call_tool(GET_PRODUCT_TOOL, arguments)
         detail_products = products_from_catalog_payload(payload)
         detail = detail_products[0] if detail_products else {}
@@ -987,9 +1107,12 @@ def run_ph_coverage_probe(
         live=live,
         fixture=not live,
         artifact_kind=PRIVATE_LOCAL_LIVE_ARTIFACT if live else NON_PRODUCTION_FIXTURE_MARKER,
-        agent_profile=TECHNICAL_TEST_AGENT_PROFILE,
-        agent_profile_usage=AGENT_PROFILE_USAGE,
-        agent_profile_not_piqsavi_identity=AGENT_PROFILE_NOT_PIQSAVI_IDENTITY,
+        agent_profile=profile.url,
+        agent_profile_source=profile.source,
+        agent_profile_usage=profile.usage,
+        agent_profile_not_piqsavi_identity=profile.not_piqsavi_identity,
+        piqsavi_profile_deployed=PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+        shopify_has_fetched_piqsavi_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
         auth_tier=ANONYMOUS_AUTH_TIER,
         credentials_required=False,
         endpoint=GLOBAL_CATALOG_ENDPOINT,
@@ -1007,4 +1130,20 @@ def run_ph_coverage_probe(
         scraping=False,
         environment_mutation=False,
         query_results=tuple(results),
+        notes=_probe_report_notes(profile),
+    )
+
+
+def _probe_report_notes(profile: AgentProfileSelection) -> tuple[str, ...]:
+    if profile.source == AGENT_PROFILE_SOURCE_PIQSAVI:
+        return (
+            "Technical PH coverage probe only. Useful PH offers do not certify production.",
+            PIQSAVI_PROFILE_SELECTED_NOTE,
+            "Sprint 32 remains open.",
+        )
+    return (
+        "Technical PH coverage probe only. Useful PH offers do not certify production.",
+        "Anonymous Shopify-hosted fixture profile is TECHNICAL TEST ONLY.",
+        PIQSAVI_PROFILE_LIFECYCLE_NOTE,
+        "Sprint 32 remains open.",
     )

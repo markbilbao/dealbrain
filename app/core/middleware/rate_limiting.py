@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.dependencies import get_rate_limiter
 from app.launch.rate_limit import classify_path
 from app.launch.redaction import safe_log_message
+from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PATH
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -30,6 +31,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             "/api/v1/health",
             "/api/v1/ready",
             "/api/v1/live",
+            PIQSAVI_UCP_AGENT_PROFILE_PATH,
         }:
             return await call_next(request)
         if path.startswith("/docs") or path.startswith("/redoc") or path == "/openapi.json":

@@ -21,6 +21,12 @@ from urllib.parse import quote_plus, urlparse
 STAGING_PUBLIC_BASE_URL = "https://staging.piqsavi.com"
 PRODUCTION_PUBLIC_BASE_URL = "https://piqsavi.com"
 PRODUCTION_TRUSTED_HOSTS = "piqsavi.com,www.piqsavi.com"
+STAGING_UCP_AGENT_PROFILE_URL = (
+    "https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json"
+)
+PRODUCTION_UCP_AGENT_PROFILE_URL = (
+    "https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json"
+)
 PRODUCTION_LEGAL_PRIVACY_VERSION = "privacy-2026-09-11"
 PRODUCTION_LEGAL_TERMS_VERSION = "terms-2026-09-11"
 PUBLIC_SUPPORT_EMAIL = "support@piqsavi.com"
@@ -279,6 +285,7 @@ def assemble(
     resend_key = mapping.get("RESEND_API_KEY", "")
     if environment == "staging":
         mapping["PUBLIC_APP_BASE_URL"] = STAGING_PUBLIC_BASE_URL
+        mapping["PIQSAVI_UCP_AGENT_PROFILE_URL"] = STAGING_UCP_AGENT_PROFILE_URL
         if _usable_resend_api_key(resend_key):
             mapping["TRANSACTIONAL_EMAIL_PROVIDER"] = "resend"
             mapping["RESEND_API_KEY"] = resend_key.strip()
@@ -287,6 +294,7 @@ def assemble(
             mapping["RESEND_API_KEY"] = ""
     else:
         mapping["PUBLIC_APP_BASE_URL"] = PRODUCTION_PUBLIC_BASE_URL
+        mapping["PIQSAVI_UCP_AGENT_PROFILE_URL"] = PRODUCTION_UCP_AGENT_PROFILE_URL
         mapping["TRUSTED_HOSTS"] = PRODUCTION_TRUSTED_HOSTS
         mapping["LEGAL_PRIVACY_PUBLISHED_VERSION_ID"] = PRODUCTION_LEGAL_PRIVACY_VERSION
         mapping["LEGAL_TERMS_PUBLISHED_VERSION_ID"] = PRODUCTION_LEGAL_TERMS_VERSION

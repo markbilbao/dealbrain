@@ -32,18 +32,25 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     GLOBAL_CATALOG_ENDPOINT,
     SEARCH_TOOL,
     TECHNICAL_TEST_ONLY,
+    LivePiqsaviProfileNotDeployedError,
     LiveProbeOutputInsideRepositoryError,
     ProbeContractError,
     ProbeLimitError,
     ProbeResponseError,
     anonymous_http_headers,
+    assert_live_piqsavi_profile_unlocked,
     assert_live_probe_output_outside_repository,
     build_jsonrpc_request,
     fixture_transport_from_payload,
     load_probe_fixture,
     minimized_artifact_payload,
     run_ph_coverage_probe,
+    select_agent_profile,
     validate_catalog_tool_response,
+)
+from app.ucp.agent_profile import (  # noqa: E402
+    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+    SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
 )
 
 
@@ -96,8 +103,15 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(serialized + "\n", encoding="utf-8")
 
 
-def _failure_envelope(exc: BaseException) -> dict[str, Any]:
+def _lifecycle_fields() -> dict[str, Any]:
     return {
+        "piqsavi_profile_deployed": PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+        "shopify_has_fetched_piqsavi_profile": SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
+    }
+
+
+def _failure_envelope(exc: BaseException) -> dict[str, Any]:
+    envelope = {
         "live": True,
         "production_certified": False,
         "closes_sprint_32": False,
@@ -109,6 +123,19 @@ def _failure_envelope(exc: BaseException) -> dict[str, Any]:
         "technical_probe_failure": True,
         "error": str(exc),
     }
+    envelope.update(_lifecycle_fields())
+    return envelope
+
+
+def _undeployed_live_piqsavi_envelope(exc: BaseException, profile: Any) -> dict[str, Any]:
+    envelope = _failure_envelope(exc)
+    envelope["agent_profile"] = profile.url
+    envelope["agent_profile_source"] = profile.source
+    envelope["agent_profile_usage"] = profile.usage
+    envelope["agent_profile_not_piqsavi_identity"] = profile.not_piqsavi_identity
+    envelope["live_piqsavi_profile_refused"] = True
+    envelope["shopify_network_calls"] = 0
+    return envelope
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -123,8 +150,23 @@ def main(argv: list[str] | None = None) -> int:
         "--live",
         action="store_true",
         help=(
-            "Call catalog.shopify.com anonymously with the official Shopify-hosted "
-            "UCP test profile. No API key. TECHNICAL TEST ONLY."
+            "Call catalog.shopify.com anonymously with the selected agent profile. "
+            "Default profile is the official Shopify-hosted UCP test fixture. "
+            "No API key. TECHNICAL TEST ONLY. "
+            "--agent-profile-source=piqsavi is refused while "
+            "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false."
+        ),
+    )
+    parser.add_argument(
+        "--agent-profile-source",
+        choices=("technical-test-fixture", "piqsavi"),
+        default="technical-test-fixture",
+        help=(
+            "technical-test-fixture uses Shopify's hosted UCP fixture (default). "
+            "piqsavi uses the server-owned PIQSAVI_UCP_AGENT_PROFILE_URL. "
+            "Live piqsavi is fail-closed until PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED "
+            "is true after owner HTTPS validation. Request/browser input cannot "
+            "set this source or either lifecycle state."
         ),
     )
     parser.add_argument(
@@ -141,12 +183,38 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     output_dir = args.output_dir
+    profile_source = (
+        "piqsavi_production_intended"
+        if args.agent_profile_source == "piqsavi"
+        else "technical_test_fixture"
+    )
+    profile = select_agent_profile(profile_source)
     if args.live:
-        print(
-            "TECHNICAL TEST ONLY. Anonymous Shopify-hosted agent profile. "
-            "Not a PiqSavi identity. Not production certification. "
-            "Sprint 32 remains open."
-        )
+        try:
+            assert_live_piqsavi_profile_unlocked(profile)
+        except LivePiqsaviProfileNotDeployedError as exc:
+            envelope = _undeployed_live_piqsavi_envelope(exc, profile)
+            print(str(exc))
+            print(json.dumps(envelope, ensure_ascii=False, indent=2))
+            try:
+                output_dir = assert_live_probe_output_outside_repository(output_dir)
+            except LiveProbeOutputInsideRepositoryError:
+                return 2
+            _write_json(output_dir / "summary.json", envelope)
+            return 2
+        if profile.source == "piqsavi_production_intended":
+            print(
+                "PiqSavi production-intended profile selected. "
+                "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is true. "
+                "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains a separate milestone. "
+                "Not production certification. Sprint 32 remains open."
+            )
+        else:
+            print(
+                "TECHNICAL TEST ONLY. Anonymous Shopify-hosted agent profile. "
+                "Not a PiqSavi identity. Not production certification. "
+                "Sprint 32 remains open."
+            )
         try:
             output_dir = assert_live_probe_output_outside_repository(output_dir)
         except LiveProbeOutputInsideRepositoryError as exc:
@@ -157,9 +225,14 @@ def main(argv: list[str] | None = None) -> int:
             report = run_ph_coverage_probe(
                 transport=transport,
                 live=True,
+                agent_profile=profile,
             )
         except (ProbeLimitError, ProbeContractError, ProbeResponseError, RuntimeError) as exc:
             envelope = _failure_envelope(exc)
+            envelope["agent_profile"] = profile.url
+            envelope["agent_profile_source"] = profile.source
+            envelope["agent_profile_usage"] = profile.usage
+            envelope["agent_profile_not_piqsavi_identity"] = profile.not_piqsavi_identity
             _write_json(output_dir / "summary.json", envelope)
             print(json.dumps(envelope, ensure_ascii=False, indent=2))
             return 2
@@ -169,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
         report = run_ph_coverage_probe(
             transport=transport,
             live=False,
+            agent_profile=profile,
         )
 
     artifact = minimized_artifact_payload(report)
@@ -178,8 +252,11 @@ def main(argv: list[str] | None = None) -> int:
         "fixture": report.fixture,
         "artifact_kind": report.artifact_kind,
         "agent_profile": report.agent_profile,
+        "agent_profile_source": report.agent_profile_source,
         "agent_profile_usage": report.agent_profile_usage,
         "agent_profile_not_piqsavi_identity": report.agent_profile_not_piqsavi_identity,
+        "piqsavi_profile_deployed": report.piqsavi_profile_deployed,
+        "shopify_has_fetched_piqsavi_profile": report.shopify_has_fetched_piqsavi_profile,
         "auth_tier": report.auth_tier,
         "credentials_required": report.credentials_required,
         "endpoint": report.endpoint,

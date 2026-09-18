@@ -27,6 +27,7 @@ services:
       TRANSACTIONAL_EMAIL_FROM_NAME: "PiqSavi"
       TRANSACTIONAL_EMAIL_FROM: ${TRANSACTIONAL_EMAIL_FROM:-no-reply@piqsavi.com}
       PUBLIC_APP_BASE_URL: ${PUBLIC_APP_BASE_URL:-https://staging.piqsavi.com}
+      PIQSAVI_UCP_AGENT_PROFILE_URL: ${PIQSAVI_UCP_AGENT_PROFILE_URL:-https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json}
       TRANSACTIONAL_EMAIL_PROVIDER: ${TRANSACTIONAL_EMAIL_PROVIDER:-null}
     labels:
       dealbrain.environment: staging
