@@ -24,7 +24,7 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1â
 | Real PH product-data path | blocked |
 | Production provider | none |
 | Production certification | none |
-| Live current-data validation | none |
+| Live current-data validation | technical coverage exists for Shopify Global Catalog; production operational validation/certification incomplete |
 | Sprint 32 closure | blocked |
 
 The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, live Lazada research, or production-ready merchant integration.
@@ -120,7 +120,7 @@ Owner-supplied live evidence after PR #149 recorded **PASSED TECHNICAL COVERAGE 
 
 - No merchant has a real approved product-data / API path
 - No real production provider
-- No current-data operational validation
+- Current-data technical coverage validation exists for Shopify Global Catalog, but production operational validation/certification is incomplete.
 - No trusted production certification
 - Staging certification incomplete
 - Monitoring / public coverage disclosure incomplete
