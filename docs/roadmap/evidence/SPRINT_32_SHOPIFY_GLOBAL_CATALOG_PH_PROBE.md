@@ -192,7 +192,7 @@ Therefore:
 - 12 tested intents do NOT equal complete PH retail coverage
 - this does NOT mean every Shopify merchant ships successfully to PH at checkout
 
-Harness issue observed in that live run: report showed `wireless earbuds` → `GET_PRODUCT True` and the remaining 11 queries → `GET_PRODUCT False`, yet `get_product_calls == 5`. The previous selector built global incomplete/complete lists in query order and sliced `(incomplete + complete)[:5]`. When first-query results are complete, all five `get_product` validations can come from the first query. That does **not** invalidate the 12-query search coverage evidence. It does mean those five deeper `get_product` validations are not diversified enough to use as representative cross-category evidence. The owner must rerun deeper `get_product` cross-category validation after this selector fix.
+Harness issue observed in that live run: report showed `wireless earbuds` → `GET_PRODUCT True` and the remaining 11 queries → `GET_PRODUCT False`, yet `get_product_calls == 5`. The previous selector built global incomplete/complete lists in query order and sliced `(incomplete + complete)[:5]`. When first-query results are complete, all five `get_product` validations can come from the first query. The current 5 `get_product` validations were concentrated in one query because of that selector issue. That does **not** invalidate the 12-query search coverage evidence. It does mean those five deeper `get_product` validations are not diversified enough to use as representative cross-category evidence. The owner must rerun deeper `get_product` cross-category validation after this selector fix.
 
 ## Owner live command
 
