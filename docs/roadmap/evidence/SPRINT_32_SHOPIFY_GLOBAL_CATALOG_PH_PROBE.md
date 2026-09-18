@@ -5,7 +5,7 @@
 **Starting `origin/main`:** `af03dac771f48379e44c64a42bff9a846d4c07e7` (merge of PR #147)
 **Market:** PH
 **Trusted production certification records:** **zero**
-**Status:** Owner live 12-query PH search coverage probe: **PASSED TECHNICAL COVERAGE TEST**. This is **not** production-certified. Deeper `get_product` cross-category validation must be rerun by the owner after the selector diversification fix. Sprint 32 remains **OPEN**. Sprint 38 remains unstarted.
+**Status:** Owner live 12-query PH search coverage: **PH LIVE TECHNICAL COVERAGE VALIDATED**. 12/12 categories `USEFUL_PH_OFFER`. Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. This is **not** production-certified. Sprint 32 remains **OPEN**. Sprint 38 remains unstarted.
 
 This document does **not** certify Shopify Global Catalog, any merchant, Shopee, Lazada, Tavily, or PiqSavi shopping beta. The owner live 12-query result means only that Global Catalog returned technically useful PH offers for the tested queries. It is not production certification.
 
@@ -194,6 +194,78 @@ Therefore:
 
 Harness issue observed in that live run: report showed `wireless earbuds` → `GET_PRODUCT True` and the remaining 11 queries → `GET_PRODUCT False`, yet `get_product_calls == 5`. The previous selector built global incomplete/complete lists in query order and sliced `(incomplete + complete)[:5]`. When first-query results are complete, all five `get_product` validations can come from the first query. The current 5 `get_product` validations were concentrated in one query because of that selector issue. That does **not** invalidate the 12-query search coverage evidence. It does mean those five deeper `get_product` validations are not diversified enough to use as representative cross-category evidence. The owner must rerun deeper `get_product` cross-category validation after this selector fix.
 
+## Owner live diversified get_product validation (2026-09-18; after PR #150)
+
+SHOPIFY GLOBAL CATALOG PH LIVE TECHNICAL COVERAGE VALIDATED
+
+Owner-supplied live evidence after PR #150 merged. This agent did **not** call Shopify. The required owner cross-category `get_product` rerun is **COMPLETE**. This is still **PH LIVE TECHNICAL COVERAGE VALIDATED**. It is **not** production certification, Shopify/PiqSavi production approval, complete PH retail coverage, proof every returned offer completes checkout to PH, proof seller location is the Philippines, Sprint 32 closure, or Sprint 38 execution.
+
+Observed summary:
+
+| Fact | Value |
+|------|-------|
+| `live` | `true` |
+| `fixture` | `false` |
+| `auth_tier` | Anonymous |
+| `credentials_required` | `false` |
+| `search_calls` | 12 |
+| `get_product_calls` | 5 |
+| `lookup_catalog_calls` | 0 |
+| `pagination_followed` | `false` |
+| `bulk_ids_used` | `false` |
+| `raw_response_persisted` | `false` |
+| `production_certified` | `false` |
+| `certifies_shopify` | `false` |
+| `closes_sprint_32` | `false` |
+| `starts_sprint_38` | `false` |
+| `affiliate_or_promoted_placement` | `false` |
+| `scraping` | `false` |
+| `environment_mutation` | `false` |
+
+All 12 query classifications remained `USEFUL_PH_OFFER`.
+
+The five live `get_product` validations were distributed across five distinct categories:
+
+| Query | Classification | Products | Offers | `usable_for_comparison` |
+|-------|----------------|----------|--------|-------------------------|
+| wireless earbuds | `USEFUL_PH_OFFER` | 10 | 10 | `true` |
+| gaming laptop | `USEFUL_PH_OFFER` | 10 | 10 | `true` |
+| mechanical keyboard | `USEFUL_PH_OFFER` | 10 | 10 | `true` |
+| USB-C charger | `USEFUL_PH_OFFER` | 10 | 19 | `true` |
+| phone case | `USEFUL_PH_OFFER` | 10 | 11 | `true` |
+
+Remaining seven categories did not use `get_product` and all remained `USEFUL_PH_OFFER`.
+
+Second-run totals: **120 products** and **130 offer records**. The additional offer records after `get_product` are compatible with products exposing multiple variants. This is **not** 130 distinct products.
+
+Completed technical evidence:
+
+- rights survivor identified for restricted query-time Shopify Global Catalog use
+- Anonymous technical connectivity works
+- PH-localized current-data search works
+- 12/12 controlled query categories returned `USEFUL_PH_OFFER`
+- five deeper `get_product` validations succeeded across five distinct categories
+- returned price/currency/seller/destination/availability evidence remained usable
+- actual returned currencies must remain preserved
+- no scraping required
+- no credentials required for Anonymous technical path
+
+Still **not** completed:
+
+- PiqSavi-owned production UCP agent profile
+- real production provider registration
+- trusted production certification
+- Sprint 31 capability-policy rows/evidence for Shopify PH path
+- production normalization/matching evidence as required
+- reliability/failure-mode certification
+- staging certification
+- monitoring
+- public coverage disclosure
+- kill-switch closure evidence
+- limited production validation where required
+
+Production provider registry = zero. Production certification catalog = zero. Production evidence catalog = zero. Production routing policies = zero. Sprint 32 remains **OPEN**. Sprint 38 remains **UNSTARTED**.
+
 ## Owner live command
 
 Credentials: **none**. Do not create a Partner account, Dev Dashboard token, or PiqSavi profile for this Anonymous probe.
@@ -229,9 +301,9 @@ This harness does **not** mean:
 
 ---
 
-SHOPIFY GLOBAL CATALOG PH LIVE COVERAGE PROBE:
-PASSED TECHNICAL COVERAGE TEST —
+SHOPIFY GLOBAL CATALOG PH LIVE TECHNICAL COVERAGE VALIDATED —
+12/12 SEARCH CATEGORIES USEFUL —
+5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
 NOT PRODUCTION CERTIFICATION —
-DEEPER GET_PRODUCT CROSS-CATEGORY VALIDATION MUST BE RERUN BY OWNER —
 SPRINT 32 REMAINS OPEN —
 SPRINT 38 UNSTARTED

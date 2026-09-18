@@ -355,8 +355,19 @@ This is **not** production certification. This does **not** close Sprint 32. Sho
 
 ---
 
+## 16. Owner live diversified get_product validation addendum (2026-09-18; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. After PR #150 merged, the owner reran the controlled Anonymous 12-query PH coverage probe. The required cross-category `get_product` rerun is **COMPLETE**. Result: **PH LIVE TECHNICAL COVERAGE VALIDATED**. This agent did **not** make that live call.
+
+Recorded facts: 12/12 `USEFUL_PH_OFFER`; five `get_product` validations across five distinct categories (wireless earbuds, gaming laptop, mechanical keyboard, USB-C charger, phone case); 120 products; 130 offer records (additional offers are compatible with multi-variant products, not 130 distinct products). Anonymous; no credentials; no scraping; no pagination; no bulk lookup; no raw persistence.
+
+This is **not** production certification. This does **not** close Sprint 32. Shopify remains a restricted query-time rights survivor / technical candidate. Production catalogs remain empty. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —
+5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
 PRODUCTION CERTIFICATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN

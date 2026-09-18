@@ -116,11 +116,13 @@ def test_owner_live_coverage_addendum_keeps_historical_unverified_strings() -> N
     assert "**PH LIVE COVERAGE VALIDATION STILL REQUIRED.**" in section_14
     assert "PH LIVE COVERAGE VALIDATION STILL REQUIRED" not in footer
     assert "PH LIVE TECHNICAL COVERAGE VALIDATED" in footer
+    assert "5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES" in footer
     assert "PRODUCTION CERTIFICATION STILL REQUIRED" in footer
     assert "SPRINT 32 REMAINS OPEN" in footer
     assert "Actual PH merchant coverage is **unverified**" in text
     assert "PASSED TECHNICAL COVERAGE TEST" in text
     assert "## 15. Owner live 12-query PH coverage probe addendum" in text
+    assert "## 16. Owner live diversified get_product validation addendum" in text
     assert "does **not** close Sprint 32" in text
     assert "Sprint 38 remains unstarted" in text
     assert "SPRINT 38 UNSTARTED" in probe_doc
@@ -130,6 +132,11 @@ def test_owner_live_coverage_addendum_keeps_historical_unverified_strings() -> N
         "but production operational validation/certification is incomplete."
     ) in sprint32
     assert "Live current-data validation | none" not in sprint32
+    current_blockers = sprint32.split("### Closure blockers (current)", 1)[1].split(
+        "### Production defaults", 1
+    )[0]
+    assert "must be rerun" not in current_blockers
+    assert "five distinct categories" in current_blockers
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
     assert production_research_provider_registry().list_providers() == ()

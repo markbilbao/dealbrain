@@ -836,3 +836,18 @@ This addendum does **not** rewrite earlier snapshots. It records owner-supplied 
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-18 owner live diversified get_product validation addendum
+
+This addendum does **not** rewrite earlier snapshots. It records owner-supplied live evidence after PR #150. This agent did **not** call Shopify. It does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `dacc17c22be52f4367915883150ef3eaf623d246` (merge of PR #150) |
+| Result | **PH LIVE TECHNICAL COVERAGE VALIDATED** — 12/12 categories `USEFUL_PH_OFFER` |
+| Diversified `get_product` | 5/5 validations across five distinct categories: wireless earbuds, gaming laptop, mechanical keyboard, USB-C charger, phone case |
+| Second-run totals | 120 products; 130 offer records. Additional offers are compatible with multi-variant products, not 130 distinct products. |
+| Auth | Anonymous; no credentials; no scraping; no pagination; no bulk lookup; no raw persistence |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
