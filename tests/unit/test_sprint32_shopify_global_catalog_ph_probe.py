@@ -17,6 +17,7 @@ from app.research.shopify_global_catalog_ph_probe import (
     AGENT_PROFILE_NOT_PIQSAVI_IDENTITY,
     AGENT_PROFILE_USAGE,
     ANONYMOUS_AUTH_TIER,
+    ANONYMOUS_USER_AGENT,
     CONTEXT_LANGUAGE,
     DEFAULT_FIXTURE,
     DEFAULT_OUTPUT_DIR,
@@ -66,6 +67,7 @@ from app.research.shopify_global_catalog_ph_probe import (
     validate_catalog_tool_response,
 )
 from scripts.shopify_global_catalog_ph_probe import main as probe_main
+from scripts.shopify_global_catalog_ph_probe import post_anonymous_catalog
 
 ROOT = Path(__file__).resolve().parents[2]
 SPRINT32 = ROOT / "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md"
@@ -148,6 +150,59 @@ def test_anonymous_mode_requires_no_credentials_and_marks_fixture_profile() -> N
     assert "valid-with-capabilities.json" in TECHNICAL_TEST_AGENT_PROFILE
     assert "shopify.dev/ucp/agent-profiles" in TECHNICAL_TEST_AGENT_PROFILE
     assert GLOBAL_CATALOG_ENDPOINT == "https://catalog.shopify.com/api/ucp/mcp"
+
+
+def test_anonymous_http_headers_include_explicit_probe_user_agent() -> None:
+    headers = anonymous_http_headers()
+    assert headers == {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "PiqSavi-Sprint32-PH-Coverage-Probe/1.0",
+    }
+    assert ANONYMOUS_USER_AGENT == "PiqSavi-Sprint32-PH-Coverage-Probe/1.0"
+    assert headers["User-Agent"] == ANONYMOUS_USER_AGENT
+    assert "Authorization" not in headers
+    assert not any("signature" in key.casefold() for key in headers)
+    assert not any(key.casefold().startswith("signature") for key in headers)
+    module = (ROOT / "app/research/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    for blob in (module, script, headers["User-Agent"]):
+        assert "ucp-cli" not in blob.casefold()
+        assert "@shopify/ucp-cli" not in blob.casefold()
+
+
+def test_live_transport_sends_anonymous_http_headers(monkeypatch) -> None:
+    import httpx
+
+    captured: dict[str, object] = {}
+
+    class _DummyResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "result": {"structuredContent": {"products": []}},
+            }
+
+    def fake_post(url, json, headers, timeout):  # noqa: A002
+        captured["url"] = url
+        captured["headers"] = headers
+        captured["timeout"] = timeout
+        captured["json"] = json
+        return _DummyResponse()
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    payload = post_anonymous_catalog({"jsonrpc": "2.0", "id": 1}, timeout=5.0)
+    assert captured["url"] == GLOBAL_CATALOG_ENDPOINT
+    assert captured["headers"] == anonymous_http_headers()
+    assert captured["headers"]["User-Agent"] == ANONYMOUS_USER_AGENT
+    assert "Authorization" not in captured["headers"]
+    assert payload["result"]["structuredContent"]["products"] == []
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    assert "headers = anonymous_http_headers()" in script
 
 
 def test_query_set_is_twelve_ph_intents_without_apple_samsung_bias() -> None:
