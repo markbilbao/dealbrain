@@ -1,19 +1,18 @@
 {
-  "schema_version": "1.2",
+  "schema_version": "1.1",
   "kind": "sprint29_internal_closeout_matrix",
   "audit_baseline_sha": "4a4fe65fa7438c75208a0052f52b77f929ee3903",
   "supersedes_pr": 127,
   "superseded_pr_head": "37eae8f1eff5a4f8e91d302faaa33fbb556173a0",
   "superseded_pr_base": "6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd",
-  "verdict": "SPRINT 29 COMPLETE / CLOSED",
-  "sprint_closed": true,
+  "verdict": "SPRINT 29 INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT",
+  "sprint_closed": false,
   "live_research_claimed": false,
   "shopping_beta_claimed": false,
   "merchant_certification_claimed": false,
   "unconditional_counsel_approval_claimed": false,
   "phase_29_0_freeze_untouched": true,
   "sprint29_owns_remaining_implementation": false,
-  "later_sprint_launch_acceptance_does_not_block_close": true,
   "minimum_cc_behavior_tests": 20,
   "entries": [
     {

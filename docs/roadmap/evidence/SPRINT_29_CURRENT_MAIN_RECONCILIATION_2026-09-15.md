@@ -197,4 +197,4 @@ One canonical Results system, one Recommendation system, one PiqScore authority,
 
 This 2026-09-15 reconciliation remains historically true of baseline `3c51494` / PR #142. It is **not** erased.
 
-Successor close record: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) against `4a4fe65`. That checkpoint marks Sprint 29 **COMPLETE / CLOSED** because later live-research / frozen-candidate CC-01 proof is launch acceptance owned by Sprints 38/45, not remaining Sprint 29 implementation. Do not rewrite this file as if PR #142 had already closed the sprint.
+Successor checkpoint: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) against `4a4fe65`. That checkpoint **reconfirms** the same verdict. It does **not** mark Sprint 29 COMPLETE/CLOSED. CC-01-10/11/12/24 remain unmet.

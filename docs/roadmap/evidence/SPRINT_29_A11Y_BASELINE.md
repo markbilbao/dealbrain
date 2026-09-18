@@ -21,4 +21,4 @@
 | Keyboard-open composer | `visualViewport` sets `--kb-inset` and `.is-keyboard-open` | JS test |
 | Ask insertion height | 80px desktop / 72px mobile | `test_ask_insertion_heights_match_manifest` |
 
-This file records the Sprint 29 engineering baseline only. Owner sign-off / third-party audit remains Sprint 44 rehearsal evidence and is **not** a Sprint 29 remaining closer. See [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md).
+Owner sign-off of this checklist is still required for Sprint 29 close. This file records the engineering baseline only.

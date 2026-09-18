@@ -2,8 +2,7 @@
 
 > **Historical unmerged PR #127 artifact.** Audit baseline `6666bb26f40255b9fece39e94bc5ca2b6e3ff2dd` on 2026-09-10.
 > **Superseded** by [`SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md)
-> against then-current `main` `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`.
-> Current close authority: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md).
+> against current `main` `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`.
 > Left in-tree so this 2026-09-10 remaining-closeout audit is not erased.
 > Do **not** treat this file as current status. Several dependency claims
 > (unpublished `/privacy` `/terms`, staging-only email, production as

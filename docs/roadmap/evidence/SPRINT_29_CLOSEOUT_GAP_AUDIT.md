@@ -81,4 +81,4 @@ The Phase 29.0 `planned_not_implemented` freeze is unchanged and must not be rea
 
 ## 2026-09-18 final-checkpoint pointer
 
-The 2026-09-05 and 2026-09-15 records remain historically true. Current close authority: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md). Sprint 29 is **COMPLETE / CLOSED**. Live CC-01 on a frozen launch candidate remains Sprint 38/45 launch evidence and does not reopen this 2026-09-05 staging package.
+The 2026-09-05 and 2026-09-15 records remain historically true. Later checkpoint: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md). Sprint 29 remains **INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT** and is **not** COMPLETE/CLOSED. Live CC-01 on a frozen launch candidate remains required for EC-02 / EC-22.
