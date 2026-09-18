@@ -1,6 +1,9 @@
 # Production Configuration (Sprint 22)
 
-**Status:** Sprint 22  
+**Status:** Sprint 22 application-config contract (historical).
+
+**Current production operations (2026-09-18):** isolated AWS production is live (Deploy Production #6). Sprint 41 is **not** closed. See [`roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md`](roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md) and [`runbooks/PRODUCTION_DEPLOY.md`](runbooks/PRODUCTION_DEPLOY.md). This file is **not** rewritten as a full ops runbook.
+
 **Module:** `app/core/config.py`, `app/core/validation.py`
 
 ## Environments

@@ -1,6 +1,11 @@
 # Sprint 41 — Production Environment & Deploy Path
 
-**Status:** Planned
+**Status:** `SPRINT 41 PARTIALLY COMPLETE — PRODUCTION LIVE; ROLLBACK VALIDATION, WWW CANONICALIZATION, CDN/WAF OWNER DECISION, STAGING PRESERVATION, AND LIVE IAM SIMULATION REMAIN OPEN`
+
+Sprint 41 is **not** COMPLETE / CLOSED. Live production after Early Access is not automatic closure.
+
+**Current-main reconciliation (2026-09-18):** [`../evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md`](../evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md) against `origin/main` `4a4fe65fa7438c75208a0052f52b77f929ee3903`. Live production digest remains Deploy Production #6 / SHA `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`. Rollback is **not** validated. `www` does **not** redirect to apex. CDN/WAF is a proposal only. No production mutation in that reconciliation.
+
 **Primary owner / domain:** Ops (extends Sprint 25 infra ownership; additive)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-2
@@ -99,11 +104,15 @@ Do not perform DNS/TLS/AWS changes from documentation-only brand-lock tasks.
 
 ## Go / no-go gate
 
-Go if prod dry-run + rollback evidenced
+Go if prod dry-run + rollback evidenced.
+
+**2026-09-18 current reading:** production `/ready` is live READY (stronger than a dry-run). Rollback workflow exists but is **not** evidenced against a real prior `production_ok` release. Accidental Rollback Production #1 (missing release object) is **not** validation. Gate remains **no-go for Sprint 41 close**.
 
 ## Rollback or contingency
 
-Do not attach public DNS until 45
+Historical lock sentence: “Do not attach public DNS until 45.”
+
+**2026-09-18 current reading:** Early Access already attached public DNS for `piqsavi.com` / `www.piqsavi.com` to the production ALB. That historical contingency is superseded as operational fact. It is **not** permission to close Sprint 41, Sprint 45, or shopping beta. Application rollback remains the production rollback workflow; DNS revert remains owner-controlled. Do not dispatch rollback from documentation tasks.
 
 ## Change control
 

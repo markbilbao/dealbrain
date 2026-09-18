@@ -230,12 +230,18 @@ Production Environment vars required for `deploy-production.yml` / `rollback-pro
 - Never destroy production to "test" — use staging restore drills (Sprint 25d)
 - Staging release-artifacts bucket is versioned; emptying it is operator-owned
 
+## Current production operations (2026-09-18)
+
+Owner-applied production Terraform and Deploy Production #6 are **live**. Historical “Deferred / do not apply from this PR” sentences below remain the authoring-time contract for the Terraform roots; they are **not** current operational status.
+
+See [`docs/roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md`](../../docs/roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md). This README still must not be used as permission to `terraform apply` from CI or a documentation task.
+
 ## Deferred
 
-- Production Terraform **apply** / live RDS / live deploy → owner after merge
-- Public DNS cutover (`piqsavi.com`) → owner; not Terraform
+- Production Terraform **apply** / live RDS / live deploy → owner after merge *(historical for the authoring PR; production is now applied/live per Deploy #6)*
+- Public DNS cutover (`piqsavi.com`) → owner; not Terraform *(historical; apex/www now resolve to the production ALB. www→apex 301 remains open)*
 - CloudWatch alarms / paging / synthetics → EXT-16 / EXT-24 (log groups exist)
-- Restore rehearsal against a throwaway RDS instance → owner
+- Restore rehearsal against a throwaway RDS instance → owner (Sprint 42)
 
 ## Validation (no apply)
 

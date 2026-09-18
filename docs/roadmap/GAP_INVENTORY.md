@@ -726,3 +726,23 @@ Stale open PR #127 (`cursor/sprint-29-remaining-internal-closeout-d1c7`, HEAD `3
 | Staging | Last packaged Sprint 29 E2E is **partial** on Deploy Staging #27 / SHA `a8bd001`. Current `main` needs its own later deploy to refresh non-live journey evidence. |
 | Early Access vs shopping | Early Access live ≠ public shopping beta. Unfinished shopping UI stays hidden in production. No merchant certification. |
 | Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) |
+
+---
+
+## 2026-09-18 Sprint 41 current-main reconciliation addendum
+
+This addendum does **not** rewrite the 2026-08-06 §A snapshot, §J historical classes, or later dated addenda. It records the current-`main` Sprint 41 production reconciliation against `4a4fe65fa7438c75208a0052f52b77f929ee3903`. It does **not** mark Sprint 41 COMPLETE/CLOSED, does **not** close Sprints 42–45, and does **not** mutate production.
+
+| Field | Value |
+|-------|-------|
+| Audit baseline | `4a4fe65fa7438c75208a0052f52b77f929ee3903` (PR #142 merge) |
+| Live production SHA | `3c514943a8a0ec34d1df97d5a329d3acb4a86e07` (Deploy Production #6) |
+| Sprint 41 | **PARTIALLY COMPLETE — PRODUCTION LIVE; ROLLBACK VALIDATION, WWW CANONICALIZATION, CDN/WAF OWNER DECISION, STAGING PRESERVATION, AND LIVE IAM SIMULATION REMAIN OPEN.** Not COMPLETE/CLOSED. |
+| §J historical rows | “TF partial; not applied”, “CDN/WAF planned_underspecified”, “production deploy missing_from_roadmap”, “EXT-11/12 not_started” remain historical wording. Current production ALB/RDS/OIDC/deploy path is live. |
+| P0-2 | Production AWS/deploy path **exists**. Remaining P0-2 residuals: rollback validation, www apex redirect, CDN/WAF owner decision, live IAM simulation, staging currently 503. |
+| CDN / WAF | Still **not** an accepted owner decision. Proposal only: [`evidence/SPRINT_41_CDN_WAF_DECISION_PROPOSAL_2026-09-18.md`](evidence/SPRINT_41_CDN_WAF_DECISION_PROPOSAL_2026-09-18.md) |
+| Rollback | Workflow exists. Accidental Rollback Production #1 is **not** validation. |
+| Isolation | IAM/Terraform/assembler deny opposite env. Live AccessDenied simulation **not** filed. |
+| Staging | Architecture preserved. Live `https://staging.piqsavi.com/` HTTP 503 on 2026-09-18. |
+| This addendum does **not** close Sprint 41 | Owner still controls remaining runtime work. No production mutation. |
+| Authority | [`sprints/SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md`](sprints/SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md); [`evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md`](evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md) |

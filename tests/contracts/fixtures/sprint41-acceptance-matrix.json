@@ -1,0 +1,301 @@
+{
+  "audit_baseline_sha": "4a4fe65fa7438c75208a0052f52b77f929ee3903",
+  "audit_date": "2026-09-18",
+  "sprint": 41,
+  "sprint_closed": false,
+  "sprints_42_45_closed": false,
+  "production_mutation_performed": false,
+  "rollback_validated_against_successful_release": false,
+  "accidental_rollback_1_counted_as_validation": false,
+  "www_redirects_to_apex": false,
+  "cdn_waf_decision_recorded": false,
+  "cdn_waf_decision_proposal_only": true,
+  "live_iam_simulation_filed": false,
+  "staging_currently_green": false,
+  "live_production_git_sha": "3c514943a8a0ec34d1df97d5a329d3acb4a86e07",
+  "live_production_deploy_number": 6,
+  "live_production_instance_id": "i-0e49ddadd4ecc772d",
+  "status": "SPRINT 41 PARTIALLY COMPLETE — PRODUCTION LIVE; ROLLBACK VALIDATION, WWW CANONICALIZATION, CDN/WAF OWNER DECISION, STAGING PRESERVATION, AND LIVE IAM SIMULATION REMAIN OPEN",
+  "entries": [
+    {
+      "id": 1,
+      "name": "Production VPC/networking",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 2,
+      "name": "Production database",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": true
+    },
+    {
+      "id": 3,
+      "name": "Production secrets",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 4,
+      "name": "Production IAM/OIDC",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 5,
+      "name": "GHCR/container pull",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 6,
+      "name": "Production ALB",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 7,
+      "name": "Public DNS",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 8,
+      "name": "TLS",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 9,
+      "name": "Static/consumer UI delivery",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 10,
+      "name": "Production deploy workflow",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 11,
+      "name": "Approval/evidence gates",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 12,
+      "name": "Production rollback workflow",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 13,
+      "name": "DB migration strategy",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 14,
+      "name": "rollback compatibility",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": false,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 15,
+      "name": "environment isolation",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 16,
+      "name": "staging cannot read production secrets",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": false,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 17,
+      "name": "production CORS",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 18,
+      "name": "TRUSTED_HOSTS",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 19,
+      "name": "CSP/topology",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 20,
+      "name": "public reset/verification links",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 21,
+      "name": "public brand hostname",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 22,
+      "name": "www canonical behavior",
+      "code_config_present": false,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 23,
+      "name": "CDN/WAF decision",
+      "code_config_present": true,
+      "real_environment_exists": false,
+      "production_evidence_exists": false,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": true
+    },
+    {
+      "id": 24,
+      "name": "production /ready",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 25,
+      "name": "immutable digest deployment",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 26,
+      "name": "evidence artifact",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": true,
+      "incomplete": false,
+      "dependent": false
+    },
+    {
+      "id": 27,
+      "name": "staging preservation",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": true,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    },
+    {
+      "id": 28,
+      "name": "operational rollback proof",
+      "code_config_present": true,
+      "real_environment_exists": true,
+      "production_evidence_exists": false,
+      "verified_complete": false,
+      "incomplete": true,
+      "dependent": false
+    }
+  ]
+}
