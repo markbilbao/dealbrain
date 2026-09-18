@@ -108,6 +108,27 @@ Persisted live evidence is minimized only: query, timestamp, classification, pro
 
 HTTP 200 JSON-RPC `error` envelopes and MCP `result.isError=true` fail the probe. They are not empty-catalog coverage results. Non-fatal `structuredContent.messages` on an otherwise successful product response are not treated as errors.
 
+Live catalog HTTP requests send an explicit probe User-Agent:
+
+`PiqSavi-Sprint32-PH-Coverage-Probe/1.0`
+
+plus `Content-Type: application/json` and `Accept: application/json`. No `Authorization` or signature headers. This is not a Shopify CLI User-Agent.
+
+---
+
+## Owner live diagnostic addendum (2026-09-18; not certification)
+
+Owner live diagnostic from the same Cursor environment, after PR #148 merged. This is **not** the controlled 12-query certification probe. It does **not** certify Shopify. Sprint 32 remains **OPEN**.
+
+- The merged custom Python harness initially returned **HTTP 403** from `https://catalog.shopify.com/api/ucp/mcp`.
+- Official Shopify CLI from the same environment succeeded for PH-localized `wireless earbuds` (`npx -y @shopify/ucp-cli@latest catalog search` with PH `ships_to`, PH `address_country`, PHP currency, `available=true`, first page `limit=3`).
+- CLI reported UCP `2026-08-25`, status success, **478** available results, and a first page of real cross-merchant offers. That count is **not** a claim that all 478 are useful comparison offers, that checkout would succeed, or that sellers are Philippine merchants.
+- Returned offers included **PHP** prices and at least one **USD** price despite PHP context. Requested `context.currency=PHP` does **not** guarantee every returned offer currency is PHP, and this harness must not overwrite or fabricate returned currency.
+- `filters.ships_to.country=PH` does **not** prove seller location is the Philippines. Seller location must not be inferred from that filter.
+- One controlled Python request using the existing harness payload (`build_search_catalog_arguments()` / `build_jsonrpc_request()` / same endpoint) plus `User-Agent: PiqSavi-Sprint32-PH-Coverage-Probe/1.0` returned **HTTP 200** and `Content-Type: application/json`.
+- Isolated cause in the tested environment: missing explicit User-Agent on the custom harness path. Explicit client identification is required for this probe path here.
+- Shopify Global Catalog remains a **rights survivor / technical candidate**, **not** production-certified. Production provider and certification catalogs remain empty. Sprint 38 has not started.
+
 ---
 
 ## Owner live command

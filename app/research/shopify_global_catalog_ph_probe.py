@@ -26,6 +26,7 @@ TECHNICAL_TEST_AGENT_PROFILE = (
 AGENT_PROFILE_USAGE = "TECHNICAL_TEST_ONLY"
 AGENT_PROFILE_NOT_PIQSAVI_IDENTITY = True
 ANONYMOUS_AUTH_TIER = "Anonymous"
+ANONYMOUS_USER_AGENT = "PiqSavi-Sprint32-PH-Coverage-Probe/1.0"
 PH_COUNTRY = "PH"
 PHP_CURRENCY = "PHP"
 CONTEXT_LANGUAGE = "en"
@@ -457,7 +458,11 @@ def build_jsonrpc_request(tool_name: str, arguments: dict[str, Any], *, request_
 def anonymous_http_headers() -> dict[str, str]:
     """Anonymous catalog access: JSON only, no Authorization or signatures."""
 
-    return {"Content-Type": "application/json", "Accept": "application/json"}
+    return {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": ANONYMOUS_USER_AGENT,
+    }
 
 
 def _safe_text(value: Any, *, limit: int = 200) -> str | None:
