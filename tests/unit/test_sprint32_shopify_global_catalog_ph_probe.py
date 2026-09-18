@@ -622,8 +622,9 @@ def test_no_raw_response_persistence_by_default(tmp_path: Path) -> None:
     assert summary["credentials_required"] is False
     assert summary["agent_profile_usage"] == TECHNICAL_TEST_ONLY
     assert summary["agent_profile_source"] == "technical_test_fixture"
-    assert summary["piqsavi_profile_deployed_and_validated"] is False
+    assert summary["piqsavi_profile_deployed"] is False
     assert summary["shopify_has_fetched_piqsavi_profile"] is False
+    assert "piqsavi_profile_deployed_and_validated" not in summary
     assert not (tmp_path / "raw").exists()
     serialized = json.dumps(probe)
     assert "cdn.example.invalid/earbuds.jpg" not in serialized

@@ -29,7 +29,9 @@ SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL: Final = (
 )
 PIQSAVI_UCP_AGENT_PROFILE_CONTENT_TYPE: Final = "application/json"
 PIQSAVI_UCP_AGENT_PROFILE_CACHE_CONTROL: Final = "public, max-age=300"
-PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED: Final = False
+# Owner-recorded lifecycle constants. Not Settings, env, request, cookie, or
+# browser controlled. Deployment is not Shopify fetch/negotiation.
+PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED: Final = False
 SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = False
 
 CAPABILITY_CATALOG_SEARCH: Final = "dev.ucp.shopping.catalog.search"
@@ -138,6 +140,18 @@ def profile_contains_secrets(document: dict[str, Any] | str | None = None) -> bo
         blob = json.dumps(document)
     lowered = blob.casefold()
     return any(marker in lowered for marker in _SECRET_MARKERS)
+
+
+def piqsavi_profile_is_shopify_negotiated() -> bool:
+    """Derived: both independent milestones are true.
+
+    ``PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED`` means the public HTTPS profile was
+    deployed and owner-validated. It does **not** mean Shopify fetched it.
+    ``SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`` is recorded only after a successful
+    live Shopify negotiation against that deployed profile.
+    """
+
+    return PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED and SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE
 
 
 def trusted_piqsavi_ucp_agent_profile_url() -> str:

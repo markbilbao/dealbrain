@@ -24,13 +24,17 @@ from app.research.shopify_global_catalog_ph_probe import (
     DEFAULT_FIXTURE,
     FORBIDDEN_LOOKUP_TOOL,
     GET_PRODUCT_TOOL,
+    LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE,
     MAX_GET_PRODUCT_VALIDATIONS,
     MAX_SEARCH_CATALOG_QUERIES,
     SEARCH_TOOL,
     TECHNICAL_TEST_AGENT_PROFILE,
     TECHNICAL_TEST_ONLY,
+    AgentProfileSelection,
+    LivePiqsaviProfileNotDeployedError,
     ProbeContractError,
     ProbeLimitError,
+    assert_live_piqsavi_profile_unlocked,
     build_get_product_arguments,
     build_jsonrpc_request,
     build_search_catalog_arguments,
@@ -50,7 +54,7 @@ from app.ucp.agent_profile import (
     PIQSAVI_UCP_AGENT_PROFILE,
     PIQSAVI_UCP_AGENT_PROFILE_CACHE_CONTROL,
     PIQSAVI_UCP_AGENT_PROFILE_CONTENT_TYPE,
-    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED,
+    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
     PIQSAVI_UCP_AGENT_PROFILE_PATH,
     PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
     PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,
@@ -58,6 +62,7 @@ from app.ucp.agent_profile import (
     SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
     SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL,
     declared_capability_names,
+    piqsavi_profile_is_shopify_negotiated,
     profile_contains_secrets,
     serialize_piqsavi_ucp_agent_profile,
     trusted_piqsavi_ucp_agent_profile_url,
@@ -220,10 +225,13 @@ def test_technical_fixture_and_piqsavi_profiles_are_explicitly_distinct() -> Non
     assert piqsavi.usage == AGENT_PROFILE_USAGE_PIQSAVI
     assert piqsavi.not_piqsavi_identity is False
     assert piqsavi.url != fixture.url
-    assert piqsavi.deployed_and_validated is False
+    assert piqsavi.piqsavi_profile_deployed is False
     assert piqsavi.shopify_has_fetched_profile is False
-    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED is False
+    assert fixture.piqsavi_profile_deployed is False
+    assert fixture.shopify_has_fetched_profile is False
+    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is False
     assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert piqsavi_profile_is_shopify_negotiated() is False
     with pytest.raises(ProbeContractError, match="unsupported agent profile source"):
         select_agent_profile("https://evil.example/ucp.json")
 
@@ -249,8 +257,9 @@ def test_probe_defaults_to_shopify_fixture_and_can_select_piqsavi_explicitly() -
     )
     assert piqsavi_report.agent_profile == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
     assert piqsavi_report.agent_profile_source == AGENT_PROFILE_SOURCE_PIQSAVI
-    assert piqsavi_report.piqsavi_profile_deployed_and_validated is False
+    assert piqsavi_report.piqsavi_profile_deployed is False
     assert piqsavi_report.shopify_has_fetched_piqsavi_profile is False
+    assert "piqsavi_profile_deployed_and_validated" not in piqsavi_report.to_dict()
     assert piqsavi_report.production_certified is False
     assert piqsavi_report.closes_sprint_32 is False
 
@@ -288,8 +297,9 @@ def test_probe_cli_keeps_fixture_default_and_rejects_request_style_url_override(
     piqsavi_summary = json.loads((piqsavi_dir / "summary.json").read_text(encoding="utf-8"))
     assert piqsavi_summary["agent_profile"] == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
     assert piqsavi_summary["agent_profile_source"] == AGENT_PROFILE_SOURCE_PIQSAVI
-    assert piqsavi_summary["piqsavi_profile_deployed_and_validated"] is False
+    assert piqsavi_summary["piqsavi_profile_deployed"] is False
     assert piqsavi_summary["shopify_has_fetched_piqsavi_profile"] is False
+    assert "piqsavi_profile_deployed_and_validated" not in piqsavi_summary
 
 
 def test_existing_ph_probe_limits_and_forbidden_tools_remain() -> None:
@@ -340,8 +350,9 @@ def test_production_registries_remain_empty_and_sprints_remain_open() -> None:
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
-    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED is False
+    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is False
     assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert piqsavi_profile_is_shopify_negotiated() is False
 
 
 def test_profile_is_omitted_from_openapi() -> None:
@@ -359,7 +370,13 @@ def test_profile_route_is_skipped_by_rate_limiter() -> None:
 def test_no_deployment_or_live_shopify_call_in_this_slice() -> None:
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    profile_src = PROFILE_SOURCE.read_text(encoding="utf-8")
     assert "NOT YET DEPLOYED/VALIDATED" in sprint32
+    assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED" in sprint32
+    assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE" in sprint32
+    assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED" not in profile_src
+    assert "FAIL CLOSED" in sprint32 or "fail-closed" in sprint32.casefold()
     assert "no live Shopify call made" in probe_doc.casefold() or (
         "This agent did **not** call Shopify" in probe_doc
         or "no live Shopify call" in probe_doc.casefold()
@@ -367,6 +384,9 @@ def test_no_deployment_or_live_shopify_call_in_this_slice() -> None:
     assert "profile has not yet been fetched by Shopify" in probe_doc.casefold() or (
         "Shopify has not fetched" in probe_doc
     )
+    assert "--agent-profile-url" not in script
+    assert "A. Merge this foundation PR." in sprint32
+    assert "G. Only after that continue capability-policy" in sprint32
 
 
 def test_sync_client_also_serves_json_without_html() -> None:
@@ -376,3 +396,198 @@ def test_sync_client_also_serves_json_without_html() -> None:
     assert "application/json" in response.headers["content-type"]
     assert not response.text.lstrip().startswith("<")
     assert response.json()["ucp"]["version"] == "2026-08-25"
+
+
+def test_deployment_and_shopify_fetch_states_are_separate_and_currently_false() -> None:
+    profile_src = PROFILE_SOURCE.read_text(encoding="utf-8")
+    assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED: Final = False" in profile_src
+    assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = False" in profile_src
+    assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED" not in profile_src
+    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert piqsavi_profile_is_shopify_negotiated() is False
+    unlock_src = inspect.getsource(assert_live_piqsavi_profile_unlocked)
+    assert "if PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED:" in unlock_src
+    assert "if SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE:" not in unlock_src
+    derived_src = inspect.getsource(piqsavi_profile_is_shopify_negotiated)
+    assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED" in derived_src
+    assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE" in derived_src
+    assert "does **not** mean Shopify fetched" in derived_src
+
+
+def test_lifecycle_states_cannot_be_changed_by_user_request_or_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED", "true")
+    monkeypatch.setenv("SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE", "true")
+    monkeypatch.setenv("PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED", "true")
+    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert piqsavi_profile_is_shopify_negotiated() is False
+    settings = Settings()
+    assert not hasattr(settings, "piqsavi_ucp_agent_profile_deployed")
+    assert not hasattr(settings, "shopify_has_fetched_piqsavi_profile")
+    poisoned = (
+        f"{PIQSAVI_UCP_AGENT_PROFILE_PATH}"
+        "?PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED=true"
+        "&SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE=true"
+    )
+    with TestClient(create_app()) as http:
+        response = http.get(
+            poisoned,
+            headers={
+                "X-Piqsavi-Profile-Deployed": "true",
+                "Cookie": "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED=true",
+            },
+        )
+    assert response.status_code == 200
+    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    spoofed = AgentProfileSelection(
+        source=AGENT_PROFILE_SOURCE_PIQSAVI,
+        url=PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
+        usage=AGENT_PROFILE_USAGE_PIQSAVI,
+        not_piqsavi_identity=False,
+        piqsavi_profile_deployed=True,
+        shopify_has_fetched_profile=True,
+    )
+    with pytest.raises(LivePiqsaviProfileNotDeployedError, match="not yet deployed"):
+        assert_live_piqsavi_profile_unlocked(spoofed)
+
+
+@pytest.mark.asyncio
+async def test_async_request_cannot_flip_lifecycle_states(client: AsyncClient) -> None:
+    response = await client.get(
+        f"{PIQSAVI_UCP_AGENT_PROFILE_PATH}?PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED=true",
+        headers={"Cookie": "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE=true"},
+    )
+    assert response.status_code == 200
+    assert PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+
+
+def test_live_piqsavi_profile_fails_closed_with_zero_network_calls(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls = {"post": 0, "transport": 0, "run": 0, "httpx": 0}
+
+    def boom_post(*_args: object, **_kwargs: object) -> dict[str, object]:
+        calls["post"] += 1
+        raise AssertionError("Shopify network must not be called")
+
+    class BoomTransport:
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            calls["transport"] += 1
+            raise AssertionError("live transport must not be constructed")
+
+    def boom_run(*_args: object, **_kwargs: object) -> object:
+        calls["run"] += 1
+        raise AssertionError("live probe must not run")
+
+    def boom_httpx(*_args: object, **_kwargs: object) -> object:
+        calls["httpx"] += 1
+        raise AssertionError("httpx must not be called")
+
+    monkeypatch.setattr(
+        "scripts.shopify_global_catalog_ph_probe.post_anonymous_catalog",
+        boom_post,
+    )
+    monkeypatch.setattr(
+        "scripts.shopify_global_catalog_ph_probe.LiveAnonymousCatalogTransport",
+        BoomTransport,
+    )
+    monkeypatch.setattr(
+        "scripts.shopify_global_catalog_ph_probe.run_ph_coverage_probe",
+        boom_run,
+    )
+    monkeypatch.setattr("httpx.post", boom_httpx)
+    outside = tmp_path / "piqsavi-live-refused"
+    exit_code = probe_main(
+        [
+            "--live",
+            "--agent-profile-source",
+            "piqsavi",
+            "--output-dir",
+            str(outside),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert calls == {"post": 0, "transport": 0, "run": 0, "httpx": 0}
+    assert LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE in captured.out
+    envelope = json.loads((outside / "summary.json").read_text(encoding="utf-8"))
+    assert envelope["technical_probe_failure"] is True
+    assert envelope["live_piqsavi_profile_refused"] is True
+    assert envelope["shopify_network_calls"] == 0
+    assert envelope["piqsavi_profile_deployed"] is False
+    assert envelope["shopify_has_fetched_piqsavi_profile"] is False
+    assert envelope["agent_profile_source"] == AGENT_PROFILE_SOURCE_PIQSAVI
+    assert envelope["closes_sprint_32"] is False
+    assert envelope["starts_sprint_38"] is False
+    assert "piqsavi_profile_deployed_and_validated" not in envelope
+    assert not (outside / "ph_probe.json").exists()
+
+
+def test_live_library_piqsavi_path_makes_zero_transport_calls() -> None:
+    class CountingTransport:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, dict[str, object]]] = []
+
+        def call_tool(self, name: str, arguments: dict[str, object]) -> dict[str, object]:
+            self.calls.append((name, arguments))
+            raise AssertionError("transport must not be called")
+
+    transport = CountingTransport()
+    profile = select_agent_profile(AGENT_PROFILE_SOURCE_PIQSAVI)
+    with pytest.raises(
+        LivePiqsaviProfileNotDeployedError,
+        match="not yet deployed/publicly validated",
+    ):
+        run_ph_coverage_probe(transport=transport, live=True, agent_profile=profile)
+    assert transport.calls == []
+
+
+def test_offline_fixture_may_still_select_piqsavi_and_live_default_stays_fixture(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = load_probe_fixture(DEFAULT_FIXTURE)
+    report = run_ph_coverage_probe(
+        transport=fixture_transport_from_payload(payload),
+        live=False,
+        agent_profile_source=AGENT_PROFILE_SOURCE_PIQSAVI,
+    )
+    assert report.live is False
+    assert report.agent_profile_source == AGENT_PROFILE_SOURCE_PIQSAVI
+    assert report.agent_profile == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
+    assert report.piqsavi_profile_deployed is False
+    assert report.shopify_has_fetched_piqsavi_profile is False
+    assert report.search_calls == 12
+    assert report.get_product_calls <= 5
+
+    live_calls: list[str] = []
+
+    def fake_post(request, timeout):
+        del timeout
+        name = request["params"]["name"]
+        live_calls.append(str(name))
+        if name == SEARCH_TOOL:
+            return {"result": {"structuredContent": {"products": []}}}
+        return {"result": {"structuredContent": {"product": {}}}}
+
+    monkeypatch.setattr(
+        "scripts.shopify_global_catalog_ph_probe.post_anonymous_catalog",
+        fake_post,
+    )
+    outside = tmp_path / "default-live-fixture"
+    exit_code = probe_main(["--live", "--output-dir", str(outside)])
+    assert exit_code == 0
+    summary = json.loads((outside / "summary.json").read_text(encoding="utf-8"))
+    assert summary["agent_profile_source"] == AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE
+    assert summary["agent_profile"] == TECHNICAL_TEST_AGENT_PROFILE
+    assert summary["piqsavi_profile_deployed"] is False
+    assert summary["shopify_has_fetched_piqsavi_profile"] is False
+    assert live_calls
+    assert DEFAULT_AGENT_PROFILE_SOURCE == AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE

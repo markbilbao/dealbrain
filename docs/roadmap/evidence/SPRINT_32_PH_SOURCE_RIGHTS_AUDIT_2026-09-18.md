@@ -373,6 +373,20 @@ This agent did **not** deploy. This agent did **not** call Shopify. Shopify has 
 
 ---
 
+## 18. Live PiqSavi-profile fail-closed lifecycle addendum (2026-09-18; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots, including the owner live PH coverage evidence or section 17. It records a local fail-closed correction only.
+
+`PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED = False`. That means the public HTTPS profile is not deployed and has not been owner-validated. It does **not** mean Shopify validation.
+
+`SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. That is a later independent milestone. Deployment alone is not Shopify fetch/negotiation.
+
+Live `--agent-profile-source piqsavi` is **FAIL CLOSED** while undeployed: zero Shopify/network calls, non-zero exit. Offline fixture mode may still select `piqsavi`. Default live mode remains the Shopify technical fixture. No user/request/browser/env input can change either lifecycle constant. There is no `--agent-profile-url`.
+
+This agent did **not** deploy. This agent did **not** call Shopify live. Both states remain false. Production catalogs remain empty. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —

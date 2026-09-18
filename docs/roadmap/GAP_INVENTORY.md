@@ -854,12 +854,15 @@ This addendum does **not** rewrite earlier snapshots. It records owner-supplied 
 
 ## 2026-09-18 PiqSavi UCP agent-profile foundation addendum
 
-This addendum does **not** rewrite earlier snapshots. It records a local FastAPI-hosted PiqSavi UCP agent profile. It does **not** deploy, does **not** call Shopify live, does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38.
+This addendum does **not** rewrite earlier snapshots. It records a local FastAPI-hosted PiqSavi UCP agent profile. It does **not** deploy, does **not** call Shopify live, does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38. Live `--agent-profile-source piqsavi` is fail-closed while undeployed. Deployment state and Shopify-fetch state are separate and both remain false.
 
 | Field | Value |
 |-------|-------|
 | Starting `origin/main` | `e6a46a345351bea1299aa299bf0ebb81be8cecf8` (merge of PR #151) |
 | Status | **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED** |
+| `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` | **False**. Public HTTPS profile is not deployed/owner-validated. This is **not** Shopify validation. |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **False**. Separate later milestone. |
+| Live `--agent-profile-source piqsavi` | **FAIL CLOSED** while undeployed. Zero Shopify/network calls. |
 | Proposed canonical URL | `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
 | Hosting route | `GET /ucp/agent-profiles/2026-08-25/piqsavi.json` on the existing FastAPI app |
 | UCP version | `2026-08-25` |

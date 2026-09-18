@@ -32,11 +32,13 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     GLOBAL_CATALOG_ENDPOINT,
     SEARCH_TOOL,
     TECHNICAL_TEST_ONLY,
+    LivePiqsaviProfileNotDeployedError,
     LiveProbeOutputInsideRepositoryError,
     ProbeContractError,
     ProbeLimitError,
     ProbeResponseError,
     anonymous_http_headers,
+    assert_live_piqsavi_profile_unlocked,
     assert_live_probe_output_outside_repository,
     build_jsonrpc_request,
     fixture_transport_from_payload,
@@ -45,6 +47,10 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     run_ph_coverage_probe,
     select_agent_profile,
     validate_catalog_tool_response,
+)
+from app.ucp.agent_profile import (  # noqa: E402
+    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+    SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
 )
 
 
@@ -97,8 +103,15 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(serialized + "\n", encoding="utf-8")
 
 
-def _failure_envelope(exc: BaseException) -> dict[str, Any]:
+def _lifecycle_fields() -> dict[str, Any]:
     return {
+        "piqsavi_profile_deployed": PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+        "shopify_has_fetched_piqsavi_profile": SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
+    }
+
+
+def _failure_envelope(exc: BaseException) -> dict[str, Any]:
+    envelope = {
         "live": True,
         "production_certified": False,
         "closes_sprint_32": False,
@@ -110,6 +123,19 @@ def _failure_envelope(exc: BaseException) -> dict[str, Any]:
         "technical_probe_failure": True,
         "error": str(exc),
     }
+    envelope.update(_lifecycle_fields())
+    return envelope
+
+
+def _undeployed_live_piqsavi_envelope(exc: BaseException, profile: Any) -> dict[str, Any]:
+    envelope = _failure_envelope(exc)
+    envelope["agent_profile"] = profile.url
+    envelope["agent_profile_source"] = profile.source
+    envelope["agent_profile_usage"] = profile.usage
+    envelope["agent_profile_not_piqsavi_identity"] = profile.not_piqsavi_identity
+    envelope["live_piqsavi_profile_refused"] = True
+    envelope["shopify_network_calls"] = 0
+    return envelope
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -126,7 +152,9 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "Call catalog.shopify.com anonymously with the selected agent profile. "
             "Default profile is the official Shopify-hosted UCP test fixture. "
-            "No API key. TECHNICAL TEST ONLY unless --agent-profile-source=piqsavi."
+            "No API key. TECHNICAL TEST ONLY. "
+            "--agent-profile-source=piqsavi is refused while "
+            "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false."
         ),
     )
     parser.add_argument(
@@ -136,8 +164,9 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "technical-test-fixture uses Shopify's hosted UCP fixture (default). "
             "piqsavi uses the server-owned PIQSAVI_UCP_AGENT_PROFILE_URL. "
-            "Do not use piqsavi for live Shopify calls until that URL is deployed "
-            "and owner-validated. Request/browser input cannot set this."
+            "Live piqsavi is fail-closed until PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED "
+            "is true after owner HTTPS validation. Request/browser input cannot "
+            "set this source or either lifecycle state."
         ),
     )
     parser.add_argument(
@@ -161,10 +190,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     profile = select_agent_profile(profile_source)
     if args.live:
+        try:
+            assert_live_piqsavi_profile_unlocked(profile)
+        except LivePiqsaviProfileNotDeployedError as exc:
+            envelope = _undeployed_live_piqsavi_envelope(exc, profile)
+            print(str(exc))
+            print(json.dumps(envelope, ensure_ascii=False, indent=2))
+            try:
+                output_dir = assert_live_probe_output_outside_repository(output_dir)
+            except LiveProbeOutputInsideRepositoryError:
+                return 2
+            _write_json(output_dir / "summary.json", envelope)
+            return 2
         if profile.source == "piqsavi_production_intended":
             print(
                 "PiqSavi production-intended profile selected. "
-                "NOT YET DEPLOYED/VALIDATED. Shopify has not fetched this profile. "
+                "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is true. "
+                "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains a separate milestone. "
                 "Not production certification. Sprint 32 remains open."
             )
         else:
@@ -191,8 +233,6 @@ def main(argv: list[str] | None = None) -> int:
             envelope["agent_profile_source"] = profile.source
             envelope["agent_profile_usage"] = profile.usage
             envelope["agent_profile_not_piqsavi_identity"] = profile.not_piqsavi_identity
-            envelope["piqsavi_profile_deployed_and_validated"] = profile.deployed_and_validated
-            envelope["shopify_has_fetched_piqsavi_profile"] = profile.shopify_has_fetched_profile
             _write_json(output_dir / "summary.json", envelope)
             print(json.dumps(envelope, ensure_ascii=False, indent=2))
             return 2
@@ -215,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
         "agent_profile_source": report.agent_profile_source,
         "agent_profile_usage": report.agent_profile_usage,
         "agent_profile_not_piqsavi_identity": report.agent_profile_not_piqsavi_identity,
-        "piqsavi_profile_deployed_and_validated": report.piqsavi_profile_deployed_and_validated,
+        "piqsavi_profile_deployed": report.piqsavi_profile_deployed,
         "shopify_has_fetched_piqsavi_profile": report.shopify_has_fetched_piqsavi_profile,
         "auth_tier": report.auth_tier,
         "credentials_required": report.credentials_required,

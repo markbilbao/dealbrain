@@ -422,7 +422,7 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 
 ### 2026-09-18 PiqSavi UCP agent-profile foundation (does not close this sprint)
 
-A PiqSavi-owned UCP agent profile is **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED** at `GET /ucp/agent-profiles/2026-08-25/piqsavi.json`. Proposed canonical production URL: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. The Shopify-hosted fixture remains **TECHNICAL TEST ONLY** and remains the PH probe default. This workspace did not deploy and did not call Shopify. Sprint 32 is **not complete**.
+A PiqSavi-owned UCP agent profile is **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED** at `GET /ucp/agent-profiles/2026-08-25/piqsavi.json`. Proposed canonical production URL: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED = False`. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. Live `--agent-profile-source piqsavi` is fail-closed while undeployed. The Shopify-hosted fixture remains **TECHNICAL TEST ONLY** and remains the PH probe default. This workspace did not deploy and did not call Shopify. Sprint 32 is **not complete**.
 
 Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 
