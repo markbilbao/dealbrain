@@ -526,13 +526,23 @@ def test_php_context_does_not_force_php_or_fabricate_conversion() -> None:
 def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
     sprint32 = SPRINT32.read_text(encoding="utf-8")
+    status_line = next(line for line in probe_doc.splitlines() if line.startswith("**Status:**"))
+    footer = probe_doc.rsplit("---", 1)[-1]
+    first_run = probe_doc.split("## Owner live 12-query PH coverage probe", 1)[1].split(
+        "## Owner live diversified get_product validation", 1
+    )[0]
+    diversified = probe_doc.split("## Owner live diversified get_product validation", 1)[1]
     assert "PASSED TECHNICAL COVERAGE TEST" in probe_doc
+    assert "PH LIVE TECHNICAL COVERAGE VALIDATED" in status_line
     assert "120 products" in probe_doc
-    assert "122 offer" in probe_doc
+    assert "122 offer" in first_run
+    assert "130 offer" in diversified
     assert "mixed" in probe_doc.casefold()
     assert "INR" in probe_doc
-    assert "concentrated in one query" in probe_doc
-    assert "rerun" in probe_doc.casefold()
+    assert "concentrated in one query" in first_run
+    assert "must be rerun" not in status_line.casefold()
+    assert "MUST BE RERUN" not in footer
+    assert "5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES" in footer
     assert "does **not** close Sprint 32" in probe_doc
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
@@ -540,6 +550,51 @@ def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
     assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert "Sprint 38 remains unstarted" in sprint32
+
+
+def test_owner_diversified_get_product_validation_is_recorded() -> None:
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    status_line = next(line for line in probe_doc.splitlines() if line.startswith("**Status:**"))
+    footer = probe_doc.rsplit("---", 1)[-1]
+    first_run = probe_doc.split("## Owner live 12-query PH coverage probe", 1)[1].split(
+        "## Owner live diversified get_product validation", 1
+    )[0]
+    diversified = probe_doc.split("## Owner live diversified get_product validation", 1)[1]
+    current_blockers = sprint32.split("### Closure blockers (current)", 1)[1].split(
+        "### Production defaults", 1
+    )[0]
+    assert "PH LIVE TECHNICAL COVERAGE VALIDATED" in status_line
+    assert "Diversified 5/5 `get_product` validations completed" in status_line
+    assert "five distinct categories" in status_line
+    assert "12/12 SEARCH CATEGORIES USEFUL" in footer
+    assert "5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES" in footer
+    assert "NOT PRODUCTION CERTIFICATION" in footer
+    assert "SPRINT 32 REMAINS OPEN" in footer
+    assert "SPRINT 38 UNSTARTED" in footer
+    assert "DEEPER GET_PRODUCT CROSS-CATEGORY VALIDATION MUST BE RERUN BY OWNER" not in footer
+    assert "must be rerun by the owner" not in status_line
+    assert "must be rerun" not in current_blockers
+    assert "concentrated in one query" in first_run
+    assert "122 offer" in first_run
+    assert "wireless earbuds" in diversified
+    assert "gaming laptop" in diversified
+    assert "mechanical keyboard" in diversified
+    assert "USB-C charger" in diversified
+    assert "phone case" in diversified
+    assert "120 products" in diversified
+    assert "130 offer" in diversified
+    assert "not 130 distinct products" in diversified.replace("*", "").casefold()
+    assert "12/12" in diversified or "All 12 query classifications remained" in diversified
+    assert "USEFUL_PH_OFFER" in diversified
+    assert "Sprint 32 remains **OPEN**" in diversified
+    assert "Sprint 38 remains **UNSTARTED**" in diversified
+    assert production_research_provider_registry().list_providers() == ()
+    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert production_research_provider_routing_policy_catalog().list_records() == ()
+    assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
 
 
