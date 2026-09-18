@@ -98,13 +98,15 @@ Maximum: **12** `search_catalog` queries and **5** `get_product` validations.
 
 | Class | Meaning |
 |-------|---------|
-| `USEFUL_PH_OFFER` | At least one non-placeholder offer has identifiable product, current price, seller identity, seller/source or checkout URL, sale-ready availability when provided, and PH query context applied. |
+| `USEFUL_PH_OFFER` | At least one non-placeholder offer has identifiable product, integer `price_amount_minor` plus currency, seller identity, an actual seller/product/checkout URL, sale-ready availability when provided, and PH query context applied. A seller domain alone is not a destination URL. |
 | `PARTIAL_PH_RESULT` | Products return but comparison-critical offer evidence is incomplete. |
-| `NO_USEFUL_PH_RESULT` | No useful offer exists, including empty or obvious placeholder/test results. |
+| `NO_USEFUL_PH_RESULT` | No useful offer exists, including empty or obvious placeholder/test results. JSON-RPC/MCP tool failures are **not** this class; they fail the probe closed. |
 
 Inferred Shopify fields (`description`, `options`, `metadata.*`, `variants[].condition`) are recorded as inferred and are not treated as merchant-authored source facts.
 
-Persisted live evidence is minimized: query, timestamp, classification, product identifier, seller identity/domain, currency, price presence, availability, URL presence, and flags. No product images. No broad inferred marketing copy. No raw full-response persistence by default.
+Persisted live evidence is minimized only: query, timestamp, classification, product identifier, seller identity/domain, `price_amount_minor`, currency, availability, actual URL presence, and flags. No product images. No broad inferred marketing copy. No raw Shopify catalog payloads. Amounts never enter PiqScore.
+
+HTTP 200 JSON-RPC `error` envelopes and MCP `result.isError=true` fail the probe. They are not empty-catalog coverage results. Non-fatal `structuredContent.messages` on an otherwise successful product response are not treated as errors.
 
 ---
 
@@ -139,6 +141,7 @@ This harness does **not** mean:
 - PiqSavi shopping beta is live
 - production provider/certification catalogs are populated
 - Sprint 38 has started
+- this harness may feed PiqScore / Recommendation / Best Piq
 
 ---
 

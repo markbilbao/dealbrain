@@ -4,6 +4,7 @@
 Anonymous, first-page-only, organic catalog probe. Not a production connector.
 Does not certify Shopify. Does not start Sprint 38. Does not scrape merchants.
 Does not enable promoted placement or affiliate commission.
+Does not persist raw Shopify catalog responses.
 
 Usage:
   uv run python scripts/shopify_global_catalog_ph_probe.py
@@ -34,6 +35,7 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     LiveProbeOutputInsideRepositoryError,
     ProbeContractError,
     ProbeLimitError,
+    ProbeResponseError,
     anonymous_http_headers,
     assert_live_probe_output_outside_repository,
     build_jsonrpc_request,
@@ -41,6 +43,7 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     load_probe_fixture,
     minimized_artifact_payload,
     run_ph_coverage_probe,
+    validate_catalog_tool_response,
 )
 
 
@@ -50,7 +53,6 @@ class LiveAnonymousCatalogTransport:
     def __init__(self, *, timeout: float = 30.0) -> None:
         self.timeout = timeout
         self._next_id = 1
-        self.raw_exchanges: list[dict[str, Any]] = []
 
     def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         if name == FORBIDDEN_LOOKUP_TOOL:
@@ -58,13 +60,7 @@ class LiveAnonymousCatalogTransport:
         request = build_jsonrpc_request(name, arguments, request_id=self._next_id)
         self._next_id += 1
         payload = post_anonymous_catalog(request, timeout=self.timeout)
-        self.raw_exchanges.append(
-            {
-                "tool": name,
-                "request_id": request["id"],
-                "response_keys": sorted(payload.keys()) if isinstance(payload, dict) else [],
-            }
-        )
+        validate_catalog_tool_response(payload)
         return payload
 
 
@@ -100,23 +96,27 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(serialized + "\n", encoding="utf-8")
 
 
-def _strip_media(value: Any) -> Any:
-    if isinstance(value, dict):
-        return {
-            key: _strip_media(item)
-            for key, item in value.items()
-            if key not in {"media", "image", "images"}
-        }
-    if isinstance(value, list):
-        return [_strip_media(item) for item in value]
-    return value
+def _failure_envelope(exc: BaseException) -> dict[str, Any]:
+    return {
+        "live": True,
+        "production_certified": False,
+        "closes_sprint_32": False,
+        "certifies_shopify": False,
+        "starts_sprint_38": False,
+        "agent_profile_usage": TECHNICAL_TEST_ONLY,
+        "credentials_required": False,
+        "raw_response_persisted": False,
+        "technical_probe_failure": True,
+        "error": str(exc),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
             "PH Shopify Global Catalog coverage probe. Anonymous technical test. "
-            "Does not certify production. Live artifacts must stay outside Git."
+            "Does not certify production. Live artifacts must stay outside Git. "
+            "Minimized evidence only; raw catalog payloads are not persisted."
         )
     )
     parser.add_argument(
@@ -139,17 +139,8 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_OUTPUT_DIR,
         help="Default live destination is /tmp/piqsavi-shopify-global-ph.",
     )
-    parser.add_argument(
-        "--persist-raw",
-        action="store_true",
-        help=(
-            "LOCAL DEBUG ONLY. Persist media-stripped JSON-RPC results under the "
-            "output dir. Never commit. Default is off."
-        ),
-    )
     args = parser.parse_args(argv)
     output_dir = args.output_dir
-    persist_raw = bool(args.persist_raw) and args.live
     if args.live:
         print(
             "TECHNICAL TEST ONLY. Anonymous Shopify-hosted agent profile. "
@@ -166,18 +157,9 @@ def main(argv: list[str] | None = None) -> int:
             report = run_ph_coverage_probe(
                 transport=transport,
                 live=True,
-                persist_raw=persist_raw,
             )
-        except (ProbeLimitError, ProbeContractError, RuntimeError) as exc:
-            envelope = {
-                "live": True,
-                "production_certified": False,
-                "closes_sprint_32": False,
-                "certifies_shopify": False,
-                "agent_profile_usage": TECHNICAL_TEST_ONLY,
-                "credentials_required": False,
-                "error": str(exc),
-            }
+        except (ProbeLimitError, ProbeContractError, ProbeResponseError, RuntimeError) as exc:
+            envelope = _failure_envelope(exc)
             _write_json(output_dir / "summary.json", envelope)
             print(json.dumps(envelope, ensure_ascii=False, indent=2))
             return 2
@@ -187,7 +169,6 @@ def main(argv: list[str] | None = None) -> int:
         report = run_ph_coverage_probe(
             transport=transport,
             live=False,
-            persist_raw=False,
         )
 
     artifact = minimized_artifact_payload(report)
@@ -207,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
         "lookup_catalog_calls": report.lookup_catalog_calls,
         "pagination_followed": report.pagination_followed,
         "bulk_ids_used": report.bulk_ids_used,
-        "raw_response_persisted": report.raw_response_persisted,
+        "raw_response_persisted": False,
         "production_certified": False,
         "certifies_shopify": False,
         "closes_sprint_32": False,
@@ -222,15 +203,6 @@ def main(argv: list[str] | None = None) -> int:
     }
     _write_json(output_dir / "summary.json", summary)
     _write_json(output_dir / "ph_probe.json", artifact)
-    if persist_raw and args.live:
-        raw_dir = output_dir / "raw"
-        raw_payload = {
-            "artifact_kind": report.artifact_kind,
-            "warning": "PRIVATE_LOCAL_LIVE_ARTIFACT — never commit live catalog payloads",
-            "media_stripped": True,
-            "exchanges": _strip_media(getattr(transport, "raw_exchanges", [])),
-        }
-        _write_json(raw_dir / "exchanges.json", raw_payload)
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
 

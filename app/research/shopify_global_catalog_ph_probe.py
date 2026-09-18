@@ -101,6 +101,10 @@ class ProbeContractError(ValueError):
     """The PH probe refused pagination, bulk lookup, or monetized catalog options."""
 
 
+class ProbeResponseError(RuntimeError):
+    """Shopify catalog JSON-RPC/MCP returned an error or malformed success."""
+
+
 class LiveProbeOutputInsideRepositoryError(ValueError):
     """Live catalog artifacts cannot be written inside the git repository."""
 
@@ -132,6 +136,7 @@ class MinimizedOfferEvidence:
     checkout_url_present: bool
     product_url_present: bool
     price_present: bool
+    price_amount_minor: int | None
     currency: str | None
     availability_present: bool
     availability_available: bool | None
@@ -153,6 +158,7 @@ class MinimizedOfferEvidence:
             "checkout_url_present": self.checkout_url_present,
             "product_url_present": self.product_url_present,
             "price_present": self.price_present,
+            "price_amount_minor": self.price_amount_minor,
             "currency": self.currency,
             "availability_present": self.availability_present,
             "availability_available": self.availability_available,
@@ -454,21 +460,77 @@ def anonymous_http_headers() -> dict[str, str]:
     return {"Content-Type": "application/json", "Accept": "application/json"}
 
 
-def structured_content_from_result(payload: dict[str, Any] | None) -> dict[str, Any]:
+def _safe_text(value: Any, *, limit: int = 200) -> str | None:
+    text = _text(value)
+    if text is None:
+        return None
+    return text if len(text) <= limit else text[:limit]
+
+
+def _safe_jsonrpc_error_diagnostic(error: Any) -> str:
+    if not isinstance(error, dict):
+        return "Shopify catalog JSON-RPC error"
+    code = error.get("code")
+    message = _safe_text(error.get("message"))
+    return f"Shopify catalog JSON-RPC error code={code} message={message}"
+
+
+def _safe_mcp_message_diagnostics(messages: Any) -> str:
+    if not isinstance(messages, list):
+        return "Shopify catalog MCP tool error"
+    parts: list[str] = []
+    for item in messages:
+        if not isinstance(item, dict):
+            continue
+        code = item.get("code")
+        severity = item.get("type") or item.get("severity")
+        content = _safe_text(item.get("content"))
+        parts.append(f"code={code} severity={severity} content={content}")
+        if len(parts) >= 5:
+            break
+    if not parts:
+        return "Shopify catalog MCP tool error"
+    return "Shopify catalog MCP tool error; " + "; ".join(parts)
+
+
+def validate_catalog_tool_response(payload: dict[str, Any] | None) -> dict[str, Any]:
+    """Fail closed on JSON-RPC/MCP errors. Do not treat failures as empty catalogs.
+
+    Successful ``structuredContent`` may include non-fatal messages. Those
+    warnings are not Shopify error semantics and do not fail the probe.
+    """
+
     if not isinstance(payload, dict):
-        return {}
-    if isinstance(payload.get("structuredContent"), dict):
-        return payload["structuredContent"]
-    result = payload.get("result")
-    if isinstance(result, dict) and isinstance(result.get("structuredContent"), dict):
-        return result["structuredContent"]
-    if "products" in payload or "product" in payload:
-        return payload
-    return {}
+        raise ProbeResponseError("Shopify catalog response is not a JSON object")
+    if payload.get("error") is not None:
+        raise ProbeResponseError(_safe_jsonrpc_error_diagnostic(payload.get("error")))
+    result: dict[str, Any] | None
+    if isinstance(payload.get("result"), dict):
+        result = payload["result"]
+    elif isinstance(payload.get("structuredContent"), dict):
+        result = payload
+    else:
+        raise ProbeResponseError(
+            "Shopify catalog response has neither structuredContent nor a recognized error envelope"
+        )
+    if result.get("isError") is True:
+        content = result.get("structuredContent")
+        messages = content.get("messages") if isinstance(content, dict) else None
+        raise ProbeResponseError(_safe_mcp_message_diagnostics(messages))
+    content = result.get("structuredContent")
+    if not isinstance(content, dict):
+        raise ProbeResponseError(
+            "Shopify catalog response has neither structuredContent nor a recognized error envelope"
+        )
+    return content
+
+
+def structured_content_from_result(payload: dict[str, Any] | None) -> dict[str, Any]:
+    return validate_catalog_tool_response(payload)
 
 
 def products_from_catalog_payload(payload: dict[str, Any] | None) -> list[dict[str, Any]]:
-    content = structured_content_from_result(payload)
+    content = validate_catalog_tool_response(payload)
     products: list[dict[str, Any]] = []
     raw_products = content.get("products")
     if isinstance(raw_products, list):
@@ -484,6 +546,31 @@ def _text(value: Any) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _absolute_http_url(value: Any) -> str | None:
+    text = _text(value)
+    if text is None:
+        return None
+    lowered = text.casefold()
+    if lowered.startswith("https://") or lowered.startswith("http://"):
+        return text
+    return None
+
+
+def _price_amount_minor(price: dict[str, Any]) -> int | None:
+    """Shopify/UCP price.amount is integer minor units. Floats are rejected."""
+
+    amount = price.get("amount")
+    if isinstance(amount, bool) or amount is None:
+        return None
+    if isinstance(amount, int):
+        return amount
+    if isinstance(amount, str):
+        stripped = amount.strip()
+        if stripped.isdigit() or (stripped.startswith("-") and stripped[1:].isdigit()):
+            return int(stripped)
+    return None
 
 
 def _seller(variant: dict[str, Any]) -> dict[str, Any]:
@@ -586,11 +673,11 @@ def minimize_offer_evidence(
     variant_id = _text(variant.get("id"))
     seller_identity = _text(seller.get("name")) or _text(seller.get("id"))
     seller_domain = _text(seller.get("domain"))
-    seller_url_present = bool(_text(seller.get("url")) or seller_domain)
-    checkout_url_present = bool(_text(variant.get("checkout_url")))
-    product_url_present = bool(_text(product.get("url")))
-    price_amount = price.get("amount")
-    price_present = price_amount is not None and str(price_amount) != ""
+    seller_url_present = bool(_absolute_http_url(seller.get("url")))
+    checkout_url_present = bool(_absolute_http_url(variant.get("checkout_url")))
+    product_url_present = bool(_absolute_http_url(product.get("url")))
+    price_amount_minor = _price_amount_minor(price)
+    price_present = price_amount_minor is not None
     currency = _text(price.get("currency"))
     availability_present = bool(availability)
     available_value = availability.get("available") if availability_present else None
@@ -609,7 +696,8 @@ def minimize_offer_evidence(
         }
     usable = (
         identifiable_product
-        and price_present
+        and price_amount_minor is not None
+        and bool(currency)
         and bool(seller_identity)
         and destination
         and sale_ready
@@ -625,6 +713,7 @@ def minimize_offer_evidence(
         checkout_url_present=checkout_url_present,
         product_url_present=product_url_present,
         price_present=price_present,
+        price_amount_minor=price_amount_minor,
         currency=currency,
         availability_present=availability_present,
         availability_available=available_value,
@@ -667,7 +756,9 @@ def coverage_flags(offers: tuple[MinimizedOfferEvidence, ...]) -> dict[str, bool
         ),
         "identifiable_product": _any(real, "identifiable_product"),
         "identifiable_seller": any(bool(item.seller_identity) for item in real),
-        "seller_url_or_domain_present": _any(real, "seller_url_present"),
+        "seller_url_or_domain_present": any(
+            item.seller_url_present or bool(item.seller_domain) for item in real
+        ),
         "price_present": _any(real, "price_present"),
         "currency_present": any(bool(item.currency) for item in real),
         "availability_present": _any(real, "availability_present"),
@@ -774,7 +865,6 @@ def run_ph_coverage_probe(
     live: bool,
     retrieved_at: datetime | None = None,
     intents: tuple[PhProbeIntent, ...] | None = None,
-    persist_raw: bool = False,
 ) -> PhProbeReport:
     selected_intents = intents or load_ph_probe_intents()
     if len(selected_intents) > MAX_SEARCH_CATALOG_QUERIES:
@@ -855,7 +945,7 @@ def run_ph_coverage_probe(
         lookup_catalog_calls=0,
         pagination_followed=False,
         bulk_ids_used=False,
-        raw_response_persisted=bool(persist_raw and live),
+        raw_response_persisted=False,
         production_certified=False,
         certifies_shopify=False,
         closes_sprint_32=False,

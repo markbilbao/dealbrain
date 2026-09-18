@@ -40,14 +40,17 @@ from app.research.shopify_global_catalog_ph_probe import (
     TECHNICAL_TEST_ONLY,
     USEFUL_PH_OFFER,
     LiveProbeOutputInsideRepositoryError,
+    PhProbeIntent,
     ProbeContractError,
     ProbeLimitError,
+    ProbeResponseError,
     anonymous_http_headers,
     assert_live_probe_output_outside_repository,
     build_get_product_arguments,
     build_jsonrpc_request,
     build_search_catalog_arguments,
     classify_query_offers,
+    coverage_flags,
     fixture_transport_from_payload,
     inferred_fields_observed,
     live_probe_output_is_inside_repository,
@@ -55,10 +58,12 @@ from app.research.shopify_global_catalog_ph_probe import (
     load_probe_fixture,
     minimize_offer_evidence,
     offers_from_products,
+    products_from_catalog_payload,
     resolve_live_probe_output_dir,
     run_ph_coverage_probe,
     select_promising_product_ids,
     source_offer_fields_observed,
+    validate_catalog_tool_response,
 )
 from scripts.shopify_global_catalog_ph_probe import main as probe_main
 
@@ -256,6 +261,8 @@ def test_classify_does_not_fabricate_missing_offer_fields() -> None:
         },
     )
     assert useful.usable_for_comparison is True
+    assert useful.price_amount_minor == 1000
+    assert useful.currency == "PHP"
     assert classify_query_offers((useful,)) == USEFUL_PH_OFFER
 
 
@@ -290,6 +297,8 @@ def test_no_raw_response_persistence_by_default(tmp_path: Path) -> None:
     assert probe["query_results"][0]["offers"][0]["product_id"] == (
         "gid://shopify/p/fixture-ph-earbuds"
     )
+    assert probe["query_results"][0]["offers"][0]["price_amount_minor"] == 249900
+    assert probe["query_results"][0]["offers"][0]["currency"] == "PHP"
 
 
 def test_live_output_rejects_paths_inside_the_repository(monkeypatch) -> None:
@@ -374,11 +383,15 @@ def test_live_anonymous_probe_does_not_require_credentials(
     assert "Authorization" not in headers
 
 
-def test_persist_raw_cannot_bypass_outside_repo_rule() -> None:
-    nested = ROOT / "artifacts" / "shopify"
-    exit_code = probe_main(["--live", "--persist-raw", "--output-dir", str(nested)])
-    assert exit_code == 2
-    assert not nested.exists()
+def test_persist_raw_option_is_removed() -> None:
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    module = (ROOT / "app/research/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    assert "--persist-raw" not in script
+    assert "persist_raw" not in script
+    assert "persist_raw" not in module
+    assert "raw_exchanges" not in script
+    with pytest.raises(SystemExit):
+        probe_main(["--persist-raw"])
 
 
 def test_module_has_no_live_http_and_script_is_catalog_only() -> None:
@@ -462,3 +475,278 @@ def test_fixture_cli_does_not_call_shopify(monkeypatch, tmp_path: Path) -> None:
     exit_code = probe_main(["--fixture", str(DEFAULT_FIXTURE), "--output-dir", str(tmp_path)])
     assert exit_code == 0
     assert (tmp_path / "summary.json").exists()
+
+
+class _FixedPayloadTransport:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+
+    def call_tool(self, name: str, arguments: dict) -> dict:
+        del name, arguments
+        return self.payload
+
+
+def _useful_product(*, seller_url=None, product_url=None, checkout_url=None, domain=None) -> dict:
+    variant = {
+        "id": "gid://shopify/ProductVariant/ok",
+        "price": {"amount": 129900, "currency": "PHP"},
+        "availability": {"available": True, "status": "in_stock"},
+        "seller": {"name": "Fixture Seller PH"},
+    }
+    if checkout_url:
+        variant["checkout_url"] = checkout_url
+    seller = variant["seller"]
+    if seller_url:
+        seller["url"] = seller_url
+    if domain:
+        seller["domain"] = domain
+    product = {"id": "gid://shopify/p/ok", "variants": [variant]}
+    if product_url:
+        product["url"] = product_url
+    return product
+
+
+def test_http_200_jsonrpc_error_fails_probe_and_is_not_no_useful() -> None:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "error": {
+            "code": -32000,
+            "message": "Unauthorized",
+            "data": {"secret": "do-not-persist"},
+        },
+    }
+    with pytest.raises(ProbeResponseError, match=r"code=-32000.*Unauthorized") as exc_info:
+        run_ph_coverage_probe(
+            transport=_FixedPayloadTransport(payload),
+            live=True,
+            intents=(PhProbeIntent("wireless_earbuds", "wireless earbuds"),),
+        )
+    text = str(exc_info.value)
+    assert "do-not-persist" not in text
+    assert NO_USEFUL_PH_RESULT not in text
+    with pytest.raises(ProbeResponseError):
+        validate_catalog_tool_response(payload)
+
+
+def test_http_200_mcp_is_error_fails_probe_and_is_not_no_useful() -> None:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+            "isError": True,
+            "structuredContent": {
+                "messages": [{"type": "error", "code": "unauthorized", "content": "tool failed"}],
+                "products": [],
+            },
+        },
+    }
+    with pytest.raises(ProbeResponseError, match="MCP tool error") as exc_info:
+        run_ph_coverage_probe(
+            transport=_FixedPayloadTransport(payload),
+            live=True,
+            intents=(PhProbeIntent("wireless_earbuds", "wireless earbuds"),),
+        )
+    text = str(exc_info.value)
+    assert "unauthorized" in text
+    assert "tool failed" in text
+    assert NO_USEFUL_PH_RESULT not in text
+    with pytest.raises(ProbeResponseError):
+        products_from_catalog_payload(payload)
+
+
+def test_malformed_success_without_structured_content_fails_closed() -> None:
+    payload = {"jsonrpc": "2.0", "id": 1, "result": {"content": []}}
+    with pytest.raises(ProbeResponseError, match="neither structuredContent"):
+        validate_catalog_tool_response(payload)
+    with pytest.raises(ProbeResponseError, match="neither structuredContent"):
+        run_ph_coverage_probe(
+            transport=_FixedPayloadTransport(payload),
+            live=True,
+            intents=(PhProbeIntent("wireless_earbuds", "wireless earbuds"),),
+        )
+
+
+def test_successful_products_with_nonfatal_messages_remain_processable() -> None:
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {
+            "structuredContent": {
+                "messages": [{"type": "info", "code": "note", "content": "non-fatal"}],
+                "products": [
+                    _useful_product(
+                        seller_url="https://fixture-ok.example.invalid",
+                        checkout_url="https://fixture-ok.example.invalid/cart/ok:1",
+                    )
+                ],
+            }
+        },
+    }
+    content = validate_catalog_tool_response(payload)
+    assert content["products"]
+    report = run_ph_coverage_probe(
+        transport=_FixedPayloadTransport(payload),
+        live=False,
+        intents=(PhProbeIntent("wireless_earbuds", "wireless earbuds"),),
+    )
+    assert report.query_results[0].classification == USEFUL_PH_OFFER
+    assert report.closes_sprint_32 is False
+
+
+def test_live_cli_jsonrpc_error_writes_failure_not_coverage(tmp_path: Path, monkeypatch) -> None:
+    def fake_post(request, timeout):
+        del request, timeout
+        return {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "error": {"code": -32000, "message": "Unauthorized", "data": {"raw": "nope"}},
+        }
+
+    monkeypatch.setattr(
+        "scripts.shopify_global_catalog_ph_probe.post_anonymous_catalog",
+        fake_post,
+    )
+    outside = tmp_path / "piqsavi-shopify-global-ph"
+    exit_code = probe_main(["--live", "--output-dir", str(outside)])
+    assert exit_code == 2
+    summary = json.loads((outside / "summary.json").read_text(encoding="utf-8"))
+    blob = json.dumps(summary)
+    assert summary["technical_probe_failure"] is True
+    assert summary["closes_sprint_32"] is False
+    assert summary["starts_sprint_38"] is False
+    assert "NO_USEFUL_PH_RESULT" not in blob
+    assert "classifications" not in summary
+    assert "nope" not in blob
+    assert "Unauthorized" in summary["error"]
+    assert not (outside / "ph_probe.json").exists()
+    assert not (outside / "raw").exists()
+
+
+def test_price_amount_and_currency_are_required_together() -> None:
+    amount_only = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok", "url": "https://fixture-ok.example.invalid/p"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 5000},
+            "checkout_url": "https://fixture-ok.example.invalid/cart/ok:1",
+            "seller": {"name": "Fixture OK"},
+        },
+    )
+    assert amount_only.price_amount_minor == 5000
+    assert amount_only.price_present is True
+    assert amount_only.currency is None
+    assert amount_only.usable_for_comparison is False
+    assert classify_query_offers((amount_only,)) == PARTIAL_PH_RESULT
+
+    currency_only = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok", "url": "https://fixture-ok.example.invalid/p"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"currency": "PHP"},
+            "checkout_url": "https://fixture-ok.example.invalid/cart/ok:1",
+            "seller": {"name": "Fixture OK"},
+        },
+    )
+    assert currency_only.price_amount_minor is None
+    assert currency_only.price_present is False
+    assert currency_only.currency == "PHP"
+    assert currency_only.usable_for_comparison is False
+    assert classify_query_offers((currency_only,)) == PARTIAL_PH_RESULT
+
+    float_amount = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok", "url": "https://fixture-ok.example.invalid/p"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 12.5, "currency": "PHP"},
+            "checkout_url": "https://fixture-ok.example.invalid/cart/ok:1",
+            "seller": {"name": "Fixture OK"},
+        },
+    )
+    assert float_amount.price_amount_minor is None
+    assert float_amount.usable_for_comparison is False
+
+
+def test_destination_requires_actual_url_not_seller_domain() -> None:
+    domain_only = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 1000, "currency": "PHP"},
+            "seller": {
+                "name": "Fixture OK",
+                "domain": "fixture-ok.example.invalid",
+            },
+        },
+    )
+    assert domain_only.seller_domain == "fixture-ok.example.invalid"
+    assert domain_only.seller_url_present is False
+    assert domain_only.product_url_present is False
+    assert domain_only.checkout_url_present is False
+    assert domain_only.usable_for_comparison is False
+    assert classify_query_offers((domain_only,)) == PARTIAL_PH_RESULT
+
+    seller_url = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 1000, "currency": "PHP"},
+            "seller": {
+                "name": "Fixture OK",
+                "domain": "fixture-ok.example.invalid",
+                "url": "https://fixture-ok.example.invalid",
+            },
+        },
+    )
+    assert seller_url.seller_url_present is True
+    assert seller_url.usable_for_comparison is True
+
+    product_url = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok", "url": "https://fixture-ok.example.invalid/products/ok"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 1000, "currency": "PHP"},
+            "seller": {"name": "Fixture OK"},
+        },
+    )
+    assert product_url.product_url_present is True
+    assert product_url.seller_url_present is False
+    assert product_url.usable_for_comparison is True
+
+    checkout_url = minimize_offer_evidence(
+        {"id": "gid://shopify/p/ok"},
+        {
+            "id": "gid://shopify/ProductVariant/ok",
+            "price": {"amount": 1000, "currency": "PHP"},
+            "checkout_url": "https://fixture-ok.example.invalid/cart/ok:1",
+            "seller": {"name": "Fixture OK"},
+        },
+    )
+    assert checkout_url.checkout_url_present is True
+    assert checkout_url.usable_for_comparison is True
+    flags = coverage_flags((domain_only,))
+    assert flags["seller_url_or_domain_present"] is True
+    assert flags["destination_present"] is False
+
+
+def test_no_raw_shopify_payload_persistence_exists() -> None:
+    module = (ROOT / "app/research/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/shopify_global_catalog_ph_probe.py").read_text(encoding="utf-8")
+    assert "raw_response_persisted=False" in module
+    assert "--persist-raw" not in script
+    assert "Do not persist raw Shopify catalog responses." in script or (
+        "raw catalog payloads are not persisted" in script
+    )
+
+
+def test_sprint38_unstarted_and_production_catalogs_empty() -> None:
+    _transport, report = _run_fixture_probe()
+    assert report.starts_sprint_38 is False
+    assert report.production_certified is False
+    assert production_research_provider_registry().list_providers() == ()
+    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    assert "Sprint 32 remains open." in sprint32
+    assert "not Sprint 38 execution" in probe_doc
