@@ -19,7 +19,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | 38 | [Connector Reliability & Honest Degradation](SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
 | 39 | [Analytics, Feedback & Support](SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md) — product-validation learning; affiliate conversion not a launch-acceptance metric |
 | 40 | [Security & Abuse Hardening](SPRINT_40_SECURITY_ABUSE_HARDENING.md) |
-| 41 | [Production Environment & Deploy Path](SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md) |
+| 41 | [Production Environment & Deploy Path](SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md) — **PARTIALLY COMPLETE — PRODUCTION LIVE; ROLLBACK VALIDATION, WWW CANONICALIZATION, CDN/WAF OWNER DECISION, STAGING PRESERVATION, AND LIVE IAM SIMULATION REMAIN OPEN.** Not COMPLETE/CLOSED. Evidence: [`../evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md`](../evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md) |
 | 42 | [Production Operations, Monitoring & DR Evidence](SPRINT_42_PRODUCTION_OPERATIONS_DR.md) |
 | 43 | [Performance & Capacity Validation](SPRINT_43_PERFORMANCE_CAPACITY_VALIDATION.md) |
 | 44 | [Claims Control, Approvals & Production Rehearsal](SPRINT_44_CLAIMS_APPROVALS_REHEARSAL.md) |

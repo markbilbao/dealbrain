@@ -61,11 +61,18 @@ def test_register_ext_rows_not_advanced_by_cutover_audit() -> None:
                 return [cell.strip() for cell in line.strip("|").split("|")][7]
         raise AssertionError(f"missing {row_id}")
 
-    assert status("EXT-11") == "`not_started`"
-    assert status("EXT-12") == "`not_started`"
-    assert "In-repo TF complete; not applied" in status("EXT-13")
-    assert status("EXT-14") == "`not_started`"
+    # Current-status table (2026-09-18 Sprint 41 reconciliation).
+    assert status("EXT-11") == "`provisioned`"
+    assert status("EXT-12") == "`provisioned`"
+    assert status("EXT-13") == "`provisioned`"
+    assert status("EXT-14") == "`provisioned`"
     assert status("EXT-20") == "`applied`"
     assert status("EXT-21") == "`applied`"
     assert "EARLY_ACCESS_PRODUCTION_CUTOVER_READINESS_2026-09-11.md" in REGISTER
     assert "EARLY_ACCESS_PRODUCTION_FOUNDATION_PHASE1_2026-09-11.md" in REGISTER
+    # Historical 2026-09-11 cutover wording is retained and not rewritten.
+    assert "EXT-11 | remains `not_started`" in REGISTER
+    assert "EXT-12 | remains `not_started`" in REGISTER
+    assert "In-repo TF complete; not applied" in REGISTER
+    assert "EXT-11 / EXT-12 / EXT-14 remain `not_started`" in REGISTER
+    assert "2026-09-18 Sprint 41 production reconciliation addendum" in REGISTER

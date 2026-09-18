@@ -80,8 +80,9 @@ Repository Terraform models:
   exact `environment:staging` / `environment:production` trust
 - Host `AmazonSSMManagedInstanceCore` + `dealbrain/<env>/ghcr_pull` secret containers
 
-**No production deploy workflows** exist yet. Staging deploy is implemented in
-Sprint 25b.3 (repository only until live prerequisites are met).
+**Roles are live for production deploys after GitHub Environment `production` was created.** Current Sprint 41 reconciliation: [`roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md`](roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md). Historical 25b.2/25b.3 sentences below are not erased.
+
+Historical 25b.2 wording (not current): “No production deploy workflows exist yet.” Production deploy/rollback workflows now exist and have been used. Staging deploy remains implemented from Sprint 25b.3.
 
 Roles are **not operationally approved** until GitHub Environments are configured
 with exact names, **`main`-only** deployment branches, and production **required
