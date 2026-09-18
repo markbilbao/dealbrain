@@ -62,11 +62,38 @@ Indexed Shopee or Lazada URLs are discovery hits. They do **not** mean “PiqSav
 
 Unknown shipping ≠ PHP 0 ≠ free. Unknown fields are not scored as zero. Do not invent price, stock, or shipping.
 
+## Technical Level-B candidate vs offer evidence
+
+A later owner-run Tavily Extract benchmark may mark:
+
+`technical_level_b_candidate = true`
+
+only when extract succeeded, the exact source URL is retained, merchant and product/page identity are identifiable, a retrieval timestamp exists, price evidence appears attributable to that product/source, the result is not a search snippet, and the result is not obviously stale/ambiguous.
+
+That flag is **not** offer evidence. Source-site contractual policy defaults to **unknown**. Unknown policy blocks evaluated-set promotion:
+
+```
+technical_level_b_candidate = true/false
+policy_allowed = false/unknown
+may_enter_evaluated_set = false
+```
+
+Keep these questions separate:
+
+1. retrieval technically possible
+2. Tavily API use under Tavily account/terms
+3. source-site content/use rights
+4. production capability policy
+
+A + B does not imply C or D. Tavily technical extraction success does not convert retailer rights from unknown to allowed. PiqSavi must not fetch merchant pages; live extract may call only the official Tavily Extract API.
+
+Live extract artifacts are **private/local only**. Tavily terms restrict disclosure of performance information or analysis relating to its Services. Do not commit extracted page text, raw Tavily responses, success-rate reports, or latency reports.
+
 ## Sprint 32 truth
 
-This PR creates a **public-web discovery foundation**. It does **not** yet create the real shopping-offer path required to close Sprint 32.
+This PR creates a **public-web discovery foundation** plus a private technical Extract harness. It does **not** yet create the real shopping-offer path required to close Sprint 32.
 
-A successful Brave/Tavily search benchmark only proves discovery usefulness. Sprint 32 still needs a legitimate route capable of establishing stronger Level A/B offer evidence, including attributable current price/freshness, before offers may enter the canonical evaluated set. Do not imply the discovery benchmark alone can close Sprint 32.
+A successful Brave/Tavily search benchmark only proves discovery usefulness. A successful Tavily Extract run can only prove technical Level-B candidate retrieval. Sprint 32 still needs a legitimate route capable of establishing stronger Level A/B offer evidence, including attributable current price/freshness **and** allowed source-site policy, before offers may enter the canonical evaluated set. Do not imply the discovery or extract benchmark alone can close Sprint 32.
 
 Brave PH localization via the Web Search `country` parameter remains unverified. The harness omits `country` and preserves PH intent in the query text.
 

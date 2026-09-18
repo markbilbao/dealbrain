@@ -94,6 +94,21 @@ def test_tavily_and_exa_runtime_llm_remain_unknown() -> None:
         assert audit.topic_state("runtime_ai_llm_grounding_or_inference") != "allowed"
 
 
+def test_tavily_api_use_is_restricted_not_categorically_forbidden() -> None:
+    tavily = next(
+        item for item in public_web_provider_policy_audits() if item.provider_key == "tavily_search"
+    )
+    notes = tavily.topic_state
+    assert notes("api_use") == "restricted"
+    assert notes("source_site_content_rights") == "unknown"
+    assert notes("production_capability_policy") == "unknown"
+    api_notes = next(item.notes for item in tavily.topics if item.topic == "api_use")
+    assert "Customer Applications" in api_notes
+    assert "third-party end users" in api_notes
+    assert "not categorically forbidden" in api_notes
+    assert "Unrestricted production shopping use is not established" in api_notes
+
+
 def test_brave_does_not_send_unverified_ph_country_parameter() -> None:
     assert BRAVE_WEB_SEARCH_COUNTRY_ENUM_COMPLETE is False
     assert brave_ph_country_parameter_verified() is False

@@ -342,11 +342,23 @@ def tavily_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "api_use",
                 "restricted",
                 terms,
-                "Terms grant a non-exclusive, revocable, non-transferable, "
-                "non-sublicensable right to use Tavily APIs solely for Customer’s "
-                "internal business purposes and according to documentation. "
-                "Shopper-facing PiqSavi use is not clearly the same as internal "
-                "business use. Do not convert that into allowed.",
+                "Tavily Platform Terms (last updated 2026-05-04) grant a "
+                "non-exclusive, revocable, non-transferable, non-sublicensable "
+                "right to use Tavily APIs and to integrate the Services with "
+                "Customer Applications, solely for Customer’s internal business "
+                "purposes and according to documentation. Customer Applications "
+                "expressly include software, platforms, and/or services, including "
+                "AI Tools. Customer Input may come from end users of the Customer "
+                "Application. Section 3.5 explicitly contemplates third-party end "
+                "users outside Customer’s organization. Integration with Customer "
+                "Applications is expressly carved out of several use restrictions. "
+                "Shopper-facing use is therefore not categorically forbidden solely "
+                "because of “internal business purposes.” API keys may not be "
+                "shared with third parties without Tavily’s prior written consent. "
+                "Customer remains responsible for Customer Application and end-user "
+                "compliance and for applicable third-party terms. Output must be "
+                "independently validated. Unrestricted production shopping use is "
+                "not established. Not converted to allowed.",
             ),
             _topic(
                 "search_result_reuse",
@@ -359,9 +371,11 @@ def tavily_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "url_result_display",
                 "unknown",
                 f"{terms}; {search_docs}",
-                "Search responses include URLs. Display/redistribution rights for "
-                "those URLs and snippets in a consumer shopping UI are not clearly "
-                "stated as allowed.",
+                "Search responses include URLs. Customer Applications and "
+                "third-party end users are contemplated, but display/redistribution "
+                "rights for retrieved third-party page content in a shopper UI are "
+                "not clearly granted. Unrestricted production display remains "
+                "unknown, not allowed.",
             ),
             _topic(
                 "caching",
@@ -375,11 +389,32 @@ def tavily_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "content_retrieval",
                 "unknown",
                 extract_docs,
-                "Tavily Extract retrieves page content from specified URLs, including "
-                "JS-rendered pages. That is Tavily’s service, not a PiqSavi crawler. "
-                "Whether PiqSavi may use extracted merchant pages as offer evidence "
-                "is a separate rights question (Tavily terms + page publisher). "
-                "Unknown. Do not scrape merchants as a workaround.",
+                "Tavily Extract retrieves page content from specified URLs "
+                "(max 20 per request). basic returns extracted raw page content "
+                "(1 credit / 5 successful URLs). advanced can handle richer/"
+                "table/embedded content (2 credits / 5 successful URLs) and is "
+                "not run automatically here. That is Tavily’s service, not a "
+                "PiqSavi crawler. Technical extraction success is not source-site "
+                "permission and is not production capability policy. Unknown. "
+                "Do not scrape merchants as a workaround.",
+            ),
+            _topic(
+                "source_site_content_rights",
+                "unknown",
+                terms,
+                "Tavily states the customer remains responsible for applicable "
+                "third-party terms and rights. Tavily technical extraction "
+                "success does not convert source-site rights from unknown to "
+                "allowed. Default source-site contractual policy remains unknown.",
+            ),
+            _topic(
+                "production_capability_policy",
+                "unknown",
+                terms,
+                "Customer Applications and third-party end users are contemplated, "
+                "but unrestricted production shopping use is not established. "
+                "Output must be independently validated. Sprint 31 unknown stays "
+                "unknown. Not certified.",
             ),
             _topic(
                 "attribution",
@@ -446,8 +481,11 @@ def tavily_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "product_discovery",
                 "unknown",
                 f"{terms}; {search_docs}",
-                "Technically capable of returning PH-boosted URLs. Contractual "
-                "permission for PiqSavi consumer discovery is not clearly allowed.",
+                "Technically capable of returning PH-boosted URLs. Customer "
+                "Applications and third-party end users are contemplated, so "
+                "shopper-facing discovery is not categorically forbidden. "
+                "Unrestricted production shopping discovery is still not "
+                "established. Unknown, not allowed, not prohibited.",
             ),
             _topic(
                 "current_pricing",
@@ -480,9 +518,13 @@ def tavily_search_policy_audit() -> PublicWebProviderPolicyAudit:
         ),
         recommended_as_first_live_candidate=True,
         notes=(
-            "Useful comparison and possible Level B retrieval *if* later policy "
-            "review allows Extract. Internal-business-purpose wording keeps "
-            "shopper-facing reuse unknown. Not certified."
+            "Useful comparison and possible technical Level B retrieval if later "
+            "policy review allows Extract as offer evidence. Shopper-facing use "
+            "is not categorically forbidden solely by “internal business "
+            "purposes,” because Customer Applications and third-party end users "
+            "are expressly contemplated. Customer remains responsible for "
+            "third-party terms. Unrestricted production use is not established. "
+            "Technical extraction success is not retailer permission. Not certified."
         ),
     )
 
