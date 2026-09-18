@@ -6,7 +6,7 @@
 **Primary owner / domain:** Frontend / product / conversational continuity
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-6 (public UX); CC-01; persistent Ask; SEO technical foundation
-**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). Historical schema 1.2 suite evidence only. Current-main reconciliation baseline is `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`. Neither SHA is the final launch candidate, and neither proves live merchant research.
+**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). Historical schema 1.2 suite evidence only. Current-main reconciliation baseline is `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`. Final-checkpoint baseline is `4a4fe65fa7438c75208a0052f52b77f929ee3903`. None of these SHAs is the final launch candidate, and none proves live merchant research.
 
 ## Objective
 
@@ -38,6 +38,7 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | Consumer a11y closeout slice | implemented | Escape/close, focus trap/restore, `aria-live`, safe-area, keyboard-open dock. Browser matrix recorded; not a signed a11y audit. Live HTML/CSS/JS locks verified on staging; not a third-party cert. |
 | Full CC-01 staging E2E on current-main | partial | Deploy Staging #27 proved SHA `a8bd001`. Package: `docs/roadmap/evidence/SPRINT_29_STAGING_CC01_EVIDENCE.md`. Live research / canonical UUID creation remain Sprint 38. |
 | Remaining internal closeout / current-main reconciliation | documented | [`../evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](../evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) supersedes stale PR #127. Historical 2026-09-10 remaining-closeout retained at [`../evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](../evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md). No additional consumer feature invented; 29.0 freeze preserved; live research not claimed. |
+| Final checkpoint (2026-09-18) | documented | [`../evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](../evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) against `4a4fe65`. Reconfirms internal implementation complete and live-research **acceptance** still dependent. **Not** COMPLETE/CLOSED. CC-01-10/11/12/24 remain unmet until later-sprint evidence. |
 
 **Truthfulness rules already locked for presentation:**
 

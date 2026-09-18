@@ -726,3 +726,21 @@ Stale open PR #127 (`cursor/sprint-29-remaining-internal-closeout-d1c7`, HEAD `3
 | Staging | Last packaged Sprint 29 E2E is **partial** on Deploy Staging #27 / SHA `a8bd001`. Current `main` needs its own later deploy to refresh non-live journey evidence. |
 | Early Access vs shopping | Early Access live ≠ public shopping beta. Unfinished shopping UI stays hidden in production. No merchant certification. |
 | Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) |
+
+---
+
+## 2026-09-18 Sprint 29 final-checkpoint addendum
+
+This addendum does **not** rewrite the 2026-08-06 §A snapshot or the 2026-09-15 reconciliation addendum. It records a re-audit of Sprint 29 against `4a4fe65fa7438c75208a0052f52b77f929ee3903` (PR #142 merge). It does **not** close Sprint 29, does **not** claim live merchant research, and does **not** launch public shopping beta.
+
+Stale open PR #127 remains **superseded** and must not be merged as-is.
+
+| Field | Value |
+|-------|-------|
+| Audit baseline | `4a4fe65fa7438c75208a0052f52b77f929ee3903` (PR #142 merge) |
+| Sprint 29 | **INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT.** Not COMPLETE/CLOSED. |
+| Implementation | No additional internally controllable Sprint-29-owned implementation remains. |
+| Acceptance | CC-01-10/11/12/24 and the frozen-candidate CC-01 journey remain unmet. Later-sprint evidence can satisfy them without reopening Sprint 29 implementation. |
+| Remaining acceptance dependencies | Sprint 32 certified PH data path; Sprint 37 MarketContext where applicable; Sprint 38 real research execution + updated Results; Sprint 45 complete CC-01 on immutable launch candidate |
+| Early Access vs shopping | Unchanged: Early Access live ≠ public shopping beta. |
+| Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) |

@@ -15,7 +15,8 @@
 | Sprint 28.2 export/delete HTTP | re-proven on Deploy #27 with synthetic `@example.invalid` accounts |
 | Identity email adapter on that host | Sprint 27 is now COMPLETE / CLOSED. Reset/verify pages still must not display demo tokens. Inbox readiness on a later Sprint 29 digest must be re-observed, not inferred from Sprint 27 Deploy #32. |
 | `/privacy` `/terms` | **Historical for Deploy #27:** 404. **Current catalog:** owner-authorized `privacy-2026-09-11` / `terms-2026-09-11` are published; do not expect 404 on a later digest. |
-| Current-main reconciliation | [`SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) — current `main` `3c51494` is newer than this staging package. PR #127 is stale and superseded. |
+| Current-main reconciliation | [`SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) — historical for `3c51494` / PR #142. PR #127 is stale and superseded. |
+| Final checkpoint | [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) — reconfirms internal implementation complete; live-research acceptance remains dependent. **Not** COMPLETE/CLOSED. Current `main` `4a4fe65` is newer than this staging package. |
 
 ## Preconditions
 
