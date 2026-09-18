@@ -1,0 +1,218 @@
+{
+  "fixture_marker": "NON_PRODUCTION_FIXTURE",
+  "test_fixture": true,
+  "production_certified": false,
+  "provider_key": "tavily_search",
+  "live": false,
+  "notes": "Synthetic Tavily Search report for extract-sample tests only. Not a live Tavily response. Not production evidence. Not certification.",
+  "evaluations": [
+    {
+      "intent_id": "ph-smartphones-001",
+      "source_url": "https://www.powermaccenter.com/products/iphone-17-pro-max",
+      "merchant_identity": "powermaccenter.com",
+      "product_identity": "iPhone 17 Pro Max",
+      "source_kind": "direct_retailer",
+      "title": "iPhone 17 Pro Max 256GB - Power Mac Center"
+    },
+    {
+      "intent_id": "ph-smartphones-001",
+      "source_url": "https://www.powermaccenter.com/products/iphone-17-pro-max",
+      "merchant_identity": "powermaccenter.com",
+      "product_identity": "iPhone 17 Pro Max duplicate",
+      "source_kind": "direct_retailer",
+      "title": "Duplicate Power Mac URL"
+    },
+    {
+      "intent_id": "ph-smartphones-002",
+      "source_url": "https://www.samsung.com/ph/smartphones/galaxy-s25-ultra/",
+      "merchant_identity": "samsung.com",
+      "product_identity": "Galaxy S25 Ultra",
+      "source_kind": "manufacturer",
+      "title": "Galaxy S25 Ultra | Samsung PH"
+    },
+    {
+      "intent_id": "ph-smartphones-001",
+      "source_url": "https://shopee.ph/iphone-17-pro-max-i.123.456",
+      "merchant_identity": "shopee.ph",
+      "product_identity": "iPhone 17 Pro Max marketplace",
+      "source_kind": "marketplace",
+      "title": "iPhone 17 Pro Max - Shopee"
+    },
+    {
+      "intent_id": "ph-smartphones-001",
+      "source_url": "https://www.lazada.com.ph/products/iphone-17-pro-max-i123.html",
+      "merchant_identity": "lazada.com.ph",
+      "product_identity": "iPhone 17 Pro Max lazada",
+      "source_kind": "marketplace",
+      "title": "iPhone 17 Pro Max - Lazada"
+    },
+    {
+      "intent_id": "ph-smartphones-001",
+      "source_url": "https://www.tiktok.com/shop/iphone-17",
+      "merchant_identity": "tiktok.com",
+      "product_identity": "TikTok Shop listing",
+      "source_kind": "marketplace",
+      "title": "TikTok Shop iPhone"
+    },
+    {
+      "intent_id": "ph-smartphones-001",
+      "source_url": "https://www.amazon.com/dp/B0FAKEIPHONE",
+      "merchant_identity": "amazon.com",
+      "product_identity": "Amazon listing",
+      "source_kind": "marketplace",
+      "title": "Amazon iPhone listing"
+    },
+    {
+      "intent_id": "ph-laptops-001",
+      "source_url": "https://digitalwalker.ph/products/macbook-air-m4",
+      "merchant_identity": "digitalwalker.ph",
+      "product_identity": "MacBook Air M4",
+      "source_kind": "direct_retailer",
+      "title": "MacBook Air M4 - Digital Walker"
+    },
+    {
+      "intent_id": "ph-laptops-002",
+      "source_url": "https://www.villman.com/product/asus-zenbook",
+      "merchant_identity": "villman.com",
+      "product_identity": "ASUS Zenbook",
+      "source_kind": "direct_retailer",
+      "title": "ASUS Zenbook - Villman"
+    },
+    {
+      "intent_id": "ph-cameras-001",
+      "source_url": "https://www.octagon.com.ph/products/sony-a7c-ii",
+      "merchant_identity": "octagon.com.ph",
+      "product_identity": "Sony A7C II",
+      "source_kind": "direct_retailer",
+      "title": "Sony A7C II - Octagon"
+    },
+    {
+      "intent_id": "ph-tvs-001",
+      "source_url": "https://www.sony.com.ph/electronics/televisions/bravia-7",
+      "merchant_identity": "sony.com.ph",
+      "product_identity": "BRAVIA 7",
+      "source_kind": "manufacturer",
+      "title": "BRAVIA 7 | Sony PH"
+    },
+    {
+      "intent_id": "ph-headphones-001",
+      "source_url": "https://beyondthebox.ph/products/sony-wh-1000xm6",
+      "merchant_identity": "beyondthebox.ph",
+      "product_identity": "WH-1000XM6",
+      "source_kind": "direct_retailer",
+      "title": "Sony WH-1000XM6 - Beyond the Box"
+    },
+    {
+      "intent_id": "ph-headphones-002",
+      "source_url": "https://unbox.ph/best-wireless-earbuds-under-5000",
+      "merchant_identity": "unbox.ph",
+      "product_identity": "Editorial earbuds roundup",
+      "source_kind": "review_editorial",
+      "title": "Best wireless earbuds under 5000"
+    },
+    {
+      "intent_id": "ph-appliances-001",
+      "source_url": "https://www.abenson.com/haier-inverter-refrigerator.html",
+      "merchant_identity": "abenson.com",
+      "product_identity": "Haier inverter refrigerator",
+      "source_kind": "direct_retailer",
+      "title": "Haier Inverter Refrigerator - Abenson"
+    },
+    {
+      "intent_id": "ph-gaming-001",
+      "source_url": "https://www.kimstore.com/products/playstation-5-slim",
+      "merchant_identity": "kimstore.com",
+      "product_identity": "PlayStation 5 Slim",
+      "source_kind": "direct_retailer",
+      "title": "PlayStation 5 Slim - Kimstore"
+    },
+    {
+      "intent_id": "ph-home-001",
+      "source_url": "https://www.electronica.com.ph/products/dyson-v15",
+      "merchant_identity": "electronica.com.ph",
+      "product_identity": "Dyson V15",
+      "source_kind": "direct_retailer",
+      "title": "Dyson V15 - Electronica"
+    },
+    {
+      "intent_id": "ph-beauty-001",
+      "source_url": "https://thesmstore.com/products/oral-b-io-series-10",
+      "merchant_identity": "thesmstore.com",
+      "product_identity": "Oral-B iO Series 10",
+      "source_kind": "direct_retailer",
+      "title": "Oral-B iO Series 10 - The SM Store"
+    },
+    {
+      "intent_id": "ph-household-001",
+      "source_url": "https://anyshop.ph/products/philips-air-fryer",
+      "merchant_identity": "anyshop.ph",
+      "product_identity": "Philips Air Fryer",
+      "source_kind": "direct_retailer",
+      "title": "Philips Air Fryer - AnyShop"
+    },
+    {
+      "intent_id": "ph-smartphones-003",
+      "source_url": "https://www.apple.com/ph/iphone-17-pro/",
+      "merchant_identity": "apple.com",
+      "product_identity": "iPhone 17 Pro",
+      "source_kind": "manufacturer",
+      "title": "iPhone 17 Pro - Apple PH"
+    },
+    {
+      "intent_id": "ph-laptops-003",
+      "source_url": "https://www.lenovo.com/ph/en/p/laptops/thinkpad/thinkpadx1/lenovo-thinkpad-x1-carbon-gen-13/lenovo-laptop",
+      "merchant_identity": "lenovo.com",
+      "product_identity": "ThinkPad X1 Carbon",
+      "source_kind": "manufacturer",
+      "title": "ThinkPad X1 Carbon Gen 13"
+    },
+    {
+      "intent_id": "ph-cameras-002",
+      "source_url": "https://www.canon.com/ph/cameras/eos-r8/",
+      "merchant_identity": "canon.com",
+      "product_identity": "EOS R8",
+      "source_kind": "manufacturer",
+      "title": "EOS R8 - Canon PH"
+    },
+    {
+      "intent_id": "ph-tvs-002",
+      "source_url": "https://www.lg.com/ph/tvs/lg-oled-c5/",
+      "merchant_identity": "lg.com",
+      "product_identity": "LG OLED C5",
+      "source_kind": "manufacturer",
+      "title": "LG OLED C5"
+    },
+    {
+      "intent_id": "ph-appliances-002",
+      "source_url": "https://www.powermaccenter.com/collections/iphone",
+      "merchant_identity": "powermaccenter.com",
+      "product_identity": "iPhone collection page",
+      "source_kind": "direct_retailer",
+      "title": "iPhone collection"
+    },
+    {
+      "intent_id": "ph-smartphones-004",
+      "source_url": "https://www.google.com/search?q=iphone+17+pro+max+philippines",
+      "merchant_identity": null,
+      "product_identity": "Google search",
+      "source_kind": "other",
+      "title": "Google search results"
+    },
+    {
+      "intent_id": "ph-gaming-002",
+      "source_url": "https://www.asus.com/ph/laptops/for-gaming/rog-strix/rog-strix-g16/",
+      "merchant_identity": "asus.com",
+      "product_identity": "ROG Strix G16",
+      "source_kind": "manufacturer",
+      "title": "ROG Strix G16"
+    },
+    {
+      "intent_id": "ph-home-002",
+      "source_url": "https://www.acer.com/ph-en/monitors/nitro/nitro-kg240y",
+      "merchant_identity": "acer.com",
+      "product_identity": "Nitro KG240Y",
+      "source_kind": "manufacturer",
+      "title": "Acer Nitro KG240Y"
+    }
+  ]
+}

@@ -7,6 +7,10 @@ Never claims certification. Does not scrape merchant sites.
 Usage:
   uv run python scripts/public_web_ph_benchmark.py
   uv run python scripts/public_web_ph_benchmark.py --provider brave_search --live
+  uv run python scripts/public_web_ph_benchmark.py \\
+    --provider tavily_search --extract-live \\
+    --search-report /tmp/piqsavi-tavily-ph/tavily_search.json \\
+    --output-dir /tmp/piqsavi-tavily-extract-ph
 """
 
 from __future__ import annotations
@@ -33,16 +37,34 @@ from app.research.public_web_benchmark import (  # noqa: E402
     owner_action_required,
     summarize_public_web_benchmark,
 )
+from app.research.public_web_extract import (  # noqa: E402
+    DEFAULT_EXTRACT_DEPTH,
+    DEFAULT_EXTRACT_OUTPUT_DIR,
+    DEFAULT_SEARCH_REPORT_PATH,
+    MAX_EXTRACT_SAMPLE_URLS,
+    MISSING_SEARCH_REPORT_MESSAGE,
+    PRIVATE_LOCAL_LIVE_ARTIFACT,
+    TAVILY_EXTRACT_ENDPOINT,
+    TAVILY_EXTRACT_MAX_URLS_PER_REQUEST,
+    ExtractSampleError,
+    MissingSearchReportError,
+    assert_artifact_has_no_secrets,
+    documented_basic_extract_credit_max,
+    evaluate_extracted_page,
+    select_extract_sample_from_report,
+)
 from app.research.public_web_policy import (  # noqa: E402
     brave_web_search_request_params,
     public_web_provider_policy_audits,
 )
 
 DEFAULT_FIXTURE = ROOT / "tests/fixtures/public_web_benchmark/non_production_search_hits.json"
+DEFAULT_SEARCH_OUTPUT_DIR = Path("/tmp/piqavi-public-web-benchmark")
 LIVE_ENDPOINTS = {
     "brave_search": "https://api.search.brave.com/res/v1/web/search",
     "tavily_search": "https://api.tavily.com/search",
     "exa_search": "https://api.exa.ai/search",
+    "tavily_extract": TAVILY_EXTRACT_ENDPOINT,
 }
 
 
@@ -204,18 +226,255 @@ def _evaluate_provider(
 
 def _write_artifact(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    assert_artifact_has_no_secrets(
+        payload,
+        (
+            os.environ.get("BRAVE_SEARCH_API_KEY", ""),
+            os.environ.get("TAVILY_API_KEY", ""),
+            os.environ.get("EXA_API_KEY", ""),
+        ),
+    )
     serialized = json.dumps(payload, ensure_ascii=False, indent=2)
-    if any(
-        token in serialized
-        for token in (
-            os.environ.get("BRAVE_SEARCH_API_KEY", "never-match-empty"),
-            os.environ.get("TAVILY_API_KEY", "never-match-empty"),
-            os.environ.get("EXA_API_KEY", "never-match-empty"),
-        )
-        if token
-    ):
-        raise RuntimeError("refusing to write an artifact that contains a credential")
     path.write_text(serialized + "\n", encoding="utf-8")
+
+
+def _live_extract(urls: list[str], secret: str) -> dict[str, Any]:
+    """Call the official Tavily Extract API only. Does not fetch merchant pages."""
+
+    import httpx
+
+    if len(urls) > MAX_EXTRACT_SAMPLE_URLS:
+        raise ExtractSampleError(
+            f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs"
+        )
+    if len(urls) > TAVILY_EXTRACT_MAX_URLS_PER_REQUEST:
+        raise ExtractSampleError(
+            f"Tavily Extract documents a max of {TAVILY_EXTRACT_MAX_URLS_PER_REQUEST} "
+            "URLs per request"
+        )
+    try:
+        response = httpx.post(
+            TAVILY_EXTRACT_ENDPOINT,
+            headers={"Authorization": f"Bearer {secret}"},
+            json={
+                "urls": urls,
+                "extract_depth": DEFAULT_EXTRACT_DEPTH,
+                "include_images": False,
+            },
+            timeout=120.0,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(f"Tavily Extract HTTP {exc.response.status_code}") from None
+    except httpx.HTTPError:
+        raise RuntimeError("Tavily Extract request failed") from None
+    if not isinstance(payload, dict):
+        raise RuntimeError("Tavily Extract returned a non-object response")
+    return payload
+
+
+def _extract_results_by_url(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    mapped: dict[str, dict[str, Any]] = {}
+    for row in payload.get("results") or []:
+        if isinstance(row, dict) and row.get("url"):
+            mapped[str(row["url"])] = row
+    for row in payload.get("failed_results") or []:
+        if isinstance(row, dict) and row.get("url"):
+            mapped.setdefault(str(row["url"]), row)
+    return mapped
+
+
+def _run_extract_mode(
+    *,
+    search_report: Path,
+    output_dir: Path,
+    live: bool,
+    persist_raw: bool,
+) -> int:
+    try:
+        selected = select_extract_sample_from_report(search_report)
+    except MissingSearchReportError as exc:
+        envelope = {
+            "generated_at": datetime.now(tz=UTC).isoformat(),
+            "mode": "extract",
+            "live": live,
+            "production_certified": False,
+            "closes_sprint_32": False,
+            "certifies_tavily": False,
+            "certifies_retailer": False,
+            "scraping": False,
+            "environment_mutation": False,
+            "owner_action_required": [
+                {
+                    "owner_action_required": "yes",
+                    "reason": MISSING_SEARCH_REPORT_MESSAGE,
+                    "missing_file": str(search_report),
+                }
+            ],
+        }
+        _write_artifact(output_dir / "summary.json", envelope)
+        print(json.dumps(envelope, ensure_ascii=False, indent=2))
+        print(str(exc))
+        return 2
+    except ExtractSampleError as exc:
+        envelope = {
+            "generated_at": datetime.now(tz=UTC).isoformat(),
+            "mode": "extract",
+            "live": live,
+            "production_certified": False,
+            "closes_sprint_32": False,
+            "scraping": False,
+            "owner_action_required": [{"owner_action_required": "yes", "reason": str(exc)}],
+        }
+        _write_artifact(output_dir / "summary.json", envelope)
+        print(json.dumps(envelope, ensure_ascii=False, indent=2))
+        print(str(exc))
+        return 2
+
+    selection_payload = {
+        "artifact_kind": PRIVATE_LOCAL_LIVE_ARTIFACT if live else NON_PRODUCTION_FIXTURE_MARKER,
+        "mode": "extract_sample",
+        "provider_key": "tavily_search",
+        "extract_depth": DEFAULT_EXTRACT_DEPTH,
+        "max_urls": MAX_EXTRACT_SAMPLE_URLS,
+        "selected_count": len(selected),
+        "documented_max_basic_credits_if_all_succeed": documented_basic_extract_credit_max(
+            len(selected)
+        ),
+        "credit_basis": (
+            "Official Tavily docs 2026-09-18: basic extract = 1 API credit per 5 "
+            "successful extractions; failed extractions are not charged. Methodology "
+            "only; not an invoice; not a live performance report."
+        ),
+        "marketplace_excluded": True,
+        "advanced_not_run": True,
+        "production_certified": False,
+        "closes_sprint_32": False,
+        "selected": [item.to_dict() for item in selected],
+    }
+    _write_artifact(output_dir / "selected_urls.json", selection_payload)
+    if not live:
+        envelope = {
+            "generated_at": datetime.now(tz=UTC).isoformat(),
+            "mode": "extract_select_only",
+            "live": False,
+            "production_certified": False,
+            "closes_sprint_32": False,
+            "certifies_tavily": False,
+            "scraping": False,
+            "environment_mutation": False,
+            "selected_count": len(selected),
+            "documented_max_basic_credits_if_all_succeed": documented_basic_extract_credit_max(
+                len(selected)
+            ),
+            "output_dir": str(output_dir),
+        }
+        _write_artifact(output_dir / "summary.json", envelope)
+        print(json.dumps(envelope, ensure_ascii=False, indent=2))
+        return 0
+
+    secret = _secret_from_env("tavily_search")
+    if not secret:
+        required = owner_action_required("tavily_search")
+        envelope = {
+            "generated_at": datetime.now(tz=UTC).isoformat(),
+            "mode": "extract",
+            "live": True,
+            "production_certified": False,
+            "closes_sprint_32": False,
+            "certifies_tavily": False,
+            "scraping": False,
+            "environment_mutation": False,
+            "owner_action_required": [required],
+            "selected_count": len(selected),
+        }
+        _write_artifact(output_dir / "summary.json", envelope)
+        print(json.dumps(envelope, ensure_ascii=False, indent=2))
+        print("OWNER ACTION REQUIRED: live Tavily Extract cannot run without TAVILY_API_KEY.")
+        return 2
+
+    retrieved_at = datetime.now(tz=UTC)
+    raw_response = _live_extract([item.source_url for item in selected], secret)
+    by_url = _extract_results_by_url(raw_response)
+    evaluations = []
+    for item in selected:
+        row = by_url.get(item.source_url, {})
+        raw_content = row.get("raw_content") if isinstance(row, dict) else None
+        succeeded = isinstance(raw_content, str) and bool(raw_content.strip())
+        evaluation = evaluate_extracted_page(
+            source_url=item.source_url,
+            raw_content=raw_content if isinstance(raw_content, str) else None,
+            retrieved_at=retrieved_at,
+            extraction_succeeded=succeeded,
+            merchant_identity=item.merchant_identity,
+            seed_product_identity=item.product_identity,
+            test_fixture=False,
+        )
+        evaluations.append(evaluation.to_dict())
+        if persist_raw and isinstance(raw_content, str) and raw_content:
+            raw_name = content_safe_stem(item.source_url)
+            raw_payload = {
+                "artifact_kind": PRIVATE_LOCAL_LIVE_ARTIFACT,
+                "warning": "PRIVATE_LOCAL_LIVE_ARTIFACT — never commit extracted retailer page text",
+                "source_url": item.source_url,
+                "retrieved_at": retrieved_at.isoformat(),
+                "raw_content": raw_content,
+            }
+            _write_artifact(output_dir / "raw" / f"{raw_name}.json", raw_payload)
+
+    report = {
+        "artifact_kind": PRIVATE_LOCAL_LIVE_ARTIFACT,
+        "warning": (
+            "PRIVATE_LOCAL_LIVE_ARTIFACT. Tavily terms restrict disclosure to "
+            "third parties of performance information or analysis relating to "
+            "its Services. Do not commit this file."
+        ),
+        "provider_key": "tavily_search",
+        "mode": "extract",
+        "live": True,
+        "extract_depth": DEFAULT_EXTRACT_DEPTH,
+        "advanced_not_run": True,
+        "raw_content_persisted": persist_raw,
+        "production_certified": False,
+        "closes_sprint_32": False,
+        "certifies_tavily": False,
+        "certifies_retailer": False,
+        "scraping": False,
+        "source_policy_default": "unknown",
+        "technical_level_b_candidate_is_not_offer_evidence": True,
+        "evaluations": evaluations,
+    }
+    _write_artifact(output_dir / "tavily_extract.json", report)
+    envelope = {
+        "generated_at": retrieved_at.isoformat(),
+        "mode": "extract",
+        "live": True,
+        "artifact_kind": PRIVATE_LOCAL_LIVE_ARTIFACT,
+        "production_certified": False,
+        "closes_sprint_32": False,
+        "certifies_tavily": False,
+        "certifies_retailer": False,
+        "scraping": False,
+        "environment_mutation": False,
+        "extract_depth": DEFAULT_EXTRACT_DEPTH,
+        "selected_count": len(selected),
+        "evaluation_count": len(evaluations),
+        "raw_content_persisted": persist_raw,
+        "output_dir": str(output_dir),
+        "documented_max_basic_credits_if_all_succeed": documented_basic_extract_credit_max(
+            len(selected)
+        ),
+    }
+    _write_artifact(output_dir / "summary.json", envelope)
+    print(json.dumps(envelope, ensure_ascii=False, indent=2))
+    return 0
+
+
+def content_safe_stem(source_url: str) -> str:
+    host = source_url.replace("https://", "").replace("http://", "")
+    cleaned = "".join(ch if ch.isalnum() else "-" for ch in host)
+    return cleaned[:80] or "extract"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -232,13 +491,63 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Call official search APIs. Requires env credentials. Does not scrape merchants.",
     )
+    parser.add_argument(
+        "--extract-live",
+        action="store_true",
+        help=(
+            "Call official Tavily Extract only, using a prior search report. "
+            "Requires TAVILY_API_KEY. Does not scrape merchants. basic depth only."
+        ),
+    )
+    parser.add_argument(
+        "--extract-select-only",
+        action="store_true",
+        help=(
+            "Select the first extract URL sample from a prior search report. "
+            "Does not call Tavily and does not require an API key."
+        ),
+    )
+    parser.add_argument(
+        "--search-report",
+        type=Path,
+        default=DEFAULT_SEARCH_REPORT_PATH,
+        help="Prior Tavily Search JSON report used as the extract URL source.",
+    )
+    parser.add_argument(
+        "--persist-raw",
+        action="store_true",
+        help=(
+            "LOCAL DEBUG ONLY. Persist extracted page text under the output dir. "
+            "Never commit. Default is off."
+        ),
+    )
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("/tmp/piqavi-public-web-benchmark"),
+        default=None,
     )
     args = parser.parse_args(argv)
+    extract_mode = args.extract_live or args.extract_select_only
+    if args.extract_live and args.extract_select_only:
+        print("Choose only one of --extract-live or --extract-select-only.")
+        return 2
+    if extract_mode and args.live:
+        print("Extract mode cannot be combined with --live search.")
+        return 2
+    if extract_mode and args.provider not in {"tavily_search", "all"}:
+        print("Extract mode is Tavily-only for this Sprint 32 technical benchmark.")
+        return 2
+    output_dir = args.output_dir or (
+        DEFAULT_EXTRACT_OUTPUT_DIR if extract_mode else DEFAULT_SEARCH_OUTPUT_DIR
+    )
+    if extract_mode:
+        return _run_extract_mode(
+            search_report=args.search_report,
+            output_dir=output_dir,
+            live=args.extract_live,
+            persist_raw=bool(args.persist_raw) and args.extract_live,
+        )
     providers = (
         ("brave_search", "tavily_search", "exa_search")
         if args.provider == "all"
@@ -271,7 +580,7 @@ def main(argv: list[str] | None = None) -> int:
             )
         reports.append(report)
         _write_artifact(
-            args.output_dir / f"{provider_key}.json",
+            output_dir / f"{provider_key}.json",
             report,
         )
     envelope = {
@@ -291,7 +600,7 @@ def main(argv: list[str] | None = None) -> int:
             for item in reports
         ],
     }
-    _write_artifact(args.output_dir / "summary.json", envelope)
+    _write_artifact(output_dir / "summary.json", envelope)
     print(json.dumps(envelope, ensure_ascii=False, indent=2))
     if args.live and missing and not reports:
         print("OWNER ACTION REQUIRED: live provider benchmark cannot run without credentials.")

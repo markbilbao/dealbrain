@@ -763,3 +763,17 @@ This addendum does **not** rewrite earlier snapshots. It records a provider-neut
 | Live credentials | Absent. Owner must create accounts out-of-band. |
 | Fixtures | Non-production only; cannot close Sprint 32. Discovery benchmark ≠ shopping-offer path. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) |
+
+## 2026-09-18 Sprint 32 Tavily Extract technical harness addendum
+
+This addendum does **not** rewrite earlier snapshots. It records a private-local Tavily Extract technical benchmark harness. It does **not** certify Tavily, does **not** certify any retailer, does **not** scrape merchants, does **not** mutate production/staging/AWS, and does **not** close Sprint 32.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `a7ba72672571be8542cd8c4b3705d9b5342ebef3` (PR #145) |
+| Extract depth | `basic` only; advanced requires a later explicit owner action |
+| Sample | 12–15 unique direct retailer/manufacturer URLs from a prior local search report |
+| Live HTTP | Official Tavily Extract API only. No merchant page fetch. |
+| Technical Level-B | Candidate flag only. Not offer evidence. Unknown source policy blocks evaluated-set promotion. |
+| Artifacts | Private/local `/tmp` only. No committed performance numbers or extracted page text. |
+| Expected max credits | 3 basic-extract credits if 12–15 URLs all succeed (documented 1 credit / 5 successful URLs) |

@@ -91,6 +91,12 @@ This slice is a **public-web discovery foundation**. It is **not** the real shop
 
 This slice does **not** scrape merchants, does **not** buy API plans, does **not** store credentials, and does **not** certify Brave, Tavily, or Exa. Live benchmark requires owner-supplied credentials. Brave `country=PH` is not sent because PH membership in the published `country` enum is unverified; PH intent stays in the query text. See [`../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) and [`../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md`](../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md).
 
+### 2026-09-18 Tavily Extract technical harness (does not close this sprint)
+
+A private-local Tavily Extract harness now exists so the owner can test whether official Extract can retrieve enough current, attributable page content from direct PH retailer/product URLs to create **technical** Level-B candidates.
+
+This does **not** certify Tavily. It does **not** certify any retailer. Technical Level-B candidate ≠ offer evidence. Source-site policy stays unknown and blocks evaluated-set promotion. PiqSavi still must not fetch merchant pages. Live mode may call only the official Tavily Extract API, `extract_depth=basic`, max 15 URLs. Advanced extraction is a later explicit owner action. Live artifacts stay in `/tmp` and must not be committed. Sprint 32 remains open.
+
 ### Closure blockers (current)
 
 - No merchant has a real approved product-data / API path

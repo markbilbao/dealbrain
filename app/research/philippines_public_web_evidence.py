@@ -47,9 +47,12 @@ _CANDIDATES: tuple[tuple[str, str, str], ...] = (
     ),
     (
         "ph-tavily-search",
-        "Tavily Search API. Terms reviewed as internal business use; shopper-facing "
-        "reuse unknown. Philippines country boost documented. Extract is not PiqSavi "
-        "scraping and is not certified offer evidence. Not a merchant.",
+        "Tavily Search/Extract API. Customer Applications and third-party end "
+        "users are contemplated; shopper-facing use is not categorically "
+        "forbidden by internal-business-purpose wording alone. Customer remains "
+        "responsible for third-party terms. Extract is not PiqSavi scraping and "
+        "is not certified offer evidence. Unrestricted production use is not "
+        "established. Not a merchant.",
         "Documentary public-web discovery candidate only. No owner credentials. "
         "No live PH shopping response. Snippets cannot become scored offers.",
     ),

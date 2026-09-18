@@ -258,3 +258,5 @@ Affiliate permission is independent of product-data permission. Reduced modes re
 Sprint 32 is in progress and is **not complete**. This runbook still creates no production certifications. Public-web discovery descriptors may exist as incomplete documentary evidence; they are not production providers.
 
 For Sprint 32 public-web live testing, the owner supplies `BRAVE_SEARCH_API_KEY` and/or `TAVILY_API_KEY` (optional `EXA_API_KEY`) outside Git. See [`../roadmap/evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../roadmap/evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md).
+
+Tavily Extract live testing is a later owner-only local command. It requires `TAVILY_API_KEY` and a prior local search report. It does not scrape merchants, does not certify Tavily, and does not close Sprint 32.

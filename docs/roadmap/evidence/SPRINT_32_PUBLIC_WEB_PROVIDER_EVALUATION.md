@@ -2,7 +2,7 @@
 
 **Document type:** Non-secret architecture / terms / benchmark evaluation
 **Date recorded:** 2026-09-18
-**Baseline:** `9222e5b506097d274a2ec940ed80d68f3353d81f` (origin/main at start of this work)
+**Baseline:** `9222e5b506097d274a2ec940ed80d68f3353d81f` (origin/main at start of the public-web discovery work). Extract harness continuation started from `a7ba72672571be8542cd8c4b3705d9b5342ebef3` (PR #145).
 **Market:** PH
 **Trusted production certification records:** **zero**
 
@@ -41,7 +41,7 @@ Evaluated from public official documentation only. No paid signup. No credential
 | Provider | First live candidate? | Why |
 |----------|-----------------------|-----|
 | Brave Search API | Yes | Clear Customer Applications license to use search results; snippets only; using Search Results to train/evaluate/improve AI models is prohibited; runtime LLM grounding is unknown (not a blanket AI ban); PH `country` enum membership is unverified so the harness omits `country` |
-| Tavily Search API | Yes | Free Researcher 1,000 credits/month; explicit `philippines` country boost; Extract could later be Level B *if* policy allows; shopper-facing reuse is unknown |
+| Tavily Search API | Yes | Free Researcher 1,000 credits/month; explicit `philippines` country boost; Extract is a vendor retrieval path for a later technical Level-B candidate test; shopper-facing use is not categorically forbidden, but unrestricted production use is not established |
 | Exa Search API | Comparison only | Contents/livecrawl is technically interesting for Level B; consumer reuse terms are more ambiguous; no verified PH country parameter |
 
 ## 4. Policy / terms status
@@ -87,6 +87,8 @@ Reviewed: [Terms](https://www.tavily.com/terms), [Search](https://docs.tavily.co
 | URL/result display | unknown |
 | Caching | unknown |
 | Content retrieval | unknown |
+| Source-site content/use rights | unknown |
+| Production capability policy | unknown |
 | Attribution | unknown |
 | Rate limits | restricted |
 | Retention | unknown |
@@ -98,9 +100,13 @@ Reviewed: [Terms](https://www.tavily.com/terms), [Search](https://docs.tavily.co
 | Product discovery | unknown |
 | Current pricing | unknown |
 
-Terms limit use to Customer’s **internal business purposes**. Shopper-facing PiqSavi use is not clearly the same thing. Extract retrieves page content via Tavily; that is not PiqSavi scraping, and it is not certified offer evidence. Search `country` enum includes `philippines` (technical targeting, not contractual authorization).
+Re-reviewed Tavily Platform Terms (last updated 2026-05-04) on 2026-09-18. Customer Applications expressly include software/platforms/services and AI Tools. Customer Input may come from end users. Section 3.5 contemplates third-party end users of Customer Applications. Integration of the Services with Customer Applications is expressly described and carved out of several restrictions. **Do not claim shopper-facing use is categorically forbidden solely because of “internal business purposes.”** Also **do not** declare unrestricted production use allowed.
 
-Public pricing observed: Researcher **1,000 free credits/month**, no credit card. Basic search = 1 credit. Extract basic = 1 credit / 5 URLs.
+The customer remains responsible for Customer Application / end-user compliance and for applicable third-party terms. Output must be independently validated. Tavily technical extraction success is not retailer content permission. Source-site contractual policy therefore stays **unknown** unless later authoritative Sprint 32 evidence proves otherwise.
+
+Extract retrieves page content via Tavily; that is not PiqSavi scraping, and it is not certified offer evidence. Search `country` enum includes `philippines` (technical targeting, not contractual authorization). Tavily terms also restrict disclosure to third parties of performance information or analysis relating to its Services, so live extract artifacts stay private/local only.
+
+Public pricing observed: Researcher **1,000 free credits/month**, no credit card. Basic search = 1 credit. Extract basic = 1 credit / 5 successful URLs. Extract advanced = 2 credits / 5 successful URLs. Advanced is not run automatically.
 
 ### Exa Search API
 
@@ -134,7 +140,30 @@ Public pricing observed: pay-as-you-go Search **$7 / 1,000 requests**; Contents 
 
 Harness: `scripts/public_web_ph_benchmark.py`. Offline fixtures are unmistakably non-production. Live mode calls official search APIs only and does not scrape merchant pages. Brave live requests omit the unverified `country` enum and keep Philippines in the query text. Tavily still sends documented `country=philippines` when `topic=general`.
 
-A successful Brave/Tavily discovery benchmark only proves discovery usefulness. It does **not** create the real shopping-offer path required to close Sprint 32. Offers still need a legitimate Level A/B route with attributable current price/freshness before they may enter the canonical evaluated set.
+A successful Brave/Tavily discovery benchmark only proves discovery usefulness. It does **not** create the real shopping-offer path required to close Sprint 32. Offers still need a legitimate Level A/B route with attributable current price/freshness **and** allowed source-site policy before they may enter the canonical evaluated set.
+
+### Tavily Extract technical benchmark (does not certify Tavily)
+
+Methodology only. Live owner testing is required. Do not publish provider performance numbers.
+
+1. Reuse a prior local Tavily Search report at `/tmp/piqsavi-tavily-ph/tavily_search.json`. If that file is absent, fail and rerun search. Do not fabricate URLs.
+2. Select 12–15 unique direct retailer / manufacturer / authorized-reseller product URLs. Exclude Shopee, Lazada, TikTok Shop, Amazon, editorial/review pages, search/category pages, and duplicates.
+3. Call **only** the official Tavily Extract API (`POST https://api.tavily.com/extract`) with `extract_depth=basic`. Max 15 URLs, one request, documented max 20 URLs/request. Do not run advanced automatically.
+4. Record private/local metadata only: source URL, merchant identity, retrieval timestamp, success/fail, content length, content hash, title/product identity, PHP price-like text, attributable-price flag, availability/shipping text presence, technical Level-B candidate YES/NO, reason. Do not persist raw page text by default.
+5. `technical_level_b_candidate=true` is not `offer_evidence`. Source-site policy stays unknown. `may_enter_evaluated_set` stays false.
+6. Expected maximum documented credit use for 12–15 basic extractions: **3 credits** if all succeed (1 credit per 5 successful basic extractions). Failed extractions are not charged.
+
+Owner live command:
+
+```bash
+uv run python scripts/public_web_ph_benchmark.py \
+  --provider tavily_search \
+  --extract-live \
+  --search-report /tmp/piqsavi-tavily-ph/tavily_search.json \
+  --output-dir /tmp/piqsavi-tavily-extract-ph
+```
+
+Requires `TAVILY_API_KEY` in the environment only. Never print, serialize, or commit it.
 
 ## 6. Minimum evidence to treat a result as an offer
 
@@ -170,4 +199,5 @@ Recommended first live run: Brave, then Tavily. Exa is optional comparison.
 - No production/staging/AWS/Terraform/DNS/SSM/RDS/IAM/Secrets Manager/Resend mutation
 - No paid signup
 - No Sprint 38 live execution
+- Technical Level-B candidate ≠ certified offer evidence
 - Sprint 32 remains open

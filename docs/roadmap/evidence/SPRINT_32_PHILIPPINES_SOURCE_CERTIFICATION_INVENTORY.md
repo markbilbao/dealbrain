@@ -377,7 +377,7 @@ Documentary candidate identities (not production `provider_id` values): `ph-brav
 | Provider | Sprint 31 production `provider_id` | Credentials | Trusted certification | Blocker |
 |----------|------------------------------------|-------------|-----------------------|---------|
 | Brave Search API | none | none | none | owner credentials + live PH current-data + policy/certification review |
-| Tavily Search API | none | none | none | owner credentials + live PH current-data + shopper-facing terms review |
+| Tavily Search API | none | none | none | owner credentials + live PH current-data + source-site rights review; shopper-facing use is not categorically forbidden, but unrestricted production use is not established |
 | Exa Search API | none | none | none | comparison only unless later selected; credentials + PH coverage + terms review |
 
 Indexed Shopee/Lazada URLs, if later returned by a permitted search API, are discovery hits only. They do not certify those marketplaces and do not authorize scraping.
@@ -393,4 +393,5 @@ Evidence: [`SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](SPRINT_32_PUBLIC_WEB_P
 - Lazada remains uncertified and fail-closed.
 - TikTok Shop remains uncertified and is not September-launch-critical.
 - Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
+- A Tavily Extract technical harness may later produce technical Level-B candidates. That is not offer evidence and does not convert source-site rights from unknown to allowed.
 - Sprint 32 is **not complete**.
