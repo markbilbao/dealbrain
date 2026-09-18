@@ -726,3 +726,21 @@ Stale open PR #127 (`cursor/sprint-29-remaining-internal-closeout-d1c7`, HEAD `3
 | Staging | Last packaged Sprint 29 E2E is **partial** on Deploy Staging #27 / SHA `a8bd001`. Current `main` needs its own later deploy to refresh non-live journey evidence. |
 | Early Access vs shopping | Early Access live ≠ public shopping beta. Unfinished shopping UI stays hidden in production. No merchant certification. |
 | Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) |
+
+---
+
+## 2026-09-18 Sprint 29 final-checkpoint addendum
+
+This addendum does **not** rewrite the 2026-08-06 §A snapshot or the 2026-09-15 reconciliation addendum. It records the Sprint 29 close decision against `4a4fe65fa7438c75208a0052f52b77f929ee3903` (PR #142 merge). It does **not** claim live merchant research, does **not** launch public shopping beta, and does **not** treat owner-authorized Early Access legal publication as unconditional counsel approval.
+
+Stale open PR #127 remains **superseded** and must not be merged as-is.
+
+| Field | Value |
+|-------|-------|
+| Audit baseline | `4a4fe65fa7438c75208a0052f52b77f929ee3903` (PR #142 merge) |
+| Sprint 29 | **COMPLETE / CLOSED.** Later live-research / MarketContext / support-backend / visual / frozen-candidate CC-01 work is launch acceptance (37–39 / 44 / 45), not a Sprint 29 closer. |
+| Ownership ruling | **B** — later-sprint dependencies are later launch acceptance and must not keep Sprint 29 open. Sprint 28 remains a different case (its remaining legal gates are still Sprint 28-owned). |
+| Still later-sprint / launch | Live research / updated Results (31–38); certified PH product-data path (32); MarketContext policy (37); support/analytics backends (39); visual pixel sign-off (44); immutable-candidate CC-01 journey (45) |
+| Staging | Last packaged Sprint 29 E2E remains **partial** on Deploy Staging #27 / SHA `a8bd001`. Current-main re-proof is ops/launch, not missing Sprint 29 contract code. |
+| Early Access vs shopping | Unchanged: Early Access live ≠ public shopping beta. |
+| Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) |

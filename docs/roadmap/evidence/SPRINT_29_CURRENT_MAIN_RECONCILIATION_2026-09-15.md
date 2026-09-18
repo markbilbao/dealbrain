@@ -190,3 +190,11 @@ One canonical Results system, one Recommendation system, one PiqScore authority,
 - No live merchant research was fabricated.
 - PR #127 was not merged, rebased, or closed.
 - Owner controls merge of this replacement PR and closure of #127.
+
+---
+
+## 2026-09-18 final-checkpoint pointer
+
+This 2026-09-15 reconciliation remains historically true of baseline `3c51494` / PR #142. It is **not** erased.
+
+Successor close record: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) against `4a4fe65`. That checkpoint marks Sprint 29 **COMPLETE / CLOSED** because later live-research / frozen-candidate CC-01 proof is launch acceptance owned by Sprints 38/45, not remaining Sprint 29 implementation. Do not rewrite this file as if PR #142 had already closed the sprint.

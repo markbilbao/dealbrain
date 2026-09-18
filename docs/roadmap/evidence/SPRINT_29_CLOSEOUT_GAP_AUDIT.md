@@ -78,3 +78,7 @@ This 2026-09-05 audit remains valid for SHA `a8bd001`. It is **not** erased.
 Current `origin/main` for the successor audit is `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`. Successor status and matrix: [`SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md). The unmerged 2026-09-10 remaining-closeout (PR #127, baseline `6666bb26`) is retained as history at [`SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md) and is **not** current authority.
 
 The Phase 29.0 `planned_not_implemented` freeze is unchanged and must not be read as current implementation status. Early Access Privacy/Terms publication (`privacy-2026-09-11` / `terms-2026-09-11`) and production/email operational facts that post-date this audit do **not** rewrite the 2026-09-05 staging package.
+
+## 2026-09-18 final-checkpoint pointer
+
+The 2026-09-05 and 2026-09-15 records remain historically true. Current close authority: [`SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md). Sprint 29 is **COMPLETE / CLOSED**. Live CC-01 on a frozen launch candidate remains Sprint 38/45 launch evidence and does not reopen this 2026-09-05 staging package.

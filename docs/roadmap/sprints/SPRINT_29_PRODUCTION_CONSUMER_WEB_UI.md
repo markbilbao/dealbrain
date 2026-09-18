@@ -2,11 +2,11 @@
 
 **Filename retained** for link stability: `SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`
 
-**Status:** **SPRINT 29 INTERNAL CONSUMER/CONVERSATIONAL CONTRACT COMPLETE — LIVE RESEARCH ACCEPTANCE REMAINS DEPENDENT.** 29.0–29.4C, Product Foundation, economics, UUID presentation, schema 1.2, research authorization handoff, account/auth/export/delete UI, market-selection shell, SEO foundation, and consumer a11y engineering are **merged**. Remaining acceptance that needs live research, MarketContext policy, support backends, visual sign-off, or the immutable launch-candidate journey is **dependent**, not missing Sprint 29 contract code. Early Access Privacy/Terms publication, production deploy path, and production transactional email are **not** Sprint 29 implementation gaps. Staging E2E on Deploy Staging #27 (`a8bd001`) remains **partial** and older than current `main`. Sprint 29 is **not** COMPLETE/CLOSED.
+**Status:** **SPRINT 29 COMPLETE / CLOSED.** 29.0–29.4C, Product Foundation, economics, UUID presentation, schema 1.2, research authorization handoff, account/auth/export/delete UI, market-selection shell, SEO foundation, and consumer a11y engineering are **merged**. Live research, MarketContext policy, support backends, visual sign-off, and the immutable launch-candidate CC-01 journey remain later-sprint **launch** acceptance (38 / 37 / 39 / 44 / 45); they are not Sprint 29 remaining implementation and do not keep this sprint open. Early Access Privacy/Terms publication, production deploy path, and production transactional email are **not** Sprint 29 implementation gaps. Staging E2E on Deploy Staging #27 (`a8bd001`) remains **partial** and older than current `main`; that package does not prove live merchant research and is not a Sprint 29 closer. Sprint 29 close does **not** mean public shopping beta. Evidence: [`../evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](../evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md).
 **Primary owner / domain:** Frontend / product / conversational continuity
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-6 (public UX); CC-01; persistent Ask; SEO technical foundation
-**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). Historical schema 1.2 suite evidence only. Current-main reconciliation baseline is `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`. Neither SHA is the final launch candidate, and neither proves live merchant research.
+**Engineering baseline recorded:** `ab23d29e5f303bd5ecdfed60f7e7defe598d84d0` (2819 passed / 0 failed / 0 skipped / 168 warnings). Historical schema 1.2 suite evidence only. Current-main reconciliation baseline is `3c514943a8a0ec34d1df97d5a329d3acb4a86e07`. Final-checkpoint baseline is `4a4fe65fa7438c75208a0052f52b77f929ee3903`. None of these SHAs is the final launch candidate, and none proves live merchant research.
 
 ## Objective
 
@@ -38,6 +38,7 @@ Frontend/accessibility responsibility is preserved. The sprint purpose is no lon
 | Consumer a11y closeout slice | implemented | Escape/close, focus trap/restore, `aria-live`, safe-area, keyboard-open dock. Browser matrix recorded; not a signed a11y audit. Live HTML/CSS/JS locks verified on staging; not a third-party cert. |
 | Full CC-01 staging E2E on current-main | partial | Deploy Staging #27 proved SHA `a8bd001`. Package: `docs/roadmap/evidence/SPRINT_29_STAGING_CC01_EVIDENCE.md`. Live research / canonical UUID creation remain Sprint 38. |
 | Remaining internal closeout / current-main reconciliation | documented | [`../evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md`](../evidence/SPRINT_29_CURRENT_MAIN_RECONCILIATION_2026-09-15.md) supersedes stale PR #127. Historical 2026-09-10 remaining-closeout retained at [`../evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`](../evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md). No additional consumer feature invented; 29.0 freeze preserved; live research not claimed. |
+| Final checkpoint / sprint close | documented 2026-09-18 | [`../evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](../evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) against `4a4fe65`. Later live-research / frozen-candidate CC-01 proof is Sprint 38/45 launch acceptance, not a Sprint 29 closer. |
 
 **Truthfulness rules already locked for presentation:**
 
@@ -310,7 +311,7 @@ Do not implement these items in documentation-only brand-lock tasks.
 
 ## Go / no-go gate
 
-Go if staging e2e + a11y baseline pass for the production consumer app surfaces above
+Sprint 29 **COMPLETE / CLOSED** on the consumer/conversational contract, FastAPI HTML/CSS/vanilla-JS validation, recorded a11y engineering baseline, and non-live staging package on `a8bd001`. Live CC-01 on an immutable launch-candidate digest remains a Sprint 45 go/no-go (EC-02 / EC-22) after Sprint 38 live execution exists. Signed visual/a11y lab pass remains Sprint 44.
 
 ## Rollback or contingency
 
