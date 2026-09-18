@@ -252,7 +252,7 @@ Completed technical evidence:
 
 Still **not** completed:
 
-- PiqSavi-owned production UCP agent profile
+- PiqSavi-owned production UCP agent profile **live-fetch validated by Shopify** (local FastAPI document exists; **NOT YET DEPLOYED/VALIDATED**)
 - real production provider registration
 - trusted production certification
 - Sprint 31 capability-policy rows/evidence for Shopify PH path
@@ -265,6 +265,70 @@ Still **not** completed:
 - limited production validation where required
 
 Production provider registry = zero. Production certification catalog = zero. Production evidence catalog = zero. Production routing policies = zero. Sprint 32 remains **OPEN**. Sprint 38 remains **UNSTARTED**.
+
+## PiqSavi UCP agent profile
+
+**PIQSAVI UCP AGENT PROFILE: IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED**
+
+This section does **not** rewrite the owner live PH coverage evidence above. No live Shopify call was made for this slice. Shopify has not fetched PiqSavi's profile.
+
+| Field | Value |
+|-------|-------|
+| Proposed canonical production URL | `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| Staging URL (when later deployed) | `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| Hosting application | Existing FastAPI app (`create_app()` in `app/main.py`) |
+| Hosting route | `GET /ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| Why this host | Production public HTTPS origin is `https://piqsavi.com` (apex). `www.piqsavi.com` is a trusted host that cutover sends to apex. The FastAPI app already serves unauthenticated public documents (`/robots.txt`, `/sitemap.xml`, `/health`). No new service. |
+| HTTP contract | GET, public, unauthenticated, HTTP 200, `Content-Type: application/json`, deterministic body, `Cache-Control: public, max-age=300`, no application-layer redirect on the canonical path, no DB/Redis/network, no cookies, no personalization |
+| UCP version | `2026-08-25` |
+| Declared capabilities | `dev.ucp.shopping.catalog.search`, `dev.ucp.shopping.catalog.lookup`, `dev.shopify.catalog.global` |
+| Why those capabilities | Least privilege for Global Catalog search + `get_product`. Official `dev.shopify.catalog.global` extends both catalog.search and catalog.lookup. UCP maps `get_product` to Lookup. Declaring lookup is **not** permission to run bulk `lookup_catalog`; the PH probe still forbids that tool. Checkout, cart, order, payment, fulfillment, buyer consent, discount, and storefront catalog are omitted. |
+| Server-owned URL setting | `PIQSAVI_UCP_AGENT_PROFILE_URL` (public, non-secret; not shopper/request/frontend controlled) |
+| Shopify test fixture | `https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json` remains **TECHNICAL TEST ONLY** and is still the PH probe default |
+| PiqSavi production-intended profile | Explicit `--agent-profile-source piqsavi` only. Live default is **not** switched to the undeployed PiqSavi URL. |
+| Local tests | Focused profile route + PH probe contract tests |
+| Live Shopify call in this slice | None |
+| Shopify fetched PiqSavi profile | No |
+| Production registries | Empty |
+| Sprint 32 | Remains **OPEN** |
+| Sprint 38 | Remains **UNSTARTED** |
+
+Exact local profile document:
+
+```json
+{
+  "ucp": {
+    "version": "2026-08-25",
+    "capabilities": {
+      "dev.ucp.shopping.catalog.search": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/catalog/search",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/catalog_search.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.lookup": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/catalog/lookup",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/catalog_lookup.json"
+        }
+      ],
+      "dev.shopify.catalog.global": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://shopify.dev/docs/agents/catalog/global-catalog",
+          "schema": "https://shopify.dev/ucp/schemas/2026-08-25/shopify_catalog_global.json",
+          "extends": [
+            "dev.ucp.shopping.catalog.search",
+            "dev.ucp.shopping.catalog.lookup"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
 
 ## Owner live command
 

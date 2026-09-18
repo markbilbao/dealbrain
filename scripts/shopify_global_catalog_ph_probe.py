@@ -43,6 +43,7 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     load_probe_fixture,
     minimized_artifact_payload,
     run_ph_coverage_probe,
+    select_agent_profile,
     validate_catalog_tool_response,
 )
 
@@ -123,8 +124,20 @@ def main(argv: list[str] | None = None) -> int:
         "--live",
         action="store_true",
         help=(
-            "Call catalog.shopify.com anonymously with the official Shopify-hosted "
-            "UCP test profile. No API key. TECHNICAL TEST ONLY."
+            "Call catalog.shopify.com anonymously with the selected agent profile. "
+            "Default profile is the official Shopify-hosted UCP test fixture. "
+            "No API key. TECHNICAL TEST ONLY unless --agent-profile-source=piqsavi."
+        ),
+    )
+    parser.add_argument(
+        "--agent-profile-source",
+        choices=("technical-test-fixture", "piqsavi"),
+        default="technical-test-fixture",
+        help=(
+            "technical-test-fixture uses Shopify's hosted UCP fixture (default). "
+            "piqsavi uses the server-owned PIQSAVI_UCP_AGENT_PROFILE_URL. "
+            "Do not use piqsavi for live Shopify calls until that URL is deployed "
+            "and owner-validated. Request/browser input cannot set this."
         ),
     )
     parser.add_argument(
@@ -141,12 +154,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     output_dir = args.output_dir
+    profile_source = (
+        "piqsavi_production_intended"
+        if args.agent_profile_source == "piqsavi"
+        else "technical_test_fixture"
+    )
+    profile = select_agent_profile(profile_source)
     if args.live:
-        print(
-            "TECHNICAL TEST ONLY. Anonymous Shopify-hosted agent profile. "
-            "Not a PiqSavi identity. Not production certification. "
-            "Sprint 32 remains open."
-        )
+        if profile.source == "piqsavi_production_intended":
+            print(
+                "PiqSavi production-intended profile selected. "
+                "NOT YET DEPLOYED/VALIDATED. Shopify has not fetched this profile. "
+                "Not production certification. Sprint 32 remains open."
+            )
+        else:
+            print(
+                "TECHNICAL TEST ONLY. Anonymous Shopify-hosted agent profile. "
+                "Not a PiqSavi identity. Not production certification. "
+                "Sprint 32 remains open."
+            )
         try:
             output_dir = assert_live_probe_output_outside_repository(output_dir)
         except LiveProbeOutputInsideRepositoryError as exc:
@@ -157,9 +183,16 @@ def main(argv: list[str] | None = None) -> int:
             report = run_ph_coverage_probe(
                 transport=transport,
                 live=True,
+                agent_profile=profile,
             )
         except (ProbeLimitError, ProbeContractError, ProbeResponseError, RuntimeError) as exc:
             envelope = _failure_envelope(exc)
+            envelope["agent_profile"] = profile.url
+            envelope["agent_profile_source"] = profile.source
+            envelope["agent_profile_usage"] = profile.usage
+            envelope["agent_profile_not_piqsavi_identity"] = profile.not_piqsavi_identity
+            envelope["piqsavi_profile_deployed_and_validated"] = profile.deployed_and_validated
+            envelope["shopify_has_fetched_piqsavi_profile"] = profile.shopify_has_fetched_profile
             _write_json(output_dir / "summary.json", envelope)
             print(json.dumps(envelope, ensure_ascii=False, indent=2))
             return 2
@@ -169,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
         report = run_ph_coverage_probe(
             transport=transport,
             live=False,
+            agent_profile=profile,
         )
 
     artifact = minimized_artifact_payload(report)
@@ -178,8 +212,11 @@ def main(argv: list[str] | None = None) -> int:
         "fixture": report.fixture,
         "artifact_kind": report.artifact_kind,
         "agent_profile": report.agent_profile,
+        "agent_profile_source": report.agent_profile_source,
         "agent_profile_usage": report.agent_profile_usage,
         "agent_profile_not_piqsavi_identity": report.agent_profile_not_piqsavi_identity,
+        "piqsavi_profile_deployed_and_validated": report.piqsavi_profile_deployed_and_validated,
+        "shopify_has_fetched_piqsavi_profile": report.shopify_has_fetched_piqsavi_profile,
         "auth_tier": report.auth_tier,
         "credentials_required": report.credentials_required,
         "endpoint": report.endpoint,

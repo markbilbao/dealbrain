@@ -120,6 +120,14 @@ Owner-supplied live evidence after PR #149 recorded **PASSED TECHNICAL COVERAGE 
 
 After PR #150 merged, the owner reran the controlled Anonymous PH probe. Result: **PH LIVE TECHNICAL COVERAGE VALIDATED**. 12/12 categories remained `USEFUL_PH_OFFER`. Five `get_product` validations succeeded across five distinct categories (wireless earbuds, gaming laptop, mechanical keyboard, USB-C charger, phone case). Second-run totals: 120 products / 130 offer records (additional offers are compatible with multi-variant products, not 130 distinct products). This is **not** production certification. A production PiqSavi agent profile, Sprint 31 policy rows, and remaining certification gates are still required. Production provider/certification registries remain empty. Sprint 38 remains unstarted. See [`../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md). Sprint 32 remains open.
 
+### 2026-09-18 PiqSavi UCP agent-profile foundation (does not close this sprint)
+
+PiqSavi now has its own least-privilege UCP agent-profile JSON, served from the existing FastAPI public application at `GET /ucp/agent-profiles/2026-08-25/piqsavi.json`.
+
+**PIQSAVI UCP AGENT PROFILE: IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED.**
+
+This slice does **not** deploy. Shopify has **not** fetched the PiqSavi profile. The Shopify-hosted fixture remains the PH probe default (`technical-test-fixture` mode) and is **TECHNICAL TEST ONLY**. Production-intended PiqSavi identity is explicit (`--agent-profile-source piqsavi`) and is not used as the live default. Production provider/certification registries remain empty. Sprint 32 remains open. Sprint 38 remains unstarted. See [`../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ### Closure blockers (current)
 
 - No merchant has a real approved product-data / API path
@@ -134,7 +142,7 @@ After PR #150 merged, the owner reran the controlled Anonymous PH probe. Result:
 - A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
 - Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
 - Public-web discovery architecture/harness exists and is **not** a certified PH shopping-data path. No owner credentials. No live current-data response. Fixtures cannot close this sprint.
-- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. Owner live 12-query PH search coverage **PH LIVE TECHNICAL COVERAGE VALIDATED** (12/12 `USEFUL_PH_OFFER`; Anonymous; no credentials; no scraping/pagination/bulk lookup). Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. That is **not** production certification and does **not** close Sprint 32. A production PiqSavi agent profile, Sprint 31 policy rows, and remaining certification gates are still required. Sprint 38 remains unstarted.
+- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. Owner live 12-query PH search coverage **PH LIVE TECHNICAL COVERAGE VALIDATED** (12/12 `USEFUL_PH_OFFER`; Anonymous; no credentials; no scraping/pagination/bulk lookup). Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. That is **not** production certification and does **not** close Sprint 32. A PiqSavi UCP agent profile is **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED**. Shopify has not fetched the PiqSavi profile. Sprint 31 policy rows and remaining certification gates are still required. Sprint 38 remains unstarted.
 
 ### Production defaults
 

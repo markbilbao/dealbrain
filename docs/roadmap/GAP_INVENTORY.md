@@ -851,3 +851,21 @@ This addendum does **not** rewrite earlier snapshots. It records owner-supplied 
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-18 PiqSavi UCP agent-profile foundation addendum
+
+This addendum does **not** rewrite earlier snapshots. It records a local FastAPI-hosted PiqSavi UCP agent profile. It does **not** deploy, does **not** call Shopify live, does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `e6a46a345351bea1299aa299bf0ebb81be8cecf8` (merge of PR #151) |
+| Status | **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED** |
+| Proposed canonical URL | `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| Hosting route | `GET /ucp/agent-profiles/2026-08-25/piqsavi.json` on the existing FastAPI app |
+| UCP version | `2026-08-25` |
+| Declared capabilities | `dev.ucp.shopping.catalog.search`, `dev.ucp.shopping.catalog.lookup`, `dev.shopify.catalog.global` |
+| Shopify test fixture | Remains **TECHNICAL TEST ONLY** and remains the PH probe default |
+| Live Shopify call / Shopify fetch of PiqSavi profile | None |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |

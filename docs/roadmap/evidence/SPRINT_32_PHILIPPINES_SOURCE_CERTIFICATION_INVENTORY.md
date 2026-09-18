@@ -420,6 +420,12 @@ This addendum does **not** rewrite earlier snapshots. After PR #150 merged, the 
 
 Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 
+### 2026-09-18 PiqSavi UCP agent-profile foundation (does not close this sprint)
+
+A PiqSavi-owned UCP agent profile is **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED** at `GET /ucp/agent-profiles/2026-08-25/piqsavi.json`. Proposed canonical production URL: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. The Shopify-hosted fixture remains **TECHNICAL TEST ONLY** and remains the PH probe default. This workspace did not deploy and did not call Shopify. Sprint 32 is **not complete**.
+
+Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -431,4 +437,5 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 - Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
 - A Tavily Extract technical harness may later produce technical Level-B candidates. That is not offer evidence and does not convert source-site rights from unknown to allowed.
 - The Shopify Global Catalog PH probe harness is technical coverage tooling only. Owner live 12-query PH search coverage **PASSED TECHNICAL COVERAGE TEST**. Diversified 5/5 `get_product` validations completed across five categories. That does not certify Shopify or close Sprint 32.
+- The PiqSavi UCP agent profile is implemented locally and is **not yet deployed/validated**. Shopify has not fetched it.
 - Sprint 32 is **not complete**.
