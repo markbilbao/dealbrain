@@ -202,27 +202,17 @@ jobs:
           ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
           BUCKET="dealbrain-staging-release-artifacts-${ACCOUNT}"
 
-          # Non-secret RDS metadata for host DATABASE_URL assembly.
-          RDS_JSON="$(
-            aws rds describe-db-instances \
-              --query "DBInstances[?contains(DBInstanceIdentifier, 'dealbrain-staging') || contains(DBInstanceIdentifier, 'staging')].[Endpoint.Address,Endpoint.Port,DBName,MasterUserSecret.SecretArn] | [0]" \
-              --output json
-          )"
-          RDS_ENDPOINT="$(echo "$RDS_JSON" | jq -r '.[0]')"
-          RDS_PORT="$(echo "$RDS_JSON" | jq -r '.[1]')"
-          RDS_DB="$(echo "$RDS_JSON" | jq -r '.[2]')"
-          RDS_SECRET="$(echo "$RDS_JSON" | jq -r '.[3]')"
-          test -n "$RDS_ENDPOINT"
-          test -n "$RDS_SECRET"
-
+          # Canonical staging RDS only. Exact identifier — never pattern-match
+          # or take the first result from a list of staging databases. Recovery
+          # copy dealbrain-staging-postgres-recovery is not a deploy target.
           mkdir -p .deploy-work
-          jq -n \
-            --arg endpoint "$RDS_ENDPOINT" \
-            --argjson port "$RDS_PORT" \
-            --arg db_name "$RDS_DB" \
-            --arg master_user_secret_arn "$RDS_SECRET" \
-            '{endpoint:$endpoint, port:$port, db_name:$db_name, master_user_secret_arn:$master_user_secret_arn}' \
-            > .deploy-work/rds-nonsecret.json
+          aws rds describe-db-instances \
+            --db-instance-identifier dealbrain-staging-postgres \
+            --output json \
+            > .deploy-work/rds-describe.json
+          python -m scripts.deploy.select_canonical_staging_rds \
+            --input .deploy-work/rds-describe.json \
+            --out .deploy-work/rds-nonsecret.json
 
           jq -n --arg target_group_arn "$TG_ARN" '{target_group_arn:$target_group_arn}' \
             > .deploy-work/alb-nonsecret.json
