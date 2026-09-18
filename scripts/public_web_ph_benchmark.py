@@ -41,14 +41,17 @@ from app.research.public_web_extract import (  # noqa: E402
     DEFAULT_EXTRACT_DEPTH,
     DEFAULT_EXTRACT_OUTPUT_DIR,
     DEFAULT_SEARCH_REPORT_PATH,
+    LIVE_EXTRACT_PRIVATE_WARNING,
     MAX_EXTRACT_SAMPLE_URLS,
     MISSING_SEARCH_REPORT_MESSAGE,
     PRIVATE_LOCAL_LIVE_ARTIFACT,
     TAVILY_EXTRACT_ENDPOINT,
     TAVILY_EXTRACT_MAX_URLS_PER_REQUEST,
     ExtractSampleError,
+    LiveExtractOutputInsideRepositoryError,
     MissingSearchReportError,
     assert_artifact_has_no_secrets,
+    assert_live_extract_output_outside_repository,
     documented_basic_extract_credit_max,
     evaluate_extracted_page,
     select_extract_sample_from_report,
@@ -290,6 +293,12 @@ def _run_extract_mode(
     live: bool,
     persist_raw: bool,
 ) -> int:
+    if live:
+        try:
+            output_dir = assert_live_extract_output_outside_repository(output_dir)
+        except LiveExtractOutputInsideRepositoryError as exc:
+            print(str(exc))
+            return 2
     try:
         selected = select_extract_sample_from_report(search_report)
     except MissingSearchReportError as exc:
@@ -414,7 +423,9 @@ def _run_extract_mode(
             raw_name = content_safe_stem(item.source_url)
             raw_payload = {
                 "artifact_kind": PRIVATE_LOCAL_LIVE_ARTIFACT,
-                "warning": "PRIVATE_LOCAL_LIVE_ARTIFACT — never commit extracted retailer page text",
+                "warning": (
+                    "PRIVATE_LOCAL_LIVE_ARTIFACT — never commit extracted retailer page text"
+                ),
                 "source_url": item.source_url,
                 "retrieved_at": retrieved_at.isoformat(),
                 "raw_content": raw_content,
@@ -539,6 +550,13 @@ def main(argv: list[str] | None = None) -> int:
     output_dir = args.output_dir or (
         DEFAULT_EXTRACT_OUTPUT_DIR if extract_mode else DEFAULT_SEARCH_OUTPUT_DIR
     )
+    if args.extract_live:
+        print(LIVE_EXTRACT_PRIVATE_WARNING)
+        try:
+            output_dir = assert_live_extract_output_outside_repository(output_dir)
+        except LiveExtractOutputInsideRepositoryError as exc:
+            print(str(exc))
+            return 2
     if extract_mode:
         return _run_extract_mode(
             search_report=args.search_report,

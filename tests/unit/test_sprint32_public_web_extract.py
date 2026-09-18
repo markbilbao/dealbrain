@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -18,22 +19,29 @@ from app.research.certification_evidence import (
 from app.research.public_web_extract import (
     DEFAULT_EXTRACT_OUTPUT_DIR,
     DEFAULT_SEARCH_REPORT_PATH,
+    LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE,
+    LIVE_EXTRACT_PRIVATE_WARNING,
     MAX_EXTRACT_SAMPLE_URLS,
     MISSING_SEARCH_REPORT_MESSAGE,
     PRIVATE_LOCAL_LIVE_ARTIFACT,
+    REPOSITORY_ROOT,
     TAVILY_EXTRACT_ENDPOINT,
     TAVILY_EXTRACT_MAX_URLS_PER_REQUEST,
     TECHNICAL_LEVEL_B_CANDIDATE,
     ExtractSampleError,
+    LiveExtractOutputInsideRepositoryError,
     MissingSearchReportError,
     assert_artifact_has_no_secrets,
+    assert_live_extract_output_outside_repository,
     detect_price_candidate,
     documented_basic_extract_credit_max,
     evaluate_extracted_page,
     hits_from_search_report,
     is_excluded_marketplace_url,
+    live_extract_output_is_inside_repository,
     load_search_report,
     refuse_uncertified_extract_price,
+    resolve_live_extract_output_dir,
     select_extract_sample,
     select_extract_sample_from_report,
     unknown_shipping_money_line,
@@ -385,3 +393,114 @@ def test_tavily_terms_do_not_categorically_forbid_shopper_facing_use() -> None:
     assert tavily.topic_state("content_retrieval") == "unknown"
     assert "shopper-facing piqsavi use is not clearly the same" not in tavily.notes.casefold()
     assert PRIVATE_LOCAL_LIVE_ARTIFACT == "PRIVATE_LOCAL_LIVE_ARTIFACT"
+
+
+def _extract_live_args(output_dir: Path, *, persist_raw: bool = False) -> list[str]:
+    args = [
+        "--provider",
+        "tavily_search",
+        "--extract-live",
+        "--search-report",
+        str(FIXTURE_REPORT),
+        "--output-dir",
+        str(output_dir),
+    ]
+    if persist_raw:
+        args.append("--persist-raw")
+    return args
+
+
+def test_live_extract_rejects_repo_root_output(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    exit_code = benchmark_main(_extract_live_args(ROOT))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_PRIVATE_WARNING in captured.out
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not (ROOT / "summary.json").exists()
+    assert not (ROOT / "tavily_extract.json").exists()
+    assert not (ROOT / "selected_urls.json").exists()
+
+
+def test_live_extract_rejects_nested_repo_output_path(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    nested = ROOT / "docs" / "live-tavily"
+    exit_code = benchmark_main(_extract_live_args(nested))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not nested.exists()
+
+
+def test_live_extract_accepts_tmp_style_outside_repo_output(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    outside = tmp_path / "piqsavi-tavily-extract-ph"
+    assert live_extract_output_is_inside_repository(outside) is False
+    assert assert_live_extract_output_outside_repository(outside) == outside.expanduser().resolve()
+    exit_code = benchmark_main(_extract_live_args(outside))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_PRIVATE_WARNING in captured.out
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE not in captured.out
+    assert (outside / "summary.json").exists()
+    assert (outside / "selected_urls.json").exists()
+    assert not (outside / "raw").exists()
+
+
+def test_live_extract_path_resolution_prevents_relative_bypass(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    monkeypatch.chdir(ROOT)
+    relative_inside = Path("./tmp-output")
+    assert live_extract_output_is_inside_repository(relative_inside) is True
+    with pytest.raises(LiveExtractOutputInsideRepositoryError):
+        assert_live_extract_output_outside_repository(relative_inside)
+    exit_code = benchmark_main(_extract_live_args(relative_inside))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not (ROOT / "tmp-output").exists()
+
+    relative_nested = Path("docs/live-tavily")
+    assert live_extract_output_is_inside_repository(relative_nested) is True
+    exit_code = benchmark_main(_extract_live_args(relative_nested))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not (ROOT / "docs" / "live-tavily").exists()
+
+    relative_outside = Path(os.path.relpath(tmp_path / "outside-extract", start=ROOT))
+    assert live_extract_output_is_inside_repository(relative_outside) is False
+    exit_code = benchmark_main(_extract_live_args(relative_outside))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE not in captured.out
+    assert (tmp_path / "outside-extract" / "summary.json").exists()
+
+    link_into_repo = tmp_path / "link-into-docs"
+    link_into_repo.symlink_to(ROOT / "docs")
+    linked_live = link_into_repo / "live-tavily"
+    assert live_extract_output_is_inside_repository(linked_live) is True
+    resolved = resolve_live_extract_output_dir(linked_live)
+    assert ROOT.resolve() in resolved.parents
+    exit_code = benchmark_main(_extract_live_args(linked_live))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not (ROOT / "docs" / "live-tavily").exists()
+
+
+def test_persist_raw_cannot_bypass_outside_repo_rule(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    nested = ROOT / "artifacts" / "tavily"
+    exit_code = benchmark_main(_extract_live_args(nested, persist_raw=True))
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert LIVE_EXTRACT_PRIVATE_WARNING in captured.out
+    assert LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE in captured.out
+    assert not nested.exists()
+    assert not (nested / "raw").exists()
+    assert ROOT.resolve() == REPOSITORY_ROOT

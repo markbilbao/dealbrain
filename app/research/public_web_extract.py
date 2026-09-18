@@ -50,7 +50,20 @@ DEFAULT_EXTRACT_DEPTH = "basic"
 TAVILY_EXTRACT_ENDPOINT = "https://api.tavily.com/extract"
 DEFAULT_EXTRACT_OUTPUT_DIR = Path("/tmp/piqsavi-tavily-extract-ph")
 DEFAULT_SEARCH_REPORT_PATH = Path("/tmp/piqsavi-tavily-ph/tavily_search.json")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 PRIVATE_LOCAL_LIVE_ARTIFACT = "PRIVATE_LOCAL_LIVE_ARTIFACT"
+LIVE_EXTRACT_PRIVATE_WARNING = (
+    "PRIVATE LOCAL BENCHMARK:\n"
+    "Do not commit or publicly share Tavily live benchmark artifacts or\n"
+    "performance analysis.\n"
+    "Do not print raw contents or API credentials."
+)
+LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE = (
+    "Live Tavily Extract artifacts must be written outside the repository. "
+    "Tavily terms restrict disclosure of performance information or analysis "
+    "relating to its Services. Use a private local directory such as "
+    "/tmp/piqsavi-tavily-extract-ph."
+)
 TECHNICAL_LEVEL_B_CANDIDATE = "TECHNICAL_LEVEL_B_CANDIDATE"
 TECHNICAL_LEVEL_B_NOT_OFFER_EVIDENCE = "technical_level_b_candidate_is_not_offer_evidence"
 MISSING_SEARCH_REPORT_MESSAGE = (
@@ -142,6 +155,43 @@ class MissingSearchReportError(FileNotFoundError):
 
 class ExtractSampleError(ValueError):
     """Extract sample cannot be built from the supplied search report."""
+
+
+class LiveExtractOutputInsideRepositoryError(ValueError):
+    """Live Extract artifacts cannot be written inside the git repository."""
+
+
+def resolve_live_extract_output_dir(path: Path) -> Path:
+    """Resolve user-supplied output paths, including relative and symlink forms."""
+
+    return path.expanduser().resolve()
+
+
+def live_extract_output_is_inside_repository(
+    output_dir: Path,
+    *,
+    repository_root: Path | None = None,
+) -> bool:
+    """True when the resolved output directory is the repo root or inside it."""
+
+    resolved = resolve_live_extract_output_dir(output_dir)
+    root = resolve_live_extract_output_dir(repository_root or REPOSITORY_ROOT)
+    return resolved == root or root in resolved.parents
+
+
+def assert_live_extract_output_outside_repository(
+    output_dir: Path,
+    *,
+    repository_root: Path | None = None,
+) -> Path:
+    """Refuse live Extract output that would land inside the repository."""
+
+    resolved = resolve_live_extract_output_dir(output_dir)
+    if live_extract_output_is_inside_repository(resolved, repository_root=repository_root):
+        raise LiveExtractOutputInsideRepositoryError(
+            f"{LIVE_EXTRACT_OUTPUT_INSIDE_REPO_MESSAGE} Refused: {resolved}"
+        )
+    return resolved
 
 
 @dataclass(frozen=True, slots=True)

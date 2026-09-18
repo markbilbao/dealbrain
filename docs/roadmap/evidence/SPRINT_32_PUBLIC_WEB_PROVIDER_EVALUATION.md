@@ -150,8 +150,9 @@ Methodology only. Live owner testing is required. Do not publish provider perfor
 2. Select 12–15 unique direct retailer / manufacturer / authorized-reseller product URLs. Exclude Shopee, Lazada, TikTok Shop, Amazon, editorial/review pages, search/category pages, and duplicates.
 3. Call **only** the official Tavily Extract API (`POST https://api.tavily.com/extract`) with `extract_depth=basic`. Max 15 URLs, one request, documented max 20 URLs/request. Do not run advanced automatically.
 4. Record private/local metadata only: source URL, merchant identity, retrieval timestamp, success/fail, content length, content hash, title/product identity, PHP price-like text, attributable-price flag, availability/shipping text presence, technical Level-B candidate YES/NO, reason. Do not persist raw page text by default.
-5. `technical_level_b_candidate=true` is not `offer_evidence`. Source-site policy stays unknown. `may_enter_evaluated_set` stays false.
-6. Expected maximum documented credit use for 12–15 basic extractions: **3 credits** if all succeed (1 credit per 5 successful basic extractions). Failed extractions are not charged.
+5. Live Extract `--output-dir` must resolve **outside** the repository. Relative paths and symlinks are resolved first. `--persist-raw` cannot bypass that rule. The harness prints a private-local warning and must not write live artifacts under the git tree.
+6. `technical_level_b_candidate=true` is not `offer_evidence`. Source-site policy stays unknown. `may_enter_evaluated_set` stays false.
+7. Expected maximum documented credit use for 12–15 basic extractions: **3 credits** if all succeed (1 credit per 5 successful basic extractions). Failed extractions are not charged.
 
 Owner live command:
 
