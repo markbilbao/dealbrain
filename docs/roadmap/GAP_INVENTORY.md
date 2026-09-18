@@ -758,6 +758,8 @@ This addendum does **not** rewrite earlier snapshots. It records a provider-neut
 | Real PH product-data path | Still missing |
 | Production providers / certifications | Still **zero** |
 | Public-web candidates | Brave and Tavily are first live-test candidates; Exa is comparison-only |
+| Brave AI/LLM policy | Training/evaluation/improvement of AI models from Search Results = **prohibited**. Runtime LLM grounding/inference = **unknown**, not a blanket prohibition and not converted to allowed. |
+| Brave `country` | PH enum membership unverified; live harness omits `country` and keeps PH in the query text |
 | Live credentials | Absent. Owner must create accounts out-of-band. |
-| Fixtures | Non-production only; cannot close Sprint 32 |
+| Fixtures | Non-production only; cannot close Sprint 32. Discovery benchmark ≠ shopping-offer path. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) |

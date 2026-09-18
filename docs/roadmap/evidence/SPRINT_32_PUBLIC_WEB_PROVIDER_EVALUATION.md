@@ -40,7 +40,7 @@ Evaluated from public official documentation only. No paid signup. No credential
 
 | Provider | First live candidate? | Why |
 |----------|-----------------------|-----|
-| Brave Search API | Yes | Clear Customer Applications license to use search results; country parameter exists; snippets only; storage/AI-training restricted/prohibited |
+| Brave Search API | Yes | Clear Customer Applications license to use search results; snippets only; using Search Results to train/evaluate/improve AI models is prohibited; runtime LLM grounding is unknown (not a blanket AI ban); PH `country` enum membership is unverified so the harness omits `country` |
 | Tavily Search API | Yes | Free Researcher 1,000 credits/month; explicit `philippines` country boost; Extract could later be Level B *if* policy allows; shopper-facing reuse is unknown |
 | Exa Search API | Comparison only | Contents/livecrawl is technically interesting for Level B; consumer reuse terms are more ambiguous; no verified PH country parameter |
 
@@ -52,7 +52,7 @@ Authoritative machine-readable copy: `app/research/public_web_policy.py`.
 
 ### Brave Search API
 
-Reviewed: [Terms of Use](https://api-dashboard.search.brave.com/documentation/resources/terms-of-service) (updated 1 Sep 2026), [product](https://brave.com/search/api/), [query docs](https://api-dashboard.search.brave.com/app/documentation/web-search/query), [pricing](https://api-dashboard.search.brave.com/documentation/pricing).
+Reviewed: [Terms of Use](https://api-dashboard.search.brave.com/documentation/resources/terms-of-service) (updated 1 Sep 2026), [product](https://brave.com/search/api/), [query docs](https://api-dashboard.search.brave.com/app/documentation/web-search/query), [pricing](https://api-dashboard.search.brave.com/documentation/pricing), [LLM Context API](https://api-dashboard.search.brave.com/api-reference/ai/llm_context/get).
 
 | Topic | State |
 |-------|-------|
@@ -64,14 +64,15 @@ Reviewed: [Terms of Use](https://api-dashboard.search.brave.com/documentation/re
 | Attribution | restricted |
 | Rate limits | unknown |
 | Retention | restricted |
-| AI/LLM usage | prohibited |
+| Model training / evaluation / improvement | prohibited |
+| Runtime AI/LLM grounding or inference | unknown |
 | Country/localization | unknown |
 | Freshness metadata | restricted |
 | Structured offer fields | unknown |
 | Product discovery | restricted |
 | Current pricing | unknown |
 
-Brave grants a limited license to use the API and Search Results with Customer Applications. Storing/caching a database of results is prohibited except transient operational storage. Using Search Results to train/evaluate/improve AI models is prohibited. Brave does not grant third-party webpage rights. Attribution is optional and, if used, must be “POWERED BY BRAVE” plus logo. PH membership of the `country` enum is unverified from the truncated public list.
+Brave grants a limited license to use the API and Search Results with Customer Applications. Storing/caching a database of results is prohibited except transient operational storage. Using Search Results to create, evaluate, train, re-train, fine-tune, benchmark, or otherwise improve AI models or services is prohibited. That is **not** a blanket ban on all runtime LLM use. Brave also documents an LLM Context API for AI agents, grounding, and RAG. The reviewed Search API terms do not clearly establish that PiqSavi may transform, summarize, score, or send third-party Search Results through its runtime AI pipeline, so runtime grounding stays **unknown** (fail-closed; not converted to allowed). Derivative-work restrictions remain relevant. Third-party webpage rights and direct source/page rights remain separate. Using Brave only for URL discovery is different from using Brave snippets as PiqSavi recommendation evidence. Attribution is optional and, if used, must be “POWERED BY BRAVE” plus logo. PH membership of the `country` request-parameter enum is **unverified** from the truncated public list (visible codes include AR/AU/AT plus examples US/DE). The live harness therefore **omits** `country` and keeps PH intent in the query text. Do not send `country=PH`. Do not silently substitute `x-loc-country`.
 
 Public pricing observed: Search prepaid **$5 / 1,000 requests**. Product page still describes a free plan that requires a credit card as anti-fraud. Historical marketing mentions 2,000 free queries/month. Exact current free-tier quota is account-dependent.
 
@@ -89,7 +90,8 @@ Reviewed: [Terms](https://www.tavily.com/terms), [Search](https://docs.tavily.co
 | Attribution | unknown |
 | Rate limits | restricted |
 | Retention | unknown |
-| AI/LLM usage | unknown |
+| Model training / evaluation / improvement | unknown |
+| Runtime AI/LLM grounding or inference | unknown |
 | Country/localization | unknown |
 | Freshness metadata | unknown |
 | Structured offer fields | unknown |
@@ -114,7 +116,8 @@ Reviewed: [Terms of Service](https://exa.ai/assets/Exa_Labs_Terms_of_Service.pdf
 | Attribution | unknown |
 | Rate limits | restricted |
 | Retention | unknown |
-| AI/LLM usage | unknown |
+| Model training / evaluation / improvement | unknown |
+| Runtime AI/LLM grounding or inference | unknown |
 | Country/localization | unknown |
 | Freshness metadata | restricted |
 | Structured offer fields | unknown |
@@ -129,7 +132,9 @@ Public pricing observed: pay-as-you-go Search **$7 / 1,000 requests**; Contents 
 
 32 intents in [`SPRINT_32_PH_PUBLIC_WEB_SHOPPING_BENCHMARK.json`](SPRINT_32_PH_PUBLIC_WEB_SHOPPING_BENCHMARK.json). Categories: smartphones, laptops, cameras, TVs, headphones, appliances, gaming, home electronics, household goods, beauty/personal care. Mix of recognizable products and generic purchase intents.
 
-Harness: `scripts/public_web_ph_benchmark.py`. Offline fixtures are unmistakably non-production. Live mode calls official search APIs only and does not scrape merchant pages.
+Harness: `scripts/public_web_ph_benchmark.py`. Offline fixtures are unmistakably non-production. Live mode calls official search APIs only and does not scrape merchant pages. Brave live requests omit the unverified `country` enum and keep Philippines in the query text. Tavily still sends documented `country=philippines` when `topic=general`.
+
+A successful Brave/Tavily discovery benchmark only proves discovery usefulness. It does **not** create the real shopping-offer path required to close Sprint 32. Offers still need a legitimate Level A/B route with attributable current price/freshness before they may enter the canonical evaluated set.
 
 ## 6. Minimum evidence to treat a result as an offer
 

@@ -62,6 +62,14 @@ Indexed Shopee or Lazada URLs are discovery hits. They do **not** mean “PiqSav
 
 Unknown shipping ≠ PHP 0 ≠ free. Unknown fields are not scored as zero. Do not invent price, stock, or shipping.
 
+## Sprint 32 truth
+
+This PR creates a **public-web discovery foundation**. It does **not** yet create the real shopping-offer path required to close Sprint 32.
+
+A successful Brave/Tavily search benchmark only proves discovery usefulness. Sprint 32 still needs a legitimate route capable of establishing stronger Level A/B offer evidence, including attributable current price/freshness, before offers may enter the canonical evaluated set. Do not imply the discovery benchmark alone can close Sprint 32.
+
+Brave PH localization via the Web Search `country` parameter remains unverified. The harness omits `country` and preserves PH intent in the query text.
+
 ## Sprint 38 boundary
 
 Sprint 32 may describe and certify a data path. It must not implement live retries, partial-result product behavior, execution-trace population, or the production live-mode gate. `PublicWebResearchProvider.execute()` remains unimplemented.

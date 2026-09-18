@@ -87,7 +87,9 @@ Architecture decision: **B** — a narrow Sprint 32 adapter/certification extens
 
 Public-web `PRODUCT_DISCOVERY` may later be planned when certified. `CURRENT_PRICING` / scored offers still require Level A or Level B evidence (or Level C only if Sprint 32 policy later explicitly permits it). Level D snippets stay discovery-only.
 
-This slice does **not** scrape merchants, does **not** buy API plans, does **not** store credentials, and does **not** certify Brave, Tavily, or Exa. Live benchmark requires owner-supplied credentials. See [`../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) and [`../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md`](../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md).
+This slice is a **public-web discovery foundation**. It is **not** the real shopping-offer path required to close Sprint 32. A successful Brave/Tavily search benchmark only proves discovery usefulness. Sprint 32 still needs a legitimate route capable of establishing stronger Level A/B offer evidence, including attributable current price/freshness, before offers may enter the canonical evaluated set.
+
+This slice does **not** scrape merchants, does **not** buy API plans, does **not** store credentials, and does **not** certify Brave, Tavily, or Exa. Live benchmark requires owner-supplied credentials. Brave `country=PH` is not sent because PH membership in the published `country` enum is unverified; PH intent stays in the query text. See [`../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) and [`../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md`](../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md).
 
 ### Closure blockers (current)
 
@@ -107,22 +109,6 @@ This slice does **not** scrape merchants, does **not** buy API plans, does **not
 ### Production defaults
 
 Certification records = 0. Production evidence = 0. Providers = 0. Routing policies = 0. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
-
-- No merchant has a real approved product-data / API path
-- No real production provider
-- No current-data operational validation
-- No trusted production certification
-- Staging certification incomplete
-- Monitoring / public coverage disclosure incomplete
-- Kill-switch closure evidence incomplete as required
-- EXT-01 is now `applied` (2026-09-08 PH product-data requests). That is **not** provider approval, credentials, a feed, or certification. EXT-06 remains `not_started`.
-- EXT-07 is `n_a_beta` for September and does not block this sprint's product-data certification purpose
-- A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
-- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
-
-### Production defaults
-
-Certification records = 0. Production evidence = 0. Providers = 0. Routing policies = 0. Documentary PH evidence records = 15 (incomplete; not loaded by production factories).
 
 ## Objective
 

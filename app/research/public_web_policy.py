@@ -15,6 +15,46 @@ from app.domain.entities.research_execution import CapabilityPolicyState
 
 POLICY_REVIEW_DATE = date(2026, 9, 18)
 
+# Brave Web Search `country` is a documented 2-character enum, but public docs
+# only show a truncated list ("AR AU AT +35 more") plus examples US and DE.
+# PH is not in that visible published set. Do not send `country=PH`.
+BRAVE_WEB_SEARCH_COUNTRY_ENUM_COMPLETE = False
+BRAVE_WEB_SEARCH_VISIBLE_COUNTRY_CODES = frozenset({"AR", "AU", "AT", "US", "DE"})
+
+
+def brave_ph_country_parameter_verified() -> bool:
+    """False until the published Brave `country` enum is recorded as including PH."""
+
+    return BRAVE_WEB_SEARCH_COUNTRY_ENUM_COMPLETE and "PH" in BRAVE_WEB_SEARCH_VISIBLE_COUNTRY_CODES
+
+
+def brave_web_search_request_params(
+    query: str,
+    *,
+    count: int = 10,
+    country: str | None = None,
+) -> dict[str, str | int]:
+    """Build Brave Web Search params without guessing unverified enum values.
+
+    PH shopping intent belongs in the query text. ``country`` is omitted unless
+    the published enum has been recorded as complete and the requested code is
+    in that recorded set.
+    """
+
+    params: dict[str, str | int] = {"q": query, "count": count}
+    if country is None or not str(country).strip():
+        return params
+    code = str(country).strip().upper()
+    if not BRAVE_WEB_SEARCH_COUNTRY_ENUM_COMPLETE:
+        raise ValueError(
+            "Brave Web Search country enum is incomplete in reviewed public docs; "
+            f"refusing to send country={code!r}"
+        )
+    if code not in BRAVE_WEB_SEARCH_VISIBLE_COUNTRY_CODES:
+        raise ValueError(f"Brave country {code!r} is not in the recorded documented enum")
+    params["country"] = code
+    return params
+
 
 @dataclass(frozen=True, slots=True)
 class PublicWebProviderPolicyTopic:
@@ -112,11 +152,12 @@ def brave_search_policy_audit() -> PublicWebProviderPolicyAudit:
     tos = "https://api-dashboard.search.brave.com/documentation/resources/terms-of-service"
     product = "https://brave.com/search/api/"
     query_docs = "https://api-dashboard.search.brave.com/app/documentation/web-search/query"
+    llm_context = "https://api-dashboard.search.brave.com/api-reference/ai/llm_context/get"
     pricing = "https://api-dashboard.search.brave.com/documentation/pricing"
     return PublicWebProviderPolicyAudit(
         provider_key="brave_search",
         display_name="Brave Search API",
-        official_docs=(tos, product, query_docs, pricing),
+        official_docs=(tos, product, query_docs, pricing, llm_context),
         review_date=POLICY_REVIEW_DATE,
         completeness="incomplete",
         topics=(
@@ -181,24 +222,38 @@ def brave_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "Transient operational storage only during the term.",
             ),
             _topic(
-                "ai_llm_use",
+                "model_training_evaluation_improvement",
                 "prohibited",
                 tos,
-                "Terms prohibit using Search Results to create, evaluate, train, "
-                "re-train, fine-tune, benchmark, or otherwise improve AI models or "
-                "services. Whether bounded in-product comparison summaries are a "
-                "separate Customer Application use remains unreviewed; do not treat "
-                "that ambiguity as allowed.",
+                "Search API Terms dated 2026-09-01 prohibit using Search Results to "
+                "create, evaluate, train, re-train, fine-tune, benchmark, or otherwise "
+                "improve artificial intelligence models or services. This prohibition "
+                "is not a blanket ban on all runtime LLM use.",
+            ),
+            _topic(
+                "runtime_ai_llm_grounding_or_inference",
+                "unknown",
+                f"{tos}; {product}",
+                "Brave publicly documents an LLM Context API for AI agents, LLM "
+                "grounding, and RAG pipelines. The Search API Terms license use of "
+                "Search Results with Customer Applications, but also restrict "
+                "derivative works of Search Results. The reviewed Search API terms "
+                "do not clearly establish that PiqSavi may transform, summarize, "
+                "score, or send third-party Search Results through its runtime AI "
+                "pipeline. URL-only discovery is different from using snippets as "
+                "recommendation evidence. Third-Party Content and page-publisher "
+                "rights remain separate. Ambiguity stays unknown, not allowed.",
             ),
             _topic(
                 "country_localization",
                 "unknown",
                 query_docs,
                 "Web Search documents a 2-character country parameter and "
-                "x-loc-country as ISO 3166-1 alpha-2. PH is not confirmed from the "
-                "truncated public enum (examples include US/DE). Do not assume PH "
-                "country targeting is allowed until the published enum is verified "
-                "with a live response.",
+                "x-loc-country as ISO 3166-1 alpha-2. PH is not in the visible "
+                "published enum (AR/AU/AT plus examples US/DE and “+35 more”). "
+                "PH localization via `country` remains unverified. Do not send "
+                "`country=PH`. Do not substitute `x-loc-country` as a silent "
+                "geographic stand-in. Preserve PH intent in the query text.",
             ),
             _topic(
                 "freshness_metadata",
@@ -240,9 +295,13 @@ def brave_search_policy_audit() -> PublicWebProviderPolicyAudit:
             "No paid signup was made. Exact current free-tier quota is account-dependent."
         ),
         localization_notes=(
-            "country and search_lang parameters exist. PH membership of the country "
-            "enum is unverified from public truncated docs. Tavily documents "
-            "philippines explicitly; Brave does not in the visible enum excerpt."
+            "Web Search documents a 2-character `country` parameter. Public docs "
+            "show examples US/DE/AR/AU/AT and a truncated enum (“+35 more”). PH is "
+            "not in the visible published list, so PH country targeting remains "
+            "unverified. The live harness therefore omits `country` and keeps PH "
+            "intent in the query text. Do not send `country=PH` until the published "
+            "enum is recorded. `x-loc-country` is a client-location header, not a "
+            "silent substitute for `country`."
         ),
         freshness_notes=(
             "Query freshness filter is documented. Result objects may include age "
@@ -256,9 +315,12 @@ def brave_search_policy_audit() -> PublicWebProviderPolicyAudit:
         recommended_as_first_live_candidate=True,
         notes=(
             "Strongest documented license to use search results in a customer "
-            "application, with hard storage/AI-training restrictions. First live "
-            "benchmark candidate if the owner supplies a key. Not certified. "
-            "Engineering interpretation is not counsel approval."
+            "application, with a hard prohibition on using Search Results to "
+            "create/evaluate/train/improve AI models. Runtime LLM grounding is "
+            "not automatically prohibited and remains unknown. First live "
+            "benchmark candidate if the owner supplies a key. URL discovery is "
+            "not offer evidence. Not certified. Engineering interpretation is "
+            "not counsel approval."
         ),
     )
 
@@ -341,7 +403,15 @@ def tavily_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "rule for search/extract outputs.",
             ),
             _topic(
-                "ai_llm_use",
+                "model_training_evaluation_improvement",
+                "unknown",
+                f"{about}; {terms}",
+                "Tavily product docs market LLM/RAG use. A Brave-style prohibition on "
+                "using retrieved results to train, evaluate, or improve models was "
+                "not located in the reviewed terms excerpt. Ambiguity stays unknown.",
+            ),
+            _topic(
+                "runtime_ai_llm_grounding_or_inference",
                 "unknown",
                 f"{about}; {terms}",
                 "Product documentation markets Tavily for LLM/RAG agents. That is "
@@ -490,11 +560,21 @@ def exa_search_policy_audit() -> PublicWebProviderPolicyAudit:
                 "and improve services.",
             ),
             _topic(
-                "ai_llm_use",
+                "model_training_evaluation_improvement",
+                "unknown",
+                terms,
+                "Exa is marketed for AI search. A Brave-style prohibition on using "
+                "retrieved information to train, evaluate, or improve models was not "
+                "located in the reviewed terms excerpt. Ambiguity stays unknown.",
+            ),
+            _topic(
+                "runtime_ai_llm_grounding_or_inference",
                 "unknown",
                 terms,
                 "Product is marketed for AI search. Terms still restrict copying/"
-                "distribution of obtained information. Ambiguity stays unknown.",
+                "distribution of obtained information. Whether PiqSavi may send Exa "
+                "results through its runtime AI pipeline is not clearly established. "
+                "Ambiguity stays unknown.",
             ),
             _topic(
                 "country_localization",

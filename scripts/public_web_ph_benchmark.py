@@ -33,7 +33,10 @@ from app.research.public_web_benchmark import (  # noqa: E402
     owner_action_required,
     summarize_public_web_benchmark,
 )
-from app.research.public_web_policy import public_web_provider_policy_audits  # noqa: E402
+from app.research.public_web_policy import (  # noqa: E402
+    brave_web_search_request_params,
+    public_web_provider_policy_audits,
+)
 
 DEFAULT_FIXTURE = ROOT / "tests/fixtures/public_web_benchmark/non_production_search_hits.json"
 LIVE_ENDPOINTS = {
@@ -81,7 +84,7 @@ def _live_hits(provider_key: str, query: str, secret: str) -> tuple[list[dict[st
                 "Accept": "application/json",
                 "X-Subscription-Token": secret,
             },
-            params={"q": query, "country": "PH", "search_lang": "en", "count": 10},
+            params=brave_web_search_request_params(query, count=10),
             timeout=20.0,
         )
         response.raise_for_status()

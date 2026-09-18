@@ -37,8 +37,10 @@ _SHARED_RESTRICTIONS = (
 _CANDIDATES: tuple[tuple[str, str, str], ...] = (
     (
         "ph-brave-search",
-        "Brave Search API. Limited Customer Applications license. Storage/AI-training "
-        "restricted. Third-party webpage rights not granted. Not a merchant.",
+        "Brave Search API. Limited Customer Applications license. Using Search "
+        "Results to create/evaluate/train/improve AI models is prohibited. Runtime "
+        "LLM grounding remains unknown, not a blanket AI ban. Storage restricted. "
+        "Third-party webpage rights not granted. Not a merchant.",
         "Documentary public-web discovery candidate only. No owner credentials. "
         "No live PH shopping response. Snippets cannot become scored offers. "
         "Shopee/Lazada URLs if later returned are indexed URLs, not direct integrations.",

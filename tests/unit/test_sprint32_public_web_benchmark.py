@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from app.research.certification import production_research_provider_certification_catalog
 from app.research.certification_evidence import (
     production_research_provider_certification_evidence_catalog,
@@ -21,6 +22,9 @@ from app.research.public_web_benchmark import (
     summarize_public_web_benchmark,
 )
 from app.research.public_web_policy import (
+    BRAVE_WEB_SEARCH_COUNTRY_ENUM_COMPLETE,
+    brave_ph_country_parameter_verified,
+    brave_web_search_request_params,
     first_live_benchmark_candidates,
     public_web_provider_policy_audits,
 )
@@ -58,10 +62,55 @@ def test_brave_hard_restrictions_are_not_softened() -> None:
     brave = next(
         item for item in public_web_provider_policy_audits() if item.provider_key == "brave_search"
     )
+    topics = {item.topic for item in brave.topics}
+    assert "ai_llm_use" not in topics
     assert brave.topic_state("caching") == "restricted"
-    assert brave.topic_state("ai_llm_use") == "prohibited"
+    assert brave.topic_state("model_training_evaluation_improvement") == "prohibited"
+    assert brave.topic_state("runtime_ai_llm_grounding_or_inference") == "unknown"
+    assert brave.topic_state("runtime_ai_llm_grounding_or_inference") != "prohibited"
+    assert brave.topic_state("runtime_ai_llm_grounding_or_inference") != "allowed"
     assert brave.topic_state("api_use") == "allowed"
     assert "third-party" in brave.structured_content_notes.casefold()
+    runtime = next(
+        item for item in brave.topics if item.topic == "runtime_ai_llm_grounding_or_inference"
+    )
+    training = next(
+        item for item in brave.topics if item.topic == "model_training_evaluation_improvement"
+    )
+    assert "derivative" in runtime.notes.casefold()
+    assert "url-only discovery" in runtime.notes.casefold()
+    assert "third-party" in runtime.notes.casefold()
+    assert "not a blanket ban" in training.notes.casefold()
+    assert "create, evaluate, train" in training.notes.casefold()
+
+
+def test_tavily_and_exa_runtime_llm_remain_unknown() -> None:
+    audits = {item.provider_key: item for item in public_web_provider_policy_audits()}
+    for key in ("tavily_search", "exa_search"):
+        audit = audits[key]
+        assert "ai_llm_use" not in {item.topic for item in audit.topics}
+        assert audit.topic_state("model_training_evaluation_improvement") == "unknown"
+        assert audit.topic_state("runtime_ai_llm_grounding_or_inference") == "unknown"
+        assert audit.topic_state("runtime_ai_llm_grounding_or_inference") != "allowed"
+
+
+def test_brave_does_not_send_unverified_ph_country_parameter() -> None:
+    assert BRAVE_WEB_SEARCH_COUNTRY_ENUM_COMPLETE is False
+    assert brave_ph_country_parameter_verified() is False
+    query = "iPhone 17 Pro Max Philippines price"
+    params = brave_web_search_request_params(query, count=10)
+    assert params == {"q": query, "count": 10}
+    assert "country" not in params
+    assert "search_lang" not in params
+    with pytest.raises(ValueError, match="refusing to send country='PH'"):
+        brave_web_search_request_params(query, country="PH")
+    with pytest.raises(ValueError, match="refusing to send country='US'"):
+        brave_web_search_request_params(query, country="US")
+    harness = (ROOT / "scripts/public_web_ph_benchmark.py").read_text(encoding="utf-8")
+    assert "country=PH" not in harness
+    assert '"country": "PH"' not in harness
+    assert "brave_web_search_request_params" in harness
+    assert '"country": "philippines"' in harness
 
 
 def test_documentary_public_web_evidence_is_incomplete_and_not_production() -> None:
@@ -105,7 +154,7 @@ def test_benchmark_has_at_least_thirty_ph_intents() -> None:
         "beauty/personal care",
     ):
         assert required in categories
-    assert any("Philippines" in item.query for item in intents)
+    assert all("Philippines" in item.query for item in intents)
     assert any(item.kind == "generic_purchase" for item in intents)
     assert any(item.kind == "recognizable_product" for item in intents)
 
