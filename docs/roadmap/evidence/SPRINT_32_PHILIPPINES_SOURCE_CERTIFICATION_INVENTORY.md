@@ -384,6 +384,16 @@ Indexed Shopee/Lazada URLs, if later returned by a permitted search API, are dis
 
 Evidence: [`SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md), [`SPRINT_32_PH_PUBLIC_WEB_SHOPPING_BENCHMARK.json`](SPRINT_32_PH_PUBLIC_WEB_SHOPPING_BENCHMARK.json).
 
+### 2026-09-18 PH source-rights / licensed-data path audit (do not rewrite historical rows)
+
+This addendum does **not** certify any provider. Shopee, Lazada, TikTok Shop, Amazon, Temu, Power Mac Center, Shopify/UCP, Optimise, Involve Asia, Samsung, Sony, Acer, Icecat, Brave, Tavily, and Exa remain **uncertified**.
+
+Audit outcome: **C** — no survivor. No official public/partner instrument reviewed on 2026-09-18 grants enough affirmative product-data rights for a shopper-facing commercial comparison path. Unauthorized public-page reuse is not accepted.
+
+Strongest owner-action candidate: Shopify commercial UCP catalog + Power Mac Center storefront, subject to written PMC permission and Shopify confirmation that query-time comparison is not a prohibited product index. Parallel owner-action: Lazada PH official product-feed rights confirmation (EXT-01 already `applied`). Direct retailer letters remain valid for Beyond the Box, Abenson, and other PH electronics retailers.
+
+Evidence: [`SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.

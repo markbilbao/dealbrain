@@ -777,3 +777,18 @@ This addendum does **not** rewrite earlier snapshots. It records a private-local
 | Technical Level-B | Candidate flag only. Not offer evidence. Unknown source policy blocks evaluated-set promotion. |
 | Artifacts | Private/local `/tmp` only. No committed performance numbers or extracted page text. |
 | Expected max credits | 3 basic-extract credits if 12–15 URLs all succeed (documented 1 credit / 5 successful URLs) |
+
+## 2026-09-18 Sprint 32 PH source-rights / licensed-data path audit addendum
+
+This addendum does **not** rewrite earlier snapshots. It records a first-party PH source-rights audit. It does **not** certify any provider, does **not** scrape merchants, does **not** send permission emails, does **not** mutate production/staging/AWS, and does **not** close Sprint 32.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `629ab4eb92c2a1bb743632b5c1d0d195e5aa6111` (PR #146) |
+| Outcome | **C** — no survivor licensed PH product-data path |
+| Strongest owner-action path | Shopify commercial UCP catalog + Power Mac Center storefront, plus written permission |
+| Parallel owner-action | Lazada PH official product-feed rights confirmation (EXT-01 already `applied`) |
+| Tavily role | Discovery/retrieval only; Extract does not solve source-site rights |
+| Production providers / certifications | Still **zero** |
+| External action from this audit | None. Owner controls later communication. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md) |
