@@ -744,3 +744,20 @@ Stale open PR #127 remains **superseded** and must not be merged as-is.
 | Remaining acceptance dependencies | Sprint 32 certified PH data path; Sprint 37 MarketContext where applicable; Sprint 38 real research execution + updated Results; Sprint 45 complete CC-01 on immutable launch candidate |
 | Early Access vs shopping | Unchanged: Early Access live ≠ public shopping beta. |
 | Authority | [`sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md`](sprints/SPRINT_29_PRODUCTION_CONSUMER_WEB_UI.md); [`evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md`](evidence/SPRINT_29_FINAL_CHECKPOINT_2026-09-18.md) |
+
+---
+
+## 2026-09-18 Sprint 32 public-web discovery evaluation addendum
+
+This addendum does **not** rewrite earlier snapshots. It records a provider-neutral public-web discovery evaluation path. It does **not** certify any provider, does **not** scrape merchants, does **not** mutate production/staging/AWS, and does **not** close Sprint 32.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `9222e5b506097d274a2ec940ed80d68f3353d81f` (PR #144) |
+| Architecture decision | **B** — narrow Sprint 32 adapter/certification extension; reuse Sprint 31 registry/router/policy |
+| Real PH product-data path | Still missing |
+| Production providers / certifications | Still **zero** |
+| Public-web candidates | Brave and Tavily are first live-test candidates; Exa is comparison-only |
+| Live credentials | Absent. Owner must create accounts out-of-band. |
+| Fixtures | Non-production only; cannot close Sprint 32 |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) |

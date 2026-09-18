@@ -33,7 +33,7 @@ ResearchExecutionPlanStatus = Literal[
     "stale_authorization",
 ]
 
-ProviderType = Literal["merchant", "manufacturer", "community", "test"]
+ProviderType = Literal["merchant", "manufacturer", "community", "public_web", "test"]
 ProviderCertificationStatus = Literal[
     "certified",
     "revoked",
@@ -384,6 +384,14 @@ class ResearchProviderDescriptor:
         if any(not code or not is_valid_country_code(code) for code in codes):
             raise ValueError("supported_markets must be valid ISO country codes")
         object.__setattr__(self, "supported_markets", codes)
+        if self.provider_type not in {
+            "merchant",
+            "manufacturer",
+            "community",
+            "public_web",
+            "test",
+        }:
+            raise ValueError("provider_type is unknown and fails closed")
         if self.test_fixture and self.provider_type != "test":
             raise ValueError("test fixtures must use provider_type='test'")
         if not self.test_fixture and self.provider_type == "test":

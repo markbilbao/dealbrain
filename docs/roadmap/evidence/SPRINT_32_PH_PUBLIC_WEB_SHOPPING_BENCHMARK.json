@@ -1,0 +1,250 @@
+{
+  "document_type": "Sprint 32 PH public-web shopping benchmark design",
+  "market": "PH",
+  "production_certified": false,
+  "closes_sprint_32": false,
+  "notes": "Provider-neutral intents for later Brave/Tavily/Exa live runs. Fixtures and this file cannot certify any provider. Search snippets are not canonical prices.",
+  "pass_fail_fields": [
+    "direct_product_url_found",
+    "identifiable_merchant",
+    "identifiable_product",
+    "ph_relevant",
+    "php_price_available",
+    "price_tied_to_actual_source",
+    "availability_identifiable",
+    "freshness_fetch_evidence",
+    "outbound_url_usable",
+    "page_source_attribution_preserved",
+    "duplicate",
+    "stale_or_ambiguous",
+    "snippet_only_price",
+    "search_result_versus_product_page",
+    "source_kind"
+  ],
+  "intents": [
+    {
+      "intent_id": "ph-smartphones-001",
+      "category": "smartphones",
+      "kind": "recognizable_product",
+      "query": "iPhone 17 Pro Max Philippines price",
+      "notes": "Flagship phone; expect retailer or marketplace product URLs, not manufacturer press as offer evidence."
+    },
+    {
+      "intent_id": "ph-smartphones-002",
+      "category": "smartphones",
+      "kind": "recognizable_product",
+      "query": "Samsung Galaxy S25 Ultra 512GB Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-smartphones-003",
+      "category": "smartphones",
+      "kind": "recognizable_product",
+      "query": "Google Pixel 9 Pro Philippines buy",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-smartphones-004",
+      "category": "smartphones",
+      "kind": "generic_purchase",
+      "query": "best Android phone under PHP 20000 Philippines",
+      "notes": "Budget band; PH relevance and retailer identity matter more than exact model."
+    },
+    {
+      "intent_id": "ph-laptops-001",
+      "category": "laptops",
+      "kind": "recognizable_product",
+      "query": "MacBook Air M4 Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-laptops-002",
+      "category": "laptops",
+      "kind": "recognizable_product",
+      "query": "ASUS Zenbook 14 OLED Philippines price",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-laptops-003",
+      "category": "laptops",
+      "kind": "generic_purchase",
+      "query": "gaming laptop under PHP 60000 Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-laptops-004",
+      "category": "laptops",
+      "kind": "generic_purchase",
+      "query": "student laptop Philippines official store",
+      "notes": "Should surface direct retailers or brand stores, not only blogs."
+    },
+    {
+      "intent_id": "ph-cameras-001",
+      "category": "cameras",
+      "kind": "recognizable_product",
+      "query": "Canon EOS R50 Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-cameras-002",
+      "category": "cameras",
+      "kind": "recognizable_product",
+      "query": "Sony ZV-E10 II Philippines price",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-cameras-003",
+      "category": "cameras",
+      "kind": "generic_purchase",
+      "query": "mirrorless camera kit Philippines authorized dealer",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-tvs-001",
+      "category": "tvs",
+      "kind": "generic_purchase",
+      "query": "55 inch OLED TV Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-tvs-002",
+      "category": "tvs",
+      "kind": "recognizable_product",
+      "query": "LG C5 55 OLED Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-tvs-003",
+      "category": "tvs",
+      "kind": "generic_purchase",
+      "query": "smart TV 65 inch Philippines Abenson",
+      "notes": "Named retailer query without treating that retailer as certified."
+    },
+    {
+      "intent_id": "ph-headphones-001",
+      "category": "headphones",
+      "kind": "recognizable_product",
+      "query": "Sony WH-1000XM6 Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-headphones-002",
+      "category": "headphones",
+      "kind": "generic_purchase",
+      "query": "wireless earbuds under PHP 5000 Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-headphones-003",
+      "category": "headphones",
+      "kind": "recognizable_product",
+      "query": "AirPods Pro 2 Philippines official",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-appliances-001",
+      "category": "appliances",
+      "kind": "generic_purchase",
+      "query": "inverter refrigerator Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-appliances-002",
+      "category": "appliances",
+      "kind": "generic_purchase",
+      "query": "air fryer Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-appliances-003",
+      "category": "appliances",
+      "kind": "recognizable_product",
+      "query": "Dyson V8 Philippines price",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-gaming-001",
+      "category": "gaming",
+      "kind": "recognizable_product",
+      "query": "PlayStation 5 Slim Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-gaming-002",
+      "category": "gaming",
+      "kind": "recognizable_product",
+      "query": "Nintendo Switch 2 Philippines buy",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-gaming-003",
+      "category": "gaming",
+      "kind": "generic_purchase",
+      "query": "gaming monitor 144Hz Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-home-electronics-001",
+      "category": "home electronics",
+      "kind": "generic_purchase",
+      "query": "portable bluetooth speaker Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-home-electronics-002",
+      "category": "home electronics",
+      "kind": "recognizable_product",
+      "query": "Kindle Paperwhite Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-home-electronics-003",
+      "category": "home electronics",
+      "kind": "generic_purchase",
+      "query": "robot vacuum Philippines official retailer",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-household-001",
+      "category": "household goods",
+      "kind": "generic_purchase",
+      "query": "water dispenser Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-household-002",
+      "category": "household goods",
+      "kind": "generic_purchase",
+      "query": "rice cooker 1.8L Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-household-003",
+      "category": "household goods",
+      "kind": "generic_purchase",
+      "query": "electric fan inverter Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-beauty-001",
+      "category": "beauty/personal care",
+      "kind": "recognizable_product",
+      "query": "Dyson Airwrap Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-beauty-002",
+      "category": "beauty/personal care",
+      "kind": "generic_purchase",
+      "query": "electric toothbrush Philippines",
+      "notes": ""
+    },
+    {
+      "intent_id": "ph-beauty-003",
+      "category": "beauty/personal care",
+      "kind": "generic_purchase",
+      "query": "skincare gift set Philippines Watsons",
+      "notes": "Named chain as discovery target; not a certified Watsons integration."
+    }
+  ]
+}

@@ -1,14 +1,15 @@
 # Sprint 32 — Philippines Merchant Certification
 
-**Status:** In progress — blocked on external certification. Internal foundation slices 32.1–32.5 are complete. Sprint 32 is **not complete**.
+**Status:** In progress — blocked on external certification. Internal foundation slices 32.1–32.6 are complete. Sprint 32 is **not complete**.
 **Primary owner / domain:** Marketplace eng + legal
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes to name PH
 **Inventory:** [`../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md`](../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md)
+**Public-web evaluation:** [`../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md)
 
 ## Authoritative status
 
-Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1–32.5 build the trusted certification architecture. They do **not** close Sprint 32.
+Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1–32.6 build the trusted certification architecture and a provider-neutral public-web discovery evaluation path. They do **not** close Sprint 32.
 
 | Area | Status |
 |------|--------|
@@ -18,6 +19,7 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1�
 | 32.3 PH documentary evidence | complete |
 | 32.4 hardening | complete |
 | 32.5 reconciliation / validation | complete |
+| 32.6 public-web discovery evaluation path | internal foundation only — not certified |
 | Real PH product-data path | blocked |
 | Production provider | none |
 | Production certification | none |
@@ -77,7 +79,34 @@ For each component, evidence must distinguish:
 
 Preserved distinctions: field present ≠ permitted to use; permitted to use ≠ field actually available; voucher available ≠ voucher applicable to this shopper/offer. All required conditions must be satisfied before a component can influence scored effective purchase cost. Provider approval and affiliate approval do not imply technical exposure or policy permission. Do not require a merchant to expose fields it does not provide; record the limitation honestly.
 
+### 2026-09-18 public-web discovery evaluation (does not close this sprint)
+
+PiqSavi may evaluate a legitimate public-web search/retrieval provider as a **discovery** path. That is not a Shopee, Lazada, or merchant API. The search provider is not the merchant. Search snippets are not canonical prices.
+
+Architecture decision: **B** — a narrow Sprint 32 adapter/certification extension. Existing `ResearchProviderRegistry`, certification evidence, `CapabilityPolicyState`, `plan_authorized_research()`, provenance, and canonical offer economics are reused. No parallel registry/router. Sprint 38 still owns live execution.
+
+Public-web `PRODUCT_DISCOVERY` may later be planned when certified. `CURRENT_PRICING` / scored offers still require Level A or Level B evidence (or Level C only if Sprint 32 policy later explicitly permits it). Level D snippets stay discovery-only.
+
+This slice does **not** scrape merchants, does **not** buy API plans, does **not** store credentials, and does **not** certify Brave, Tavily, or Exa. Live benchmark requires owner-supplied credentials. See [`../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md) and [`../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md`](../../architecture/SPRINT_32_PUBLIC_WEB_DISCOVERY_PATH.md).
+
 ### Closure blockers (current)
+
+- No merchant has a real approved product-data / API path
+- No real production provider
+- No current-data operational validation
+- No trusted production certification
+- Staging certification incomplete
+- Monitoring / public coverage disclosure incomplete
+- Kill-switch closure evidence incomplete as required
+- EXT-01 is now `applied` (2026-09-08 PH product-data requests). That is **not** provider approval, credentials, a feed, or certification. EXT-06 remains `not_started`.
+- EXT-07 is `n_a_beta` for September and does not block this sprint's product-data certification purpose
+- A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
+- Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
+- Public-web discovery architecture/harness exists and is **not** a certified PH shopping-data path. No owner credentials. No live current-data response. Fixtures cannot close this sprint.
+
+### Production defaults
+
+Certification records = 0. Production evidence = 0. Providers = 0. Routing policies = 0. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
 
 - No merchant has a real approved product-data / API path
 - No real production provider
