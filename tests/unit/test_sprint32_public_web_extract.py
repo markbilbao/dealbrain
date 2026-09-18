@@ -43,6 +43,8 @@ from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
 from scripts.public_web_ph_benchmark import (
     LIVE_ENDPOINTS,
+)
+from scripts.public_web_ph_benchmark import (
     main as benchmark_main,
 )
 
@@ -79,10 +81,12 @@ def test_extract_sample_excludes_marketplaces_and_respects_max() -> None:
     assert len(urls) == len(set(urls))
     assert all(not is_excluded_marketplace_url(url) for url in urls)
     assert all(
-        token not in " ".join(urls)
-        for token in ("shopee.", "lazada.", "tiktok.com", "amazon.")
+        token not in " ".join(urls) for token in ("shopee.", "lazada.", "tiktok.com", "amazon.")
     )
-    assert all(item.source_kind in {"direct_retailer", "manufacturer", "authorized_reseller"} for item in selected)
+    assert all(
+        item.source_kind in {"direct_retailer", "manufacturer", "authorized_reseller"}
+        for item in selected
+    )
     assert "https://unbox.ph/best-wireless-earbuds-under-5000" not in urls
     assert "https://www.powermaccenter.com/collections/iphone" not in urls
     assert "https://www.google.com/search?q=iphone+17+pro+max+philippines" not in urls
@@ -170,8 +174,8 @@ def test_select_only_writes_git_ignored_default_style_artifacts(tmp_path: Path) 
     assert "raw_content" not in selected
     assert "TAVILY_API_KEY" not in blob or "export" in blob
     assert "Authorization" not in blob
-    assert DEFAULT_EXTRACT_OUTPUT_DIR == Path("/tmp/piqsavi-tavily-extract-ph")
-    assert DEFAULT_SEARCH_REPORT_PATH == Path("/tmp/piqsavi-tavily-ph/tavily_search.json")
+    assert Path("/tmp/piqsavi-tavily-extract-ph") == DEFAULT_EXTRACT_OUTPUT_DIR
+    assert Path("/tmp/piqsavi-tavily-ph/tavily_search.json") == DEFAULT_SEARCH_REPORT_PATH
     assert str(DEFAULT_EXTRACT_OUTPUT_DIR).startswith("/tmp/")
     assert ROOT not in DEFAULT_EXTRACT_OUTPUT_DIR.parents
 
@@ -306,17 +310,21 @@ def test_no_direct_merchant_http_in_benchmark_implementation() -> None:
     for path in files:
         text = path.read_text(encoding="utf-8")
         for host in forbidden_hosts:
-            for prefix in (f'https://{host}', f'http://{host}', f'https://www.{host}'):
+            for prefix in (f"https://{host}", f"http://{host}", f"https://www.{host}"):
                 if prefix in text:
                     assert "httpx" not in text[max(0, text.find(prefix) - 80) : text.find(prefix)]
         assert "httpx.get(" not in text or "api.search.brave.com" in text
     extract_source = (ROOT / "app/research/public_web_extract.py").read_text(encoding="utf-8")
     assert "httpx" not in extract_source
+    assert TAVILY_EXTRACT_ENDPOINT in extract_source
     harness = (ROOT / "scripts/public_web_ph_benchmark.py").read_text(encoding="utf-8")
-    assert 'LIVE_ENDPOINTS["tavily_search"]' in harness or "api.tavily.com/search" in harness
-    assert "api.tavily.com/extract" in harness
+    assert "TAVILY_EXTRACT_ENDPOINT" in harness
     assert "extract_depth" in harness
-    assert '"advanced"' not in harness or "advanced extraction requires" in harness.lower() or "advanced_not_run" in harness
+    assert "advanced_not_run" in harness
+    assert "httpx.post(" in harness
+    assert "httpx.get(" in harness
+    assert "shopee.ph" not in harness
+    assert "powermaccenter.com" not in harness
 
 
 def test_production_catalogs_stay_empty() -> None:
@@ -348,7 +356,7 @@ def test_failed_or_snippet_like_extract_is_not_level_b() -> None:
 
 def test_artifact_secret_guard_rejects_key_material() -> None:
     with pytest.raises(RuntimeError, match="credential"):
-        assert_artifact_has_no_secrets({"ok": True}, ("super-secret-key",))
+        assert_artifact_has_no_secrets({"note": "super-secret-key"}, ("super-secret-key",))
     with pytest.raises(RuntimeError, match="Tavily key"):
         assert_artifact_has_no_secrets({"note": "tvly-abc123"}, ())
     assert_artifact_has_no_secrets({"policy": "unknown", "output_dir": "/tmp/x"}, ())

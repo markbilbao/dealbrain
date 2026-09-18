@@ -29,7 +29,6 @@ from app.domain.entities.offer_economics import CanonicalMoneyLine
 from app.domain.entities.public_web_shopping_evidence import (
     LEVEL_B,
     LEVEL_D,
-    SNIPPET_NOT_CANONICAL_PRICE,
     PublicWebProvenance,
     PublicWebShoppingResult,
     ShoppingSourceKind,
@@ -298,9 +297,7 @@ def documented_basic_extract_credit_max(url_count: int) -> int:
     if url_count <= 0:
         return 0
     if url_count > MAX_EXTRACT_SAMPLE_URLS:
-        raise ExtractSampleError(
-            f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs"
-        )
+        raise ExtractSampleError(f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs")
     return (url_count + 4) // 5
 
 
@@ -320,8 +317,7 @@ def default_source_policy_separation(
 def is_excluded_marketplace_url(source_url: str) -> bool:
     host = (urlparse(source_url).hostname or source_url).casefold()
     return classify_source_kind(source_url) == "marketplace" or any(
-        token in host
-        for token in ("shopee.", "lazada.", "tiktok.com", "amazon.")
+        token in host for token in ("shopee.", "lazada.", "tiktok.com", "amazon.")
     )
 
 
@@ -442,9 +438,7 @@ def select_extract_sample(
     """
 
     if max_urls > MAX_EXTRACT_SAMPLE_URLS:
-        raise ExtractSampleError(
-            f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs"
-        )
+        raise ExtractSampleError(f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs")
     if max_urls > TAVILY_EXTRACT_MAX_URLS_PER_REQUEST:
         raise ExtractSampleError(
             f"Tavily Extract documents a max of {TAVILY_EXTRACT_MAX_URLS_PER_REQUEST} "
@@ -523,8 +517,10 @@ def evaluate_extracted_page(
     merchant = merchant_identity or merchant_identity_from_url(source_url)
     title = page_title_from_extracted_content(content) if succeeded else None
     product_identity = title or seed_product_identity
-    price_signal = detect_price_candidate(content) if succeeded else PriceCandidateSignal(
-        False, False, False, None, None
+    price_signal = (
+        detect_price_candidate(content)
+        if succeeded
+        else PriceCandidateSignal(False, False, False, None, None)
     )
     lowered = content.casefold()
     availability_present = succeeded and any(token in lowered for token in _AVAILABILITY_MARKERS)
@@ -584,8 +580,7 @@ def evaluate_extracted_page(
         policy=policy,
         shipping_evidence=shipping_status_from_discovery_text(content),
         canonical_price_created=False,
-        promotion_refusal=offer_promotion_reason(shopping)
-        or TECHNICAL_LEVEL_B_NOT_OFFER_EVIDENCE,
+        promotion_refusal=offer_promotion_reason(shopping) or TECHNICAL_LEVEL_B_NOT_OFFER_EVIDENCE,
         test_fixture=test_fixture,
     )
 
@@ -661,8 +656,7 @@ def _evaluation_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
                     rows.append({**row, "intent_id": intent_id})
         return rows
     raise ExtractSampleError(
-        "search report has no evaluations or results_by_intent; rerun the "
-        "Tavily Search benchmark"
+        "search report has no evaluations or results_by_intent; rerun the Tavily Search benchmark"
     )
 
 

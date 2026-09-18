@@ -244,9 +244,7 @@ def _live_extract(urls: list[str], secret: str) -> dict[str, Any]:
     import httpx
 
     if len(urls) > MAX_EXTRACT_SAMPLE_URLS:
-        raise ExtractSampleError(
-            f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs"
-        )
+        raise ExtractSampleError(f"first extract benchmark max is {MAX_EXTRACT_SAMPLE_URLS} URLs")
     if len(urls) > TAVILY_EXTRACT_MAX_URLS_PER_REQUEST:
         raise ExtractSampleError(
             f"Tavily Extract documents a max of {TAVILY_EXTRACT_MAX_URLS_PER_REQUEST} "
