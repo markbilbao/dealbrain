@@ -1,9 +1,9 @@
 # Sprint 32 — Public-web provider evaluation
 
-**Document type:** Non-secret architecture / terms / benchmark evaluation  
-**Date recorded:** 2026-09-18  
-**Baseline:** `9222e5b506097d274a2ec940ed80d68f3353d81f` (origin/main at start of this work)  
-**Market:** PH  
+**Document type:** Non-secret architecture / terms / benchmark evaluation
+**Date recorded:** 2026-09-18
+**Baseline:** `9222e5b506097d274a2ec940ed80d68f3353d81f` (origin/main at start of this work)
+**Market:** PH
 **Trusted production certification records:** **zero**
 
 This document does **not** certify Brave, Tavily, Exa, Shopee, Lazada, or any retailer. Fixtures, documentation, and a provider account cannot close Sprint 32.
@@ -19,7 +19,7 @@ Related:
 
 ## 1. Starting SHA
 
-Verified `origin/main` = `9222e5b506097d274a2ec940ed80d68f3353d81f`  
+Verified `origin/main` = `9222e5b506097d274a2ec940ed80d68f3353d81f`
 Merge of PR #144: “Sprint 29: final checkpoint — internal implementation complete, live-research acceptance dependent”
 
 ## 2. Architecture decision

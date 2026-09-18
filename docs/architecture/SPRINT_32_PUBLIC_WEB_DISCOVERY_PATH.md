@@ -1,7 +1,7 @@
 # Sprint 32 — Public-web discovery path
 
-**Status:** Internal architecture note. Not a production certification. Sprint 32 remains **not complete**.  
-**Date:** 2026-09-18  
+**Status:** Internal architecture note. Not a production certification. Sprint 32 remains **not complete**.
+**Date:** 2026-09-18
 **Related:** [`SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](SPRINT_31_RESEARCH_EXECUTION_ROUTER.md), [`ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](ADR_SPRINT_31_CONNECTOR_UNIFICATION.md), [`../roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](../roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md)
 
 ## Decision
