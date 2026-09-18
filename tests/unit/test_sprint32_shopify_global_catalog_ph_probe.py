@@ -250,9 +250,7 @@ def test_fixture_probe_enforces_search_and_get_product_caps() -> None:
     assert len(get_ids) == len(set(get_ids)) == 5
     assert "gid://shopify/p/fixture-ph-chair" in get_ids
     assert "gid://shopify/p/7f3a2b8c1d9e" not in get_ids
-    get_query_ids = [
-        item.query_id for item in report.query_results if item.get_product_used
-    ]
+    get_query_ids = [item.query_id for item in report.query_results if item.get_product_used]
     assert len(get_query_ids) == len(set(get_query_ids)) == 5
     for _name, arguments in transport.calls:
         catalog = arguments["catalog"]
@@ -485,9 +483,7 @@ def test_all_complete_twelve_query_probe_keeps_budget_and_distinct_get_product()
     assert tools.count(SEARCH_TOOL) == 12
     assert tools.count(GET_PRODUCT_TOOL) == 5
     assert FORBIDDEN_LOOKUP_TOOL not in tools
-    get_query_ids = [
-        item.query_id for item in report.query_results if item.get_product_used
-    ]
+    get_query_ids = [item.query_id for item in report.query_results if item.get_product_used]
     assert get_query_ids == [item.query_id for item in intents[:5]]
     assert all(item.classification == USEFUL_PH_OFFER for item in report.query_results)
     assert all(offer.currency == "USD" for item in report.query_results for offer in item.offers)
