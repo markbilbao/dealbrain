@@ -5,7 +5,7 @@
 **Starting `origin/main`:** `629ab4eb92c2a1bb743632b5c1d0d195e5aa6111` (merge of PR #146)
 **Market:** PH
 **Trusted production certification records:** **zero**
-**Outcome:** **C** — no current public or partner path reaches the Sprint 32 survivor bar
+**Outcome:** **A** — Shopify Global Catalog UCP supplies affirmative official authorization for a **restricted query-time** commercial comparison path, subject to technical validation. This is **not** production certification.
 
 This document does **not** certify any merchant, marketplace, affiliate network, manufacturer, Shopify/UCP catalog, Icecat dataset, Tavily, or other provider. Engineering interpretation is not counsel approval. Do not store privileged legal advice in Git.
 
@@ -15,6 +15,22 @@ Related:
 - [`SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md`](SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md)
 - [`EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md`](EXT-01_PH_PRODUCT_DATA_ACCESS_REQUESTS_2026-09-08.md)
 - [`../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md`](../../runbooks/MERCHANT_PROVIDER_ONBOARDING.md)
+
+---
+
+## 0. Reassessment note
+
+An earlier draft of this same-day audit recorded **Outcome C** because it conflated five distinct Shopify surfaces:
+
+1. Shopify Global Catalog / UCP agent APIs
+2. Shop.app personal-agent skill
+3. ordinary merchant/admin APIs
+4. merchant public storefront pages
+5. building a persistent product index
+
+Those are not the same path. This reassessment evaluates **Shopify Global Catalog** as its own first-party provider path. Power Mac Center written permission is **not** a prerequisite for Global Catalog. Shop.app personal-use limits do **not** disqualify the commercial Global Catalog developer surface. API Terms prohibitions on indexing, scraping, and AI training remain in force and define the restricted operating mode; they are not read as a ban on the query-time comparison shopping that Shopify’s own Developer Documentation describes.
+
+Unauthorized public-page reuse remains not accepted.
 
 ---
 
@@ -35,7 +51,7 @@ Required eventually:
 - Sprint 31 fail-closed policy
 - canonical offer-economics compatibility
 
-**Survivor rule used here:** a path enters SURVIVORS only if official/current first-party terms already give affirmative evidence for enough of those capabilities. Account-gated programs, private agreements, and “the page exists” are not survivors.
+**Survivor rule used here:** a path enters SURVIVORS only if official/current first-party terms already give affirmative evidence for enough of those capabilities, including under a Sprint 31 reduced-capability mode. Account-gated programs, private agreements, and “the page exists” are not survivors. A restricted-but-documented operating mode can still be a survivor.
 
 Three columns are kept separate throughout:
 
@@ -43,168 +59,186 @@ Three columns are kept separate throughout:
 2. policy authorized? (`allowed` / `restricted` / `prohibited` / `unknown`)
 3. usable in a canonical evaluated offer?
 
-UNKNOWN fails closed. Technical retrieval is not product-data permission. Affiliate permission is not product-data permission. Tavily is not the merchant.
+UNKNOWN fails closed. Technical retrieval is not product-data permission. Affiliate permission is not product-data permission. Tavily is not the merchant. A survivor rights path is not a production certification.
 
 ---
 
 ## 2. Outcome
 
-**OUTCOME C.**
+**OUTCOME A.**
 
-No reviewed official public/partner instrument currently grants PiqSavi enough affirmative product-data rights to certify a PH shopping-offer path. Unauthorized public-page reuse is not accepted.
+Official Shopify Global Catalog Developer Documentation plus the Shopify API License and Terms of Use already provide sufficient affirmative permission for a **restricted query-time** commercial comparison path:
 
-There **are** owner-action programs that expose structured current product data and that could become legitimate after approval or written permission. The strongest of those is identified below. Production catalogs remain empty. Sprint 32 remains **OPEN**.
+- query only in response to shopper intent
+- no broad crawling
+- no bulk catalog copying
+- no persistent Shopify product index
+- no training / fine-tuning / model improvement using Shopify-derived data
+- minimum data requested
+- source/seller attribution retained
+- offer data is not reused as a cached catalog
+- fresh re-query when current data is needed
+- ordinary outbound merchant / checkout link
+- promoted placement / affiliate **off** initially
+
+This is **not** production certification. Actual PH merchant coverage is **unverified** until a later live current-data probe. Production catalogs remain empty. Sprint 32 remains **OPEN**.
 
 ---
 
 ## 3. SURVIVORS
 
-**None.**
+### S-1 — Shopify Global Catalog UCP (restricted query-time comparison)
 
-No official API, feed, or public program terms reviewed on 2026-09-18 explicitly authorize commercial publisher use of current PH product/catalog data for shopper-facing display **and** comparison at the Sprint 32 bar.
+**Architecture (no Tavily on this path):**
+
+```text
+PiqSavi shopper query
+        ↓
+Shopify Global Catalog (`https://catalog.shopify.com/api/ucp/mcp`)
+        ↓
+query-time product / merchant offers
+        ↓
+restricted no-index / no-scrape / no-bulk-cache handling
+        ↓
+normalized canonical offer candidate
+        ↓
+later Sprint 38 execution
+```
+
+Tavily may remain useful for non-Shopify discovery. Do not place Tavily between PiqSavi and Shopify Global Catalog unless a later technical constraint requires it.
+
+| Layer | State |
+|-------|-------|
+| Technically exposed | **Yes, documented.** Endpoint `https://catalog.shopify.com/api/ucp/mcp`. Tools: `search_catalog`, `lookup_catalog`, `get_product`. Results clustered by Universal Product ID; offers from multiple merchants; current catalog data; prices; seller identity / URL; checkout links; availability. `catalog.view` = `"offer"` is documented for comparison shopping. |
+| Policy authorized | **allowed / restricted** for the query-time Application described in Developer Documentation. **prohibited** for persistent product indexes, scraping/mining, bulk catalog copy, caching search results or images, and using derived API/Merchant Data to create/train/fine-tune/improve AI systems without the required consent. Individual retailer public-web reuse permission is **not** required for this Shopify-operated catalog path. |
+| Canonical evaluated offer | **No.** Rights survivor ≠ production certification. PH inventory/coverage is unverified. No agent profile is hosted yet. No live probe was run. No Sprint 31 certification record exists. |
+
+**Why this is a survivor.** API Terms §2.2 grant a limited, revocable license to use the Shopify API **solely in the manner described in the Terms and in the Developer Documentation**. Developer Documentation is defined as `https://shopify.dev/docs` and subordinate pages. Current Global Catalog docs expressly tell agents to use this catalog for **comparison shopping**, **cross-merchant discovery**, and **recommendations not tied to a specific store**. Promoted-placement docs describe commercial agent integrations earning commission on attributed purchases from an existing Global Catalog integration. Organic catalog results remain available when promoted placement is off.
+
+**What this is not.**
+
+- Not the Shop.app personal-agent skill (personal use only; commercial aggregators unauthorized).
+- Not ordinary merchant Admin / Storefront GraphQL APIs.
+- Not scraping merchant public pages.
+- Not a licence to own catalog content or to build a persistent commerce/product index.
+- Not proof that useful PH offers actually return.
+
+**Individual merchant permission.** Not required for Global Catalog itself. API Terms §6.1.1 require merchant install/private credentials before a Developer accesses a Merchant Store or Merchant Data **except as expressly authorized by Shopify**. Global Catalog Developer Documentation is that Shopify authorization for cross-merchant catalog queries without per-merchant app install. Power Mac Center written permission is therefore **not** a prerequisite for S-1. Storefront Catalog / PMC remains a separate optional path (OA-1).
 
 ---
 
 ## 4. OWNER-ACTION CANDIDATES
 
-Ranked by combination of (a) current PH shopping usefulness, (b) official structured data path, and (c) a realistic permission/approval route. None of these is certified.
+None of these is certified. They remain optional or parallel to S-1.
 
-### OA-1 — Shopify commercial UCP catalog + Power Mac Center storefront (strongest)
+### OA-1 — Power Mac Center Storefront Catalog (optional; separate from S-1)
 
-**Why this is the strongest path.** Power Mac Center is a genuine PH Apple/electronics retailer with current storefront prices. The merchant publishes an official agent-facing document describing UCP/MCP catalog search and product identity endpoints. Shopify’s commercial developer documentation describes Global Catalog / Storefront Catalog as query-time product discovery for AI agents, including comparison shopping as an intended Global Catalog use. Marketplace coverage is not required for the first technical floor.
+Single-merchant UCP Storefront Catalog at the merchant origin. PMC [agents.md](https://powermaccenter.com/agents.md) documents storefront UCP/MCP. PMC [Terms of service](https://powermaccenter.com/policies/terms-of-service) §5(b) grant no extra public-web reuse rights. This path may later need written PMC permission because it is **not** Global Catalog. Do not treat PMC consent as required for S-1.
 
-This is **not** the Shop.app personal-agent skill. Shop Help Center states that the Shop skill is for personal, individual use only and prohibits building commercial products/services/platforms, bulk catalog download, and aggregators. Businesses are directed to Shop/Shopify developer documentation instead.
+### OA-2 — Lazada PH Affiliate Platform product feed
 
-| Layer | State |
-|-------|-------|
-| Technically exposed | **Yes, documented.** PMC: [agents.md](https://powermaccenter.com/agents.md), `GET /.well-known/ucp`, `POST /api/ucp/mcp`, product JSON/search paths. Shopify: [Build commerce agents with UCP](https://shopify.dev/docs/agents), [About Catalogs](https://shopify.dev/docs/agents/catalog), [Storefront Catalog MCP](https://shopify.dev/docs/agents/catalog/storefront-catalog), [Global Catalog MCP](https://shopify.dev/docs/agents/catalog/global-catalog). |
-| Policy authorized | **unknown / restricted.** PMC [Terms of service](https://powermaccenter.com/policies/terms-of-service) §5(b): the terms grant no rights in the Web Store or contents except as expressly provided. `agents.md` describes how personal shopping assistants may interact; it does not expressly license a commercial comparison product. Shopify [API License and Terms of Use](https://www.shopify.com/legal/api-terms) grant a limited API license for Applications that interoperate with Shopify Services; they prohibit building a commerce/product index, systematic automated collection, and using derived API/Merchant Data to train or improve AI systems without written Shopify (or, for Merchant Data, merchant) consent. Catalog usage guidelines prohibit caching search results and images. Content accessed through the APIs is not licensed to the developer as owned data. |
-| Canonical evaluated offer | **No.** Query-time catalog fields are not permission. Persistence/index/cache/AI summarization remain fail-closed. PH coverage of Global Catalog is unverified (no live catalog calls were made). Agent profile / Dev Dashboard / trust-tier access is not established. |
+Official PH CPS terms mention a product feed / CSV. Promotional Guidelines 3.5 forbid copying, storing, editing, or publishing Lazada-provided data without prior authorization. EXT-01 already `applied` (2026-09-08). Still needs written display / compare / normalize / short-TTL rights confirmation.
 
-**Smallest owner action.** Do not sign up from this agent. Owner should, out of band:
+### OA-3 — Optimise Media publisher product catalogue
 
-1. Ask Power Mac Center in writing for the permission set in §8 (storefront UCP/catalog use for PiqSavi comparison, not checkout modification, no endorsement).
-2. In parallel, use Shopify Partner / Dev Dashboard commercial UCP docs to host an agent profile and obtain written confirmation that a query-time shopper-facing comparison agent for PH Shopify merchants is an intended Application, not a prohibited product index.
-3. Counsel-review the no-cache / no-index / no-AI-training clauses against PiqSavi canonical-offer persistence and runtime summarization.
-
-Tavily may remain a discovery provider pointing at authorized PMC URLs only after source-side permission is actually defensible. Tavily Extract does not solve PMC rights.
-
-### OA-2 — Lazada PH Affiliate Platform product feed (already requested)
-
-Official PH CPS terms operate the Affiliate Platform at [adsense.lazada.com.ph](https://adsense.lazada.com.ph) and expressly mention provision of a **product feed** / CSV files as a Lazada service. Marketing Materials include “any product information shown in equivalent forms.” Affiliates may place those materials on registered, approved Affiliate Media.
-
-That is **not** yet a display/comparison/cache/AI license.
-
-| Official source | What it actually says |
-|-----------------|------------------------|
-| [PH-Affiliate Program (CPS) T&Cs](https://terms.alicdn.com/legal-agreement/terms/suit_bu1_other/suit_bu1_other201808302007_72534.html) | 3.2: place Marketing Materials on registered/approved media. 4.1: no use or modification of Marketing Materials other than as expressly allowed, without prior written agreement. 4.5: no crawling; no copying graphics/texts/other content from Lazada web presence; brand/logo use needs prior written approval. 5.2: Lazada operates services “such as the provision of product feed” / CSV files, quality at Lazada’s discretion. |
-| [Lazada Online Promotional Guidelines](https://terms.alicdn.com/legal-agreement/terms/product/20230331141234394/20230331141234394.html) (effective 1 June 2023) | 3.5: data provided by Lazada “shall be used in the manner previously confirmed by Lazada” and shall **not** be copied, stored, edited, published, rented, sold, or otherwise disclosed or used without prior authorization. |
-
-EXT-01 already records a 2026-09-08 product-data / feed request to `affiliate@lazada.com.ph`. That request is **applied**, not approved.
-
-**Smallest owner action.** Owner-controlled follow-up asking Lazada to confirm, in writing, that an approved publisher may (i) ingest the official product feed, (ii) display current title/price/availability/URL, (iii) compare those offers with non-Lazada sources, (iv) normalize fields, (v) cache only under an agreed short TTL, and (vi) use the data as shopper-facing recommendation evidence. Until that confirmation exists, policy for comparison/caching/transformation/AI remains **unknown** (fail-closed). Historical Optimise campaign observation of “Product Feed: 0 items” is not a rights grant and is not recertified here.
-
-### OA-3 — Optimise Media publisher product catalogue (Lazada PH / Samsung Club PH)
-
-Optimise documents a network product catalogue distributed to publishers as XML/CSV, with current price, discounted/was price, product URL, availability, and brand fields. Feed access is gated by campaign approval. Advertiser terms authorize Optimise to provide affiliates a licence to use advertiser brand/content **for promoting the company**. Samsung Philippines’ Club Affiliate Program publicly routes partnership contact to Optimise (`partnerships.sea@optimisemedia.com`). Lazada PH appears in the Optimise advertiser directory.
-
-| Official source | Role |
-|-----------------|------|
-| [Optimise Product Feeds](https://docs.optimisemedia.com/docs/advertisers/getting-started/publisher-content/advertiserproductfeeds/) | Technical feed/catalogue for publishers; access controlled by advertiser/account manager |
-| [Optimise Network API — List Product Feeds](https://docs.optimisemedia.com/api/) | Publisher API can list feeds for campaigns the publisher is promoting |
-| [Optimise Advertiser Terms](https://optimisemedia.com/terms/Optimise-Terms-of-Service-0418.pdf) | Product Feed defined so affiliates can present Products on Affiliate Media; advertiser licences brand/content to Optimise and its affiliates for promotion |
-| [Samsung Club Affiliate Program](https://www.samsung.com/ph/offer/samsung-club-affiliates/) | PH official-store affiliate program operated via Optimise |
-| [lazada ph Affiliate Program \| Optimise Media](https://optimisemedia.com/advertiser-directory/lazada-ph-affiliate-program-2107053/) | Directory listing; not a data-rights grant |
-
-**Smallest owner action.** Owner-controlled publisher application (not from this agent). After approval, request product-feed access for a PH shopping advertiser and obtain the campaign’s publisher terms on display, comparison, caching, transformation, and AI use. Commission approval alone is insufficient.
+Network XML/CSV catalogue after campaign approval. Commission approval alone is insufficient. Owner-controlled publisher application only.
 
 ### OA-4 — Involve Asia Datafeed / Publisher API
 
-Involve Asia publishes a Datafeed product whose stated purpose is to populate advertiser products on a publisher website with tracking links already inserted. The Publisher API can filter offers by `filters[offer_country]=Philippines`. The Publisher Agreement licences Qualifying Links and provided Content only as supplied; publishers may not modify advertiser Content unless expressly authorized; each Engagement has its own terms.
-
-| Official source | Role |
-|-----------------|------|
-| [Involve Asia Datafeed](https://involve.asia/products/datafeed/) | Publisher catalog-listing tool |
-| [Publisher API](https://api.involve.asia/) | Offers, deeplinks; PH country filter exists |
-| [Publisher Agreement](https://involve.asia/terms-conditions/) | Limited licence; no modification of Content; per-offer Engagement terms control |
-| [How to apply for offers](https://helpcentre.involve.asia/portal/en/kb/articles/how-to-apply-for-offers) | Per-offer promotional guidelines and T&Cs must be accepted |
-
-Public glossary copy mentioning “comparison content” is marketing language, not a licence grant. **Smallest owner action:** owner-controlled publisher registration, then apply only to PH shopping advertisers that actually supply a current product feed and whose offer T&Cs allow consumer-facing listing/comparison.
+Limited licence; per-offer Engagement terms control. Owner-controlled registration only.
 
 ### OA-5 — Direct written permission from additional PH retailers
 
-No reviewed PH specialty retailer publicly grants commercial comparison reuse. Several remain high-value written-permission targets because they sell current PH electronics with attributable prices:
-
-1. **Power Mac Center** — already OA-1; still the first retailer letter.
-2. **Beyond the Box** — Apple Premium Reseller. [Terms of Use](https://beyondthebox.ph/pages/terms-of-use) prohibit reproducing/exploiting any portion of the site without express written permission, and prohibit spider/crawl/scrape.
-3. **Abenson** — [Terms of Use](https://home.abenson.com/terms-of-use) forbid using any agent/tool (other than Abenson-provided tools and third-party search engines) to navigate the site; content reuse is limited to personal/educational/non-commercial printouts.
-4. **SM Appliance / Digital Walker / VillMan / Octagon** — useful PH electronics coverage; no official public product-data licence found. Treat as written-permission targets, not scrape targets.
-
-Do not send retailer email from this agent. Owner controls external communication. Use the specification in §8.
+Beyond the Box, Abenson, SM Appliance, Digital Walker, VillMan, Octagon. Use §9. Do not send email from this workspace.
 
 ---
 
-## 5. Capability-policy matrix — strongest path (OA-1)
+## 5. Capability-policy matrix — S-1 Shopify Global Catalog
 
-States are only `allowed` / `restricted` / `prohibited` / `unknown`. This matrix is for the **combined** Shopify commercial UCP + PMC storefront path **before** written permission. It is not a certification.
+States are only `allowed` / `restricted` / `prohibited` / `unknown`. Restricted capabilities may still be usable if the certified operating mode respects the restriction. This matrix is a rights classification. It is **not** a production certification.
 
 | Capability | Technically exposed? | Policy | Canonical evaluated offer? |
 |------------|----------------------|--------|----------------------------|
-| product_discovery | documented UCP `search_catalog` / storefront search | unknown | no |
-| product_identity | documented product/variant IDs and handles | unknown | no |
-| current_pricing | documented catalog price fields | unknown | no |
-| availability | documented in UCP get_product / stock fields | unknown | no |
-| shipping | destination-dependent; UCP checkout/context may expose later | unknown | no — Sprint 37 honesty still applies |
-| promotion/discount | possible in catalog; not confirmed for PMC | unknown | no |
-| caching | catalog guidelines: do not cache search results or images | restricted / unknown | no |
-| redistribution/display | PMC ToS grant no extra rights; Shopify API does not transfer content ownership | unknown | no |
-| comparison use | Shopify Global Catalog docs name comparison shopping; API Terms prohibit building a product index | unknown | no |
-| transformation/normalization | not expressly granted | unknown | no |
-| runtime AI summarization | Shopify API Terms restrict using derived API/Merchant Data to train/improve AI systems without written consent; runtime inference is not clearly allowed | unknown | no |
-| recommendation/scoring input | not expressly granted | unknown | no |
-| source URL attribution | product URLs are technically present | unknown | no |
-| retention | no-cache guideline; PMC ToS silent on PiqSavi retention | restricted / unknown | no |
-| commercial use | Shop personal skill: prohibited for commercial aggregators. Commercial UCP developer path: unknown pending agent profile and written confirmation | unknown | no |
+| product_discovery | `search_catalog` across Shopify merchants | allowed — query-time; minimum data; rate limits | no |
+| product_identity | UPID, product/variant GIDs, handles | allowed — query-time | no |
+| current_pricing | variant `price`, product `price_range` | allowed — restricted: do not cache search results; re-query for freshness | no |
+| seller identity | `variants[].seller` name, id, domain, url | allowed — retain attribution | no |
+| seller URL / outbound destination | product `url`, variant `checkout_url` | allowed — ordinary outbound merchant/checkout link; promoted placement off | no |
+| availability | `availability.available` / `status` | allowed — query-time | no |
+| ships-to-PH filtering | `filters.ships_to.country` is ISO 3166-1 alpha-2 | allowed to send `PH` as documented country code | no — actual PH inventory unverified |
+| currency/localization | `context.address_country`, `currency`, `language` | allowed as documented localization | no — useful PH/PHP coverage unverified |
+| comparison use | docs: comparison shopping; `catalog.view` = `"offer"` | allowed — restricted: query-time only, not a persistent index | no |
+| recommendation use | docs: recommendations not tied to a specific store | allowed — restricted: query-time shopper intent | no |
+| runtime AI inference | shopper-facing ranking/summarization at request time | allowed — restricted: runtime inference only | no |
+| transformation/normalization | offer-view clustering by UPID | restricted — Application functionality only; no content ownership | no |
+| short-lived query processing | intended catalog use | allowed | no |
+| caching | search results and images | prohibited for search results and images (render images in real time) | no |
+| persistent product indexing | n/a as a licensed activity | prohibited — API Terms §2.3.14 | no |
+| AI model training/improvement | n/a as a licensed activity | prohibited without Shopify or relevant merchant consent — API Terms §2.3.24 | no |
+| commercial use | buyer-facing agents; promoted-placement program exists | allowed — restricted organic path; promoted placement off initially | no |
+| attribution | seller/product/checkout URLs | allowed — retain source/seller attribution | no |
+| retention | request/response lifecycle only | restricted — process then discard; do not keep a Shopify catalog | no |
 
-Fail-closed consequence: **no PMC/Shopify offer may enter the canonical evaluated set on this evidence.**
+Fail-closed consequence until live PH validation and a Sprint 31 certification record exist: **no Shopify Global Catalog offer may enter the canonical evaluated set yet.**
 
 ---
 
-## 6. Concise BLOCKED / disqualified classes
+## 6. Candidate production policy (Sprint 31 reduced-capability mode)
+
+Sprint 31 allows reduced modes to be represented. Candidate S-1 operating mode, if later certified:
+
+1. Query Global Catalog only in response to a shopper intent.
+2. Do not crawl, mine, scrape, or bulk-copy the catalog.
+3. Do not build or persist a Shopify product index.
+4. Do not cache search results. Do not download catalog images to PiqSavi servers; render in real time if shown.
+5. Do not use Shopify-derived data to create, train, fine-tune, or improve AI systems.
+6. Runtime shopper-facing inference/recommendation on the current response is in-scope; model improvement is not.
+7. Request the minimum fields needed for identity, price, availability, seller attribution, and outbound URL.
+8. Keep source/seller attribution on any displayed offer.
+9. Treat response offers as short-lived. Re-query when current data is required.
+10. Use the ordinary merchant/checkout URL from the response. Promoted placement / affiliate parameters stay **off** until a later explicit owner action.
+11. Host a UCP agent profile and send `meta.ucp-agent.profile` on every catalog call, as documented.
+12. Do not enable production until the §10 live PH probe and remaining Sprint 32 certification gates pass.
+
+Anonymous catalog tools are documented, but production PiqSavi should identify the agent (hosted profile; Signed or Token tier when available) rather than relying on anonymous rate limits.
+
+---
+
+## 7. Concise BLOCKED / disqualified classes
 
 These classes were reviewed and are **not** current Sprint 32 offer paths. Detail is in Appendix A.
 
 | Class | Why it cannot certify |
 |-------|------------------------|
-| Public product pages, robots.txt, search-engine indexing, Tavily Extract | Technical retrieval only. Not a content licence. Source-site policy remains unknown. |
-| Shop.app personal AI agent skill | Official Help Center: personal use only; commercial products, aggregators, bulk catalog copy, and AI-model training from Shop data are unauthorized. |
-| Shopee Open Platform (seller/ISV) | Public ToS allow display of Shopee Content in an approved Application, but Shopee Content **may not be combined with non-Shopee Content**, may not be used to benefit competing services, and may not be displayed relative to third-party services. That is incompatible with PiqSavi comparison. Access also requires a separate approved developer account (currently held). |
-| Shopee Affiliate Program T&Cs | Grant a licence to display **Affiliate Links** only. They do not grant product-catalog comparison rights. Affiliate Open API documentation ≠ PiqSavi authorization. |
-| Consumer storefront ToS as a reuse licence | Sony PH expressly authorizes personal, non-commercial viewing only. PMC, Beyond the Box, Abenson, Samsung PH online shop, and Acer storefront sales terms do not affirmatively license commercial comparison reuse. |
-| Manufacturer consumer shops / partner pages without a catalog licence | Samsung PH, Sony PH, Acer PH, Apple reseller pages, Knox/EPP/business-partner pages are not PH offer feeds for PiqSavi. |
-| Icecat Open/Full content | Licensed product **specs/identity** (Full Icecat even lists comparison sites as a typical client). It does **not** supply attributable current PH retailer prices or merchant source URLs. Open Icecat voids the licence if data is used in a generative-AI framework. Complementary identity source only — not a Sprint 32 offer path. |
-| Generic SERP snippets, scraper APIs, unofficial wrappers | Not a legitimate provenance path. Forbidden as a workaround. |
+| Public product pages, robots.txt, search-engine indexing, Tavily Extract | Technical retrieval only. Not a content licence. Tavily Extract does not solve PMC rights or any other source-site rights. |
+| Shop.app personal AI agent skill | Official Help Center: personal use only; commercial products, aggregators, bulk catalog copy, and AI-model training from Shop data are unauthorized. This restriction does **not** disqualify S-1. |
+| Shopee Open Platform (seller/ISV) | Shopee Content may not be combined with non-Shopee Content or used to benefit competing services. Incompatible with PiqSavi comparison. |
+| Shopee Affiliate Program T&Cs | Licence to display Affiliate Links only. |
+| Consumer storefront ToS as a reuse licence | Sony PH personal/non-commercial viewing only. PMC, Beyond the Box, Abenson, Samsung PH online shop, and Acer storefront sales terms do not affirmatively license commercial comparison reuse of **public pages**. |
+| Manufacturer consumer shops without a catalog licence | Not PH offer feeds for PiqSavi. |
+| Icecat Open/Full content | Specs/identity only. No attributable current PH retailer prices. |
+| Generic SERP snippets, scraper APIs, unofficial wrappers | Not a legitimate provenance path. |
 
 ---
 
-## 7. What still prevents production certification
+## 8. What still prevents production certification
 
-Even OA-1 cannot close Sprint 32 until all of the following exist:
+S-1 does not close Sprint 32 until all of the following exist:
 
-1. Written source-side permission or an executed program agreement covering the §8 uses.
-2. Provider/merchant approval and credentials where the program requires them (EXT-06 still `not_started`).
-3. Technical connectivity against the authorized path (not Tavily-as-merchant; not fixtures).
-4. Evidence-backed Sprint 31 capability-policy rows, with unknown remaining fail-closed.
-5. Current-data validation, freshness, provenance, and canonical offer-economics compatibility.
-6. Staging certification, monitoring, public coverage disclosure, kill-switch evidence.
+1. Hosted UCP agent profile and documented catalog calls (no live probe in this audit).
+2. Real current-data probe showing **useful PH offers** (identity, current price, seller identity/URL, availability) under PH localization / `ships_to` parameters.
+3. Evidence-backed Sprint 31 capability-policy rows for the reduced mode in §6.
+4. Connector reliability, freshness, provenance, and canonical offer-economics compatibility.
+5. Staging certification, monitoring, public coverage disclosure, kill-switch evidence.
+6. No production `ResearchProviderCertification` until those gates pass.
 
-EXT-01 `applied` (2026-09-08 Shopee/Lazada emails) is not approval, credentials, a feed, or certification.
+EXT-01 `applied` (2026-09-08 Shopee/Lazada emails) is not approval, credentials, a feed, or certification. EXT-06 remains `not_started`.
 
 ---
 
-## 8. Written permission specification (owner-controlled; do not send)
+## 9. Written permission specification (non-S-1 retailers only)
 
-High-value PH retailers without a public reuse licence remain valid owner-action candidates. Any permission request should ask the retailer/platform to **explicitly authorize PiqSavi** to:
+High-value PH retailers without a public reuse licence remain valid owner-action candidates for **Storefront Catalog or direct feeds**. Any permission request should ask the retailer to **explicitly authorize PiqSavi** to:
 
 - retrieve/access current public product pages **or** a supplied official feed/API/UCP catalog
 - identify products
@@ -217,65 +251,66 @@ High-value PH retailers without a public reuse licence remain valid owner-action
 - not imply retailer endorsement
 - not modify retailer checkout
 
-Also state: PiqSavi is a shopper-facing comparison assistant; initial public beta is planned without affiliate commissions; ordinary outbound merchant links are sufficient.
-
 **Do not send any email from this workspace.** Owner controls external communication.
 
-Suggested first five addressees, in order:
-
-1. Power Mac Center (`webstore@powermaccenter.com` is the public web-store support address on the official terms page)
-2. Lazada PH affiliate / product-data follow-up (`affiliate@lazada.com.ph` — EXT-01 already applied)
-3. Shopify commercial UCP / Partner support via official developer support path (confirm query-time comparison agent vs product-index prohibition)
-4. Beyond the Box (`inquiry@beyondthebox.ph`)
-5. Abenson (`shop@abenson.com` appears on the public terms page)
+This specification is **not** required to begin S-1 Global Catalog technical validation.
 
 ---
 
-## 9. Tavily role (unchanged)
+## 10. Next technical validation (plan only; do not run in this agent)
 
-Tavily may remain a **discovery/retrieval provider**. It is not the merchant.
+Owner-authorized later step. This audit performed no Shopify live call.
 
-Possible later architecture, only if the source-side permission is actually defensible:
+1. Create or reuse an agent profile with official Shopify tooling ([Agent profiles](https://shopify.dev/docs/agents/profiles), [Auth and rate limiting](https://shopify.dev/docs/agents/profiles/auth-and-rate-limiting)). Catalog tools are documented even at Anonymous tier; still send `meta.ucp-agent.profile`. Prefer Signed or Token identification for production-bound work.
+2. Do not scrape retailers. Do not bulk-index. Do not enable promoted placement.
+3. Issue a **small** set of real PH shopping queries against `https://catalog.shopify.com/api/ucp/mcp` (`search_catalog`, then `get_product` on a shortlist).
+4. Pass documented localization where applicable: `filters.ships_to.country=PH`, `context.address_country=PH`, and currency/language if the probe needs them.
+5. Record whether useful PH offers actually return.
+6. For any returned offer, verify product identity, current price, seller identity, seller URL / checkout URL, and availability.
+7. Preserve no-index / no-cache / no-training restrictions in the harness (do not persist a catalog; do not commit extracted live payloads).
+8. Do **not** enable production from the probe. A useful PH result becomes technical coverage evidence only.
 
-```text
-Tavily discovery/retrieval
-        ↓
-authorized retailer/source (first target: Power Mac Center / Shopify UCP)
-        ↓
-source-site rights = allowed or restricted-as-certified
-        ↓
-Level B evidence
-        ↓
-later Sprint 38 execution
-        ↓
-canonical normalized offer
-```
+Actual PH coverage remains **unverified** until that probe runs.
+
+---
+
+## 11. Tavily role (unchanged for non-Shopify sources)
+
+Tavily may remain a **discovery/retrieval provider** for non-Shopify sources. It is not the merchant and is not on the S-1 path.
 
 A Tavily Extract result does **not** solve source-site rights. Public-web snippets remain Level D / discovery-only.
 
 ---
 
-## 10. Next external action
+## 12. Official Shopify sources reviewed (reassessment)
 
-Owner-only. This audit performed no signup, application, email, payment, credential creation, merchant API call, or scrape.
+| Source | Role |
+|--------|------|
+| [About Catalogs](https://shopify.dev/docs/agents/catalog) | Global vs Storefront; Global best for cross-merchant discovery / comparison shopping; agent profile, no API key; no-cache guidelines |
+| [Global Catalog MCP](https://shopify.dev/docs/agents/catalog/global-catalog) | Comparison shopping / recommendations; prices; seller identity/URL; checkout links; availability; `ships_to`; `context.address_country` / currency; `view=offer` |
+| [Agent profiles](https://shopify.dev/docs/agents/profiles) | Hosted UCP profile URL on every request |
+| [Auth and rate limiting](https://shopify.dev/docs/agents/profiles/auth-and-rate-limiting) | Catalog tools at Token, Signed, and Anonymous tiers |
+| [Earn with promoted placements](https://shopify.dev/docs/agents/catalog/promoted-placement) | Commercial Global Catalog integrations contemplated; organic path works with placement off |
+| [Build commerce agents with UCP](https://shopify.dev/docs/agents) | Discover products across Shopify merchants |
+| [Shopify API License and Terms of Use](https://www.shopify.com/legal/api-terms) (last updated 27 February 2026) | §2.2 limited API license in the manner of Developer Documentation; §2.3.8 no scrape/mine; §2.3.14 no automated collection / product index; §2.3.24 no AI training/improvement without consent; §4.3 no ownership of accessed content; §6.1.1 merchant consent except as expressly authorized by Shopify |
+| [Using Shop with personal AI agents](https://help.shop.app/en/shop/shopping/personal-agents) | Personal skill only — not S-1 |
 
-1. Send the PMC written-permission request (§8).
-2. Request Shopify written confirmation of commercial UCP query-time comparison use.
-3. Follow up Lazada EXT-01 specifically on feed **display / compare / normalize / short-TTL cache / AI-assisted recommendation** rights.
-4. Keep Shopee Open Platform out of the first comparison floor unless Shopee grants a written waiver of the no-combining / no-competing-service clauses.
-5. Counsel-review any draft agreement before treating a capability as `allowed`.
+PH localization is **documented as query parameters** (`ships_to.country` ISO 3166-1 alpha-2, including the ability to send `PH`). Documentation does **not** establish that useful PH merchants or PHP prices actually exist in Global Catalog.
 
 ---
 
-## 11. Non-claims
+## 13. Non-claims
 
 This audit does **not** mean:
 
 - any path is legal under Philippine law (no qualified legal review is recorded here)
 - PiqSavi may reuse public PH product pages
 - robots.txt, search indexing, or Tavily extraction is permission
-- Shopee, Lazada, PMC, Shopify, Optimise, Involve Asia, Samsung, Sony, Acer, Icecat, Brave, Tavily, or Exa is certified
+- Shopify Global Catalog, PMC, Shopee, Lazada, Optimise, Involve Asia, Samsung, Sony, Acer, Icecat, Brave, Tavily, or Exa is production-certified
+- actual PH inventory/coverage has been observed
 - affiliate commission approval is product-data permission
+- PiqSavi owns content accessed through Shopify APIs
+- runtime inference equals permission to train or improve models
 - Sprint 32 is complete
 - production catalogs are populated
 - Sprint 38 has started
@@ -286,10 +321,9 @@ This audit does **not** mean:
 
 | Candidate | Official sources reviewed | Technically exposed? | Policy | Why not a survivor |
 |-----------|---------------------------|----------------------|--------|--------------------|
-| PMC public pages alone | [Terms of service](https://powermaccenter.com/policies/terms-of-service) | storefront HTML/JSON exist | unknown / restricted — §5(b) grants no rights except as expressly provided | No affirmative commercial comparison licence |
-| PMC `agents.md` / storefront UCP without written confirmation | [agents.md](https://powermaccenter.com/agents.md) | UCP/MCP and product JSON documented | unknown — framed for personal shopping assistants; Shop skill recommended | Technical protocol ≠ PiqSavi licence |
-| Shop.app personal skill | [Using Shop with personal AI agents](https://help.shop.app/en/shop/shopping/personal-agents); [shop.app/SKILL.md](https://shop.app/SKILL.md) | catalog search exists | **prohibited** for commercial aggregators / bulk catalog copy | Wrong program for PiqSavi |
-| Shopify Global Catalog as a public licence | [About Catalogs](https://shopify.dev/docs/agents/catalog); [API Terms](https://www.shopify.com/legal/api-terms) | comparison shopping named in developer docs | unknown / restricted — no-index, no-cache, no-AI-training, no content ownership | Needs agent profile + written confirmation |
+| PMC public pages alone | [Terms of service](https://powermaccenter.com/policies/terms-of-service) | storefront HTML/JSON exist | unknown / restricted — §5(b) grants no rights except as expressly provided | No affirmative commercial comparison licence for public pages |
+| PMC Storefront Catalog without written confirmation | [agents.md](https://powermaccenter.com/agents.md) | storefront UCP/MCP documented | unknown for commercial PiqSavi use of that origin | Separate from S-1; optional OA-1 |
+| Shop.app personal skill | [Using Shop with personal AI agents](https://help.shop.app/en/shop/shopping/personal-agents); [shop.app/SKILL.md](https://shop.app/SKILL.md) | catalog search exists | **prohibited** for commercial aggregators / bulk catalog copy | Wrong program; does not disqualify S-1 |
 | Beyond the Box pages | [Terms of Use](https://beyondthebox.ph/pages/terms-of-use) | public catalog | prohibited / restricted — no scrape; no exploit without written permission | Written permission required |
 | Abenson pages | [Terms of Use](https://home.abenson.com/terms-of-use) | public catalog | prohibited / restricted — agent/tool navigation forbidden; non-commercial content use | Written permission required |
 | Sony PH site | [Terms of Use](https://www.sony.com.ph/microsite/termsofuse/) clause 7 | public catalog | **prohibited** for copying/distribution/adaptation except personal non-commercial use, unless prior written consent | Direct commercial reuse not defensible |
@@ -305,8 +339,7 @@ This audit does **not** mean:
 
 ---
 
-SPRINT 32 SOURCE-RIGHTS AUDIT COMPLETE —
-NO UNAUTHORIZED PUBLIC-PAGE REUSE ACCEPTED —
-STRONGEST LEGITIMATE PATH IDENTIFIED —
-EXTERNAL PERMISSION / PROVIDER EVIDENCE STILL REQUIRED —
+SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
+OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
+PH LIVE COVERAGE VALIDATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN

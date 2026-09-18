@@ -394,6 +394,14 @@ Strongest owner-action candidate: Shopify commercial UCP catalog + Power Mac Cen
 
 Evidence: [`SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md).
 
+### 2026-09-18 Shopify Global Catalog reassessment (authoritative for current outcome; do not rewrite historical rows)
+
+This addendum supersedes the same-day Outcome C conclusion for Shopify surfaces only. It does **not** certify Shopify. Shopee, Lazada, TikTok Shop, Amazon, Temu, Power Mac Center, Optimise, Involve Asia, Samsung, Sony, Acer, Icecat, Brave, Tavily, and Exa remain **uncertified**.
+
+Reassessment outcome: **A** — Shopify Global Catalog UCP is a **rights survivor** for restricted query-time commercial comparison (Developer Documentation + API Terms). Shop.app personal skill remains prohibited for commercial aggregators and is a different path. Individual merchant permission is **not** required for Global Catalog. Actual PH coverage is **unverified**. No live Shopify catalog call was made. Sprint 32 is **not complete**.
+
+Evidence: [`SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.

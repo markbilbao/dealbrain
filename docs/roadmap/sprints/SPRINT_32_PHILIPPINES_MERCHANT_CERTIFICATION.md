@@ -100,11 +100,11 @@ This does **not** certify Tavily. It does **not** certify any retailer. Technica
 
 ### 2026-09-18 PH source-rights / licensed-data path audit (does not close this sprint)
 
-A first-party rights audit of PH retailers, marketplaces, affiliate/product-feed programs, manufacturer shops, and licensed catalog APIs found **no survivor**. No official public/partner instrument currently grants enough affirmative product-data rights for shopper-facing commercial comparison. Technical retrieval remains distinct from permission. Unauthorized public-page reuse is not accepted.
+A first-party rights audit of PH retailers, marketplaces, affiliate/product-feed programs, manufacturer shops, and licensed catalog APIs initially conflated Shopify Global Catalog with Shop.app personal skill, merchant Admin APIs, public storefront pages, and persistent product indexes. Reassessment of official Shopify Global Catalog docs plus API Terms records **Outcome A**: Global Catalog is a **rights survivor** for a restricted query-time commercial comparison path. This is **not** production certification. Actual PH coverage is unverified. Unauthorized public-page reuse is not accepted.
 
-Strongest owner-action path: Shopify commercial UCP catalog plus Power Mac Center storefront, with written PMC permission and Shopify confirmation that query-time comparison is not a prohibited product index. Parallel owner-action: Lazada PH official product-feed rights confirmation (EXT-01 already `applied`). Tavily stays discovery/retrieval only.
+S-1 architecture is PiqSavi → Shopify Global Catalog (no Tavily on this path). Individual retailer permission, including Power Mac Center, is **not** required for Global Catalog. PMC Storefront Catalog remains an optional separate owner-action path. Shop.app personal-agent skill stays prohibited for commercial aggregators and does not disqualify Global Catalog. Promoted placement stays off initially.
 
-This audit performed no signup, application, email, payment, credential creation, merchant API call, scrape, or environment mutation. See [`../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md). Sprint 32 remains open.
+This audit performed no signup, application, email, payment, credential creation, merchant API call, Shopify live catalog call, scrape, or environment mutation. See [`../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md). Sprint 32 remains open.
 
 ### Closure blockers (current)
 
@@ -120,7 +120,7 @@ This audit performed no signup, application, email, payment, credential creation
 - A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
 - Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
 - Public-web discovery architecture/harness exists and is **not** a certified PH shopping-data path. No owner credentials. No live current-data response. Fixtures cannot close this sprint.
-- 2026-09-18 source-rights audit found **no survivor** licensed PH product-data path. Strongest remaining route is owner-action (Shopify commercial UCP + Power Mac Center written permission; Lazada feed-rights follow-up). External permission / provider evidence is still required.
+- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. PH live coverage validation, agent profile, Sprint 31 policy rows, and remaining certification gates are still required.
 
 ### Production defaults
 

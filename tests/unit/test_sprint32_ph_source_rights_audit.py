@@ -1,4 +1,4 @@
-"""Lock the 2026-09-18 Sprint 32 PH source-rights audit: no survivor, sprint remains open."""
+"""Lock Sprint 32 PH source-rights audit: Global Catalog survivor, sprint open."""
 
 from __future__ import annotations
 
@@ -19,36 +19,41 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_audit_document_exists_and_records_outcome_c() -> None:
+def test_audit_document_exists_and_records_outcome_a() -> None:
     text = _read(AUDIT)
     assert "2026-09-18" in text
     assert "629ab4eb92c2a1bb743632b5c1d0d195e5aa6111" in text
-    assert "**Outcome:** **C**" in text
-    assert "**None.**" in text
+    assert "**Outcome:** **A**" in text
+    assert "**OUTCOME A.**" in text
+    assert "S-1 — Shopify Global Catalog UCP" in text
     assert "SPRINT 32 REMAINS OPEN" in text
     assert "Sprint 32 remains **OPEN**" in text
-    assert "no survivor" in text.lower() or "**None.**" in text
+    assert "PH LIVE COVERAGE VALIDATION STILL REQUIRED" in text
 
 
 def test_audit_does_not_certify_or_scrape() -> None:
     text = _read(AUDIT)
     assert "This document does **not** certify" in text
     assert "Do not send any email from this workspace." in text
-    assert "merchant API call, or scrape" in text
-    assert "Unauthorized public-page reuse is not accepted." in text
-    assert "Tavily Extract does not solve PMC rights." in text
+    assert "This audit performed no Shopify live call." in text
+    assert "Unauthorized public-page reuse remains not accepted." in text
+    assert "Tavily Extract does not solve PMC rights" in text
     assert "Engineering interpretation is not counsel approval." in text
     assert "legal under Philippine law" in text
 
 
-def test_strongest_path_is_owner_action_not_certified() -> None:
+def test_global_catalog_is_survivor_separate_from_shop_and_pmc() -> None:
     text = _read(AUDIT)
-    assert "OA-1 — Shopify commercial UCP catalog + Power Mac Center" in text
-    assert "Canonical evaluated offer" in text
-    assert "**No.**" in text
+    assert "PiqSavi shopper query" in text
+    assert "Shopify Global Catalog" in text
+    assert "Do not place Tavily between PiqSavi and Shopify Global Catalog" in text
+    assert "Power Mac Center written permission is **not** a prerequisite" in text
     assert "Shop.app personal-agent skill" in text
-    assert "personal, individual use only" in text
-    assert "EXT-01 already records" in text
+    assert "personal use only" in text
+    assert "do **not** disqualify the commercial Global Catalog" in text
+    assert "Actual PH merchant coverage is **unverified**" in text
+    assert "Canonical evaluated offer" in text
+    assert "**No.** Rights survivor ≠ production certification." in text
 
 
 def test_capability_matrix_uses_only_sprint31_states() -> None:
@@ -56,8 +61,12 @@ def test_capability_matrix_uses_only_sprint31_states() -> None:
     matrix = text.split("## 5. Capability-policy matrix", 1)[1].split("## 6.", 1)[0]
     found = set(re.findall(r"\b(allowed|restricted|prohibited|unknown)\b", matrix.lower()))
     assert found <= POLICY_STATES
-    assert "unknown" in found
+    assert "allowed" in found
+    assert "prohibited" in found
+    assert "restricted" in found
     assert FIFTH_STATE_RE.search(matrix) is None
+    assert "persistent product indexing" in matrix.lower()
+    assert "AI model training" in matrix or "AI model training/improvement" in matrix
 
 
 def test_sprint32_status_remains_in_progress_and_links_audit() -> None:
@@ -67,19 +76,21 @@ def test_sprint32_status_remains_in_progress_and_links_audit() -> None:
     assert "not complete" in status_line.lower()
     assert "Sprint 32 is **not complete**" in text
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in text
-    assert "no survivor" in text.lower()
+    assert "rights survivor" in text.lower()
     assert "Sprint 32 remains open." in text
+    assert "not** production-certified" in text or "**not** production-certified" in text
 
 
-def test_inventory_and_gap_record_outcome_c_without_closing_sprint() -> None:
+def test_inventory_and_gap_record_outcome_a_without_closing_sprint() -> None:
     inventory = _read(INVENTORY)
     gap = _read(GAP)
-    assert "Audit outcome: **C** — no survivor." in inventory
+    assert "Reassessment outcome: **A**" in inventory
     assert "Sprint 32 is **not complete**." in inventory
-    assert "no survivor licensed PH product-data path" in gap
+    assert "Outcome | **A** — Shopify Global Catalog UCP rights survivor" in gap
     assert "does **not** close Sprint 32" in gap
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in inventory
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in gap
+    assert "actual PH inventory **unverified**" in gap
 
 
 def test_audit_relative_links_resolve() -> None:

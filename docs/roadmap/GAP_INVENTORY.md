@@ -792,3 +792,17 @@ This addendum does **not** rewrite earlier snapshots. It records a first-party P
 | Production providers / certifications | Still **zero** |
 | External action from this audit | None. Owner controls later communication. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md) |
+
+## 2026-09-18 Shopify Global Catalog source-rights reassessment addendum
+
+This addendum does **not** rewrite earlier snapshots. It records a same-day reassessment that separated Shopify Global Catalog from Shop.app, merchant Admin APIs, public pages, and persistent indexes. It does **not** certify Shopify, does **not** scrape merchants, does **not** run a live catalog probe, does **not** mutate production/staging/AWS, and does **not** close Sprint 32.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `629ab4eb92c2a1bb743632b5c1d0d195e5aa6111` (PR #146) |
+| Outcome | **A** — Shopify Global Catalog UCP rights survivor (restricted query-time comparison) |
+| PH coverage | Technical `ships_to` / localization documented; actual PH inventory **unverified** |
+| Individual merchant permission | **Not** required for Global Catalog itself |
+| Production providers / certifications | Still **zero** |
+| External action from this reassessment | None. Live PH probe is a later owner-authorized step. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md) |
