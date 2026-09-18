@@ -6,6 +6,7 @@
 **Beta blocker classification:** Yes to name PH
 **Inventory:** [`../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md`](../evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md)
 **Public-web evaluation:** [`../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md`](../evidence/SPRINT_32_PUBLIC_WEB_PROVIDER_EVALUATION.md)
+**Source-rights audit:** [`../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md)
 
 ## Authoritative status
 
@@ -97,6 +98,14 @@ A private-local Tavily Extract harness now exists so the owner can test whether 
 
 This does **not** certify Tavily. It does **not** certify any retailer. Technical Level-B candidate ≠ offer evidence. Source-site policy stays unknown and blocks evaluated-set promotion. PiqSavi still must not fetch merchant pages. Live mode may call only the official Tavily Extract API, `extract_depth=basic`, max 15 URLs. Advanced extraction is a later explicit owner action. Live artifacts stay in `/tmp` and must not be committed. Sprint 32 remains open.
 
+### 2026-09-18 PH source-rights / licensed-data path audit (does not close this sprint)
+
+A first-party rights audit of PH retailers, marketplaces, affiliate/product-feed programs, manufacturer shops, and licensed catalog APIs initially conflated Shopify Global Catalog with Shop.app personal skill, merchant Admin APIs, public storefront pages, and persistent product indexes. Reassessment of official Shopify Global Catalog docs plus API Terms records **Outcome A**: Global Catalog is a **rights survivor** for a restricted query-time commercial comparison path. This is **not** production certification. Actual PH coverage is unverified. Unauthorized public-page reuse is not accepted.
+
+S-1 architecture is PiqSavi → Shopify Global Catalog (no Tavily on this path). Individual retailer permission, including Power Mac Center, is **not** required for Global Catalog. PMC Storefront Catalog remains an optional separate owner-action path. Shop.app personal-agent skill stays prohibited for commercial aggregators and does not disqualify Global Catalog. Promoted placement stays off initially.
+
+This audit performed no signup, application, email, payment, credential creation, merchant API call, Shopify live catalog call, scrape, or environment mutation. See [`../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md). Sprint 32 remains open.
+
 ### Closure blockers (current)
 
 - No merchant has a real approved product-data / API path
@@ -111,6 +120,7 @@ This does **not** certify Tavily. It does **not** certify any retailer. Technica
 - A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
 - Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
 - Public-web discovery architecture/harness exists and is **not** a certified PH shopping-data path. No owner credentials. No live current-data response. Fixtures cannot close this sprint.
+- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. PH live coverage validation, agent profile, Sprint 31 policy rows, and remaining certification gates are still required.
 
 ### Production defaults
 

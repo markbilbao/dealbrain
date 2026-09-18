@@ -2,7 +2,7 @@
 
 **Audience:** engineering and owner reviewers preparing a future merchant/provider for evidence-backed certification
 **Status:** Sprint 31 formally owner-closed. This runbook does **not** onboard any production provider.
-**Sprint 32 status:** In progress; **not complete**. Blocked on external certification (merchant path and/or public-web live credentials + current-data validation).
+**Sprint 32 status:** In progress; **not complete**. Blocked on external certification (merchant path and/or public-web live credentials + current-data validation). 2026-09-18 source-rights audit: Shopify Global Catalog is a **rights survivor** (Outcome A, not production-certified; PH coverage unverified); see [`../roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md).
 **Production certified research providers:** **zero**
 
 This is operational documentation only. No application, credential, or certification record is created by this document.
