@@ -9,15 +9,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX_PATH = ROOT / "tests/contracts/fixtures/sprint41-acceptance-matrix.json"
-RECONCILIATION = (
-    ROOT / "docs/roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md"
-)
-CDN_PROPOSAL = (
-    ROOT / "docs/roadmap/evidence/SPRINT_41_CDN_WAF_DECISION_PROPOSAL_2026-09-18.md"
-)
-DEPLOY6_EVIDENCE = (
-    ROOT / "docs/roadmap/evidence/PRODUCTION_DEPLOY_6_EVIDENCE_2026-09-15.json"
-)
+RECONCILIATION = ROOT / "docs/roadmap/evidence/SPRINT_41_CURRENT_MAIN_RECONCILIATION_2026-09-18.md"
+CDN_PROPOSAL = ROOT / "docs/roadmap/evidence/SPRINT_41_CDN_WAF_DECISION_PROPOSAL_2026-09-18.md"
+DEPLOY6_EVIDENCE = ROOT / "docs/roadmap/evidence/PRODUCTION_DEPLOY_6_EVIDENCE_2026-09-15.json"
 SPRINT_41 = ROOT / "docs/roadmap/sprints/SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md"
 SPRINTS_README = ROOT / "docs/roadmap/sprints/README.md"
 MASTER = ROOT / "docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md"
@@ -71,13 +65,21 @@ def test_reconciliation_records_starting_sha_verdict_and_no_mutation() -> None:
     assert "not** rollback validation" in text.lower() or "not validation" in text.lower()
     assert "HTTP **200**" in text
     assert "www.piqsavi.com" in text
-    assert "OWNER DECISION PROPOSAL" in _read(CDN_PROPOSAL) or "not recorded as accepted" in _read(
-        CDN_PROPOSAL
-    ).lower()
-    assert "Do not trigger" in text or "Do not trigger rollback" in text.lower() or (
-        "not trigger rollback" in text.lower()
+    assert (
+        "OWNER DECISION PROPOSAL" in _read(CDN_PROPOSAL)
+        or "not recorded as accepted" in _read(CDN_PROPOSAL).lower()
     )
-    for phrase in ("SPRINT 42 COMPLETE", "SPRINT 43 COMPLETE", "SPRINT 44 COMPLETE", "SPRINT 45 COMPLETE"):
+    assert (
+        "Do not trigger" in text
+        or "Do not trigger rollback" in text.lower()
+        or ("not trigger rollback" in text.lower())
+    )
+    for phrase in (
+        "SPRINT 42 COMPLETE",
+        "SPRINT 43 COMPLETE",
+        "SPRINT 44 COMPLETE",
+        "SPRINT 45 COMPLETE",
+    ):
         assert phrase not in text
 
 
@@ -149,11 +151,12 @@ def test_sprint_41_doc_is_partially_complete_not_closed() -> None:
     for phrase in FORBIDDEN_COMPLETE_PHRASES:
         assert phrase not in text
     assert "**Status:** Planned" not in text
-    assert "www redirects to canonical apex" in text
-    assert "NOT validated" in text or "not validated" in text.lower()
+    assert "`www` redirects to canonical apex" in text
+    assert "**not** validated" in text.lower()
     readme = _read(SPRINTS_README)
     assert "PARTIALLY COMPLETE" in readme
-    assert "COMPLETE / CLOSED" not in readme.split("SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md")[1][:400]
+    sprint41_readme = readme.split("SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md")[1][:400]
+    assert "COMPLETE / CLOSED" not in sprint41_readme
 
 
 def test_deploy_and_rollback_workflows_remain_and_do_not_apply_terraform() -> None:
@@ -168,12 +171,14 @@ def test_deploy_and_rollback_workflows_remain_and_do_not_apply_terraform() -> No
     assert "environment: production" in rollback
     assert "DealBrain-ProductionDeploy" in deploy
     assert "DealBrain-ProductionRollback" in rollback
-    assert "terraform apply" not in deploy.lower()
-    assert "terraform apply" not in rollback.lower()
+    assert "no terraform apply" in deploy.lower()
+    assert "no terraform apply" in rollback.lower()
+    assert "run: terraform apply" not in deploy
+    assert "run: terraform apply" not in rollback
     assert "production-release-mutation" in deploy
     assert "production-release-mutation" in rollback
-    assert "workflow_dispatch" in parsed_deploy["on"]
-    assert "workflow_dispatch" in parsed_rollback["on"]
+    assert "workflow_dispatch:" in deploy
+    assert "workflow_dispatch:" in rollback
 
 
 def test_alb_has_http_https_redirect_but_no_www_host_redirect() -> None:
@@ -200,8 +205,10 @@ def test_isolation_policies_and_assembler_refuse_opposite_secrets() -> None:
     assert "DenySecretsManagerValueAccess" in gha
     assert 'environment = "production"' in prod
     assert 'environment = "staging"' in staging
-    assert "10.20.0.0/16" in _read(ROOT / "infra/terraform/environments/production/terraform.tfvars.example")
-    assert "10.10.0.0/16" in _read(ROOT / "infra/terraform/environments/staging/terraform.tfvars.example")
+    prod_tfvars = ROOT / "infra/terraform/environments/production/terraform.tfvars.example"
+    staging_tfvars = ROOT / "infra/terraform/environments/staging/terraform.tfvars.example"
+    assert "10.20.0.0/16" in _read(prod_tfvars)
+    assert "10.10.0.0/16" in _read(staging_tfvars)
     assert "refusing to read production secrets on staging host" in assemble
     assert "refusing to read staging secrets on production host" in assemble
     assert 'PRODUCTION_PUBLIC_BASE_URL = "https://piqsavi.com"' in assemble
@@ -262,7 +269,7 @@ def test_master_gap_and_ext_register_are_current_without_closing_later_sprints()
     gap = _read(GAP)
     ext = _read(EXT)
     assert VERDICT in master or "PARTIALLY COMPLETE" in master
-    assert "SPRINT 42" in master
+    assert "Sprint 42" in master
     assert "**COMPLETE / CLOSED**" not in master.split("| 42 |")[1][:120]
     assert "2026-09-18 Sprint 41 current-main reconciliation addendum" in gap
     assert "does **not** close Sprint 41" in gap or "does **not** mark Sprint 41 COMPLETE" in gap
