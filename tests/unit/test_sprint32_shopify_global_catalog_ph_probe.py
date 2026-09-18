@@ -250,6 +250,8 @@ def test_fixture_probe_enforces_search_and_get_product_caps() -> None:
     assert len(get_ids) == len(set(get_ids)) == 5
     assert "gid://shopify/p/fixture-ph-chair" in get_ids
     assert "gid://shopify/p/7f3a2b8c1d9e" not in get_ids
+    get_query_ids = [item.query_id for item in report.query_results if item.get_product_used]
+    assert len(get_query_ids) == len(set(get_query_ids)) == 5
     for _name, arguments in transport.calls:
         catalog = arguments["catalog"]
         assert "cursor" not in (catalog.get("pagination") or {})
@@ -319,6 +321,226 @@ def test_classify_does_not_fabricate_missing_offer_fields() -> None:
     assert useful.price_amount_minor == 1000
     assert useful.currency == "PHP"
     assert classify_query_offers((useful,)) == USEFUL_PH_OFFER
+
+
+def _complete_product(product_id: str, *, currency: str = "USD") -> dict:
+    slug = product_id.rsplit("/", 1)[-1]
+    return {
+        "id": product_id,
+        "url": f"https://fixture.example.invalid/products/{slug}",
+        "variants": [
+            {
+                "id": f"{product_id}-variant",
+                "price": {"amount": 1000, "currency": currency},
+                "availability": {"available": True, "status": "in_stock"},
+                "seller": {
+                    "name": "Fixture Seller",
+                    "url": "https://fixture.example.invalid",
+                },
+            }
+        ],
+    }
+
+
+def _incomplete_product(product_id: str) -> dict:
+    return {"id": product_id, "title": "incomplete fixture"}
+
+
+def test_select_promising_product_ids_diversifies_across_query_ids() -> None:
+    products = {
+        f"query_{index}": [
+            _complete_product(f"gid://shopify/p/q{index}-a"),
+            _complete_product(f"gid://shopify/p/q{index}-b"),
+        ]
+        for index in range(12)
+    }
+    selected = select_promising_product_ids(products)
+    assert len(selected) == MAX_GET_PRODUCT_VALIDATIONS == 5
+    query_ids = [query_id for query_id, _product_id in selected]
+    assert query_ids == ["query_0", "query_1", "query_2", "query_3", "query_4"]
+    assert len(set(query_ids)) == 5
+    assert selected == (
+        ("query_0", "gid://shopify/p/q0-a"),
+        ("query_1", "gid://shopify/p/q1-a"),
+        ("query_2", "gid://shopify/p/q2-a"),
+        ("query_3", "gid://shopify/p/q3-a"),
+        ("query_4", "gid://shopify/p/q4-a"),
+    )
+    assert select_promising_product_ids(products) == selected
+
+
+def test_select_promising_product_ids_first_pass_is_one_per_query() -> None:
+    products = {
+        "wireless_earbuds": [
+            _complete_product(f"gid://shopify/p/earbuds-{index}") for index in range(10)
+        ],
+        "gaming_laptop": [_complete_product("gid://shopify/p/laptop-a")],
+        "mechanical_keyboard": [_complete_product("gid://shopify/p/keyboard-a")],
+        "usb_c_charger": [_complete_product("gid://shopify/p/charger-a")],
+        "phone_case": [_complete_product("gid://shopify/p/case-a")],
+        "portable_power_bank": [_complete_product("gid://shopify/p/powerbank-a")],
+    }
+    selected = select_promising_product_ids(products)
+    query_ids = [query_id for query_id, _product_id in selected]
+    assert query_ids == [
+        "wireless_earbuds",
+        "gaming_laptop",
+        "mechanical_keyboard",
+        "usb_c_charger",
+        "phone_case",
+    ]
+    assert "gid://shopify/p/earbuds-1" not in {product_id for _q, product_id in selected}
+    assert all(query_ids.count(query_id) == 1 for query_id in query_ids)
+
+
+def test_select_promising_product_ids_prefers_incomplete_within_query() -> None:
+    products = {
+        "wireless_earbuds": [
+            _complete_product("gid://shopify/p/earbuds-complete"),
+            _incomplete_product("gid://shopify/p/earbuds-incomplete"),
+        ],
+        "gaming_laptop": [
+            _complete_product("gid://shopify/p/laptop-complete"),
+            _incomplete_product("gid://shopify/p/laptop-incomplete"),
+        ],
+        "usb_c_charger": [_complete_product("gid://shopify/p/charger-complete")],
+        "phone_case": [_incomplete_product("gid://shopify/p/case-incomplete")],
+        "skincare_serum": [_complete_product("gid://shopify/p/serum-complete")],
+        "backpack": [_complete_product("gid://shopify/p/backpack-complete")],
+    }
+    selected = select_promising_product_ids(products)
+    assert selected == (
+        ("wireless_earbuds", "gid://shopify/p/earbuds-incomplete"),
+        ("gaming_laptop", "gid://shopify/p/laptop-incomplete"),
+        ("phone_case", "gid://shopify/p/case-incomplete"),
+        ("usb_c_charger", "gid://shopify/p/charger-complete"),
+        ("skincare_serum", "gid://shopify/p/serum-complete"),
+    )
+
+
+def test_select_promising_product_ids_fills_leftovers_after_distinct_query_pass() -> None:
+    products = {
+        "alpha": [
+            _incomplete_product("gid://shopify/p/alpha-1"),
+            _incomplete_product("gid://shopify/p/alpha-2"),
+            _complete_product("gid://shopify/p/alpha-3"),
+        ],
+        "beta": [
+            _complete_product("gid://shopify/p/beta-1"),
+            _complete_product("gid://shopify/p/beta-2"),
+        ],
+        "gamma": [
+            _incomplete_product("gid://shopify/p/gamma-1"),
+            _complete_product("gid://shopify/p/gamma-2"),
+        ],
+    }
+    selected = select_promising_product_ids(products)
+    assert selected == (
+        ("alpha", "gid://shopify/p/alpha-1"),
+        ("gamma", "gid://shopify/p/gamma-1"),
+        ("beta", "gid://shopify/p/beta-1"),
+        ("alpha", "gid://shopify/p/alpha-2"),
+        ("alpha", "gid://shopify/p/alpha-3"),
+    )
+    assert len(selected) == 5
+    assert len({query_id for query_id, _product_id in selected[:3]}) == 3
+
+
+def test_all_complete_twelve_query_probe_keeps_budget_and_distinct_get_product() -> None:
+    intents = load_ph_probe_intents()
+    responses_by_query_id: dict[str, dict] = {}
+    get_product_by_id: dict[str, dict] = {}
+    for intent in intents:
+        products = [
+            _complete_product(
+                f"gid://shopify/p/{intent.query_id}-{index}",
+                currency="USD",
+            )
+            for index in range(10)
+        ]
+        responses_by_query_id[intent.query_id] = {
+            "products": products,
+            "pagination": {"has_next_page": True, "cursor": "ignore-me"},
+        }
+        for product in products:
+            get_product_by_id[product["id"]] = {"product": product}
+    transport = fixture_transport_from_payload(
+        {
+            "responses_by_query_id": responses_by_query_id,
+            "get_product_by_id": get_product_by_id,
+        }
+    )
+    report = run_ph_coverage_probe(transport=transport, live=False)
+    assert report.search_calls == 12
+    assert report.get_product_calls == 5
+    assert report.lookup_catalog_calls == 0
+    assert report.pagination_followed is False
+    assert report.bulk_ids_used is False
+    assert report.closes_sprint_32 is False
+    assert report.starts_sprint_38 is False
+    assert report.production_certified is False
+    tools = [name for name, _arguments in transport.calls]
+    assert tools.count(SEARCH_TOOL) == 12
+    assert tools.count(GET_PRODUCT_TOOL) == 5
+    assert FORBIDDEN_LOOKUP_TOOL not in tools
+    get_query_ids = [item.query_id for item in report.query_results if item.get_product_used]
+    assert get_query_ids == [item.query_id for item in intents[:5]]
+    assert all(item.classification == USEFUL_PH_OFFER for item in report.query_results)
+    assert all(offer.currency == "USD" for item in report.query_results for offer in item.offers)
+    for _name, arguments in transport.calls:
+        catalog = arguments["catalog"]
+        assert "cursor" not in (catalog.get("pagination") or {})
+        assert catalog.get("context", {}).get("currency") == PHP_CURRENCY
+
+
+def test_php_context_does_not_force_php_or_fabricate_conversion() -> None:
+    arguments = build_search_catalog_arguments("wireless earbuds")
+    assert arguments["catalog"]["context"]["currency"] == PHP_CURRENCY
+    usd = minimize_offer_evidence(
+        _complete_product("gid://shopify/p/usd", currency="USD"),
+        _complete_product("gid://shopify/p/usd", currency="USD")["variants"][0],
+    )
+    inr = minimize_offer_evidence(
+        _complete_product("gid://shopify/p/inr", currency="INR"),
+        _complete_product("gid://shopify/p/inr", currency="INR")["variants"][0],
+    )
+    gbp = minimize_offer_evidence(
+        _complete_product("gid://shopify/p/gbp", currency="GBP"),
+        _complete_product("gid://shopify/p/gbp", currency="GBP")["variants"][0],
+    )
+    assert usd.currency == "USD"
+    assert inr.currency == "INR"
+    assert gbp.currency == "GBP"
+    assert usd.price_amount_minor == 1000
+    assert classify_query_offers((usd,)) == USEFUL_PH_OFFER
+    mixed = offers_from_products(
+        [
+            _complete_product("gid://shopify/p/php", currency="PHP"),
+            _complete_product("gid://shopify/p/zar", currency="ZAR"),
+        ]
+    )
+    assert {item.currency for item in mixed} == {"PHP", "ZAR"}
+    assert PHP_CURRENCY not in {usd.currency, inr.currency, gbp.currency}
+
+
+def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    assert "PASSED TECHNICAL COVERAGE TEST" in probe_doc
+    assert "120 products" in probe_doc
+    assert "122 offer" in probe_doc
+    assert "mixed" in probe_doc.casefold()
+    assert "INR" in probe_doc
+    assert "concentrated in one query" in probe_doc
+    assert "rerun" in probe_doc.casefold()
+    assert "does **not** close Sprint 32" in probe_doc
+    assert "SPRINT 32 REMAINS OPEN" in probe_doc
+    assert "SPRINT 38 UNSTARTED" in probe_doc
+    assert "OWNER LIVE PH COVERAGE TEST REQUIRED" not in probe_doc
+    assert production_research_provider_registry().list_providers() == ()
+    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert "Sprint 38 remains unstarted" in sprint32
 
 
 def test_budget_rejects_thirteenth_search_and_sixth_get_product() -> None:
@@ -475,10 +697,14 @@ def test_production_catalogs_stay_empty_and_sprint32_stays_open() -> None:
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     assert "Sprint 32 is **not complete**" in sprint32
     assert "In progress" in sprint32
+    assert "PASSED TECHNICAL COVERAGE TEST" in sprint32
+    assert "does **not** close Sprint 32" in sprint32
     assert PROBE_DOC.exists()
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    assert "PASSED TECHNICAL COVERAGE TEST" in probe_doc
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
-    assert "no production certification" in probe_doc.lower()
+    assert "SPRINT 38 UNSTARTED" in probe_doc
+    assert "not production certification" in probe_doc.lower()
 
 
 def test_affiliate_neutrality_remains_intact() -> None:
@@ -804,4 +1030,6 @@ def test_sprint38_unstarted_and_production_catalogs_empty() -> None:
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
     assert "Sprint 32 remains open." in sprint32
+    assert "Sprint 38 remains unstarted" in sprint32
     assert "not Sprint 38 execution" in probe_doc
+    assert "SPRINT 38 UNSTARTED" in probe_doc

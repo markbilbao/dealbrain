@@ -820,3 +820,19 @@ This addendum does **not** rewrite earlier snapshots. It records a private-local
 | Production providers / certifications | Still **zero** |
 | External action from this harness slice | Owner live probe after review/merge. No live `catalog.shopify.com` call from this agent. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-18 owner live Shopify Global Catalog PH coverage probe addendum
+
+This addendum does **not** rewrite earlier snapshots. It records owner-supplied live evidence after PR #149. This agent did **not** call Shopify. It does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `571615570000529ec09b9c33a7861b341f57341d` (merge of PR #149) |
+| Result | **PASSED TECHNICAL COVERAGE TEST** — 12/12 tested categories `USEFUL_PH_OFFER` |
+| First-page totals | 120 products; 122 offer records; price/currency/seller/destination/availability present on every query |
+| Auth | Anonymous; no credentials; no scraping; no pagination; no bulk lookup; no raw persistence |
+| Currency | Mixed returned currencies despite PHP context (PHP, USD, INR, GBP, SGD, AUD, EUR, ZAR). Preserve returned currency; do not fabricate PHP conversion. |
+| `get_product` in that live run | Five validations were concentrated in one query because the previous selector sliced a global incomplete+complete list. Search coverage evidence remains valid. Deeper cross-category `get_product` validation must be rerun by the owner after the selector diversification fix. |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |

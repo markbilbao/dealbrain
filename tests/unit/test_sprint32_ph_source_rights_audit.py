@@ -5,6 +5,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from app.research.certification import production_research_provider_certification_catalog
+from app.research.certification_evidence import (
+    production_research_provider_certification_evidence_catalog,
+)
+from app.research.registry import production_research_provider_registry
+from app.research.routing import production_research_provider_routing_policy_catalog
+
 ROOT = Path(__file__).resolve().parents[2]
 AUDIT = ROOT / "docs/roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md"
 SPRINT32 = ROOT / "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md"
@@ -91,6 +98,44 @@ def test_inventory_and_gap_record_outcome_a_without_closing_sprint() -> None:
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in inventory
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in gap
     assert "actual PH inventory **unverified**" in gap
+    assert "PASSED TECHNICAL COVERAGE TEST" in inventory
+    assert "PASSED TECHNICAL COVERAGE TEST" in gap
+    assert "actual live PH inventory **unverified until owner runs `--live`**" in gap
+
+
+def test_owner_live_coverage_addendum_keeps_historical_unverified_strings() -> None:
+    text = _read(AUDIT)
+    section_14 = text.split("## 14.", 1)[1].split("## 15.", 1)[0]
+    after_15 = text.split("## 15.", 1)[1]
+    footer = after_15.rsplit("---", 1)[-1]
+    sprint32 = _read(SPRINT32)
+    probe_doc = (
+        ROOT / "docs/roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md"
+    ).read_text(encoding="utf-8")
+
+    assert "**PH LIVE COVERAGE VALIDATION STILL REQUIRED.**" in section_14
+    assert "PH LIVE COVERAGE VALIDATION STILL REQUIRED" not in footer
+    assert "PH LIVE TECHNICAL COVERAGE VALIDATED" in footer
+    assert "PRODUCTION CERTIFICATION STILL REQUIRED" in footer
+    assert "SPRINT 32 REMAINS OPEN" in footer
+    assert "Actual PH merchant coverage is **unverified**" in text
+    assert "PASSED TECHNICAL COVERAGE TEST" in text
+    assert "## 15. Owner live 12-query PH coverage probe addendum" in text
+    assert "does **not** close Sprint 32" in text
+    assert "Sprint 38 remains unstarted" in text
+    assert "SPRINT 38 UNSTARTED" in probe_doc
+    assert "No current-data operational validation" not in sprint32
+    assert (
+        "Current-data technical coverage validation exists for Shopify Global Catalog, "
+        "but production operational validation/certification is incomplete."
+    ) in sprint32
+    assert "Live current-data validation | none" not in sprint32
+    assert "Sprint 32 remains open." in sprint32
+    assert "Sprint 38 remains unstarted" in sprint32
+    assert production_research_provider_registry().list_providers() == ()
+    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert production_research_provider_routing_policy_catalog().list_records() == ()
 
 
 def test_audit_relative_links_resolve() -> None:

@@ -2,7 +2,7 @@
 
 **Audience:** engineering and owner reviewers preparing a future merchant/provider for evidence-backed certification
 **Status:** Sprint 31 formally owner-closed. This runbook does **not** onboard any production provider.
-**Sprint 32 status:** In progress; **not complete**. Blocked on external certification (merchant path and/or public-web live credentials + current-data validation). 2026-09-18 source-rights audit: Shopify Global Catalog is a **rights survivor** (Outcome A, not production-certified; PH coverage unverified); see [`../roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md).
+**Sprint 32 status:** In progress; **not complete**. Blocked on external certification (merchant path and/or public-web live credentials + current-data validation). 2026-09-18 source-rights audit: Shopify Global Catalog is a **rights survivor** (Outcome A, not production-certified). Owner live 12-query PH search coverage probe **PASSED TECHNICAL COVERAGE TEST**; that is not production certification and does not close Sprint 32. See [`../roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md`](../roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md) and [`../roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](../roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 **Production certified research providers:** **zero**
 
 This is operational documentation only. No application, credential, or certification record is created by this document.

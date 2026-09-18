@@ -345,7 +345,18 @@ A later same-day slice prepared the private-local Anonymous PH coverage harness 
 
 ---
 
+## 15. Owner live 12-query PH coverage probe addendum (2026-09-18; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. After PR #149 the owner ran the controlled Anonymous 12-query PH coverage probe. Result: **PASSED TECHNICAL COVERAGE TEST**. This agent did **not** make that live call.
+
+Recorded facts: 12/12 `USEFUL_PH_OFFER`; 120 first-page products; 122 offer records; Anonymous; no credentials; no scraping; no pagination; no bulk lookup; no raw persistence. Mixed returned currencies despite PHP context. The five `get_product` validations in that run were concentrated in one query and must be rerun by the owner after the selector diversification fix.
+
+This is **not** production certification. This does **not** close Sprint 32. Shopify remains a restricted query-time rights survivor / technical candidate. Production catalogs remain empty. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
-PH LIVE COVERAGE VALIDATION STILL REQUIRED —
+PH LIVE TECHNICAL COVERAGE VALIDATED —
+PRODUCTION CERTIFICATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN
