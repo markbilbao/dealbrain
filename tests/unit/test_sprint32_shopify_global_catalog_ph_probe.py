@@ -526,16 +526,12 @@ def test_php_context_does_not_force_php_or_fabricate_conversion() -> None:
 def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
     sprint32 = SPRINT32.read_text(encoding="utf-8")
-    status_line = next(
-        line for line in probe_doc.splitlines() if line.startswith("**Status:**")
-    )
+    status_line = next(line for line in probe_doc.splitlines() if line.startswith("**Status:**"))
     footer = probe_doc.rsplit("---", 1)[-1]
     first_run = probe_doc.split("## Owner live 12-query PH coverage probe", 1)[1].split(
         "## Owner live diversified get_product validation", 1
     )[0]
-    diversified = probe_doc.split("## Owner live diversified get_product validation", 1)[
-        1
-    ]
+    diversified = probe_doc.split("## Owner live diversified get_product validation", 1)[1]
     assert "PASSED TECHNICAL COVERAGE TEST" in probe_doc
     assert "PH LIVE TECHNICAL COVERAGE VALIDATED" in status_line
     assert "120 products" in probe_doc
@@ -560,16 +556,12 @@ def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
 def test_owner_diversified_get_product_validation_is_recorded() -> None:
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
     sprint32 = SPRINT32.read_text(encoding="utf-8")
-    status_line = next(
-        line for line in probe_doc.splitlines() if line.startswith("**Status:**")
-    )
+    status_line = next(line for line in probe_doc.splitlines() if line.startswith("**Status:**"))
     footer = probe_doc.rsplit("---", 1)[-1]
     first_run = probe_doc.split("## Owner live 12-query PH coverage probe", 1)[1].split(
         "## Owner live diversified get_product validation", 1
     )[0]
-    diversified = probe_doc.split("## Owner live diversified get_product validation", 1)[
-        1
-    ]
+    diversified = probe_doc.split("## Owner live diversified get_product validation", 1)[1]
     current_blockers = sprint32.split("### Closure blockers (current)", 1)[1].split(
         "### Production defaults", 1
     )[0]
