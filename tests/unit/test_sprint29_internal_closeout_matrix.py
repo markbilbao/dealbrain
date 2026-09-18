@@ -131,4 +131,4 @@ def test_internal_closeout_does_not_claim_live_research() -> None:
     assert "Early Access" in checkpoint
     assert "terms-2026-09-11" in historical
     assert "privacy-2026-09-11" in historical
-    assert "no production, staging, AWS" in checkpoint.lower()
+    assert "no production, staging, aws" in checkpoint.lower()
