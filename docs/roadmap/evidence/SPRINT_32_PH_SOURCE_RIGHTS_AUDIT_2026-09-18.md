@@ -405,12 +405,29 @@ This agent did **not** call Shopify live. This agent did **not** mutate AWS or d
 
 ---
 
+## 20. Owner first PiqSavi profile Shopify discovery attempt addendum (2026-09-19; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots, including sections 17–19 or the owner live PH coverage evidence.
+
+After Deploy Staging #39 succeeded, the owner revalidated `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` (HTTP/2 200) and performed exactly one Shopify `search_catalog` request for wireless earbuds using that profile. Shopify returned HTTP 422. JSON-RPC `error.code = -32001`, `error.message = "UCP discovery failed"`, `error.data.code = "profile_malformed"`, `error.data.content = "Unable to fetch agent profile: Missing services"`. Request budget: search_catalog = 1; get_product = 0; lookup_catalog = 0; pagination = 0. No product result. No `get_product`. No `lookup_catalog`. No pagination.
+
+PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = no. PRODUCTION CERTIFIED = no.
+
+`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. A failed 422 is not Shopify approval or certification.
+
+This agent did **not** call Shopify live. This agent did **not** mutate AWS or deploy. Production catalogs remain empty. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —
 5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
 STAGING PIQSAVI UCP PROFILE DEPLOYED / OWNER HTTPS-VALIDATED —
 PRODUCTION PROFILE NOT VALIDATED —
+PUBLIC PROFILE REACHABLE = YES —
+SHOPIFY DISCOVERY ATTEMPTED = YES —
+SUCCESSFUL UCP NEGOTIATION = NO —
 SHOPIFY HAS NOT FETCHED PIQSAVI PROFILE —
 PRODUCTION CERTIFICATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN
