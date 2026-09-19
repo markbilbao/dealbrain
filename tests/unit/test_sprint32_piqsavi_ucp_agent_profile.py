@@ -50,6 +50,7 @@ from app.ucp.agent_profile import (
     CAPABILITY_CATALOG_SEARCH,
     CAPABILITY_SHOPIFY_GLOBAL_CATALOG,
     DECLARED_CAPABILITY_NAMES,
+    DECLARED_SERVICE_NAMES,
     FORBIDDEN_PROFILE_CAPABILITIES,
     PIQSAVI_UCP_AGENT_PROFILE,
     PIQSAVI_UCP_AGENT_PROFILE_CACHE_CONTROL,
@@ -59,11 +60,17 @@ from app.ucp.agent_profile import (
     PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
     PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
     PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,
+    PIQSAVI_UCP_SHOPPING_SERVICE,
     PIQSAVI_UCP_VERSION,
+    SERVICE_DEV_UCP_SHOPPING,
+    SERVICE_SCHEMA,
+    SERVICE_SPEC,
+    SERVICE_TRANSPORT,
     SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
     SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL,
     TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS,
     declared_capability_names,
+    declared_service_names,
     piqsavi_profile_deployed_for_url,
     piqsavi_profile_is_shopify_negotiated,
     profile_contains_secrets,
@@ -107,6 +114,11 @@ def test_profile_document_is_valid_deterministic_least_privilege_json() -> None:
     assert parsed["ucp"]["version"] == "2026-08-25"
     assert parsed["ucp"]["version"] == PIQSAVI_UCP_VERSION
     assert declared_capability_names(parsed) == DECLARED_CAPABILITY_NAMES
+    assert tuple(parsed["ucp"]["capabilities"]) == (
+        CAPABILITY_CATALOG_SEARCH,
+        CAPABILITY_CATALOG_LOOKUP,
+        CAPABILITY_SHOPIFY_GLOBAL_CATALOG,
+    )
     assert CAPABILITY_CATALOG_SEARCH in parsed["ucp"]["capabilities"]
     assert CAPABILITY_CATALOG_LOOKUP in parsed["ucp"]["capabilities"]
     assert CAPABILITY_SHOPIFY_GLOBAL_CATALOG in parsed["ucp"]["capabilities"]
@@ -115,17 +127,43 @@ def test_profile_document_is_valid_deterministic_least_privilege_json() -> None:
         CAPABILITY_CATALOG_SEARCH,
         CAPABILITY_CATALOG_LOOKUP,
     ]
+    assert "services" in parsed["ucp"]
+    assert declared_service_names(parsed) == DECLARED_SERVICE_NAMES
+    assert tuple(parsed["ucp"]["services"]) == (SERVICE_DEV_UCP_SHOPPING,)
+    shopping = parsed["ucp"]["services"][SERVICE_DEV_UCP_SHOPPING]
+    assert isinstance(shopping, list)
+    assert len(shopping) == 1
+    assert shopping[0] == PIQSAVI_UCP_SHOPPING_SERVICE
+    assert shopping[0]["version"] == "2026-08-25"
+    assert shopping[0]["spec"] == SERVICE_SPEC
+    assert shopping[0]["spec"] == "https://ucp.dev/2026-08-25/specification/overview"
+    assert shopping[0]["transport"] == SERVICE_TRANSPORT == "mcp"
+    assert shopping[0]["schema"] == SERVICE_SCHEMA
+    assert shopping[0]["schema"] == (
+        "https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json"
+    )
+    assert tuple(shopping[0]) == ("version", "spec", "transport", "schema")
+    assert "endpoint" not in shopping[0]
+    assert "payment_handlers" in parsed["ucp"]
+    assert parsed["ucp"]["payment_handlers"] == {}
     blob = json.dumps(parsed)
     for name in FORBIDDEN_PROFILE_CAPABILITIES:
         assert name not in parsed["ucp"]["capabilities"]
+        assert name not in parsed["ucp"]["services"]
         assert name not in blob or name == "dev.shopify.catalog"
     assert "dev.ucp.shopping.checkout" not in blob
     assert "dev.ucp.shopping.cart" not in blob
     assert "dev.ucp.shopping.order" not in blob
-    assert "payment_handlers" not in parsed["ucp"]
-    assert "services" not in parsed["ucp"]
+    assert "dev.ucp.shopping.fulfillment" not in blob
+    assert "dev.ucp.shopping.buyer_consent" not in blob
+    assert "dev.ucp.shopping.discount" not in blob
+    assert "dev.ucp.shopping.payment" not in blob
+    assert "dev.shopify.catalog\"" not in blob
     assert profile_contains_secrets(parsed) is False
     assert serialize_piqsavi_ucp_agent_profile() == body
+    assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
 
 
 def test_lookup_is_declared_only_because_global_catalog_extends_it() -> None:
@@ -150,6 +188,9 @@ async def test_profile_route_http_contract_is_public_json(client: AsyncClient) -
     assert "set-cookie" not in {key.casefold() for key in first.headers}
     body = json.loads(first.text)
     assert body["ucp"]["version"] == "2026-08-25"
+    assert tuple(body["ucp"]["services"]) == (SERVICE_DEV_UCP_SHOPPING,)
+    assert body["ucp"]["services"][SERVICE_DEV_UCP_SHOPPING][0]["transport"] == "mcp"
+    assert body["ucp"]["payment_handlers"] == {}
     assert first.content == second.content
     assert first.text == serialize_piqsavi_ucp_agent_profile()
 
@@ -845,3 +886,37 @@ def test_piqsavi_source_and_usage_labels_are_environment_neutral() -> None:
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
     assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+
+
+def test_owner_failed_piqsav_profile_discovery_attempt_is_recorded() -> None:
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    current_sprint32 = sprint32.split("### 2026-09-19 owner first PiqSavi", 1)[1]
+    current_probe = probe_doc.split(
+        "## 2026-09-19 owner first PiqSavi profile Shopify discovery attempt", 1
+    )[1]
+    for text in (current_sprint32, current_probe):
+        assert "PUBLIC PROFILE REACHABLE = yes" in text
+        assert "SHOPIFY DISCOVERY ATTEMPTED = yes" in text
+        assert "SUCCESSFUL UCP NEGOTIATION = no" in text
+        assert "PRODUCTION CERTIFIED = no" in text
+        assert "HTTP/2 200" in text
+        assert "search_catalog" in text
+        assert "wireless earbuds" in text
+        assert "HTTP 422" in text
+        assert "-32001" in text
+        assert "UCP discovery failed" in text
+        assert "profile_malformed" in text
+        assert "Missing services" in text
+        assert "get_product = 0" in text
+        assert "lookup_catalog = 0" in text
+        assert "pagination = 0" in text
+        assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False" in text
+        assert "Sprint 32 remains open." in text or "SPRINT 32 REMAINS OPEN" in text
+        assert "Sprint 38 remains unstarted" in text or "SPRINT 38 UNSTARTED" in text
+        _assert_no_stale_piqsavi_labels(text)
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
+    assert piqsavi_profile_is_shopify_negotiated() is False
+

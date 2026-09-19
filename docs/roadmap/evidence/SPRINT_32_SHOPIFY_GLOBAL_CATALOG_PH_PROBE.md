@@ -358,6 +358,122 @@ This addendum does **not** rewrite the owner live PH coverage evidence or claim 
 | Sprint 32 | Remains **OPEN** |
 | Sprint 38 | Remains **UNSTARTED** |
 
+## 2026-09-19 owner first PiqSavi profile Shopify discovery attempt
+
+This addendum does **not** rewrite earlier snapshots, including the owner live PH coverage evidence or the 2026-09-19 staging HTTPS addendum. It records the owner-observed first live Shopify discovery attempt against the deployed staging PiqSavi profile. This workspace did **not** call Shopify. This is **not** successful UCP negotiation and is **not** production certification.
+
+After Deploy Staging #39 succeeded, the owner revalidated:
+
+`https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`
+
+Result: HTTP/2 200. The profile advertised `dev.shopify.catalog.global`, `dev.ucp.shopping.catalog.lookup`, and `dev.ucp.shopping.catalog.search`.
+
+The owner then performed exactly one Shopify Global Catalog request:
+
+| Field | Value |
+|-------|-------|
+| tool | `search_catalog` |
+| query | wireless earbuds |
+| profile | `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| search_catalog | 1 |
+| get_product = 0 | true |
+| lookup_catalog = 0 | true |
+| pagination = 0 | true |
+| Shopify HTTP | HTTP 422 |
+| JSON-RPC `error.code` | `-32001` |
+| JSON-RPC `error.message` | `UCP discovery failed` |
+| `error.data.code` | `profile_malformed` |
+| `error.data.content` | `Unable to fetch agent profile: Missing services` |
+| Product result | none |
+| `get_product` call | none |
+| `lookup_catalog` call | none |
+| pagination | none |
+
+Distinction:
+
+- PUBLIC PROFILE REACHABLE = yes
+- SHOPIFY DISCOVERY ATTEMPTED = yes
+- SUCCESSFUL UCP NEGOTIATION = no
+- PRODUCTION CERTIFIED = no
+
+Root cause: the live profile contained `ucp.version` and `ucp.capabilities` but omitted `ucp.services` and `ucp.payment_handlers`. Official Shopify/UCP 2026-08-25 agent profiles include:
+
+```json
+"services": {
+  "dev.ucp.shopping": [
+    {
+      "version": "2026-08-25",
+      "spec": "https://ucp.dev/2026-08-25/specification/overview",
+      "transport": "mcp",
+      "schema": "https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json"
+    }
+  ]
+}
+```
+
+and `"payment_handlers": {}`.
+
+This documentation slice adds those keys to the PiqSavi-owned profile. Catalog capabilities remain exactly `dev.ucp.shopping.catalog.search`, `dev.ucp.shopping.catalog.lookup`, and `dev.shopify.catalog.global`. Cart, checkout, order, fulfillment, buyer consent, discount, payment capability, and Shopify storefront catalog remain absent. No `endpoint` field is added to the agent-profile service declaration.
+
+| Field | Value |
+|-------|-------|
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True** |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | **False** |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False` | Successful fetch/negotiation milestone remains unset. A failed 422 is not Shopify approval. |
+| Live Shopify call in this workspace | **None**. This agent did **not** call Shopify |
+| AWS mutation / deploy in this slice | **None** |
+| Production certification | **False** |
+| Sprint 32 | Remains **OPEN**. Sprint 32 remains open. |
+| Sprint 38 | Remains **UNSTARTED**. Sprint 38 remains unstarted. |
+
+Corrected profile document after this slice (not yet redeployed by this workspace):
+
+```json
+{
+  "ucp": {
+    "version": "2026-08-25",
+    "capabilities": {
+      "dev.ucp.shopping.catalog.search": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/catalog/search",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/catalog_search.json"
+        }
+      ],
+      "dev.ucp.shopping.catalog.lookup": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/catalog/lookup",
+          "schema": "https://ucp.dev/2026-08-25/schemas/shopping/catalog_lookup.json"
+        }
+      ],
+      "dev.shopify.catalog.global": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://shopify.dev/docs/agents/catalog/global-catalog",
+          "schema": "https://shopify.dev/ucp/schemas/2026-08-25/shopify_catalog_global.json",
+          "extends": [
+            "dev.ucp.shopping.catalog.search",
+            "dev.ucp.shopping.catalog.lookup"
+          ]
+        }
+      ]
+    },
+    "services": {
+      "dev.ucp.shopping": [
+        {
+          "version": "2026-08-25",
+          "spec": "https://ucp.dev/2026-08-25/specification/overview",
+          "transport": "mcp",
+          "schema": "https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json"
+        }
+      ]
+    },
+    "payment_handlers": {}
+  }
+}
+```
+
 ## Owner live command
 
 Credentials: **none**. Do not create a Partner account, Dev Dashboard token, or PiqSavi profile for this Anonymous probe.
@@ -398,6 +514,9 @@ SHOPIFY GLOBAL CATALOG PH LIVE TECHNICAL COVERAGE VALIDATED —
 5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
 STAGING PIQSAVI UCP PROFILE DEPLOYED / OWNER HTTPS-VALIDATED —
 PRODUCTION PROFILE NOT VALIDATED —
+PUBLIC PROFILE REACHABLE = YES —
+SHOPIFY DISCOVERY ATTEMPTED = YES —
+SUCCESSFUL UCP NEGOTIATION = NO —
 SHOPIFY HAS NOT FETCHED PIQSAVI PROFILE —
 NOT PRODUCTION CERTIFICATION —
 SPRINT 32 REMAINS OPEN —

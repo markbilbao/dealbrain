@@ -2,7 +2,9 @@
 
 Static server-owned JSON for Shopify/UCP capability negotiation. This is not
 Shopify's hosted test fixture, not a business ``/.well-known/ucp`` document,
-and not a production certification of Shopify.
+and not a production certification of Shopify. Official 2026-08-25 agent
+profiles require ``ucp.services`` and ``ucp.payment_handlers`` in addition to
+``ucp.version`` and ``ucp.capabilities``.
 
 Least privilege: product discovery / comparison only. Declaring
 ``dev.ucp.shopping.catalog.lookup`` is required because official
@@ -64,6 +66,18 @@ FORBIDDEN_PROFILE_CAPABILITIES: Final[tuple[str, ...]] = (
     "dev.shopify.catalog",
 )
 
+SERVICE_DEV_UCP_SHOPPING: Final = "dev.ucp.shopping"
+SERVICE_SPEC: Final = "https://ucp.dev/2026-08-25/specification/overview"
+SERVICE_SCHEMA: Final = "https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json"
+SERVICE_TRANSPORT: Final = "mcp"
+DECLARED_SERVICE_NAMES: Final[tuple[str, ...]] = (SERVICE_DEV_UCP_SHOPPING,)
+PIQSAVI_UCP_SHOPPING_SERVICE: Final[dict[str, str]] = {
+    "version": PIQSAVI_UCP_VERSION,
+    "spec": SERVICE_SPEC,
+    "transport": SERVICE_TRANSPORT,
+    "schema": SERVICE_SCHEMA,
+}
+
 _SECRET_MARKERS: Final[tuple[str, ...]] = (
     "password",
     "passwd",
@@ -119,6 +133,17 @@ PIQSAVI_UCP_AGENT_PROFILE: Final[dict[str, Any]] = {
                 }
             ],
         },
+        "services": {
+            SERVICE_DEV_UCP_SHOPPING: [
+                {
+                    "version": PIQSAVI_UCP_VERSION,
+                    "spec": SERVICE_SPEC,
+                    "transport": SERVICE_TRANSPORT,
+                    "schema": SERVICE_SCHEMA,
+                }
+            ],
+        },
+        "payment_handlers": {},
     }
 }
 
@@ -136,6 +161,15 @@ def declared_capability_names(profile: dict[str, Any] | None = None) -> tuple[st
     if not isinstance(capabilities, dict):
         return ()
     return tuple(capabilities)
+
+
+def declared_service_names(profile: dict[str, Any] | None = None) -> tuple[str, ...]:
+    document = profile if profile is not None else PIQSAVI_UCP_AGENT_PROFILE
+    ucp = document.get("ucp") if isinstance(document, dict) else None
+    services = ucp.get("services") if isinstance(ucp, dict) else None
+    if not isinstance(services, dict):
+        return ()
+    return tuple(services)
 
 
 def profile_contains_secrets(document: dict[str, Any] | str | None = None) -> bool:
