@@ -25,11 +25,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
+    AGENT_PROFILE_SOURCE_PIQSAVI,
+    AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE,
     DEFAULT_FIXTURE,
     DEFAULT_OUTPUT_DIR,
     FORBIDDEN_LOOKUP_TOOL,
     GET_PRODUCT_TOOL,
     GLOBAL_CATALOG_ENDPOINT,
+    PIQSAVI_OWNED_PROFILE_SELECTED_NOTE,
+    PIQSAVI_PROFILE_DEPLOYED_URL_NOTE,
+    PIQSAVI_PROFILE_NOT_CERTIFICATION_NOTE,
+    PIQSAVI_PROFILE_SHOPIFY_FETCH_NOTE,
     SEARCH_TOOL,
     TECHNICAL_TEST_ONLY,
     LivePiqsaviProfileNotDeployedError,
@@ -49,8 +55,10 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
     validate_catalog_tool_response,
 )
 from app.ucp.agent_profile import (  # noqa: E402
-    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+    PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED,
+    PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
     SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
+    piqsavi_profile_deployed_for_url,
 )
 
 
@@ -103,14 +111,16 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(serialized + "\n", encoding="utf-8")
 
 
-def _lifecycle_fields() -> dict[str, Any]:
+def _lifecycle_fields(url: str | None = None) -> dict[str, Any]:
     return {
-        "piqsavi_profile_deployed": PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+        "piqsavi_profile_deployed": piqsavi_profile_deployed_for_url(url),
+        "piqsavi_profile_staging_deployed": PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
+        "piqsavi_profile_production_deployed": (PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED),
         "shopify_has_fetched_piqsavi_profile": SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
     }
 
 
-def _failure_envelope(exc: BaseException) -> dict[str, Any]:
+def _failure_envelope(exc: BaseException, url: str | None = None) -> dict[str, Any]:
     envelope = {
         "live": True,
         "production_certified": False,
@@ -123,12 +133,12 @@ def _failure_envelope(exc: BaseException) -> dict[str, Any]:
         "technical_probe_failure": True,
         "error": str(exc),
     }
-    envelope.update(_lifecycle_fields())
+    envelope.update(_lifecycle_fields(url))
     return envelope
 
 
 def _undeployed_live_piqsavi_envelope(exc: BaseException, profile: Any) -> dict[str, Any]:
-    envelope = _failure_envelope(exc)
+    envelope = _failure_envelope(exc, profile.url)
     envelope["agent_profile"] = profile.url
     envelope["agent_profile_source"] = profile.source
     envelope["agent_profile_usage"] = profile.usage
@@ -154,7 +164,7 @@ def main(argv: list[str] | None = None) -> int:
             "Default profile is the official Shopify-hosted UCP test fixture. "
             "No API key. TECHNICAL TEST ONLY. "
             "--agent-profile-source=piqsavi is refused while "
-            "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false."
+            "the exact selected trusted profile URL is undeployed."
         ),
     )
     parser.add_argument(
@@ -164,9 +174,10 @@ def main(argv: list[str] | None = None) -> int:
         help=(
             "technical-test-fixture uses Shopify's hosted UCP fixture (default). "
             "piqsavi uses the server-owned PIQSAVI_UCP_AGENT_PROFILE_URL. "
-            "Live piqsavi is fail-closed until PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED "
-            "is true after owner HTTPS validation. Request/browser input cannot "
-            "set this source or either lifecycle state."
+            "Live piqsavi is fail-closed unless that exact trusted URL is "
+            "owner-validated as deployed. Staging may unlock; production "
+            "remains blocked. Request/browser/env input cannot set this "
+            "source or lifecycle state."
         ),
     )
     parser.add_argument(
@@ -184,9 +195,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     output_dir = args.output_dir
     profile_source = (
-        "piqsavi_production_intended"
+        AGENT_PROFILE_SOURCE_PIQSAVI
         if args.agent_profile_source == "piqsavi"
-        else "technical_test_fixture"
+        else AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE
     )
     profile = select_agent_profile(profile_source)
     if args.live:
@@ -202,12 +213,13 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
             _write_json(output_dir / "summary.json", envelope)
             return 2
-        if profile.source == "piqsavi_production_intended":
+        if profile.source == AGENT_PROFILE_SOURCE_PIQSAVI:
             print(
-                "PiqSavi production-intended profile selected. "
-                "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is true. "
-                "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains a separate milestone. "
-                "Not production certification. Sprint 32 remains open."
+                f"{PIQSAVI_OWNED_PROFILE_SELECTED_NOTE} "
+                f"{PIQSAVI_PROFILE_DEPLOYED_URL_NOTE} "
+                f"{PIQSAVI_PROFILE_SHOPIFY_FETCH_NOTE} "
+                f"{PIQSAVI_PROFILE_NOT_CERTIFICATION_NOTE} "
+                "Sprint 32 remains open."
             )
         else:
             print(
@@ -228,7 +240,7 @@ def main(argv: list[str] | None = None) -> int:
                 agent_profile=profile,
             )
         except (ProbeLimitError, ProbeContractError, ProbeResponseError, RuntimeError) as exc:
-            envelope = _failure_envelope(exc)
+            envelope = _failure_envelope(exc, profile.url)
             envelope["agent_profile"] = profile.url
             envelope["agent_profile_source"] = profile.source
             envelope["agent_profile_usage"] = profile.usage
@@ -256,6 +268,8 @@ def main(argv: list[str] | None = None) -> int:
         "agent_profile_usage": report.agent_profile_usage,
         "agent_profile_not_piqsavi_identity": report.agent_profile_not_piqsavi_identity,
         "piqsavi_profile_deployed": report.piqsavi_profile_deployed,
+        "piqsavi_profile_staging_deployed": report.piqsavi_profile_staging_deployed,
+        "piqsavi_profile_production_deployed": report.piqsavi_profile_production_deployed,
         "shopify_has_fetched_piqsavi_profile": report.shopify_has_fetched_piqsavi_profile,
         "auth_tier": report.auth_tier,
         "credentials_required": report.credentials_required,

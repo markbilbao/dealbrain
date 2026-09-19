@@ -387,10 +387,30 @@ This agent did **not** deploy. This agent did **not** call Shopify live. Both st
 
 ---
 
+## 19. Staging PiqSavi UCP profile owner-validated addendum (2026-09-19; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots, including sections 17 and 18 or the owner live PH coverage evidence.
+
+Owner evidence after Deploy Staging run `35430542107` on SHA `e5654a63fe650fd21c219a24270455f8902519a0` recorded a public HTTP/2 200 for the exact staging URL `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. Expected JSON was returned.
+
+`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`. That is staging HTTPS deployment and owner validation only. It does **not** mean Shopify validation.
+
+`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. The production URL `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` is not owner-validated.
+
+`SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. Public HTTPS deployment is not Shopify fetch/negotiation.
+
+There is no global `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` flag. Live `--agent-profile-source piqsavi` checks the exact selected trusted URL. Staging may unlock. Production remains fail-closed. Arbitrary URLs fail closed. Shopify technical fixture behavior is unchanged. No user/request/browser/env input can change lifecycle constants. There is no `--agent-profile-url`.
+
+This agent did **not** call Shopify live. This agent did **not** mutate AWS or deploy. Production catalogs remain empty. Production certification remains false. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —
 5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
-PIQSAVI UCP AGENT PROFILE IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED —
+STAGING PIQSAVI UCP PROFILE DEPLOYED / OWNER HTTPS-VALIDATED —
+PRODUCTION PROFILE NOT VALIDATED —
+SHOPIFY HAS NOT FETCHED PIQSAVI PROFILE —
 PRODUCTION CERTIFICATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN
