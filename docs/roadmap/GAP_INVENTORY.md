@@ -891,3 +891,30 @@ This addendum does **not** rewrite earlier snapshots. It records owner-validated
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-19 first PiqSavi profile Shopify discovery attempt failed addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-observed failed first Shopify discovery attempt against the reachable staging PiqSavi profile. This workspace did **not** call Shopify, deploy, or mutate AWS. It does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+PUBLIC PROFILE REACHABLE = yes
+
+SHOPIFY DISCOVERY ATTEMPTED = yes
+
+SUCCESSFUL UCP NEGOTIATION = no
+
+PRODUCTION CERTIFIED = no
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `127a708c4f94e87403c2a5bf8a5aa4eff78dc2a2` |
+| Staging profile | Public HTTP/2 200 at `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` after Deploy Staging #39 |
+| Owner Shopify request | Exactly one `search_catalog` (`wireless earbuds`); `get_product = 0`; `lookup_catalog = 0`; pagination = 0 |
+| Shopify response | HTTP 422; JSON-RPC `-32001`; `UCP discovery failed`; `profile_malformed`; `Missing services` |
+| Product / deeper tools | No product result. No `get_product`. No `lookup_catalog`. No pagination. |
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True**. Reachability is not successful negotiation. |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | **False**. |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **False**. Failed discovery must not flip this flag. |
+| Live Shopify call / production certification in this workspace | None / false |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |

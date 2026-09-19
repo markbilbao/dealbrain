@@ -4,8 +4,9 @@ Static server-owned JSON for Shopify/UCP capability negotiation. This is not
 Shopify's hosted test fixture, not a business ``/.well-known/ucp`` document,
 and not a production certification of Shopify.
 
-Least privilege: product discovery / comparison only. Declaring
-``dev.ucp.shopping.catalog.lookup`` is required because official
+Least privilege: product discovery / comparison only. Official Shopify/UCP
+2026-08-25 agent profiles declare ``ucp.services`` and ``ucp.payment_handlers``.
+Declaring ``dev.ucp.shopping.catalog.lookup`` is required because official
 ``dev.shopify.catalog.global`` extends both catalog.search and catalog.lookup,
 and UCP maps ``get_product`` to Lookup. It is not permission to run bulk
 ``lookup_catalog`` from the Sprint 32 probe.
@@ -46,12 +47,24 @@ TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS: Final[frozenset[str]] = frozenset(
 CAPABILITY_CATALOG_SEARCH: Final = "dev.ucp.shopping.catalog.search"
 CAPABILITY_CATALOG_LOOKUP: Final = "dev.ucp.shopping.catalog.lookup"
 CAPABILITY_SHOPIFY_GLOBAL_CATALOG: Final = "dev.shopify.catalog.global"
+SERVICE_DEV_UCP_SHOPPING: Final = "dev.ucp.shopping"
+PIQSAVI_UCP_SERVICE_SPEC: Final = "https://ucp.dev/2026-08-25/specification/overview"
+PIQSAVI_UCP_SERVICE_TRANSPORT: Final = "mcp"
+PIQSAVI_UCP_SERVICE_SCHEMA: Final = "https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json"
 
 DECLARED_CAPABILITY_NAMES: Final[tuple[str, ...]] = (
     CAPABILITY_CATALOG_SEARCH,
     CAPABILITY_CATALOG_LOOKUP,
     CAPABILITY_SHOPIFY_GLOBAL_CATALOG,
 )
+DECLARED_SERVICE_NAMES: Final[tuple[str, ...]] = (SERVICE_DEV_UCP_SHOPPING,)
+DECLARED_SERVICE_FIELDS: Final[tuple[str, ...]] = (
+    "version",
+    "spec",
+    "transport",
+    "schema",
+)
+PIQSAVI_UCP_PAYMENT_HANDLERS: Final[dict[str, Any]] = {}
 
 FORBIDDEN_PROFILE_CAPABILITIES: Final[tuple[str, ...]] = (
     "dev.ucp.shopping.cart",
@@ -90,6 +103,16 @@ _SECRET_MARKERS: Final[tuple[str, ...]] = (
 PIQSAVI_UCP_AGENT_PROFILE: Final[dict[str, Any]] = {
     "ucp": {
         "version": PIQSAVI_UCP_VERSION,
+        "services": {
+            SERVICE_DEV_UCP_SHOPPING: [
+                {
+                    "version": PIQSAVI_UCP_VERSION,
+                    "spec": PIQSAVI_UCP_SERVICE_SPEC,
+                    "transport": PIQSAVI_UCP_SERVICE_TRANSPORT,
+                    "schema": PIQSAVI_UCP_SERVICE_SCHEMA,
+                }
+            ],
+        },
         "capabilities": {
             CAPABILITY_CATALOG_SEARCH: [
                 {
@@ -119,6 +142,7 @@ PIQSAVI_UCP_AGENT_PROFILE: Final[dict[str, Any]] = {
                 }
             ],
         },
+        "payment_handlers": PIQSAVI_UCP_PAYMENT_HANDLERS,
     }
 }
 
@@ -136,6 +160,15 @@ def declared_capability_names(profile: dict[str, Any] | None = None) -> tuple[st
     if not isinstance(capabilities, dict):
         return ()
     return tuple(capabilities)
+
+
+def declared_service_names(profile: dict[str, Any] | None = None) -> tuple[str, ...]:
+    document = profile if profile is not None else PIQSAVI_UCP_AGENT_PROFILE
+    ucp = document.get("ucp") if isinstance(document, dict) else None
+    services = ucp.get("services") if isinstance(ucp, dict) else None
+    if not isinstance(services, dict):
+        return ()
+    return tuple(services)
 
 
 def profile_contains_secrets(document: dict[str, Any] | str | None = None) -> bool:
