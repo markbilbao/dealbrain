@@ -881,7 +881,7 @@ def test_owner_first_piqsavi_profile_shopify_discovery_failed() -> None:
         assert "SUCCESSFUL UCP NEGOTIATION = no" in text
         assert "PRODUCTION CERTIFIED = no" in text
         assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE" in text
-        assert "Sprint 32 remains open" in text.casefold() or "SPRINT 32 REMAINS OPEN" in text
+        assert "sprint 32 remains open" in text.casefold() or "SPRINT 32 REMAINS OPEN" in text
         assert "Sprint 38 remains unstarted" in text or "SPRINT 38 UNSTARTED" in text
     assert "search_catalog" in probe_doc
     assert "wireless earbuds" in probe_doc
