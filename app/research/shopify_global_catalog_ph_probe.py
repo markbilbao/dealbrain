@@ -471,13 +471,9 @@ def select_agent_profile(source: str | None = None) -> AgentProfileSelection:
             url=TECHNICAL_TEST_AGENT_PROFILE,
             usage=AGENT_PROFILE_USAGE,
             not_piqsavi_identity=True,
-            piqsavi_profile_deployed=piqsavi_profile_deployed_for_url(
-                TECHNICAL_TEST_AGENT_PROFILE
-            ),
+            piqsavi_profile_deployed=piqsavi_profile_deployed_for_url(TECHNICAL_TEST_AGENT_PROFILE),
             piqsavi_profile_staging_deployed=PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
-            piqsavi_profile_production_deployed=(
-                PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
-            ),
+            piqsavi_profile_production_deployed=PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED,
             shopify_has_fetched_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
         )
     if selected == AGENT_PROFILE_SOURCE_PIQSAVI:
@@ -493,9 +489,7 @@ def select_agent_profile(source: str | None = None) -> AgentProfileSelection:
             not_piqsavi_identity=False,
             piqsavi_profile_deployed=piqsavi_profile_deployed_for_url(url),
             piqsavi_profile_staging_deployed=PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
-            piqsavi_profile_production_deployed=(
-                PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
-            ),
+            piqsavi_profile_production_deployed=PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED,
             shopify_has_fetched_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
         )
     raise ProbeContractError(f"unsupported agent profile source {selected}")

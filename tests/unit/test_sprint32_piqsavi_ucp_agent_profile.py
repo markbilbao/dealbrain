@@ -664,31 +664,19 @@ def test_piqsavi_profile_deployed_for_url_is_exact_and_fail_closed() -> None:
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
     assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
-    assert (
-        piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
-    )
-    assert (
-        piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL)
-        is False
-    )
+    assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
+    assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
     assert piqsavi_profile_deployed_for_url("https://evil.example/ucp.json") is False
     assert piqsavi_profile_deployed_for_url("") is False
     assert piqsavi_profile_deployed_for_url(None) is False
+    assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL + "/") is False
     assert (
-        piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL + "/")
-        is False
-    )
-    assert (
-        piqsavi_profile_deployed_for_url(
-            PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL + "?deployed=true"
-        )
+        piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL + "?deployed=true")
         is False
     )
     assert piqsavi_profile_deployed_for_url(TECHNICAL_TEST_AGENT_PROFILE) is False
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL in TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS
-    assert (
-        PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL in TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS
-    )
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL in TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS
     assert TECHNICAL_TEST_AGENT_PROFILE not in TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS
 
 
