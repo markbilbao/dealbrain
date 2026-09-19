@@ -2,7 +2,7 @@
 
 **Status:** Authoritative register for Global Public Beta
 **Master roadmap:** [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close; **2026-09-10** EXT-19 written conditional counsel-review record sanitized (status remains `applied`); **2026-09-11** Early Access legal publication-activation attempt remains blocked as history; later **2026-09-11** owner-authorized content-layer publication advances EXT-20 / EXT-21 to `applied` (EXT-19 remains `applied`); **2026-09-11** Early Access production-cutover re-audit re-verified EXT-11…14 as not applied / not live (statuses unchanged) and recorded staging live `/privacy` `/terms` on Deploy Staging #35.
+**Reconciled:** 2026-08-24 against current register evidence; **2026-09-07** Sprint 26 PH validation-beta launch-scope reconciliation; **2026-09-08** EXT-01 `applied` + Sprint 26 close; **2026-09-10** EXT-19 written conditional counsel-review record sanitized (status remains `applied`); **2026-09-11** Early Access legal publication-activation attempt remains blocked as history; later **2026-09-11** owner-authorized content-layer publication advances EXT-20 / EXT-21 to `applied` (EXT-19 remains `applied`); **2026-09-11** Early Access production-cutover re-audit re-verified EXT-11…14 as not applied / not live (statuses unchanged) and recorded staging live `/privacy` `/terms` on Deploy Staging #35; **2026-09-11** Early Access production Phase 2 (provisioning & private origin) remained blocked — GitHub Environment `production` absent, no AWS apply, no DNS change.
 **Historical inventory HEAD:** `fd25cc927236807ae1fe412fa0c4eac2429fbc50`
 **Current approved engineering baseline:** `d62a6fb176a6a0e6947b453c6517d5b0e5570ce0` (historical suite evidence; later `main` including PR #114 does **not** invalidate packaged Sprint 26 staging proof)
 **Owner target:** Controlled Global Public Beta Launch no later than September 30, 2026
@@ -227,6 +227,19 @@ Do **not** mark these rows `applied` / `approved` / `provisioned` from this re-a
 ### EXT-13 2026-09-11 Early Access production foundation Phase 1
 
 In-repo production Terraform, deploy/rollback workflows, host assembler, logging, and backup runbook are now complete. **Not applied. No live RDS. No production deploy. No DNS change.** Evidence: [`evidence/EARLY_ACCESS_PRODUCTION_FOUNDATION_PHASE1_2026-09-11.md`](evidence/EARLY_ACCESS_PRODUCTION_FOUNDATION_PHASE1_2026-09-11.md). Current EXT-13 status: `In-repo TF complete; not applied`. EXT-11 / EXT-12 / EXT-14 remain `not_started`.
+
+### EXT-11 / EXT-12 / EXT-13 / EXT-14 2026-09-11 Early Access production Phase 2
+
+Phase 2 attempted live provisioning and private origin validation after Phase 1 merge SHA `37418968e23320129020015d7e70f2a883672a0b`. **No Cloudflare DNS change. No production apply. No secret values written. No production deploy.** Evidence: [`evidence/EARLY_ACCESS_PRODUCTION_PHASE2_PROVISIONING_2026-09-11.md`](evidence/EARLY_ACCESS_PRODUCTION_PHASE2_PROVISIONING_2026-09-11.md).
+
+| ID | Status after Phase 2 | Live evidence 2026-09-11 |
+|----|----------------------|--------------------------|
+| EXT-11 | remains `not_started` | Apex A still Cloudflare anycast `104.21.66.117` / `172.67.159.152`. `/privacy` `/terms` `/health` still 404. Staging CNAME unchanged. No apex/www traffic records were edited |
+| EXT-12 | remains `not_started` | No production ACM request. ALB HTTPS listener still requires a non-empty `alb_certificate_arn` after apply. Apex TLS remains Cloudflare, not production ALB |
+| EXT-13 | remains `In-repo TF complete; not applied` | GitHub Environment `production` 404. This agent has no AWS CLI/credentials. Live `terraform plan`/`apply` not run. No `dealbrain-production-*` inventory |
+| EXT-14 | remains `not_started` | Production secret containers still unapplied. Required Early Access values (`app_secret_key`, `cors_origins`, `ghcr_pull`, `resend_api_key`) were not populated. Merchant/affiliate/AI/analytics credentials were not added |
+
+Do **not** mark these rows `applied` / `approved` / `provisioned` from Phase 2. Public DNS cutover still requires a separate owner GO.
 
 ### EXT-20 / EXT-21 2026-09-11 staging live-URL addendum
 
