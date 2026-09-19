@@ -32,10 +32,10 @@ GLOBAL_CATALOG_ENDPOINT = "https://catalog.shopify.com/api/ucp/mcp"
 # Official Shopify-hosted UCP fixture. TECHNICAL TEST ONLY. Not a PiqSavi identity.
 TECHNICAL_TEST_AGENT_PROFILE = SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL
 AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE = "technical_test_fixture"
-AGENT_PROFILE_SOURCE_PIQSAVI = "piqsavi_production_intended"
-AgentProfileSource = Literal["technical_test_fixture", "piqsavi_production_intended"]
+AGENT_PROFILE_SOURCE_PIQSAVI = "piqsavi"
+AgentProfileSource = Literal["technical_test_fixture", "piqsavi"]
 AGENT_PROFILE_USAGE = "TECHNICAL_TEST_ONLY"
-AGENT_PROFILE_USAGE_PIQSAVI = "PIQSAVI_PRODUCTION_INTENDED_NOT_YET_DEPLOYED"
+AGENT_PROFILE_USAGE_PIQSAVI = "PIQSAVI_OWNED_PROFILE"
 AGENT_PROFILE_NOT_PIQSAVI_IDENTITY = True
 DEFAULT_AGENT_PROFILE_SOURCE: AgentProfileSource = AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE
 LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE = (
@@ -47,15 +47,15 @@ PIQSAVI_PROFILE_LIFECYCLE_NOTE = (
     "PiqSavi profile lifecycle is environment-specific. "
     "PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is true. "
     "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is false. "
-    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
+    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains false."
 )
-PIQSAVI_PROFILE_SELECTED_NOTE = (
-    "PiqSavi production-intended profile selected. "
-    "Live use requires the exact selected trusted URL to be deployed. "
-    "PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is true. "
-    "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is false. "
-    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
+PIQSAVI_OWNED_PROFILE_SELECTED_NOTE = "PiqSavi-owned profile selected."
+PIQSAVI_PROFILE_DEPLOYED_URL_NOTE = "Exact selected trusted URL is owner-validated as deployed."
+PIQSAVI_PROFILE_UNDEPLOYED_URL_NOTE = (
+    "Exact selected trusted URL is not owner-validated as deployed."
 )
+PIQSAVI_PROFILE_SHOPIFY_FETCH_NOTE = "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains false."
+PIQSAVI_PROFILE_NOT_CERTIFICATION_NOTE = "Not production certification."
 if PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL == TECHNICAL_TEST_AGENT_PROFILE:
     raise RuntimeError("PiqSavi production profile URL must not be Shopify's test fixture")
 ANONYMOUS_AUTH_TIER = "Anonymous"
@@ -1160,9 +1160,17 @@ def run_ph_coverage_probe(
 
 def _probe_report_notes(profile: AgentProfileSelection) -> tuple[str, ...]:
     if profile.source == AGENT_PROFILE_SOURCE_PIQSAVI:
+        url_note = (
+            PIQSAVI_PROFILE_DEPLOYED_URL_NOTE
+            if piqsavi_profile_deployed_for_url(profile.url)
+            else PIQSAVI_PROFILE_UNDEPLOYED_URL_NOTE
+        )
         return (
             "Technical PH coverage probe only. Useful PH offers do not certify production.",
-            PIQSAVI_PROFILE_SELECTED_NOTE,
+            PIQSAVI_OWNED_PROFILE_SELECTED_NOTE,
+            url_note,
+            PIQSAVI_PROFILE_SHOPIFY_FETCH_NOTE,
+            PIQSAVI_PROFILE_NOT_CERTIFICATION_NOTE,
             "Sprint 32 remains open.",
         )
     return (

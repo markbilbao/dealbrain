@@ -80,10 +80,24 @@ PROBE_DOC = ROOT / "docs/roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PR
 SPRINT38 = ROOT / "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md"
 ROUTE_SOURCE = ROOT / "app/api/ucp.py"
 PROFILE_SOURCE = ROOT / "app/ucp/agent_profile.py"
+PROBE_MODULE = ROOT / "app/research/shopify_global_catalog_ph_probe.py"
+PROBE_SCRIPT = ROOT / "scripts/shopify_global_catalog_ph_probe.py"
+_STALE_PIQSAVI_LABELS = (
+    "NOT_YET_DEPLOYED",
+    "production-intended profile selected",
+    "piqsavi_production_intended",
+    "PIQSAVI_PRODUCTION_INTENDED",
+)
 
 
 def _clear_settings_cache() -> None:
     get_settings.cache_clear()
+
+
+def _assert_no_stale_piqsavi_labels(payload: object) -> None:
+    blob = payload if isinstance(payload, str) else json.dumps(payload)
+    for stale in _STALE_PIQSAVI_LABELS:
+        assert stale not in blob
 
 
 def test_profile_document_is_valid_deterministic_least_privilege_json() -> None:
@@ -232,6 +246,9 @@ def test_technical_fixture_and_piqsavi_profiles_are_explicitly_distinct() -> Non
     assert fixture.usage == TECHNICAL_TEST_ONLY == AGENT_PROFILE_USAGE
     assert fixture.not_piqsavi_identity is True
     assert piqsavi.url == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
+    assert AGENT_PROFILE_SOURCE_PIQSAVI == "piqsavi"
+    assert AGENT_PROFILE_USAGE_PIQSAVI == "PIQSAVI_OWNED_PROFILE"
+    assert piqsavi.source == "piqsavi"
     assert piqsavi.usage == AGENT_PROFILE_USAGE_PIQSAVI
     assert piqsavi.not_piqsavi_identity is False
     assert piqsavi.url != fixture.url
@@ -713,6 +730,15 @@ def test_live_staging_piqsavi_profile_passes_deployment_gate(
         assert report.closes_sprint_32 is False
         assert report.starts_sprint_38 is False
         assert report.lookup_catalog_calls == 0
+        assert report.agent_profile_source == "piqsavi"
+        assert report.agent_profile_usage == "PIQSAVI_OWNED_PROFILE"
+        assert "PiqSavi-owned profile selected." in report.notes
+        assert "Exact selected trusted URL is owner-validated as deployed." in report.notes
+        assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains false." in report.notes
+        assert "Not production certification." in report.notes
+        assert "Sprint 32 remains open." in report.notes
+        _assert_no_stale_piqsavi_labels(report.to_dict())
+        _assert_no_stale_piqsavi_labels(list(report.notes))
     finally:
         monkeypatch.delenv("PIQSAVI_UCP_AGENT_PROFILE_URL", raising=False)
         _clear_settings_cache()
@@ -745,3 +771,77 @@ def test_sprint32_remains_open_and_sprint38_unstarted() -> None:
     assert production_research_provider_certification_catalog().list_records() == ()
     assert production_research_provider_certification_evidence_catalog().list_records() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
+
+
+def test_staging_piqsavi_report_has_no_stale_production_labels(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    _clear_settings_cache()
+    monkeypatch.setenv(
+        "PIQSAVI_UCP_AGENT_PROFILE_URL",
+        PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,
+    )
+    _clear_settings_cache()
+    try:
+        profile = select_agent_profile(AGENT_PROFILE_SOURCE_PIQSAVI)
+        payload = load_probe_fixture(DEFAULT_FIXTURE)
+        report = run_ph_coverage_probe(
+            transport=fixture_transport_from_payload(payload),
+            live=False,
+            agent_profile=profile,
+        )
+        assert report.agent_profile == PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL
+        assert report.agent_profile_source == "piqsavi"
+        assert report.agent_profile_usage == "PIQSAVI_OWNED_PROFILE"
+        assert report.piqsavi_profile_deployed is True
+        assert report.piqsavi_profile_staging_deployed is True
+        assert report.piqsavi_profile_production_deployed is False
+        assert report.shopify_has_fetched_piqsavi_profile is False
+        assert "PiqSavi-owned profile selected." in report.notes
+        assert "Exact selected trusted URL is owner-validated as deployed." in report.notes
+        _assert_no_stale_piqsavi_labels(report.to_dict())
+        _assert_no_stale_piqsavi_labels(list(report.notes))
+        outside = tmp_path / "staging-labels"
+        exit_code = probe_main(
+            [
+                "--fixture",
+                str(DEFAULT_FIXTURE),
+                "--agent-profile-source",
+                "piqsavi",
+                "--output-dir",
+                str(outside),
+            ]
+        )
+        assert exit_code == 0
+        summary = json.loads((outside / "summary.json").read_text(encoding="utf-8"))
+        assert summary["agent_profile"] == PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL
+        assert summary["agent_profile_source"] == "piqsavi"
+        assert summary["agent_profile_usage"] == "PIQSAVI_OWNED_PROFILE"
+        _assert_no_stale_piqsavi_labels(summary)
+    finally:
+        monkeypatch.delenv("PIQSAVI_UCP_AGENT_PROFILE_URL", raising=False)
+        _clear_settings_cache()
+    production_profile = select_agent_profile(AGENT_PROFILE_SOURCE_PIQSAVI)
+    assert production_profile.url == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
+    with pytest.raises(LivePiqsaviProfileNotDeployedError):
+        assert_live_piqsavi_profile_unlocked(production_profile)
+
+
+def test_piqsavi_source_and_usage_labels_are_environment_neutral() -> None:
+    assert AGENT_PROFILE_SOURCE_PIQSAVI == "piqsavi"
+    assert AGENT_PROFILE_USAGE_PIQSAVI == "PIQSAVI_OWNED_PROFILE"
+    probe_src = PROBE_MODULE.read_text(encoding="utf-8")
+    script_src = PROBE_SCRIPT.read_text(encoding="utf-8")
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    _assert_no_stale_piqsavi_labels(probe_src)
+    _assert_no_stale_piqsavi_labels(script_src)
+    current_sprint32 = sprint32.split("### 2026-09-19", 1)[1]
+    current_probe = probe_doc.split("## 2026-09-19 staging PiqSavi", 1)[1]
+    _assert_no_stale_piqsavi_labels(current_sprint32)
+    _assert_no_stale_piqsavi_labels(current_probe)
+    assert "PIQSAVI_OWNED_PROFILE" in probe_doc
+    assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False

@@ -290,7 +290,7 @@ This heading is the 2026-09-18 local-implementation snapshot. It does **not** re
 | `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | `False` (separate later milestone; not implied by staging deployment). Recorded only after a successful live Shopify response against a deployed profile. |
 | Live `--agent-profile-source piqsavi` | Allowed only when `piqsavi_profile_deployed_for_url(exact selected trusted URL)` is true. Staging may unlock. Production remains **FAIL CLOSED**. Arbitrary URLs fail closed. |
 | Shopify test fixture | `https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json` remains **TECHNICAL TEST ONLY** and is still the PH probe default |
-| PiqSavi production-intended profile | Explicit `--agent-profile-source piqsavi` only. Live default is **not** switched to the undeployed PiqSavi URL. Offline fixture mode may still select `piqsavi`. |
+| PiqSavi-owned profile | Explicit `--agent-profile-source piqsavi` only. Evidence source is `piqsavi`; usage is `PIQSAVI_OWNED_PROFILE`. Deployment/fetch truth is in the lifecycle booleans. Live default is **not** switched to PiqSavi. Offline fixture mode may still select `piqsavi`. Staging URL may unlock when deployed; production remains fail-closed. |
 | Next sequence (not performed here) | E controlled live Shopify call using only the exact deployed staging URL; F successful Shopify response records `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`; G owner-validate production URL then record `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`; H capability-policy / production certification |
 | Local tests | Focused profile route + PH probe contract tests, including fail-closed zero-network proof |
 | Live Shopify call in this slice | None |
@@ -353,6 +353,7 @@ This addendum does **not** rewrite the owner live PH coverage evidence or claim 
 | Live Shopify call in this slice | **None**. This workspace did not call Shopify |
 | AWS mutation / deploy in this slice | **None** |
 | Live gate | `piqsavi_profile_deployed_for_url(exact selected trusted URL)`. Staging may unlock. Production remains fail-closed. Arbitrary URLs fail closed |
+| Evidence labels | Source `piqsavi`. Usage `PIQSAVI_OWNED_PROFILE`. Notes say "PiqSavi-owned profile selected." Staging output must not claim the selected profile is undeployed or production-intended. Lifecycle booleans remain the source of truth. |
 | Shopify technical fixture | Unchanged. Still the PH probe default. **TECHNICAL TEST ONLY** |
 | Sprint 32 | Remains **OPEN** |
 | Sprint 38 | Remains **UNSTARTED** |

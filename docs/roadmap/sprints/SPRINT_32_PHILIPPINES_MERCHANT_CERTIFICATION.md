@@ -159,7 +159,7 @@ This does **not** validate the production URL `https://piqsavi.com/ucp/agent-pro
 - `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False` — production HTTPS profile is not owner-validated and must not be unlocked.
 - `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False` — Shopify has not fetched or negotiated the PiqSavi profile. A successful public HTTPS deployment is not Shopify fetch/negotiation.
 
-There is no global `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` flag. Live `--agent-profile-source piqsavi` checks `piqsavi_profile_deployed_for_url(exact selected trusted URL)`. Staging may unlock. Production remains **FAIL CLOSED**. Arbitrary URLs fail closed. Shopify technical fixture behavior is unchanged. This workspace did **not** call Shopify, deploy, or mutate AWS. Sprint 32 remains open. Sprint 38 remains unstarted.
+There is no global `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` flag. Live `--agent-profile-source piqsavi` checks `piqsavi_profile_deployed_for_url(exact selected trusted URL)`. Staging may unlock. Production remains **FAIL CLOSED**. Arbitrary URLs fail closed. Shopify technical fixture behavior is unchanged. Evidence source is `piqsavi` and usage is `PIQSAVI_OWNED_PROFILE`; lifecycle booleans remain the source of truth. Staging output must not claim the selected profile is undeployed or production-intended. This workspace did **not** call Shopify, deploy, or mutate AWS. Sprint 32 remains open. Sprint 38 remains unstarted.
 
 **Next sequence (not performed in this PR):**
 
