@@ -252,8 +252,8 @@ Completed technical evidence:
 
 Still **not** completed:
 
-- PiqSavi-owned UCP agent profile **deployed and owner HTTPS-validated** (`PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED`; local FastAPI document exists; **NOT YET DEPLOYED/VALIDATED**)
-- PiqSavi-owned production UCP agent profile **live-fetch validated by Shopify** (`SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`; separate later milestone; not implied by deployment)
+- PiqSavi-owned **production** UCP agent profile deployed and owner HTTPS-validated (`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`; production URL is **NOT** owner-validated)
+- PiqSavi-owned UCP agent profile **live-fetch validated by Shopify** (`SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`; separate later milestone; not implied by staging HTTPS deployment)
 - real production provider registration
 - trusted production certification
 - Sprint 31 capability-policy rows/evidence for Shopify PH path
@@ -271,12 +271,12 @@ Production provider registry = zero. Production certification catalog = zero. Pr
 
 **PIQSAVI UCP AGENT PROFILE: IMPLEMENTED LOCALLY — NOT YET DEPLOYED/VALIDATED**
 
-This section does **not** rewrite the owner live PH coverage evidence above. No live Shopify call was made for this slice. Shopify has not fetched PiqSavi's profile.
+This heading is the 2026-09-18 local-implementation snapshot. It does **not** rewrite the owner live PH coverage evidence above. Current environment-specific deployment state is recorded in the 2026-09-19 addendum below. No live Shopify call was made for this documentation slice. Shopify has not fetched PiqSavi's profile.
 
 | Field | Value |
 |-------|-------|
 | Proposed canonical production URL | `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
-| Staging URL (when later deployed) | `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| Staging URL (owner-validated 2026-09-19) | `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
 | Hosting application | Existing FastAPI app (`create_app()` in `app/main.py`) |
 | Hosting route | `GET /ucp/agent-profiles/2026-08-25/piqsavi.json` |
 | Why this host | Production public HTTPS origin is `https://piqsavi.com` (apex). `www.piqsavi.com` is a trusted host that cutover sends to apex. The FastAPI app already serves unauthenticated public documents (`/robots.txt`, `/sitemap.xml`, `/health`). No new service. |
@@ -285,12 +285,13 @@ This section does **not** rewrite the owner live PH coverage evidence above. No 
 | Declared capabilities | `dev.ucp.shopping.catalog.search`, `dev.ucp.shopping.catalog.lookup`, `dev.shopify.catalog.global` |
 | Why those capabilities | Least privilege for Global Catalog search + `get_product`. Official `dev.shopify.catalog.global` extends both catalog.search and catalog.lookup. UCP maps `get_product` to Lookup. Declaring lookup is **not** permission to run bulk `lookup_catalog`; the PH probe still forbids that tool. Checkout, cart, order, payment, fulfillment, buyer consent, discount, and storefront catalog are omitted. |
 | Server-owned URL setting | `PIQSAVI_UCP_AGENT_PROFILE_URL` (public, non-secret; not shopper/request/frontend controlled) |
-| `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` | `False` (code constant; not request/env/browser controlled). Means public HTTPS profile deployed and owner-validated. Does **not** mean Shopify fetched it. |
-| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | `False` (separate later milestone; not implied by deployment). Recorded only after a successful live Shopify response against the deployed profile. |
-| Live `--agent-profile-source piqsavi` | **FAIL CLOSED** while undeployed. Zero Shopify/network calls. Non-zero exit. |
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | `True` (code constant; not request/env/browser controlled). Exact staging HTTPS profile deployed and owner-validated. Does **not** mean Shopify fetched it. |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | `False` (code constant; not request/env/browser controlled). Production HTTPS profile is not owner-validated. |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | `False` (separate later milestone; not implied by staging deployment). Recorded only after a successful live Shopify response against a deployed profile. |
+| Live `--agent-profile-source piqsavi` | Allowed only when `piqsavi_profile_deployed_for_url(exact selected trusted URL)` is true. Staging may unlock. Production remains **FAIL CLOSED**. Arbitrary URLs fail closed. |
 | Shopify test fixture | `https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json` remains **TECHNICAL TEST ONLY** and is still the PH probe default |
 | PiqSavi production-intended profile | Explicit `--agent-profile-source piqsavi` only. Live default is **not** switched to the undeployed PiqSavi URL. Offline fixture mode may still select `piqsavi`. |
-| Next sequence (not performed here) | A merge this PR; B deploy FastAPI route; C owner verifies public HTTPS JSON; D record `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED`; E unlock controlled live PiqSavi Shopify call; F successful Shopify response records `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`; G then capability-policy / production certification |
+| Next sequence (not performed here) | E controlled live Shopify call using only the exact deployed staging URL; F successful Shopify response records `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`; G owner-validate production URL then record `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`; H capability-policy / production certification |
 | Local tests | Focused profile route + PH probe contract tests, including fail-closed zero-network proof |
 | Live Shopify call in this slice | None |
 | Shopify fetched PiqSavi profile | No |
@@ -335,6 +336,27 @@ Exact local profile document:
 }
 ```
 
+## 2026-09-19 staging PiqSavi UCP profile owner-validated
+
+This addendum does **not** rewrite the owner live PH coverage evidence or claim production readiness.
+
+| Field | Value |
+|-------|-------|
+| Staging profile deployed | **True** |
+| Exact staging URL | `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| Owner validation | Public HTTP/2 200; expected JSON (`ucp.version = 2026-08-25`, catalog.search, catalog.lookup, `dev.shopify.catalog.global`) |
+| Deploy Staging | run_id `35430542107`, run_number 38, result success |
+| Deployed SHA | `e5654a63fe650fd21c219a24270455f8902519a0` |
+| Production profile deployed | **False**. `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` is **not** owner-validated |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **False**. Public HTTPS deployment is not Shopify fetch/negotiation |
+| Production certification | **False** |
+| Live Shopify call in this slice | **None**. This workspace did not call Shopify |
+| AWS mutation / deploy in this slice | **None** |
+| Live gate | `piqsavi_profile_deployed_for_url(exact selected trusted URL)`. Staging may unlock. Production remains fail-closed. Arbitrary URLs fail closed |
+| Shopify technical fixture | Unchanged. Still the PH probe default. **TECHNICAL TEST ONLY** |
+| Sprint 32 | Remains **OPEN** |
+| Sprint 38 | Remains **UNSTARTED** |
+
 ## Owner live command
 
 Credentials: **none**. Do not create a Partner account, Dev Dashboard token, or PiqSavi profile for this Anonymous probe.
@@ -373,6 +395,9 @@ This harness does **not** mean:
 SHOPIFY GLOBAL CATALOG PH LIVE TECHNICAL COVERAGE VALIDATED —
 12/12 SEARCH CATEGORIES USEFUL —
 5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
+STAGING PIQSAVI UCP PROFILE DEPLOYED / OWNER HTTPS-VALIDATED —
+PRODUCTION PROFILE NOT VALIDATED —
+SHOPIFY HAS NOT FETCHED PIQSAVI PROFILE —
 NOT PRODUCTION CERTIFICATION —
 SPRINT 32 REMAINS OPEN —
 SPRINT 38 UNSTARTED

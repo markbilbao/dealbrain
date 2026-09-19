@@ -872,3 +872,22 @@ This addendum does **not** rewrite earlier snapshots. It records a local FastAPI
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-19 staging PiqSavi UCP profile owner-validated addendum
+
+This addendum does **not** rewrite earlier snapshots. It records owner-validated staging HTTPS deployment only. It does **not** validate production, does **not** call Shopify, does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38.
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `e5654a63fe650fd21c219a24270455f8902519a0` |
+| Staging profile | **DEPLOYED / OWNER HTTPS-VALIDATED**. Exact URL `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. Public HTTP/2 200. |
+| Deploy Staging | run_id `35430542107`, run_number 38, success |
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True**. This is **not** Shopify validation. |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | **False**. Production URL is not owner-validated. |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **False**. Separate later milestone. Public HTTPS deployment is not Shopify fetch/negotiation. |
+| Global `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` | **Removed**. Staging and production are independent. |
+| Live `--agent-profile-source piqsavi` | Unlocks only the exact selected trusted URL whose environment deployed constant is true. Staging may unlock. Production remains **FAIL CLOSED**. |
+| Live Shopify call / production certification | None / false |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |

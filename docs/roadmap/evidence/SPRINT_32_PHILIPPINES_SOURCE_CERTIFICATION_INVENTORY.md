@@ -426,6 +426,12 @@ A PiqSavi-owned UCP agent profile is **IMPLEMENTED LOCALLY — NOT YET DEPLOYED/
 
 Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 
+### 2026-09-19 staging PiqSavi UCP profile owner-validated (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. The exact staging URL `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` is **STAGING DEPLOYED / OWNER HTTPS-VALIDATED** (public HTTP/2 200; Deploy Staging run `35430542107`; SHA `e5654a63fe650fd21c219a24270455f8902519a0`). `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. Production URL is not owner-validated. There is no global deployment flag. Live `--agent-profile-source piqsavi` may unlock only that exact staging URL and remains fail-closed for production and arbitrary URLs. This workspace did not call Shopify and did not mutate AWS. Sprint 32 is **not complete**. Sprint 38 remains unstarted.
+
+Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -437,5 +443,5 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 - Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
 - A Tavily Extract technical harness may later produce technical Level-B candidates. That is not offer evidence and does not convert source-site rights from unknown to allowed.
 - The Shopify Global Catalog PH probe harness is technical coverage tooling only. Owner live 12-query PH search coverage **PASSED TECHNICAL COVERAGE TEST**. Diversified 5/5 `get_product` validations completed across five categories. That does not certify Shopify or close Sprint 32.
-- The PiqSavi UCP agent profile is implemented locally and is **not yet deployed/validated**. Shopify has not fetched it.
+- The staging PiqSavi UCP profile is owner-validated. The production PiqSavi UCP profile is **not** owner-validated. Shopify has not fetched the PiqSavi profile. That is not production certification.
 - Sprint 32 is **not complete**.

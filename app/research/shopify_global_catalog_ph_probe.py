@@ -18,10 +18,12 @@ from pathlib import Path
 from typing import Any, Literal, Protocol
 
 from app.ucp.agent_profile import (
-    PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+    PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED,
     PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
+    PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
     SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
     SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL,
+    piqsavi_profile_deployed_for_url,
     trusted_piqsavi_ucp_agent_profile_url,
 )
 
@@ -38,16 +40,20 @@ AGENT_PROFILE_NOT_PIQSAVI_IDENTITY = True
 DEFAULT_AGENT_PROFILE_SOURCE: AgentProfileSource = AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE
 LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE = (
     "PiqSavi UCP profile is not yet deployed/publicly validated. "
-    "Deploy and owner-validate the HTTPS profile before live Shopify negotiation."
+    "Deploy and owner-validate the exact selected trusted HTTPS profile URL "
+    "before live Shopify negotiation."
 )
 PIQSAVI_PROFILE_LIFECYCLE_NOTE = (
-    "PiqSavi profile is implemented locally. "
-    "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. "
+    "PiqSavi profile lifecycle is environment-specific. "
+    "PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is true. "
+    "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is false. "
     "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
 )
 PIQSAVI_PROFILE_SELECTED_NOTE = (
     "PiqSavi production-intended profile selected. "
-    "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED is false. "
+    "Live use requires the exact selected trusted URL to be deployed. "
+    "PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is true. "
+    "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is false. "
     "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is a separate later milestone and is false."
 )
 if PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL == TECHNICAL_TEST_AGENT_PROFILE:
@@ -266,6 +272,8 @@ class AgentProfileSelection:
     usage: str
     not_piqsavi_identity: bool
     piqsavi_profile_deployed: bool
+    piqsavi_profile_staging_deployed: bool
+    piqsavi_profile_production_deployed: bool
     shopify_has_fetched_profile: bool
 
     def to_dict(self) -> dict[str, Any]:
@@ -275,6 +283,8 @@ class AgentProfileSelection:
             "agent_profile_usage": self.usage,
             "agent_profile_not_piqsavi_identity": self.not_piqsavi_identity,
             "piqsavi_profile_deployed": self.piqsavi_profile_deployed,
+            "piqsavi_profile_staging_deployed": self.piqsavi_profile_staging_deployed,
+            "piqsavi_profile_production_deployed": self.piqsavi_profile_production_deployed,
             "shopify_has_fetched_piqsavi_profile": self.shopify_has_fetched_profile,
         }
 
@@ -290,6 +300,8 @@ class PhProbeReport:
     agent_profile_usage: str
     agent_profile_not_piqsavi_identity: bool
     piqsavi_profile_deployed: bool
+    piqsavi_profile_staging_deployed: bool
+    piqsavi_profile_production_deployed: bool
     shopify_has_fetched_piqsavi_profile: bool
     auth_tier: str
     credentials_required: bool
@@ -326,6 +338,8 @@ class PhProbeReport:
             "agent_profile_usage": self.agent_profile_usage,
             "agent_profile_not_piqsavi_identity": self.agent_profile_not_piqsavi_identity,
             "piqsavi_profile_deployed": self.piqsavi_profile_deployed,
+            "piqsavi_profile_staging_deployed": self.piqsavi_profile_staging_deployed,
+            "piqsavi_profile_production_deployed": self.piqsavi_profile_production_deployed,
             "shopify_has_fetched_piqsavi_profile": self.shopify_has_fetched_piqsavi_profile,
             "auth_tier": self.auth_tier,
             "credentials_required": self.credentials_required,
@@ -457,7 +471,13 @@ def select_agent_profile(source: str | None = None) -> AgentProfileSelection:
             url=TECHNICAL_TEST_AGENT_PROFILE,
             usage=AGENT_PROFILE_USAGE,
             not_piqsavi_identity=True,
-            piqsavi_profile_deployed=PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+            piqsavi_profile_deployed=piqsavi_profile_deployed_for_url(
+                TECHNICAL_TEST_AGENT_PROFILE
+            ),
+            piqsavi_profile_staging_deployed=PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
+            piqsavi_profile_production_deployed=(
+                PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
+            ),
             shopify_has_fetched_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
         )
     if selected == AGENT_PROFILE_SOURCE_PIQSAVI:
@@ -471,24 +491,32 @@ def select_agent_profile(source: str | None = None) -> AgentProfileSelection:
             url=url,
             usage=AGENT_PROFILE_USAGE_PIQSAVI,
             not_piqsavi_identity=False,
-            piqsavi_profile_deployed=PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+            piqsavi_profile_deployed=piqsavi_profile_deployed_for_url(url),
+            piqsavi_profile_staging_deployed=PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
+            piqsavi_profile_production_deployed=(
+                PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
+            ),
             shopify_has_fetched_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
         )
     raise ProbeContractError(f"unsupported agent profile source {selected}")
 
 
 def assert_live_piqsavi_profile_unlocked(profile: AgentProfileSelection) -> None:
-    """Fail closed: live PiqSavi profile use requires PROFILE DEPLOYED first.
+    """Fail closed unless the exact selected trusted URL is deployed.
 
-    Checks the server-owned ``PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED`` constant,
-    not a spoofable selection field. Request, browser, query, cookie, and env
-    input cannot flip this. ``SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`` is a
-    later independent milestone and does not unlock live calls.
+    Checks ``piqsavi_profile_deployed_for_url(profile.url)`` against
+    server-owned environment constants, not a spoofable selection field.
+    Staging may unlock only the exact staging URL. Production remains
+    blocked while ``PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`` is
+    false. Arbitrary URLs fail closed. Request, browser, query, cookie,
+    and env input cannot flip lifecycle state.
+    ``SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`` is a later independent
+    milestone and does not unlock live calls.
     """
 
     if profile.source != AGENT_PROFILE_SOURCE_PIQSAVI:
         return
-    if PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED:
+    if piqsavi_profile_deployed_for_url(profile.url):
         return
     raise LivePiqsaviProfileNotDeployedError(LIVE_PIQSAVI_PROFILE_NOT_DEPLOYED_MESSAGE)
 
@@ -1111,7 +1139,9 @@ def run_ph_coverage_probe(
         agent_profile_source=profile.source,
         agent_profile_usage=profile.usage,
         agent_profile_not_piqsavi_identity=profile.not_piqsavi_identity,
-        piqsavi_profile_deployed=PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED,
+        piqsavi_profile_deployed=piqsavi_profile_deployed_for_url(profile.url),
+        piqsavi_profile_staging_deployed=PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
+        piqsavi_profile_production_deployed=PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED,
         shopify_has_fetched_piqsavi_profile=SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
         auth_tier=ANONYMOUS_AUTH_TIER,
         credentials_required=False,

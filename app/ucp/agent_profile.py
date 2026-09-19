@@ -1,4 +1,4 @@
-"""PiqSavi-owned UCP agent profile — production-intended, not yet deployed.
+"""PiqSavi-owned UCP agent profile — staging deployed, production not deployed.
 
 Static server-owned JSON for Shopify/UCP capability negotiation. This is not
 Shopify's hosted test fixture, not a business ``/.well-known/ucp`` document,
@@ -30,9 +30,18 @@ SHOPIFY_TECHNICAL_TEST_AGENT_PROFILE_URL: Final = (
 PIQSAVI_UCP_AGENT_PROFILE_CONTENT_TYPE: Final = "application/json"
 PIQSAVI_UCP_AGENT_PROFILE_CACHE_CONTROL: Final = "public, max-age=300"
 # Owner-recorded lifecycle constants. Not Settings, env, request, cookie, or
-# browser controlled. Deployment is not Shopify fetch/negotiation.
-PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED: Final = False
+# browser controlled. Staging and production deployment are independent.
+# Deployment of either environment is not Shopify fetch/negotiation.
+# There is no global PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED flag.
+PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED: Final = True
+PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED: Final = False
 SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = False
+TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS: Final[frozenset[str]] = frozenset(
+    {
+        PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,
+        PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
+    }
+)
 
 CAPABILITY_CATALOG_SEARCH: Final = "dev.ucp.shopping.catalog.search"
 CAPABILITY_CATALOG_LOOKUP: Final = "dev.ucp.shopping.catalog.lookup"
@@ -142,16 +151,35 @@ def profile_contains_secrets(document: dict[str, Any] | str | None = None) -> bo
     return any(marker in lowered for marker in _SECRET_MARKERS)
 
 
-def piqsavi_profile_is_shopify_negotiated() -> bool:
-    """Derived: both independent milestones are true.
+def piqsavi_profile_deployed_for_url(url: str | None) -> bool:
+    """Return True only for an exact trusted URL whose environment is deployed.
 
-    ``PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED`` means the public HTTPS profile was
-    deployed and owner-validated. It does **not** mean Shopify fetched it.
-    ``SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`` is recorded only after a successful
-    live Shopify negotiation against that deployed profile.
+    Staging URL is True only while ``PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED``
+    is True. Production URL is False while
+    ``PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`` is False. Unknown,
+    arbitrary, query-suffixed, trailing-slash, and non-exact URLs fail closed.
+    Request, cookie, query, and env input cannot change these constants.
     """
 
-    return PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED and SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE
+    if url == PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL:
+        return PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED
+    if url == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL:
+        return PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
+    return False
+
+
+def piqsavi_profile_is_shopify_negotiated() -> bool:
+    """Derived: Shopify fetched a deployed PiqSavi profile.
+
+    Staging or production HTTPS deployment does **not** mean Shopify fetched
+    the profile. ``SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE`` is recorded only after
+    a successful live Shopify negotiation against a deployed profile URL.
+    """
+
+    return SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE and (
+        PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED
+        or PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
+    )
 
 
 def trusted_piqsavi_ucp_agent_profile_url() -> str:
@@ -170,5 +198,9 @@ def trusted_piqsavi_ucp_agent_profile_url() -> str:
     if "shopify.dev/ucp/agent-profiles" in url:
         raise ValueError(
             "PIQSAVI_UCP_AGENT_PROFILE_URL must not impersonate Shopify hosted agent profiles"
+        )
+    if url not in TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS:
+        raise ValueError(
+            "PIQSAVI_UCP_AGENT_PROFILE_URL must be an exact trusted PiqSavi profile URL"
         )
     return url
