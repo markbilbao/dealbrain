@@ -286,15 +286,15 @@ def test_technical_fixture_and_piqsavi_profiles_are_explicitly_distinct() -> Non
     assert piqsavi.piqsavi_profile_deployed is False
     assert piqsavi.piqsavi_profile_staging_deployed is True
     assert piqsavi.piqsavi_profile_production_deployed is False
-    assert piqsavi.shopify_has_fetched_profile is False
+    assert piqsavi.shopify_has_fetched_profile is True
     assert fixture.piqsavi_profile_deployed is False
     assert fixture.piqsavi_profile_staging_deployed is True
     assert fixture.piqsavi_profile_production_deployed is False
-    assert fixture.shopify_has_fetched_profile is False
+    assert fixture.shopify_has_fetched_profile is True
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
-    assert piqsavi_profile_is_shopify_negotiated() is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
+    assert piqsavi_profile_is_shopify_negotiated() is True
     with pytest.raises(ProbeContractError, match="unsupported agent profile source"):
         select_agent_profile("https://evil.example/ucp.json")
 
@@ -323,7 +323,7 @@ def test_probe_defaults_to_shopify_fixture_and_can_select_piqsavi_explicitly() -
     assert piqsavi_report.piqsavi_profile_deployed is False
     assert piqsavi_report.piqsavi_profile_staging_deployed is True
     assert piqsavi_report.piqsavi_profile_production_deployed is False
-    assert piqsavi_report.shopify_has_fetched_piqsavi_profile is False
+    assert piqsavi_report.shopify_has_fetched_piqsavi_profile is True
     assert "piqsavi_profile_deployed_and_validated" not in piqsavi_report.to_dict()
     assert piqsavi_report.production_certified is False
     assert piqsavi_report.closes_sprint_32 is False
@@ -365,7 +365,7 @@ def test_probe_cli_keeps_fixture_default_and_rejects_request_style_url_override(
     assert piqsavi_summary["piqsavi_profile_deployed"] is False
     assert piqsavi_summary["piqsavi_profile_staging_deployed"] is True
     assert piqsavi_summary["piqsavi_profile_production_deployed"] is False
-    assert piqsavi_summary["shopify_has_fetched_piqsavi_profile"] is False
+    assert piqsavi_summary["shopify_has_fetched_piqsavi_profile"] is True
     assert "piqsavi_profile_deployed_and_validated" not in piqsavi_summary
 
 
@@ -421,8 +421,8 @@ def test_production_registries_remain_empty_and_sprints_remain_open() -> None:
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
-    assert piqsavi_profile_is_shopify_negotiated() is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
+    assert piqsavi_profile_is_shopify_negotiated() is True
 
 
 def test_profile_is_omitted_from_openapi() -> None:
@@ -475,13 +475,13 @@ def test_deployment_and_shopify_fetch_states_are_environment_specific() -> None:
     profile_src = PROFILE_SOURCE.read_text(encoding="utf-8")
     assert "PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED: Final = True" in profile_src
     assert "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED: Final = False" in profile_src
-    assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = False" in profile_src
+    assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = True" in profile_src
     assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED: Final =" not in profile_src
     assert "PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED" not in profile_src
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
-    assert piqsavi_profile_is_shopify_negotiated() is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
+    assert piqsavi_profile_is_shopify_negotiated() is True
     unlock_src = inspect.getsource(assert_live_piqsavi_profile_unlocked)
     assert "piqsavi_profile_deployed_for_url(profile.url)" in unlock_src
     assert "if PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED:" not in unlock_src
@@ -499,7 +499,7 @@ def test_lifecycle_states_cannot_be_changed_by_user_request_or_env(
     monkeypatch.setenv("PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED", "false")
     monkeypatch.setenv("PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED", "true")
     monkeypatch.setenv("PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED", "true")
-    monkeypatch.setenv("SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE", "true")
+    monkeypatch.setenv("SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE", "false")
     monkeypatch.setenv("PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED_AND_VALIDATED", "true")
     monkeypatch.setenv(
         "PIQSAVI_UCP_AGENT_PROFILE_URL",
@@ -507,8 +507,8 @@ def test_lifecycle_states_cannot_be_changed_by_user_request_or_env(
     )
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
-    assert piqsavi_profile_is_shopify_negotiated() is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
+    assert piqsavi_profile_is_shopify_negotiated() is True
     assert piqsavi_profile_deployed_for_url("https://evil.example/ucp.json") is False
     settings = Settings()
     assert not hasattr(settings, "piqsavi_ucp_agent_profile_deployed")
@@ -519,7 +519,7 @@ def test_lifecycle_states_cannot_be_changed_by_user_request_or_env(
         f"{PIQSAVI_UCP_AGENT_PROFILE_PATH}"
         "?PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED=true"
         "&PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED=false"
-        "&SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE=true"
+        "&SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE=false"
         "&PIQSAVI_UCP_AGENT_PROFILE_URL=https://evil.example/ucp.json"
     )
     with TestClient(create_app()) as http:
@@ -533,7 +533,7 @@ def test_lifecycle_states_cannot_be_changed_by_user_request_or_env(
     assert response.status_code == 200
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
     spoofed = AgentProfileSelection(
         source=AGENT_PROFILE_SOURCE_PIQSAVI,
         url=PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
@@ -566,12 +566,12 @@ async def test_async_request_cannot_flip_lifecycle_states(client: AsyncClient) -
         f"{PIQSAVI_UCP_AGENT_PROFILE_PATH}"
         "?PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED=true"
         "&PIQSAVI_UCP_AGENT_PROFILE_URL=https://evil.example/ucp.json",
-        headers={"Cookie": "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE=true"},
+        headers={"Cookie": "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE=false"},
     )
     assert response.status_code == 200
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
 
 
@@ -633,7 +633,7 @@ def test_live_piqsavi_profile_fails_closed_with_zero_network_calls(
     assert envelope["piqsavi_profile_deployed"] is False
     assert envelope["piqsavi_profile_staging_deployed"] is True
     assert envelope["piqsavi_profile_production_deployed"] is False
-    assert envelope["shopify_has_fetched_piqsavi_profile"] is False
+    assert envelope["shopify_has_fetched_piqsavi_profile"] is True
     assert envelope["agent_profile_source"] == AGENT_PROFILE_SOURCE_PIQSAVI
     assert envelope["closes_sprint_32"] is False
     assert envelope["starts_sprint_38"] is False
@@ -676,7 +676,7 @@ def test_offline_fixture_may_still_select_piqsavi_and_live_default_stays_fixture
     assert report.piqsavi_profile_deployed is False
     assert report.piqsavi_profile_staging_deployed is True
     assert report.piqsavi_profile_production_deployed is False
-    assert report.shopify_has_fetched_piqsavi_profile is False
+    assert report.shopify_has_fetched_piqsavi_profile is True
     assert report.search_calls == 12
     assert report.get_product_calls <= 5
 
@@ -703,7 +703,7 @@ def test_offline_fixture_may_still_select_piqsavi_and_live_default_stays_fixture
     assert summary["piqsavi_profile_deployed"] is False
     assert summary["piqsavi_profile_staging_deployed"] is True
     assert summary["piqsavi_profile_production_deployed"] is False
-    assert summary["shopify_has_fetched_piqsavi_profile"] is False
+    assert summary["shopify_has_fetched_piqsavi_profile"] is True
     assert live_calls
     assert DEFAULT_AGENT_PROFILE_SOURCE == AGENT_PROFILE_SOURCE_TECHNICAL_FIXTURE
 
@@ -711,7 +711,7 @@ def test_offline_fixture_may_still_select_piqsavi_and_live_default_stays_fixture
 def test_piqsavi_profile_deployed_for_url_is_exact_and_fail_closed() -> None:
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
     assert piqsavi_profile_deployed_for_url("https://evil.example/ucp.json") is False
@@ -743,7 +743,7 @@ def test_live_staging_piqsavi_profile_passes_deployment_gate(
         assert profile.piqsavi_profile_deployed is True
         assert profile.piqsavi_profile_staging_deployed is True
         assert profile.piqsavi_profile_production_deployed is False
-        assert profile.shopify_has_fetched_profile is False
+        assert profile.shopify_has_fetched_profile is True
         assert_live_piqsavi_profile_unlocked(profile)
         payload = load_probe_fixture(DEFAULT_FIXTURE)
         report = run_ph_coverage_probe(
@@ -756,7 +756,7 @@ def test_live_staging_piqsavi_profile_passes_deployment_gate(
         assert report.piqsavi_profile_deployed is True
         assert report.piqsavi_profile_staging_deployed is True
         assert report.piqsavi_profile_production_deployed is False
-        assert report.shopify_has_fetched_piqsavi_profile is False
+        assert report.shopify_has_fetched_piqsavi_profile is True
         assert report.production_certified is False
         assert report.closes_sprint_32 is False
         assert report.starts_sprint_38 is False
@@ -765,7 +765,7 @@ def test_live_staging_piqsavi_profile_passes_deployment_gate(
         assert report.agent_profile_usage == "PIQSAVI_OWNED_PROFILE"
         assert "PiqSavi-owned profile selected." in report.notes
         assert "Exact selected trusted URL is owner-validated as deployed." in report.notes
-        assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains false." in report.notes
+        assert "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is true." in report.notes
         assert "Not production certification." in report.notes
         assert "Sprint 32 remains open." in report.notes
         _assert_no_stale_piqsavi_labels(report.to_dict())
@@ -828,7 +828,7 @@ def test_staging_piqsavi_report_has_no_stale_production_labels(
         assert report.piqsavi_profile_deployed is True
         assert report.piqsavi_profile_staging_deployed is True
         assert report.piqsavi_profile_production_deployed is False
-        assert report.shopify_has_fetched_piqsavi_profile is False
+        assert report.shopify_has_fetched_piqsavi_profile is True
         assert "PiqSavi-owned profile selected." in report.notes
         assert "Exact selected trusted URL is owner-validated as deployed." in report.notes
         _assert_no_stale_piqsavi_labels(report.to_dict())
@@ -888,10 +888,74 @@ def test_owner_first_piqsavi_profile_shopify_discovery_failed() -> None:
     assert "no get_product" in probe_doc.casefold() or "get_product = 0" in probe_doc
     assert "lookup_catalog" in probe_doc
     assert "pagination" in probe_doc.casefold()
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert piqsavi_profile_is_shopify_negotiated() is False
+    assert piqsavi_profile_is_shopify_negotiated() is True
+
+
+def test_owner_successful_piqsavi_profile_shopify_negotiation() -> None:
+    sprint32 = SPRINT32.read_text(encoding="utf-8")
+    probe_doc = PROBE_DOC.read_text(encoding="utf-8")
+    inventory = (
+        ROOT / "docs/roadmap/evidence/SPRINT_32_PHILIPPINES_SOURCE_CERTIFICATION_INVENTORY.md"
+    ).read_text(encoding="utf-8")
+    audit = (
+        ROOT / "docs/roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md"
+    ).read_text(encoding="utf-8")
+    gap = (ROOT / "docs/roadmap/GAP_INVENTORY.md").read_text(encoding="utf-8")
+    historical = (
+        sprint32.split("### 2026-09-22", 1)[0],
+        probe_doc.split("## 2026-09-22", 1)[0],
+        inventory.split("### 2026-09-22", 1)[0],
+        audit.split("## 21.", 1)[0],
+        gap.split("## 2026-09-22", 1)[0],
+    )
+    current = (
+        sprint32.split("### 2026-09-22", 1)[1],
+        probe_doc.split("## 2026-09-22", 1)[1],
+        inventory.split("### 2026-09-22", 1)[1],
+        audit.split("## 21.", 1)[1],
+        gap.split("## 2026-09-22", 1)[1],
+    )
+    for text in historical:
+        assert "HTTP 422" in text
+        assert "profile_malformed" in text
+        assert "Missing services" in text
+        assert "SUCCESSFUL UCP NEGOTIATION = no" in text
+    for text in current:
+        assert "HTTP 200" in text
+        assert "error = null" in text
+        assert "isError = false" in text
+        assert "product_count = 3" in text or "PRODUCTS RETURNED = 3" in text
+        assert "SUCCESSFUL UCP NEGOTIATION = yes" in text
+        assert "LIVE SEARCH_CATALOG RESPONSE = yes" in text
+        assert "PRODUCTION PROFILE DEPLOYED = no" in text
+        assert "PRODUCTION CERTIFIED = no" in text
+        assert "SPRINT 32 COMPLETE = no" in text
+        assert "SPRINT 38 STARTED = no" in text
+        assert "35439563878" in text
+        assert "06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620" in text
+        assert "raw product payload" in text.casefold() or "raw product payload" in text
+        assert '"products":' not in text
+        assert "gid://shopify" not in text
+    assert '"title":' not in current[1]
+    assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL in current[1]
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL not in current[1] or (
+        "PRODUCTION PROFILE DEPLOYED = no" in current[1]
+    )
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
+    assert piqsavi_profile_is_shopify_negotiated() is True
+    assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
+    assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
+    assert production_research_provider_registry().list_providers() == ()
+    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert production_research_provider_routing_policy_catalog().list_records() == ()
+    assert "Sprint 32 remains open." in sprint32
+    assert "Sprint 38 remains unstarted" in sprint32
 
 
 def test_piqsavi_source_and_usage_labels_are_environment_neutral() -> None:
@@ -910,4 +974,4 @@ def test_piqsavi_source_and_usage_labels_are_environment_neutral() -> None:
     assert "PIQSAVI_OWNED_PROFILE" in probe_doc
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
-    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is False
+    assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True

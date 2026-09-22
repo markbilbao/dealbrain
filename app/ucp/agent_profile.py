@@ -36,7 +36,10 @@ PIQSAVI_UCP_AGENT_PROFILE_CACHE_CONTROL: Final = "public, max-age=300"
 # There is no global PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED flag.
 PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED: Final = True
 PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED: Final = False
-SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = False
+# Recorded True only after a successful live Shopify negotiation against a
+# deployed PiqSavi profile URL. Staging succeeded 2026-09-22. This is not
+# production-profile negotiation or production certification.
+SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = True
 TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS: Final[frozenset[str]] = frozenset(
     {
         PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,

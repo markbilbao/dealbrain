@@ -47,14 +47,14 @@ PIQSAVI_PROFILE_LIFECYCLE_NOTE = (
     "PiqSavi profile lifecycle is environment-specific. "
     "PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is true. "
     "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is false. "
-    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains false."
+    "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is true."
 )
 PIQSAVI_OWNED_PROFILE_SELECTED_NOTE = "PiqSavi-owned profile selected."
 PIQSAVI_PROFILE_DEPLOYED_URL_NOTE = "Exact selected trusted URL is owner-validated as deployed."
 PIQSAVI_PROFILE_UNDEPLOYED_URL_NOTE = (
     "Exact selected trusted URL is not owner-validated as deployed."
 )
-PIQSAVI_PROFILE_SHOPIFY_FETCH_NOTE = "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE remains false."
+PIQSAVI_PROFILE_SHOPIFY_FETCH_NOTE = "SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is true."
 PIQSAVI_PROFILE_NOT_CERTIFICATION_NOTE = "Not production certification."
 if PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL == TECHNICAL_TEST_AGENT_PROFILE:
     raise RuntimeError("PiqSavi production profile URL must not be Shopify's test fixture")
