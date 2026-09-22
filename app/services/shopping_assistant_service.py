@@ -46,6 +46,34 @@ DEFAULT_MAX_QUERY_LENGTH = 500
 _DATA_STATUS_RANK = {"live": 2, "imported": 1, "mock": 0}
 
 
+def _normalize_identity_title(title: str) -> str:
+    """Casefold and collapse whitespace for exact title identity only."""
+    return " ".join(title.casefold().split())
+
+
+def _authoritative_marketplace_enrichment(
+    candidate: Any,
+    enrichments: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Associate enrichment only by exact product_id or full-title equality.
+
+    Substring / neighboring-variant titles are not authoritative and must not
+    grant live status or ranking boosts.
+    """
+    candidate_id = str(getattr(candidate, "product_id", "") or "").strip()
+    candidate_title = _normalize_identity_title(str(getattr(candidate, "product_name", "") or ""))
+    id_match: dict[str, Any] | None = None
+    title_match: dict[str, Any] | None = None
+    for item in enrichments:
+        item_id = str(item.get("product_id") or "").strip()
+        if candidate_id and item_id and candidate_id == item_id and id_match is None:
+            id_match = item
+        item_title = _normalize_identity_title(str(item.get("title") or ""))
+        if candidate_title and item_title and candidate_title == item_title and title_match is None:
+            title_match = item
+    return id_match or title_match
+
+
 def _resolve_marketplace_enrichment_status(
     candidate_status: str,
     match: dict[str, Any],
@@ -697,22 +725,10 @@ class ShoppingAssistantService:
         if not enrichments:
             return candidates, warnings
 
-        by_title: dict[str, dict[str, Any]] = {}
-        for item in enrichments:
-            key = str(item.get("title") or "").strip().lower()
-            if key and key not in by_title:
-                by_title[key] = item
-
         updated: list[Any] = []
         seen_warnings: set[str] = set()
         for candidate in candidates:
-            match = by_title.get(candidate.product_name.strip().lower())
-            if match is None:
-                for title, item in by_title.items():
-                    name = candidate.product_name.lower()
-                    if title in name or name in title:
-                        match = item
-                        break
+            match = _authoritative_marketplace_enrichment(candidate, enrichments)
             if match is None:
                 updated.append(candidate)
                 continue

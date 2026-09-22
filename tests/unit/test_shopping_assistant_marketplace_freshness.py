@@ -10,6 +10,8 @@ from app.intelligence.shopping_assistant.intent import ShoppingIntentService
 from app.intelligence.shopping_assistant.recommendation import ShoppingRecommendationRanker
 from app.services.shopping_assistant_service import (
     ShoppingAssistantService,
+    _authoritative_marketplace_enrichment,
+    _normalize_identity_title,
     _resolve_marketplace_enrichment_status,
 )
 
@@ -17,6 +19,10 @@ FIXED_NOW = datetime(2026, 7, 29, 12, 0, tzinfo=UTC)
 GAMING_QUERY = "What is the best gaming laptop under ₱60,000?"
 TUF_NAME = "ASUS TUF Gaming A15 Ryzen 7 RTX 4050"
 LOQ_NAME = "Lenovo LOQ 15 RTX 4060"
+AIRPODS_NAME = "Apple AirPods Pro 2 USB-C"
+GENERIC_AIRPODS_TITLE = "Apple AirPods Pro 2"
+IPHONE_128_NAME = "Apple iPhone 16 Pro 128GB White Titanium"
+IPHONE_512_TITLE = "Apple iPhone 16 Pro 512GB White Titanium"
 
 
 class _StaticEnrichment:
@@ -34,8 +40,9 @@ def _enrichment(
     data_status: str,
     is_current_live_price: bool,
     freshness_warning: str | None = None,
+    product_id: str | None = None,
 ) -> dict:
-    return {
+    payload = {
         "title": title,
         "data_status": data_status,
         "is_current_live_price": is_current_live_price,
@@ -43,6 +50,9 @@ def _enrichment(
         "notes": ["Marketplace provenance note for tests."],
         "total_price": 1.0,
     }
+    if product_id is not None:
+        payload["product_id"] = product_id
+    return payload
 
 
 def _assistant(items: list[dict] | None) -> ShoppingAssistantService:
@@ -163,6 +173,109 @@ def test_fresh_current_live_receives_normal_treatment() -> None:
     assert not any(item.code == "marketplace_data_freshness" for item in response.warnings)
     assert not any(item.code == "non_live_price_claim" for item in response.warnings)
     assert fresh_tuf.known_price == baseline_tuf.known_price
+
+
+def _candidate_named(name: str) -> ShoppingCandidate:
+    intent = ShoppingIntentService().parse(name, overrides={"products": [name]})
+    found = ProductCandidateService().find_candidates(intent)
+    match = next(item for item in found if item.product_name == name)
+    return match
+
+
+def _apply_named(assistant: ShoppingAssistantService, name: str) -> ShoppingCandidate:
+    updated, _warnings = assistant._apply_marketplace_data_provenance([_candidate_named(name)])
+    return updated[0]
+
+
+def test_normalized_title_equality_is_not_substring() -> None:
+    assert _normalize_identity_title("  Apple AirPods Pro 2 USB-C  ") == (
+        "apple airpods pro 2 usb-c"
+    )
+    candidate = _candidate_named(AIRPODS_NAME)
+    generic = _enrichment(
+        GENERIC_AIRPODS_TITLE,
+        data_status="live",
+        is_current_live_price=True,
+    )
+    assert _authoritative_marketplace_enrichment(candidate, [generic]) is None
+
+
+def test_exact_title_fresh_live_enrichment_is_authoritative() -> None:
+    exact = _assistant(
+        [
+            _enrichment(
+                f"  {AIRPODS_NAME}  ",
+                data_status="live",
+                is_current_live_price=True,
+            )
+        ]
+    )
+    none = _assistant(None)
+    enriched = _apply_named(exact, AIRPODS_NAME)
+    baseline = _apply_named(none, AIRPODS_NAME)
+    assert enriched.data_status == "live"
+    assert enriched.match_score == baseline.match_score + 0.15
+    assert enriched.known_price == baseline.known_price
+
+
+def test_exact_product_id_fresh_live_is_authoritative() -> None:
+    candidate = _candidate_named(AIRPODS_NAME)
+    assistant = _assistant(
+        [
+            _enrichment(
+                "Unrelated marketplace listing title",
+                data_status="live",
+                is_current_live_price=True,
+                product_id=candidate.product_id,
+            )
+        ]
+    )
+    none = _assistant(None)
+    enriched = _apply_named(assistant, AIRPODS_NAME)
+    baseline = _apply_named(none, AIRPODS_NAME)
+    assert enriched.data_status == "live"
+    assert enriched.match_score == baseline.match_score + 0.15
+    assert enriched.known_price == baseline.known_price
+
+
+def test_generic_substring_title_does_not_grant_live_authority() -> None:
+    generic = _assistant(
+        [
+            _enrichment(
+                GENERIC_AIRPODS_TITLE,
+                data_status="live",
+                is_current_live_price=True,
+            )
+        ]
+    )
+    none = _assistant(None)
+    enriched = _apply_named(generic, AIRPODS_NAME)
+    baseline = _apply_named(none, AIRPODS_NAME)
+    assert enriched.data_status == "mock"
+    assert enriched.match_score == baseline.match_score
+    assert enriched.known_price == baseline.known_price
+    response = generic.query({"query": "Is the cheapest seller trustworthy for AirPods Pro 2?"})
+    assert response.data_status == "mock"
+    top = response.top_recommendation
+    assert top is None or top.product_name != AIRPODS_NAME or response.data_status != "live"
+
+
+def test_different_storage_variant_does_not_grant_live_authority() -> None:
+    wrong_variant = _assistant(
+        [
+            _enrichment(
+                IPHONE_512_TITLE,
+                data_status="live",
+                is_current_live_price=True,
+            )
+        ]
+    )
+    none = _assistant(None)
+    enriched = _apply_named(wrong_variant, IPHONE_128_NAME)
+    baseline = _apply_named(none, IPHONE_128_NAME)
+    assert enriched.data_status == "mock"
+    assert enriched.match_score == baseline.match_score
+    assert enriched.known_price == baseline.known_price
 
 
 def test_stale_and_current_warnings_remain_correct() -> None:
