@@ -62,6 +62,12 @@ class _ScriptedReviewOrchestrator:
 
 
 def _review_service() -> ReviewService:
+    counter = {"n": 0}
+
+    def next_id() -> str:
+        counter["n"] += 1
+        return f"rv-conflict-{counter['n']}"
+
     return ReviewService(
         InMemoryReviewRepository(),
         [
@@ -71,7 +77,7 @@ def _review_service() -> ReviewService:
             MockAmazonReviewCollector(),
         ],
         clock=lambda: FIXED_NOW,
-        id_factory=lambda: "rv-conflict",
+        id_factory=next_id,
         seed_demo_history=False,
     )
 
@@ -130,14 +136,14 @@ def test_high_rating_negative_written_summary_is_surfaced() -> None:
     )
     summary = service.summarize(IPHONE_DEMO_PRODUCT_ID, product_label=IPHONE_DEMO_PRODUCT_LABEL)
     assert summary.average_rating is not None
-    assert summary.average_rating > 4.6
+    assert rating_polarity(summary.average_rating) == "positive"
     assert summary.overall_sentiment == "Negative"
     assert summary.processing.get("summary_rating_conflict") is True
     assert any(item.field == "summary_rating" for item in summary.disagreements)
     conflict = next(item for item in summary.disagreements if item.field == "summary_rating")
     assert "Negative" in conflict.values
     assert any(value.startswith("4.") for value in conflict.values)
-    assert "not automatically" in conflict.detail.lower()
+    assert "neither signal is automatically treated as correct" in conflict.detail.lower()
     assert any(item.message == SUMMARY_RATING_CONFLICT_WARNING for item in summary.warnings)
     assert summary.recommendation.label == CAUTIOUS_RECOMMENDATION_LABEL
     assert summary.consensus_confidence is not None
@@ -155,7 +161,7 @@ def test_aligned_high_rating_positive_summary_is_unchanged() -> None:
     )
     summary = service.summarize(IPHONE_DEMO_PRODUCT_ID, product_label=IPHONE_DEMO_PRODUCT_LABEL)
     assert summary.average_rating is not None
-    assert summary.average_rating > 4.6
+    assert rating_polarity(summary.average_rating) == "positive"
     assert summary.overall_sentiment == "Very Positive"
     assert summary.processing.get("summary_rating_conflict") is False
     assert all(item.field != "summary_rating" for item in summary.disagreements)
