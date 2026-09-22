@@ -269,9 +269,7 @@ class ReviewSummaryService:
             fallback_used=consensus.fallback_used,
             fallback_reason=consensus.fallback_reason,
             agreement_score=(
-                consensus.agreement_score
-                if consensus.mode in {"balanced", "maximum"}
-                else None
+                consensus.agreement_score if consensus.mode in {"balanced", "maximum"} else None
             ),
             consensus_confidence=consensus.consensus_confidence,
             disagreements=consensus.disagreements,

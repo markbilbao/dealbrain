@@ -132,7 +132,9 @@ def test_stale_live_gets_no_ranking_authority_boost() -> None:
     none = _assistant(None)
     stale_ranked = _rank(stale)
     baseline_ranked = _rank(none)
-    assert [item.product_id for item in stale_ranked] == [item.product_id for item in baseline_ranked]
+    assert [item.product_id for item in stale_ranked] == [
+        item.product_id for item in baseline_ranked
+    ]
     stale_tuf = next(item for item in _apply(stale) if item.product_name == TUF_NAME)
     baseline_tuf = next(item for item in _apply(none) if item.product_name == TUF_NAME)
     assert stale_tuf.match_score == baseline_tuf.match_score

@@ -124,7 +124,8 @@ def test_repeat_queries_are_stable_on_unchanged_fixture_catalog() -> None:
             metrics["unsupported_current_live_claims"] += _unsupported_live_claims(later)
         metrics["unsupported_current_live_claims"] += _unsupported_live_claims(first)
         assert first.data_status == "mock"
-        assert not any(item.product_id is None for item in [first.top_recommendation, *first.alternatives] if item)
+        ranked = [item for item in [first.top_recommendation, *first.alternatives] if item]
+        assert all(item.product_id is not None for item in ranked)
 
     assert metrics["top_three_overlap"]
     assert min(metrics["top_three_overlap"]) == 1.0
