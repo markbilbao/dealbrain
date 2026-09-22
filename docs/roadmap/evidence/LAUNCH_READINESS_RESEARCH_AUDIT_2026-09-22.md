@@ -46,6 +46,7 @@ No duplicate systems were added.
 1. **Stale live ranking authority.** `_apply_marketplace_data_provenance` gave `+0.08` and could set `data_status=live` when enrichment was live but `is_current_live_price` was false, including simulated live. That could promote a mock candidate or response to live and change ranking without current-live evidence.
 2. **Review-summary rating vs written polarity.** `ReviewSummaryService` preserved both `average_rating` and provider `overall_sentiment` but did not surface a final consistency disagreement when those polarities materially conflicted.
 3. **Assistant-level repeat-query metrics.** DealScore / recommendation-engine stability existed, and some shopping queries were exercised, but the assistant fixture catalog did not have an explicit 5-query × 3-run overlap / rank / evidence / identity / known-price suite.
+4. **Loose marketplace-enrichment identity.** `_apply_marketplace_data_provenance` could associate enrichment by title substring (`title in name or name in title`). After current-live enrichment became ranking-authoritative, a generic or neighboring-variant title could have granted another variant live status or a `+0.15` boost.
 
 ## Launch-critical changes in this patch
 
@@ -53,7 +54,8 @@ No duplicate systems were added.
    - fresh current live still becomes `live` with the existing `+0.15` boost;
    - live enrichment that is not current gets no live ranking boost and does not promote mock/imported candidates to live;
    - imported enrichment still applies `+0.03` when it does not downgrade a stronger trusted status;
-   - `known_price` is not changed by marketplace enrichment.
+   - `known_price` is not changed by marketplace enrichment;
+   - freshness or current-live evidence may influence recommendation authority only after a sufficiently exact candidate identity association: exact `product_id` when both sides expose the same stable id, or normalized full-title equality (case-insensitive, whitespace-normalized). Substring / generic / neighboring-variant titles are not authoritative. This is not the future per-attribute evidence envelope.
 2. `ReviewSummaryService` applies a deterministic final consistency guard:
    - broad polarity only (`positive`/`very_positive`, `mixed`, `negative`);
    - conflict adds `AnalysisDisagreement.field=summary_rating`, keeps both signals, warns the shopper, caps consensus confidence at `0.60`, uses `Consider Carefully`, and sets `processing.summary_rating_conflict=true`;
@@ -70,7 +72,9 @@ Existing tests still prove:
 - ambiguous / low-confidence marketplace matches are held for review
 - unsupported graph claims are rejected
 
-PiqScore currently scores listing-specific attributes (`listing_id`, price, seller, shipping, official-store, warranty, return policy). It does not merge evidence from a different matched variant. No runtime change was made in this area.
+PiqScore currently scores listing-specific attributes (`listing_id`, price, seller, shipping, official-store, warranty, return policy). It does not merge evidence from a different matched variant.
+
+Shopping Assistant marketplace enrichment may now change live status or ranking authority only after exact `product_id` or normalized full-title equality. That is a fail-closed association guard, not the P1 per-attribute evidence envelope.
 
 ## P1 follow-ups — not this launch patch
 
