@@ -43,6 +43,40 @@ from app.services.refine_session_recommendation import (
 )
 
 DEFAULT_MAX_QUERY_LENGTH = 500
+_DATA_STATUS_RANK = {"live": 2, "imported": 1, "mock": 0}
+
+
+def _resolve_marketplace_enrichment_status(
+    candidate_status: str,
+    match: dict[str, Any],
+) -> tuple[str, float]:
+    """Resolve provenance status and ranking boost fail-closed.
+
+    Fresh current live may promote and receive the existing +0.15 boost.
+    Live enrichment that is not current must not boost ranking and must not
+    promote mock/imported candidates to live. Imported enrichment keeps the
+    existing +0.03 boost when it does not downgrade a stronger status.
+    """
+    current_status = candidate_status if candidate_status in _DATA_STATUS_RANK else "mock"
+    match_status = str(match.get("data_status") or current_status)
+    if match_status not in _DATA_STATUS_RANK:
+        match_status = current_status
+
+    current_rank = _DATA_STATUS_RANK[current_status]
+    match_rank = _DATA_STATUS_RANK[match_status]
+    is_current_live = bool(match.get("is_current_live_price"))
+
+    if match_status == "live" and is_current_live:
+        return "live", 0.15
+    if match_status == "live":
+        return current_status, 0.0
+    if match_status == "imported":
+        if current_rank > match_rank:
+            return current_status, 0.0
+        return "imported", 0.03
+    if current_rank > match_rank:
+        return current_status, 0.0
+    return match_status, 0.0
 
 
 class ShoppingAssistantService:
@@ -683,22 +717,19 @@ class ShoppingAssistantService:
                 updated.append(candidate)
                 continue
 
-            data_status = match.get("data_status") or candidate.data_status
+            data_status, boost = _resolve_marketplace_enrichment_status(
+                candidate.data_status,
+                match,
+            )
             freshness_warning = match.get("freshness_warning")
             notes = list(match.get("notes") or [])
-            boost = 0.0
-            if data_status == "live" and match.get("is_current_live_price"):
-                boost = 0.15
-            elif data_status == "live":
-                boost = 0.08
-            elif data_status == "imported":
-                boost = 0.03
 
             updated.append(
                 ShoppingCandidate(
                     product_id=candidate.product_id,
                     product_name=candidate.product_name,
                     category=candidate.category,
+                    # Marketplace enrichment must not overwrite catalog known_price.
                     known_price=candidate.known_price,
                     currency=candidate.currency,
                     marketplace=candidate.marketplace,
