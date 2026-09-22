@@ -78,6 +78,7 @@ Global error handlers → consistent JSON (+ legacy detail)
 | [OPERATIONS.md](OPERATIONS.md) | Day-2 ops |
 | [MONITORING.md](MONITORING.md) | Health / logs / metrics |
 | [BACKUP_RESTORE.md](BACKUP_RESTORE.md) | Backup & restore guides |
+| [roadmap/evidence/LAUNCH_READINESS_RESEARCH_AUDIT_2026-09-22.md](roadmap/evidence/LAUNCH_READINESS_RESEARCH_AUDIT_2026-09-22.md) | 2026-09-22 research audit, fail-closed launch gaps, and P1 follow-ups |
 
 ## Limitations
 

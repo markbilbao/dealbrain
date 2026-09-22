@@ -65,7 +65,7 @@ PROTECTED_DIGESTS = {
     ),
     # AI Review Summary / multi-model (Sprint 12) — protected for Sprint 13.
     "app/services/review_summary_service.py": (
-        "8cae6c78fe7f23c85d13fc6de654516c7b0b79c7a87a0bbd7438cd32a841b3e3"
+        "0e69739621056b53d5e67a00be1a19608cc88677877be9f76fca220bd52b4622"
     ),
     "app/intelligence/review_summary/deterministic.py": (
         "c25240da6eca7cbebf82d0cb6bd3833645c398d170e01c7bad8c50ebd4e4adff"

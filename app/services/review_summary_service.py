@@ -8,12 +8,14 @@ unless explicitly enabled in server configuration.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.domain.entities.review_analysis import (
     RECOMMENDATION_DISPLAY,
     SENTIMENT_DISPLAY,
+    AnalysisDisagreement,
     OrchestratedAnalysis,
     ReviewAnalysisRequest,
 )
@@ -34,6 +36,7 @@ from app.domain.interfaces.review_summary_repository import (
     ReviewSummarizer,
     ReviewSummaryRepository,
 )
+from app.intelligence.review_summary.deterministic import classify_sentiment
 from app.intelligence.review_summary.fixtures import (
     IPHONE_DEMO_PRODUCT_ID,
     IPHONE_DEMO_PRODUCT_LABEL,
@@ -43,6 +46,37 @@ from app.intelligence.review_summary.fixtures import (
 from app.intelligence.review_summary.orchestrator import MultiModelReviewOrchestrator
 from app.intelligence.review_summary.validator import build_review_evidence
 from app.services.review_service import ReviewService
+
+SUMMARY_RATING_CONFLICT_WARNING = (
+    "Written review evidence and the aggregate rating disagree; PiqSavi is "
+    "showing both signals instead of forcing one conclusion."
+)
+_POSITIVE_POLARITY = frozenset({"positive", "very_positive", "very positive"})
+_MIXED_POLARITY = frozenset({"mixed"})
+_NEGATIVE_POLARITY = frozenset({"negative"})
+CAUTIOUS_RECOMMENDATION_LABEL = RECOMMENDATION_DISPLAY["consider_alternatives"]
+
+
+def broad_sentiment_polarity(sentiment: str | None) -> str | None:
+    """Collapse provider/display sentiment to positive, mixed, or negative."""
+    if not sentiment:
+        return None
+    key = sentiment.strip().lower().replace("-", " ").replace("_", " ")
+    compact = key.replace(" ", "_")
+    if key in _POSITIVE_POLARITY or compact in {"positive", "very_positive"}:
+        return "positive"
+    if key in _MIXED_POLARITY or compact == "mixed":
+        return "mixed"
+    if key in _NEGATIVE_POLARITY or compact == "negative":
+        return "negative"
+    return None
+
+
+def rating_polarity(average_rating: float | None) -> str | None:
+    """Map an aggregate rating onto the same broad polarity used for summaries."""
+    if average_rating is None:
+        return None
+    return broad_sentiment_polarity(classify_sentiment(average_rating))
 
 
 class ReviewSummaryService:
@@ -113,7 +147,7 @@ class ReviewSummaryService:
                 average_rating=average_rating,
                 total_review_count=total_reviews,
             )
-            return self._repository.save(summary)
+            return self._repository.save(self._apply_summary_rating_consistency(summary))
 
         # Legacy deterministic path (no orchestrator injected).
         summary = self._summarizer.summarize(
@@ -148,7 +182,7 @@ class ReviewSummaryService:
             consensus_confidence=0.72,
             processing={"ai_review_enabled": False},
         )
-        return self._repository.save(enriched)
+        return self._repository.save(self._apply_summary_rating_consistency(enriched))
 
     def get_summary(self, product_id: str, *, mode: str | None = None) -> ReviewSummary:
         cleaned = self._require_product_id(product_id)
@@ -235,15 +269,60 @@ class ReviewSummaryService:
             fallback_used=consensus.fallback_used,
             fallback_reason=consensus.fallback_reason,
             agreement_score=(
-                consensus.agreement_score
-                if consensus.mode in {"balanced", "maximum"}
-                else None
+                consensus.agreement_score if consensus.mode in {"balanced", "maximum"} else None
             ),
             consensus_confidence=consensus.consensus_confidence,
             disagreements=consensus.disagreements,
             evidence_pros=analysis.pros,
             evidence_cons=analysis.cons,
             evidence_warnings=analysis.warnings,
+            processing=processing,
+        )
+
+    def _apply_summary_rating_consistency(self, summary: ReviewSummary) -> ReviewSummary:
+        """Preserve both aggregate-rating and written-summary signals on conflict."""
+        processing = dict(summary.processing)
+        written_polarity = broad_sentiment_polarity(summary.overall_sentiment)
+        aggregate_polarity = rating_polarity(summary.average_rating)
+        if (
+            written_polarity is None
+            or aggregate_polarity is None
+            or written_polarity == aggregate_polarity
+        ):
+            processing["summary_rating_conflict"] = False
+            return replace(summary, processing=processing)
+
+        rating_text = (
+            f"{summary.average_rating:.2f}" if summary.average_rating is not None else "unknown"
+        )
+        detail = (
+            f"Written/provider overall sentiment is {summary.overall_sentiment} "
+            f"(broad polarity: {written_polarity}), while the aggregate average "
+            f"rating is {rating_text} (broad polarity: {aggregate_polarity}). "
+            "Neither signal is automatically treated as correct; both are preserved."
+        )
+        disagreement = AnalysisDisagreement(
+            field="summary_rating",
+            providers=("written_summary", "aggregate_rating"),
+            values=(str(summary.overall_sentiment), rating_text),
+            detail=detail,
+        )
+        warnings = list(summary.warnings)
+        if not any(item.message == SUMMARY_RATING_CONFLICT_WARNING for item in warnings):
+            warnings.append(Warning(message=SUMMARY_RATING_CONFLICT_WARNING))
+        disagreements = list(summary.disagreements)
+        if not any(item.field == "summary_rating" for item in disagreements):
+            disagreements.append(disagreement)
+        confidence = summary.consensus_confidence
+        if confidence is not None:
+            confidence = min(confidence, 0.60)
+        processing["summary_rating_conflict"] = True
+        return replace(
+            summary,
+            warnings=tuple(warnings),
+            recommendation=Recommendation(label=CAUTIOUS_RECOMMENDATION_LABEL),
+            consensus_confidence=confidence,
+            disagreements=tuple(disagreements),
             processing=processing,
         )
 

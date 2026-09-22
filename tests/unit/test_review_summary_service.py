@@ -74,6 +74,8 @@ def test_summarize_auto_collects_reviews() -> None:
     assert summary.average_rating > 4.6
     assert "Excellent camera" in summary.pros.items
     assert "Warms under heavy gaming" in summary.cons.items
+    assert summary.processing.get("summary_rating_conflict") is False
+    assert all(item.field != "summary_rating" for item in summary.disagreements)
 
 
 def test_get_summary_uses_cache_when_force_refresh_false() -> None:
