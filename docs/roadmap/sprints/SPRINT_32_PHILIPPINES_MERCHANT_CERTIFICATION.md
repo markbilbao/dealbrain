@@ -221,6 +221,77 @@ F. Successful Shopify response proves Shopify fetched/accepted the profile (`SHO
 G. Owner-validate the exact production profile URL, then record `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`.
 H. Only after that continue capability-policy / production certification work.
 
+### 2026-09-22 staging PiqSavi profile Shopify negotiation succeeded (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. The 2026-09-19 first Shopify discovery attempt remains historically true: HTTP 422, JSON-RPC `-32001`, `UCP discovery failed`, `profile_malformed`, `Missing services`.
+
+After the official `ucp.services` + `payment_handlers` profile-shape fix, Deploy Staging #40 (`run_id` `35439563878`) on main SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620` succeeded. The owner revalidated the exact public staging URL `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` and confirmed:
+
+- `ucp.version = 2026-08-25`
+- `ucp.services.dev.ucp.shopping`: version `2026-08-25`, spec `https://ucp.dev/2026-08-25/specification/overview`, transport `mcp`, schema `https://ucp.dev/2026-08-25/services/shopping/mcp.openrpc.json`
+- `ucp.payment_handlers = {}`
+- capabilities: `dev.ucp.shopping.catalog.search`, `dev.ucp.shopping.catalog.lookup`, `dev.shopify.catalog.global`
+
+The owner then performed exactly **one** controlled Shopify Global Catalog retry. This workspace did **not** repeat that request.
+
+- endpoint: `https://catalog.shopify.com/api/ucp/mcp`
+- tool: `search_catalog`
+- query: `wireless earbuds`
+- profile: `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`
+- `ships_to.country = PH`
+- `available = true`
+- `address_country = PH`
+- `currency = PHP`
+- `language = en`
+- `view = offer`
+- `pagination.limit = 3`
+- User-Agent: `PiqSavi-Sprint32-PH-Coverage-Probe/1.0`
+- No authentication
+- request budget: `search_catalog = 1`, `get_product = 0`, `lookup_catalog = 0`, pagination followed = 0
+
+Shopify response:
+
+- HTTP 200
+- JSON-RPC `jsonrpc = "2.0"`, `id = 2`, `error = null`
+- MCP `isError = false`
+- `product_count = 3`
+- `messages = []`
+
+No second request was made. The raw Shopify product payload is **not** stored.
+
+This is **not** production-profile negotiation, production certification, Shopify partnership, Shopify endorsement, or full Philippine retail coverage.
+
+PUBLIC PROFILE REACHABLE = yes
+
+SHOPIFY DISCOVERY ATTEMPTED = yes
+
+SUCCESSFUL UCP NEGOTIATION = yes
+
+LIVE SEARCH_CATALOG RESPONSE = yes
+
+PRODUCTS RETURNED = 3
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION CERTIFIED = no
+
+SPRINT 32 COMPLETE = no
+
+SPRINT 38 STARTED = no
+
+**Current lifecycle states (environment-specific; not request/env/browser controlled):**
+
+- `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True` — exact staging HTTPS profile remains deployed and owner-reachable.
+- `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False` — production HTTPS profile is not owner-validated.
+- `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True` — recorded after the successful live Shopify retry against the deployed staging profile.
+
+`piqsavi_profile_is_shopify_negotiated()` is now **True** because the fetch milestone is true and at least one trusted PiqSavi environment is deployed. There is no global `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` flag. Production live `--agent-profile-source piqsavi` remains **FAIL CLOSED**. Arbitrary URLs fail closed. Shopify technical fixture behavior is unchanged. This workspace did **not** call Shopify, deploy, or mutate AWS. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+**Next sequence (not performed in this PR):**
+
+G. Owner-validate the exact production profile URL, then record `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`.
+H. Only after that continue capability-policy / production certification work.
+
 ### Closure blockers (current)
 
 - No merchant has a real approved product-data / API path
@@ -235,8 +306,9 @@ H. Only after that continue capability-policy / production certification work.
 - A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
 - Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
 - Public-web discovery architecture/harness exists and is **not** a certified PH shopping-data path. No owner credentials. No live current-data response. Fixtures cannot close this sprint.
-- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. Owner live 12-query PH search coverage **PH LIVE TECHNICAL COVERAGE VALIDATED** (12/12 `USEFUL_PH_OFFER`; Anonymous; no credentials; no scraping/pagination/bulk lookup). Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. That is **not** production certification and does **not** close Sprint 32. The staging PiqSavi UCP profile is **STAGING DEPLOYED / OWNER HTTPS-VALIDATED** (`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`; Deploy Staging run `35430542107`; SHA `e5654a63fe650fd21c219a24270455f8902519a0`). The production profile is **NOT validated/deployed** (`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`). `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = False`. Live PiqSavi-profile Shopify negotiation may unlock only the exact deployed staging URL and remains fail-closed for production and arbitrary URLs. Shopify-fetch validation is a later, separate milestone. Sprint 31 policy rows and remaining certification gates are still required. Sprint 38 remains unstarted.
+- 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. Owner live 12-query PH search coverage **PH LIVE TECHNICAL COVERAGE VALIDATED** (12/12 `USEFUL_PH_OFFER`; Anonymous; no credentials; no scraping/pagination/bulk lookup). Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. That is **not** production certification and does **not** close Sprint 32. The staging PiqSavi UCP profile is **STAGING DEPLOYED / OWNER HTTPS-VALIDATED** (`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`; Deploy Staging run `35430542107`; SHA `e5654a63fe650fd21c219a24270455f8902519a0`; later corrected-profile redeploy Deploy Staging #40, run `35439563878`, SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620`). The production profile is **NOT validated/deployed** (`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`). `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True` after the later successful staging retry. Live PiqSavi-profile Shopify negotiation may unlock only the exact deployed staging URL and remains fail-closed for production and arbitrary URLs. This is **not** production-profile negotiation or production certification. Sprint 31 policy rows and remaining certification gates are still required. Sprint 38 remains unstarted.
 - 2026-09-19 owner first PiqSavi-profile Shopify discovery attempt failed after Deploy Staging #39: staging profile publicly reachable HTTP/2 200; one `search_catalog` (`wireless earbuds`); Shopify returned HTTP 422, JSON-RPC `-32001`, `UCP discovery failed`, `profile_malformed`, `Missing services`. No product result. No `get_product`. No `lookup_catalog`. No pagination. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = no. PRODUCTION CERTIFIED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` remains false. Sprint 32 remains open. Sprint 38 remains unstarted.
+- 2026-09-22 owner controlled Shopify retry after Deploy Staging #40 succeeded: staging profile publicly reachable with official `ucp.services` + `payment_handlers`; one `search_catalog` (`wireless earbuds`); Shopify returned HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, `product_count = 3`. No `get_product`. No `lookup_catalog`. No pagination. No raw product payload stored. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = yes. LIVE SEARCH_CATALOG RESPONSE = yes. PRODUCTS RETURNED = 3. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION CERTIFIED = no. SPRINT 32 COMPLETE = no. SPRINT 38 STARTED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`. Sprint 32 remains open. Sprint 38 remains unstarted.
 
 ### Production defaults
 

@@ -448,6 +448,32 @@ PRODUCTION CERTIFIED = no
 
 Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 
+### 2026-09-22 staging PiqSavi profile Shopify negotiation succeeded (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. The 2026-09-19 first Shopify discovery attempt remains historically true: HTTP 422, JSON-RPC `-32001`, `UCP discovery failed`, `profile_malformed`, `Missing services`. After Deploy Staging #40 (`run_id` `35439563878`; SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620`), the owner verified the exact staging URL `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` and then made exactly one Shopify `search_catalog` retry (`wireless earbuds`). Shopify returned HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, and `product_count = 3`. No `get_product`. No `lookup_catalog`. No pagination. No raw product payload stored.
+
+PUBLIC PROFILE REACHABLE = yes
+
+SHOPIFY DISCOVERY ATTEMPTED = yes
+
+SUCCESSFUL UCP NEGOTIATION = yes
+
+LIVE SEARCH_CATALOG RESPONSE = yes
+
+PRODUCTS RETURNED = 3
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION CERTIFIED = no
+
+SPRINT 32 COMPLETE = no
+
+SPRINT 38 STARTED = no
+
+`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`. This workspace did not call Shopify and did not mutate AWS. Sprint 32 remains open. Sprint 32 is **not complete**. Sprint 38 remains unstarted.
+
+Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -459,6 +485,7 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 - Brave, Tavily, and Exa remain uncertified. A benchmark harness is not a certified PH data path.
 - A Tavily Extract technical harness may later produce technical Level-B candidates. That is not offer evidence and does not convert source-site rights from unknown to allowed.
 - The Shopify Global Catalog PH probe harness is technical coverage tooling only. Owner live 12-query PH search coverage **PASSED TECHNICAL COVERAGE TEST**. Diversified 5/5 `get_product` validations completed across five categories. That does not certify Shopify or close Sprint 32.
-- The staging PiqSavi UCP profile is owner-validated. The production PiqSavi UCP profile is **not** owner-validated. Shopify has not fetched the PiqSavi profile. That is not production certification.
+- The staging PiqSavi UCP profile is owner-validated. The production PiqSavi UCP profile is **not** owner-validated. Shopify successfully negotiated the staging PiqSavi profile. That is not production certification.
 - Owner first Shopify discovery attempt against the staging PiqSavi profile failed: HTTP 422, JSON-RPC `-32001`, `profile_malformed`, `Missing services`. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = no. PRODUCTION CERTIFIED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` remains false.
+- Owner later Shopify retry after Deploy Staging #40 succeeded: HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, `product_count = 3`. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = yes. LIVE SEARCH_CATALOG RESPONSE = yes. PRODUCTS RETURNED = 3. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION CERTIFIED = no. SPRINT 32 COMPLETE = no. SPRINT 38 STARTED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`.
 - Sprint 32 is **not complete**.

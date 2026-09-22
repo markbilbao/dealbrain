@@ -918,3 +918,40 @@ PRODUCTION CERTIFIED = no
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-22 staging PiqSavi profile Shopify negotiation succeeded addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the owner-observed successful Shopify retry against the corrected, redeployed staging PiqSavi profile. The earlier HTTP 422 / `profile_malformed` / `Missing services` attempt remains historically true. This workspace did **not** call Shopify, deploy, or mutate AWS. It does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+PUBLIC PROFILE REACHABLE = yes
+
+SHOPIFY DISCOVERY ATTEMPTED = yes
+
+SUCCESSFUL UCP NEGOTIATION = yes
+
+LIVE SEARCH_CATALOG RESPONSE = yes
+
+PRODUCTS RETURNED = 3
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION CERTIFIED = no
+
+SPRINT 32 COMPLETE = no
+
+SPRINT 38 STARTED = no
+
+| Field | Value |
+|-------|-------|
+| Starting `origin/main` | `c27b188bb40dfc22406cbdfeca6aac3a756113b9` |
+| Staging profile | Public HTTP/2 200 at `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` after Deploy Staging #40 (`run_id` `35439563878`; SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620`) |
+| Owner Shopify request | Exactly one `search_catalog` retry (`wireless earbuds`); `get_product = 0`; `lookup_catalog = 0`; pagination followed = 0 |
+| Shopify response | HTTP 200; JSON-RPC `error = null`; MCP `isError = false`; `product_count = 3`; `messages = []` |
+| Product / deeper tools | `product_count = 3`. No raw product payload stored. No `get_product`. No `lookup_catalog`. No pagination. |
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True**. |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | **False**. |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **True**. Recorded after this successful staging retry. |
+| Live Shopify call / production certification in this workspace | None / false |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |

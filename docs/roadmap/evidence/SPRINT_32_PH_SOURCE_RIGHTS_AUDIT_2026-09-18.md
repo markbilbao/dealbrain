@@ -423,17 +423,48 @@ PRODUCTION CERTIFIED = no
 
 ---
 
+## 21. Staging PiqSavi profile Shopify negotiation succeeded addendum (2026-09-22; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots, including sections 17–20 or the owner live PH coverage evidence. The 2026-09-19 first Shopify discovery attempt remains historically true: HTTP 422, JSON-RPC `-32001`, `UCP discovery failed`, `profile_malformed`, `Missing services`.
+
+After Deploy Staging #40 (`run_id` `35439563878`; SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620`), the exact staging URL `https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` remained publicly reachable with official `ucp.services` and `payment_handlers`. The owner then performed exactly one Shopify `search_catalog` retry (`wireless earbuds`) using that profile. Shopify returned HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, and `product_count = 3`. No `get_product`. No `lookup_catalog`. No pagination. No raw product payload stored.
+
+PUBLIC PROFILE REACHABLE = yes
+
+SHOPIFY DISCOVERY ATTEMPTED = yes
+
+SUCCESSFUL UCP NEGOTIATION = yes
+
+LIVE SEARCH_CATALOG RESPONSE = yes
+
+PRODUCTS RETURNED = 3
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION CERTIFIED = no
+
+SPRINT 32 COMPLETE = no
+
+SPRINT 38 STARTED = no
+
+`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`. Public HTTPS reachability plus this later successful retry now satisfy the Shopify fetch/negotiation milestone for staging only. This is **not** production-profile negotiation or production certification. This workspace did **not** call Shopify live. This workspace did **not** mutate AWS or deploy. Production catalogs remain empty. Production certification remains false. Sprint 32 remains open. Sprint 38 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —
 5/5 GET_PRODUCT VALIDATIONS DIVERSIFIED ACROSS FIVE CATEGORIES —
 STAGING PIQSAVI UCP PROFILE DEPLOYED / OWNER HTTPS-VALIDATED —
 PRODUCTION PROFILE NOT VALIDATED —
-SHOPIFY HAS NOT FETCHED PIQSAVI PROFILE —
+SHOPIFY HAS FETCHED STAGING PIQSAVI PROFILE —
 PUBLIC PROFILE REACHABLE = YES —
 SHOPIFY DISCOVERY ATTEMPTED = YES —
-SUCCESSFUL UCP NEGOTIATION = NO —
+SUCCESSFUL UCP NEGOTIATION = YES —
+LIVE SEARCH_CATALOG RESPONSE = YES —
+PRODUCTS RETURNED = 3 —
 PRODUCTION CERTIFIED = NO —
-PROFILE MALFORMED / MISSING SERVICES —
+FIRST DISCOVERY ATTEMPT PROFILE MALFORMED / MISSING SERVICES —
+LATER CONTROLLED RETRY HTTP 200 —
 PRODUCTION CERTIFICATION STILL REQUIRED —
 SPRINT 32 REMAINS OPEN
