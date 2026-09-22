@@ -939,7 +939,7 @@ def test_owner_successful_piqsavi_profile_shopify_negotiation() -> None:
         assert "raw product payload" in text.casefold() or "raw product payload" in text
         assert '"products":' not in text
         assert "gid://shopify" not in text
-    assert "\"title\":" not in current[1]
+    assert '"title":' not in current[1]
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL in current[1]
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL not in current[1] or (
         "PRODUCTION PROFILE DEPLOYED = no" in current[1]
