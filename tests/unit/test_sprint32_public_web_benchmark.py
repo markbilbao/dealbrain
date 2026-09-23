@@ -7,9 +7,6 @@ from pathlib import Path
 
 import pytest
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.philippines_public_web_evidence import (
     philippines_public_web_certification_evidence_catalog,
     philippines_public_web_certification_evidence_records,
@@ -31,6 +28,8 @@ from app.research.public_web_policy import (
 from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
 from scripts.public_web_ph_benchmark import main as benchmark_main
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 ROOT = Path(__file__).resolve().parents[2]
 RANKING_MODULES = (
@@ -146,7 +145,7 @@ def test_documentary_public_web_evidence_is_incomplete_and_not_production() -> N
         assert record.grants_eligibility is False
         assert "search snippet is not canonical price evidence" in record.restrictions
         assert record.test_fixture is False
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_certification_catalog().list_records() == ()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()

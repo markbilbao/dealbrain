@@ -7,9 +7,6 @@ from datetime import date
 from app.domain.entities.research_certification_decision import CertificationDecisionRequest
 from app.domain.entities.research_execution import ResearchCapability
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.philippines_certification_evidence import (
     philippines_merchant_certification_evidence_catalog,
     philippines_merchant_certification_evidence_records,
@@ -20,6 +17,8 @@ from app.research.routing import production_research_provider_routing_policy_cat
 from app.services.research_certification_decision import (
     ResearchProviderCertificationDecisionService,
 )
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 _AS_OF = date(2026, 9, 2)
 _CAPABILITIES = (
@@ -66,7 +65,7 @@ def test_philippines_merchant_snapshots_load_without_entering_production() -> No
     assert all(record.test_fixture is False for record in records)
     assert all(record.market == "PH" for record in records)
     assert all(record.completeness == "incomplete" for record in records)
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_certification_catalog().list_records() == ()
 
 
@@ -184,6 +183,6 @@ def test_sprint_32_3_production_catalogs_remain_empty() -> None:
     philippines_merchant_certification_evidence_records()
     philippines_merchant_certification_evidence_catalog()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()

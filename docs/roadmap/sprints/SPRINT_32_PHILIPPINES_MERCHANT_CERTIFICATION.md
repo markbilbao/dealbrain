@@ -1,6 +1,6 @@
 # Sprint 32 — Philippines Merchant Certification
 
-**Status:** In progress — blocked on external certification. Internal foundation slices 32.1–32.6 are complete. Sprint 32 is **not complete**.
+**Status:** In progress — not production-certified. Internal foundation slices 32.1–32.6 are complete. Sprint 32 is **not complete**.
 **Primary owner / domain:** Marketplace eng + legal
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes to name PH
@@ -21,7 +21,7 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1�
 | 32.4 hardening | complete |
 | 32.5 reconciliation / validation | complete |
 | 32.6 public-web discovery evaluation path | internal foundation only — not certified |
-| Real PH product-data path | blocked |
+| Real PH product-data path | Anonymous Shopify Global Catalog access stages reconciled; not production-certified |
 | Production provider | none |
 | Production certification | none |
 | Live current-data validation | technical coverage exists for Shopify Global Catalog; production operational validation/certification incomplete |
@@ -346,14 +346,18 @@ The capability-policy preparation map is documentary only. It uses existing Spri
 
 ### Closure blockers (current)
 
-- No merchant has a real approved product-data / API path
-- No real production provider
-- Current-data technical coverage validation exists for Shopify Global Catalog, but production operational validation/certification is incomplete.
+- No executable production provider
 - No trusted production certification
-- Staging certification incomplete
+- Production profile undeployed
+- Market-specific canonical normalization and product-variant matching evidence still incomplete
+- Staging certification not yet complete
 - Monitoring / public coverage disclosure incomplete
-- Kill-switch closure evidence incomplete as required
-- EXT-01 is now `applied` (2026-09-08 PH product-data requests). That is **not** provider approval, credentials, a feed, or certification. EXT-06 remains `not_started`.
+- Kill-switch closure evidence incomplete
+- Later production validation remains
+- Unknown effective-cost components remain excluded and fail-closed
+- Shopify Global Catalog Anonymous catalog mode does not require a separate application, separate provider preapproval, or merchant/API credentials. That fact does not make the path production-ready or production-certified.
+- Current-data technical coverage validation exists for Shopify Global Catalog, but production operational validation/certification is incomplete.
+- EXT-01 remains `applied` for the 2026-09-08 Shopee and Lazada product-data requests. That is **not** provider approval, credentials, a feed, or certification, and it is **not** Shopify approval. Shopee and Lazada remain unapproved and unprovisioned. EXT-06 remains `not_started` for paths that require credentials. EXT-06 is **not applicable** to the S-1 Anonymous Shopify Global Catalog path. Lack of credentials must not block that path. Do not mark EXT-06 `provisioned`.
 - EXT-07 is `n_a_beta` for September and does not block this sprint's product-data certification purpose
 - A submitted email request alone does **not** satisfy Sprint 32. Shopee and Lazada remain **not certified**.
 - Owner-observed Shopee dashboard / Affiliate Open API facts are **not** official Sprint 32 certification evidence. The 2026-09-07 Sprint 26 reconciliation recorded those affiliate facts as **not** satisfying EXT-01; the later 2026-09-08 emails satisfy EXT-01 `applied` only.
@@ -365,7 +369,43 @@ The capability-policy preparation map is documentary only. It uses existing Spri
 
 ### Production defaults
 
-Certification records = 0. Production evidence = 0. Providers = 0. Routing policies = 0. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
+Certification records = 0. Production evidence = 4 Shopify Global Catalog PH rows (`PRODUCT_DISCOVERY`, `OFFER_DISCOVERY`, `CURRENT_PRICING`, `AVAILABILITY`; `completeness="recorded"` means capture is complete, not legal sufficiency or production certification). Combined evidence date for those rows is 2026-09-22 because they use the 2026-09-22 staging negotiation. Review date is 2026-09-23. `ResearchProviderCertificationEvidence.restrictions` records only unresolved certification blockers and is empty on these four rows. Permanent allowed-mode operating conditions stay on the capability-policy map, the evidence notes, and attribution requirements. Providers = 0. Routing policies = 0. `SHIPPING` and `PROMOTION_EVIDENCE` remain uncertified and unknown. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
+
+### Shopify Anonymous Global Catalog access stage (current)
+
+Application required: N/A for documented Anonymous catalog mode.
+
+Provider preapproval required: N/A for ordinary documented Anonymous catalog tools.
+
+Credentials: N/A / not required for Anonymous catalog mode.
+
+Agent profile: required.
+
+Staging profile: validated.
+
+Live technical connection: validated.
+
+PH technical coverage: validated.
+
+Capability-policy evidence: recorded/prepared.
+
+Production profile: not deployed.
+
+Production provider: none.
+
+Executable production certification: none.
+
+Routing: none.
+
+Production certified: NO.
+
+Sprint 32: OPEN.
+
+Sprint 38: UNSTARTED.
+
+Sprint 41: UNSTARTED.
+
+Do not call this path production ready.
 
 ## Objective
 
@@ -399,6 +439,8 @@ Certification stages must remain distinct (do not collapse):
 4. technical connection works
 5. capabilities legally/contractually usable (evidence-backed; not inferred from approval alone)
 6. production certified
+
+That sequence is valid for a provider path that actually requires application, approval, or credentials. It must not invent those stages for an official access path whose documented catalog mode does not require them. For the documented Shopify Global Catalog Anonymous catalog mode, separate application is not required, separate provider preapproval is not documented for ordinary catalog tools, and merchant/API credentials are not required. An agent profile is required. Signed and Token tiers are optional stronger identification modes and are not required to prove Anonymous catalog-tool access. Promoted placement is a different path: not enrolled, disabled, and policy unknown. This wording does not record a Shopify partnership, endorsement, special approval, preferred-developer status, or production-app approval. Staging technical validation is not production certification.
 
 **Rules:**
 
@@ -471,7 +513,7 @@ Certification stages must remain distinct (do not collapse):
 - Kill switch tested
 - **Fixtures, mocks, imported samples, or simulations cannot close this sprint**
 - PH may be named only after this gate + claims approval
-- Each named market requires: at least one legally usable real source path; current-data evidence; capability-policy evidence; credential/provider approval; truthful coverage definition; staging/limited production proof where required
+- Each named market requires a legitimate authorized access path whose actual access requirements are satisfied, plus current-data evidence, capability-policy evidence, a truthful coverage definition, and staging/limited production proof where required. Where the selected path requires provider approval, provisioning, or credentials, those stages must be satisfied. Where official provider documentation establishes a public/keyless/anonymous mode with no separate credential or preapproval requirement, that documented mode satisfies the access stage and the remaining certification evidence is still required. This exception applies only to the actual documented path and does not weaken Shopee, Lazada, or other credential-required providers.
 - Failure of PH certification delays/removes PH shopping claims; it does not authorize substituting US/SG/UK/CA as the September beta unless the owner later expands supported markets
 - Sprint 45 does not require US/SG/UK/CA for September
 

@@ -27,9 +27,6 @@ from app.marketplace.connectors.mock_live import MockLiveMarketplaceConnector
 from app.marketplace.memory import InMemoryMarketplaceDataRepository
 from app.marketplace.registry import MarketplaceConnectorRegistry
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.philippines_certification_evidence import philippines_merchant_provider_ids
 from app.research.providers import StaticResearchProvider
 from app.research.registry import (
@@ -39,6 +36,8 @@ from app.research.registry import (
 from app.research.routing import production_research_provider_routing_policy_catalog
 from app.services.marketplace_data_service import MarketplaceDataService
 from app.services.research_execution import execute_research_plan
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -172,7 +171,7 @@ def test_sprint31_still_rejects_duplicate_provider_id() -> None:
 def test_production_research_and_market_catalogs_remain_empty() -> None:
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     assert production_certified_shopping_markets().to_tuple() == ()
 

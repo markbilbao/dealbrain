@@ -16,7 +16,6 @@ from app.research.certification import (
 )
 from app.research.certification_evidence import (
     make_research_provider_certification_evidence,
-    production_research_provider_certification_evidence_catalog,
     research_provider_certification_evidence_catalog_for_tests,
 )
 from app.research.providers import StaticResearchProvider
@@ -26,6 +25,7 @@ from app.services.research_certification_decision import (
     ResearchProviderCertificationDecisionService,
 )
 
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 from tests.unit.test_sprint31_certification_authority import (
     _pricing_provider,
     _pricing_scope,
@@ -203,7 +203,7 @@ def test_certification_decision_does_not_create_routing_policy() -> None:
 
 def test_sprint_32_2_production_catalogs_remain_empty() -> None:
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 

@@ -990,3 +990,22 @@ SHOPIFY CALL = no
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 / Sprint 41 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. Sprint 41 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) |
+
+## 2026-09-23 Shopify Global Catalog access-stage reconciliation addendum
+
+This addendum does **not** rewrite earlier snapshots. It records path applicability for the documented Anonymous Global Catalog catalog mode. It does **not** call Shopify, does **not** deploy, does **not** mutate AWS, does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38 or Sprint 41.
+
+| Field | Value |
+|-------|-------|
+| Application required | No separate application required for the documented Anonymous catalog mode |
+| Provider preapproval required | No separate preapproval documented for ordinary Anonymous catalog tools |
+| Credentials required | False. EXT-06 remains `not_started` and is not applicable to this path |
+| Agent profile required | True. Staging profile deployed and owner HTTPS-validated |
+| Technical connection | Validated in staging / live Shopify response already recorded |
+| Production profile | Undeployed (HTTP 404 remains the recorded production check) |
+| Production evidence | Four PH rows only: product discovery, offer discovery, current pricing, availability. Evidence date 2026-09-22. Review date 2026-09-23. Recorded capture is not certification. Unresolved evidence restrictions are empty. Permanent query-time, no-cache, no-index, no-training, and short-lived conditions stay on the capability-policy map, evidence notes, and attribution requirements |
+| Shipping / promotion | Unknown and uncertified |
+| Production provider / certification / routing | Still **zero** |
+| EXT-01 | Remains `applied` for the 2026-09-08 Shopee and Lazada requests. Not approved. Not provisioned |
+| Sprint 32 / Sprint 38 / Sprint 41 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. Sprint 41 remains unstarted. |
+| Production ready | No |

@@ -24,6 +24,7 @@ from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
 from app.services.research_execution_router import plan_authorized_research
 
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 from tests.unit.test_phase_29_4b_refine_session_recommendation import _owner
 from tests.unit.test_sprint31_certification_authority import (
     _exact_cert,
@@ -289,14 +290,15 @@ def test_us_shopee_evidence_does_not_authorize_philippines_planning() -> None:
 
 def test_test_evidence_cannot_enter_production_catalog() -> None:
     production = production_research_provider_certification_evidence_catalog()
-    assert production.list_records() == ()
+    assert production.list_records()
+    assert all(record.test_fixture is False for record in production.list_records())
     with pytest.raises(ValueError, match="test evidence"):
         production.register(_evidence())
 
 
 def test_sprint_32_1_does_not_populate_production_catalogs() -> None:
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     authorization = _authorization(_pricing_scope(source="shopee"))

@@ -13,9 +13,6 @@ from app.domain.entities.public_web_shopping_evidence import (
     classify_search_hit_as_discovery,
 )
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.public_web_extract import (
     DEFAULT_EXTRACT_OUTPUT_DIR,
     DEFAULT_SEARCH_REPORT_PATH,
@@ -55,6 +52,8 @@ from scripts.public_web_ph_benchmark import (
 from scripts.public_web_ph_benchmark import (
     main as benchmark_main,
 )
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_REPORT = (
@@ -336,7 +335,7 @@ def test_no_direct_merchant_http_in_benchmark_implementation() -> None:
 
 
 def test_production_catalogs_stay_empty() -> None:
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_certification_catalog().list_records() == ()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()

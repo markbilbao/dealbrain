@@ -200,7 +200,7 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 
 Go if unification merged, reliability contracts published, capability/policy model + fail-closed harness expectations published, and suite exists — else 32–36 blocked.
 
-Closure evidence for the remaining documentation P0 items was implemented and later owner-closed. Sprint 32 is now in progress; it remains blocked on external merchant certification, not on Sprint 31.
+Closure evidence for the remaining documentation P0 items was implemented and later owner-closed. Sprint 32 is now in progress and remains open. It is not blocked on Sprint 31, and it is not blocked on a Shopify application, preapproval, or credential stage that the documented Anonymous catalog mode does not require. Production certification remains incomplete.
 
 ## Rollback or contingency
 
