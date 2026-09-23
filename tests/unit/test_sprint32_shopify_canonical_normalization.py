@@ -764,8 +764,9 @@ def test_owner_harness_summary_preserves_identity_without_raw_payload(tmp_path: 
     assert summary.sprint_38_started is False
     assert summary.sprint_32_closed is False
     assert summary.sprint_41_started is False
-    assert summary.live_execution is False
+    assert summary.owner_live_validation is False
     assert summary.cursor_executed_live_harness is False
+    assert "live_execution" not in summary.to_dict()
     assert summary.fabricated_shipping_count == 0
     assert summary.fabricated_voucher_count == 0
     assert summary.fabricated_tax_count == 0
@@ -786,11 +787,18 @@ def test_owner_harness_summary_preserves_identity_without_raw_payload(tmp_path: 
     assert summary.currencies_observed_count == 5
     assert summary.different_variant_conflicts_correctly_held_apart_count >= 1
     assert summary.ambiguous_or_insufficient_matches_count >= 1
-    assert summary.listing_prices_preserved_as_integer_minor_units == (
+    assert summary.products_with_stable_source_product_id == 5
+    assert summary.variants_with_stable_source_variant_id == 6
+    assert summary.search_variant_ids_observed_count == 6
+    assert summary.detail_variant_ids_observed_count == 6
+    assert summary.search_variants_confirmed_in_detail_count == 6
+    assert summary.listing_prices_preserved_as_integer_minor_units == 12
+    assert summary.listing_prices_preserved_as_integer_minor_units != (
         summary.products_with_stable_source_product_id
     )
-    assert summary.products_with_stable_source_product_id > 0
-    assert summary.variants_with_stable_source_variant_id > 0
+    assert summary.availability_unknown_count == 0
+    assert summary.availability_non_unknown_count == 12
+    assert summary.availability_normalized_count == summary.availability_non_unknown_count
     names = [name for name, _arguments in transport.calls]
     assert names.count("search_catalog") == 5
     assert names.count("get_product") == 5
@@ -811,6 +819,276 @@ def test_owner_harness_summary_preserves_identity_without_raw_payload(tmp_path: 
     assert "gid://shopify/" not in written
     with pytest.raises(Exception, match="repository"):
         write_normalization_summary(summary, ROOT / "not-committed-summary", live=False)
+
+
+def _run(transport: MemoryTransport, *, live: bool = False):
+    return run_shopify_normalization_validation(
+        transport,
+        profile_url=PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,
+        live=live,
+        now=CHECKED,
+    )
+
+
+def _search_queries(transport: MemoryTransport) -> list[str]:
+    return [
+        arguments["catalog"]["query"]
+        for name, arguments in transport.calls
+        if name == "search_catalog"
+    ]
+
+
+def _empty_catalog() -> dict:
+    return {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "result": {"isError": False, "structuredContent": {"products": []}},
+    }
+
+
+def test_stable_product_count_uses_distinct_search_to_detail_identities() -> None:
+    summary = _run(_diversified_transport())
+    assert summary.products_with_stable_source_product_id == 5
+    assert summary.listing_prices_preserved_as_integer_minor_units == 12
+    assert summary.products_with_stable_source_product_id != (
+        summary.listing_prices_preserved_as_integer_minor_units
+    )
+
+
+def test_changed_product_id_between_search_and_detail_fails_closed() -> None:
+    transport = _diversified_transport()
+    changed = _catalog_product(
+        product_id="gid://shopify/p/changed-laptop",
+        title="Gaming laptop",
+        amount=20002,
+        currency="USD",
+    )
+    transport.by_id["gid://shopify/p/norm-laptop"] = _envelope(changed)
+    with pytest.raises(ShopifyNormalizationHarnessError, match="product ID disappears"):
+        _run(transport)
+
+
+def test_search_variant_confirmed_in_detail_counts_stable() -> None:
+    summary = _run(_diversified_transport())
+    assert summary.search_variant_ids_observed_count == 6
+    assert summary.search_variants_confirmed_in_detail_count == 6
+    assert summary.variants_with_stable_source_variant_id == 6
+    assert summary.detail_variant_ids_observed_count == 6
+
+
+def test_search_variant_missing_from_detail_fails_closed() -> None:
+    transport = _diversified_transport()
+    red_only = _catalog_product(
+        product_id="gid://shopify/p/norm-keyboard",
+        title="Mechanical keyboard",
+        amount=8999,
+        currency="EUR",
+        variants=[
+            _variant(
+                variant_id="gid://shopify/ProductVariant/keyboard-red",
+                amount=8999,
+                currency="EUR",
+            )
+        ],
+    )
+    transport.by_id["gid://shopify/p/norm-keyboard"] = _envelope(
+        red_only, pagination={"has_next_page": True}
+    )
+    with pytest.raises(
+        ShopifyNormalizationHarnessError, match="search_variant_missing_from_get_product"
+    ):
+        _run(transport)
+
+
+def test_additional_detail_only_variant_is_allowed() -> None:
+    transport = _diversified_transport()
+    detail = _catalog_product(
+        product_id="gid://shopify/p/norm-keyboard",
+        title="Mechanical keyboard",
+        amount=8999,
+        currency="EUR",
+        variants=[
+            _variant(
+                variant_id="gid://shopify/ProductVariant/keyboard-red",
+                amount=8999,
+                currency="EUR",
+            ),
+            _variant(
+                variant_id="gid://shopify/ProductVariant/keyboard-blue",
+                amount=8999,
+                currency="EUR",
+            ),
+            _variant(
+                variant_id="gid://shopify/ProductVariant/keyboard-green",
+                amount=8999,
+                currency="EUR",
+            ),
+        ],
+    )
+    transport.by_id["gid://shopify/p/norm-keyboard"] = _envelope(
+        detail, pagination={"has_next_page": True}
+    )
+    summary = _run(transport)
+    assert summary.search_variant_ids_observed_count == 6
+    assert summary.detail_variant_ids_observed_count == 7
+    assert summary.search_variants_confirmed_in_detail_count == 6
+    assert summary.variants_with_stable_source_variant_id == 6
+    assert summary.products_with_stable_source_product_id == 5
+
+
+def test_duplicate_offer_rows_do_not_inflate_stable_counts() -> None:
+    transport = _diversified_transport()
+    duplicate_id = "gid://shopify/ProductVariant/earbuds-dup"
+    product = _catalog_product(
+        product_id="gid://shopify/p/norm-earbuds",
+        title="Wireless earbuds",
+        amount=10001,
+        currency="PHP",
+        variants=[
+            _variant(variant_id=duplicate_id, amount=10001, currency="PHP"),
+            _variant(variant_id=duplicate_id, amount=10001, currency="PHP"),
+        ],
+    )
+    envelope = _envelope(product, pagination={"has_next_page": True})
+    transport.by_query["wireless earbuds"] = envelope
+    transport.by_id["gid://shopify/p/norm-earbuds"] = envelope
+    summary = _run(transport)
+    assert summary.products_with_stable_source_product_id == 5
+    assert summary.variants_with_stable_source_variant_id == 6
+    assert summary.search_variant_ids_observed_count == 6
+    assert summary.search_variants_confirmed_in_detail_count == 6
+    assert summary.listing_prices_preserved_as_integer_minor_units == 14
+
+
+def test_five_of_five_category_success_passes() -> None:
+    transport = _diversified_transport()
+    summary = _run(transport)
+    expected = tuple(category_id for category_id, _query in OWNER_NORMALIZATION_CATEGORIES)
+    assert summary.categories_attempted == expected
+    assert summary.categories_normalized_successfully == expected
+    assert summary.search_call_count == 5
+    assert summary.get_product_call_count == 5
+    assert _search_queries(transport) == [
+        query for _category_id, query in OWNER_NORMALIZATION_CATEGORIES
+    ]
+
+
+def test_four_of_five_category_success_fails_closed() -> None:
+    transport = _diversified_transport()
+    transport.by_query["gaming laptop"] = _empty_catalog()
+    with pytest.raises(
+        ShopifyNormalizationHarnessError,
+        match="category_normalization_incomplete:gaming_laptop",
+    ):
+        _run(transport)
+    assert _search_queries(transport) == [
+        query for _category_id, query in OWNER_NORMALIZATION_CATEGORIES
+    ]
+    assert len(transport.calls) == 9
+    assert sum(name == "get_product" for name, _arguments in transport.calls) == 4
+    assert sum(name == "search_catalog" for name, _arguments in transport.calls) == 5
+
+
+def test_zero_of_five_category_success_fails_closed() -> None:
+    transport = _diversified_transport()
+    for query in list(transport.by_query):
+        transport.by_query[query] = _empty_catalog()
+    with pytest.raises(
+        ShopifyNormalizationHarnessError,
+        match="category_normalization_incomplete:wireless_earbuds",
+    ):
+        _run(transport)
+    assert _search_queries(transport) == [
+        query for _category_id, query in OWNER_NORMALIZATION_CATEGORIES
+    ]
+    assert sum(name == "search_catalog" for name, _arguments in transport.calls) == 5
+    assert sum(name == "get_product" for name, _arguments in transport.calls) == 0
+
+
+def test_incomplete_category_does_not_attempt_a_fallback_search() -> None:
+    transport = _diversified_transport()
+    transport.by_query["phone case"] = _empty_catalog()
+    with pytest.raises(
+        ShopifyNormalizationHarnessError,
+        match="category_normalization_incomplete:phone_case",
+    ):
+        _run(transport)
+    queries = _search_queries(transport)
+    assert queries == [query for _category_id, query in OWNER_NORMALIZATION_CATEGORIES]
+    assert len(queries) == 5
+    assert "fallback gadget" not in queries
+
+
+def test_unknown_availability_is_not_positive_evidence() -> None:
+    transport = _diversified_transport()
+    product = transport.by_query["wireless earbuds"]["result"]["structuredContent"]["products"][0]
+    for variant in product["variants"]:
+        variant.pop("availability")
+    summary = _run(transport)
+    assert summary.availability_unknown_count == 2
+    assert summary.availability_non_unknown_count == 10
+    assert summary.availability_normalized_count == 10
+    assert summary.availability_normalized_count == summary.availability_non_unknown_count
+    assert summary.availability_normalized_count != (
+        summary.availability_non_unknown_count + summary.availability_unknown_count
+    )
+
+
+def test_known_availability_is_counted_separately_from_unknown() -> None:
+    transport = _diversified_transport()
+    earbuds = transport.by_query["wireless earbuds"]["result"]["structuredContent"]["products"][0]
+    for variant in earbuds["variants"]:
+        variant.pop("availability")
+    laptop = transport.by_query["gaming laptop"]["result"]["structuredContent"]["products"][0]
+    for variant in laptop["variants"]:
+        variant["availability"] = {"available": False}
+    summary = _run(transport)
+    assert summary.availability_unknown_count == 2
+    assert summary.availability_non_unknown_count == 10
+    assert summary.availability_normalized_count == summary.availability_non_unknown_count
+
+
+def test_live_execution_field_is_removed() -> None:
+    summary = _run(_diversified_transport())
+    assert not hasattr(summary, "live_execution")
+    assert "live_execution" not in summary.to_dict()
+
+
+def test_owner_live_validation_is_true_only_for_owner_live_mode() -> None:
+    synthetic = _run(_diversified_transport(), live=False)
+    owner_live = _run(_diversified_transport(), live=True)
+    assert synthetic.owner_live_validation is False
+    assert owner_live.owner_live_validation is True
+    assert owner_live.sprint_38_started is False
+    assert owner_live.sprint_32_closed is False
+    assert owner_live.sprint_41_started is False
+    assert owner_live.production_certification is False
+    assert owner_live.cursor_executed_live_harness is False
+    assert "live_execution" not in owner_live.to_dict()
+
+
+def test_persisted_summary_has_no_raw_shopify_ids_or_payload(tmp_path: Path) -> None:
+    summary = _run(_diversified_transport())
+    path = write_normalization_summary(summary, tmp_path / "out", live=False)
+    written = path.read_text(encoding="utf-8")
+    payload = json.loads(written)
+    assert "gid://shopify/" not in written
+    assert RAW_SENTINEL not in written
+    assert '"raw_payload"' not in written
+    assert '"description"' not in written
+    assert '"media"' not in written
+    assert '"metadata"' not in written
+    assert "live_execution" not in payload
+    assert payload["production_certification"] is False
+    assert payload["owner_live_validation"] is False
+    for digest in payload["source_id_digests"]:
+        assert len(digest) == 64
+        int(digest, 16)
+    assert stable_source_digest("gid://shopify/p/norm-earbuds") in payload["source_id_digests"]
+    assert (
+        stable_source_digest("gid://shopify/ProductVariant/keyboard-red")
+        in (payload["source_id_digests"])
+    )
 
 
 def test_owner_harness_fails_closed_on_transport_errors() -> None:

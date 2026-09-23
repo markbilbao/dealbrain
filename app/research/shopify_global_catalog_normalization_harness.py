@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from app.domain.entities.marketplace_data import ProductAvailability
 from app.marketplace.normalization.shopify_global_catalog import (
     ObservationKind,
     ShopifyIdentityComparison,
@@ -132,11 +133,16 @@ class ShopifyNormalizationValidationSummary:
     categories_normalized_successfully: tuple[str, ...]
     products_with_stable_source_product_id: int
     variants_with_stable_source_variant_id: int
+    search_variant_ids_observed_count: int
+    detail_variant_ids_observed_count: int
+    search_variants_confirmed_in_detail_count: int
     listing_prices_preserved_as_integer_minor_units: int
     currencies_observed_count: int
     currency_codes: tuple[str, ...]
     seller_identity_present_count: int
     availability_normalized_count: int
+    availability_non_unknown_count: int
+    availability_unknown_count: int
     canonical_parsing_attempted_count: int
     exact_variant_comparisons_count: int
     different_variant_conflicts_correctly_held_apart_count: int
@@ -148,10 +154,46 @@ class ShopifyNormalizationValidationSummary:
     production_certification: bool
     sprint_38_started: bool
     source_id_digests: tuple[str, ...]
-    live_execution: bool
+    owner_live_validation: bool
     sprint_32_closed: bool
     sprint_41_started: bool
     cursor_executed_live_harness: bool
+
+    def __post_init__(self) -> None:
+        if (
+            self.production_certification
+            or self.sprint_38_started
+            or self.sprint_32_closed
+            or self.sprint_41_started
+            or self.cursor_executed_live_harness
+            or self.raw_payload_persisted
+            or self.raw_response_persistence
+            or self.pagination_followed
+            or self.lookup_count != 0
+        ):
+            raise ShopifyNormalizationHarnessError(
+                "validation summary is not certification evidence"
+            )
+        if (
+            len(self.categories_attempted) != MAX_SEARCH_CATALOG_CALLS
+            or len(self.categories_normalized_successfully) != MAX_SEARCH_CATALOG_CALLS
+            or self.search_call_count != MAX_SEARCH_CATALOG_CALLS
+            or self.get_product_call_count != MAX_GET_PRODUCT_CALLS
+        ):
+            raise ShopifyNormalizationHarnessError("category_normalization_incomplete")
+        if self.availability_normalized_count != self.availability_non_unknown_count:
+            raise ShopifyNormalizationHarnessError("availability count includes unknown")
+        if (
+            self.variants_with_stable_source_variant_id
+            != self.search_variants_confirmed_in_detail_count
+        ):
+            raise ShopifyNormalizationHarnessError(
+                "variant stability count is not confirmed continuity"
+            )
+        if self.products_with_stable_source_product_id > len(
+            self.categories_normalized_successfully
+        ):
+            raise ShopifyNormalizationHarnessError("stable product count exceeds selected products")
 
     def to_dict(self) -> dict[str, Any]:
         payload = {
@@ -170,6 +212,11 @@ class ShopifyNormalizationValidationSummary:
             "categories_normalized_successfully": list(self.categories_normalized_successfully),
             "products_with_stable_source_product_id": (self.products_with_stable_source_product_id),
             "variants_with_stable_source_variant_id": self.variants_with_stable_source_variant_id,
+            "search_variant_ids_observed_count": self.search_variant_ids_observed_count,
+            "detail_variant_ids_observed_count": self.detail_variant_ids_observed_count,
+            "search_variants_confirmed_in_detail_count": (
+                self.search_variants_confirmed_in_detail_count
+            ),
             "listing_prices_preserved_as_integer_minor_units": (
                 self.listing_prices_preserved_as_integer_minor_units
             ),
@@ -177,6 +224,8 @@ class ShopifyNormalizationValidationSummary:
             "currency_codes": list(self.currency_codes),
             "seller_identity_present_count": self.seller_identity_present_count,
             "availability_normalized_count": self.availability_normalized_count,
+            "availability_non_unknown_count": self.availability_non_unknown_count,
+            "availability_unknown_count": self.availability_unknown_count,
             "canonical_parsing_attempted_count": self.canonical_parsing_attempted_count,
             "exact_variant_comparisons_count": self.exact_variant_comparisons_count,
             "different_variant_conflicts_correctly_held_apart_count": (
@@ -192,7 +241,7 @@ class ShopifyNormalizationValidationSummary:
             "production_certification": self.production_certification,
             "sprint_38_started": self.sprint_38_started,
             "source_id_digests": list(self.source_id_digests),
-            "live_execution": self.live_execution,
+            "owner_live_validation": self.owner_live_validation,
             "sprint_32_closed": self.sprint_32_closed,
             "sprint_41_started": self.sprint_41_started,
             "cursor_executed_live_harness": self.cursor_executed_live_harness,
@@ -241,6 +290,8 @@ def assert_summary_has_no_raw_payload(payload: Mapping[str, Any]) -> None:
     blob = json.dumps(payload, sort_keys=True)
     if any(marker in blob for marker in _RAW_SUMMARY_MARKERS):
         raise ShopifyNormalizationHarnessError("raw payload written into summary")
+    if "gid://shopify/" in blob:
+        raise ShopifyNormalizationHarnessError("raw shopify id written into summary")
 
 
 def assert_normalization_preserved_price(
@@ -316,12 +367,16 @@ def run_shopify_normalization_validation(
         checked_at = checked_at.replace(tzinfo=UTC)
     observation: ObservationKind = "live" if live else "synthetic"
     offers: list[ShopifyNormalizedOffer] = []
-    successful_categories: list[str] = []
     comparisons = 0
     held_apart = 0
     ambiguous = 0
     digests: set[str] = set()
-    selected: list[tuple[str, str, list[ShopifyNormalizedOffer]]] = []
+    selected: list[tuple[str, str, list[ShopifyNormalizedOffer], frozenset[str]]] = []
+    search_variant_ids: set[str] = set()
+    detail_variant_ids: set[str] = set()
+    confirmed_variant_ids: set[str] = set()
+    stable_product_ids: set[str] = set()
+    validated_categories: list[str] = []
 
     for category_id, query in OWNER_NORMALIZATION_CATEGORIES:
         budget.consume_search()
@@ -338,16 +393,20 @@ def run_shopify_normalization_validation(
         category_offers = _normalize_product(
             product, checked_at=checked_at, observation_kind=observation
         )
-        if category_offers:
-            successful_categories.append(category_id)
+        if not category_offers:
+            continue
+        observed_search = _variant_id_set(product)
+        search_variant_ids.update(observed_search)
         comparisons, held_apart, ambiguous = _tally(
             category_offers, comparisons, held_apart, ambiguous
         )
         offers.extend(category_offers)
-        selected.append((category_id, product_id, category_offers))
+        selected.append((category_id, product_id, category_offers, observed_search))
         digests.add(stable_source_digest(product_id))
+        for variant_id in observed_search:
+            digests.add(stable_source_digest(variant_id))
 
-    for _category_id, product_id, search_offers in selected:
+    for category_id, product_id, search_offers, observed_search in selected:
         budget.consume_get_product()
         arguments = build_get_product_arguments(product_id, profile=profile)
         _assert_request_in_bounds(GET_PRODUCT_TOOL, arguments)
@@ -360,9 +419,17 @@ def run_shopify_normalization_validation(
             raise ShopifyNormalizationHarnessError(
                 "product ID disappears between search and get_product"
             )
+        observed_detail = _variant_id_set(detail)
+        detail_variant_ids.update(observed_detail)
+        if observed_search - observed_detail:
+            raise ShopifyNormalizationHarnessError("search_variant_missing_from_get_product")
+        confirmed_variant_ids.update(observed_search & observed_detail)
+        stable_product_ids.add(product_id)
         detail_offers = _normalize_product(
             detail, checked_at=checked_at, observation_kind=observation
         )
+        if not detail_offers:
+            continue
         comparisons, held_apart, ambiguous = _tally(
             detail_offers, comparisons, held_apart, ambiguous
         )
@@ -374,12 +441,23 @@ def run_shopify_normalization_validation(
             ambiguous,
         )
         offers.extend(detail_offers)
-        for variant_id in _variant_ids(detail):
+        for variant_id in observed_detail:
             digests.add(stable_source_digest(variant_id))
+        validated_categories.append(category_id)
 
+    for category_id, _query in OWNER_NORMALIZATION_CATEGORIES:
+        if category_id not in validated_categories:
+            raise ShopifyNormalizationHarnessError(
+                f"category_normalization_incomplete:{category_id}"
+            )
+    if budget.search_calls != MAX_SEARCH_CATALOG_CALLS:
+        raise ShopifyNormalizationHarnessError("category_normalization_incomplete")
+    if budget.get_product_calls != MAX_GET_PRODUCT_CALLS:
+        raise ShopifyNormalizationHarnessError("category_normalization_incomplete")
     if budget.lookup_calls != LOOKUP_CATALOG_CALLS or budget.pagination_followed:
         raise ShopifyNormalizationHarnessError("lookup or pagination occurred")
     currencies = tuple(sorted({offer.source.currency for offer in offers}))
+    non_unknown, unknown = _availability_counts(offers)
     summary = ShopifyNormalizationValidationSummary(
         generated_at=checked_at.isoformat(),
         agent_profile_source=AGENT_PROFILE_SOURCE_PIQSAVI,
@@ -393,13 +471,12 @@ def run_shopify_normalization_validation(
         categories_attempted=tuple(
             category_id for category_id, _query in OWNER_NORMALIZATION_CATEGORIES
         ),
-        categories_normalized_successfully=tuple(successful_categories),
-        products_with_stable_source_product_id=sum(
-            1 for offer in offers if offer.source.product_id
-        ),
-        variants_with_stable_source_variant_id=sum(
-            1 for offer in offers if offer.source.variant_id
-        ),
+        categories_normalized_successfully=tuple(validated_categories),
+        products_with_stable_source_product_id=len(stable_product_ids),
+        variants_with_stable_source_variant_id=len(confirmed_variant_ids),
+        search_variant_ids_observed_count=len(search_variant_ids),
+        detail_variant_ids_observed_count=len(detail_variant_ids),
+        search_variants_confirmed_in_detail_count=len(confirmed_variant_ids),
         listing_prices_preserved_as_integer_minor_units=sum(
             1
             for offer in offers
@@ -408,7 +485,9 @@ def run_shopify_normalization_validation(
         currencies_observed_count=len(currencies),
         currency_codes=currencies,
         seller_identity_present_count=sum(1 for offer in offers if offer.source.seller_identity),
-        availability_normalized_count=len(offers),
+        availability_normalized_count=non_unknown,
+        availability_non_unknown_count=non_unknown,
+        availability_unknown_count=unknown,
         canonical_parsing_attempted_count=len(offers),
         exact_variant_comparisons_count=comparisons,
         different_variant_conflicts_correctly_held_apart_count=held_apart,
@@ -420,7 +499,7 @@ def run_shopify_normalization_validation(
         production_certification=False,
         sprint_38_started=False,
         source_id_digests=tuple(sorted(digests)),
-        live_execution=live,
+        owner_live_validation=live,
         sprint_32_closed=False,
         sprint_41_started=False,
         cursor_executed_live_harness=False,
@@ -576,12 +655,23 @@ def _reject_followed_pagination(
 
 
 def _variant_ids(product: dict[str, Any]) -> tuple[str, ...]:
-    ids: list[str] = []
+    return tuple(_variant_id_set(product))
+
+
+def _variant_id_set(product: dict[str, Any]) -> frozenset[str]:
+    ids: set[str] = set()
     for variant in variants_from_product(product):
         text = _text(variant.get("id"))
         if text:
-            ids.append(text)
-    return tuple(ids)
+            ids.add(text)
+    return frozenset(ids)
+
+
+def _availability_counts(offers: list[ShopifyNormalizedOffer]) -> tuple[int, int]:
+    """Return non-unknown and unknown availability counts. Unknown is not evidence."""
+
+    unknown = sum(1 for offer in offers if offer.source.availability == ProductAvailability.UNKNOWN)
+    return len(offers) - unknown, unknown
 
 
 def _text(value: Any) -> str | None:
