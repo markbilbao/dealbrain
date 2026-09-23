@@ -451,6 +451,34 @@ SPRINT 38 STARTED = no
 
 ---
 
+## 22. Production profile HTTP 404 and capability-policy prep addendum (2026-09-23; does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots, including the §5 capability matrix or sections 17–21. The owner read-only check of `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` returned HTTP/2 404 with `content-type = application/json`.
+
+PRODUCTION PROFILE URL CHECKED = yes
+
+PRODUCTION PROFILE HTTP STATUS = 404
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION PROFILE VALIDATED = no
+
+PRODUCTION PROFILE NEGOTIATED = no
+
+PRODUCTION CERTIFIED = no
+
+AWS MUTATION = no
+
+DEPLOYMENT = no
+
+SHOPIFY CALL = no
+
+`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains False. Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32.
+
+The §5 matrix remains the rights classification. The Sprint 32 certification-prep map collapses each compound “allowed — restricted” query-time use to the single existing Sprint 31 state `restricted`. It does not mark unknown permissions `allowed`. Persistent indexing, search-result caching, AI training, promoted placement, affiliate ranking, this probe’s `lookup_catalog`, and raw response persistence stay `prohibited`. Discount, voucher, shipping-amount, free-shipping, and checkout-cost permissions stay `unknown`. Technical exposure and shopper applicability stay separate from policy. No production certification record is created. Production catalogs remain empty. Sprint 32 remains open. Sprint 38 remains unstarted. Sprint 41 remains unstarted.
+
+---
+
 SHOPIFY GLOBAL CATALOG REASSESSMENT COMPLETE —
 OFFICIAL QUERY-TIME COMPARISON PATH IDENTIFIED —
 PH LIVE TECHNICAL COVERAGE VALIDATED —
@@ -466,5 +494,9 @@ PRODUCTS RETURNED = 3 —
 PRODUCTION CERTIFIED = NO —
 FIRST DISCOVERY ATTEMPT PROFILE MALFORMED / MISSING SERVICES —
 LATER CONTROLLED RETRY HTTP 200 —
+PRODUCTION PROFILE HTTP STATUS = 404 —
+PRODUCTION PROFILE DEPLOYED = NO —
+PRODUCTION PROFILE DEPLOYMENT BELONGS TO SPRINT 41 —
 PRODUCTION CERTIFICATION STILL REQUIRED —
-SPRINT 32 REMAINS OPEN
+SPRINT 32 REMAINS OPEN —
+SPRINT 41 UNSTARTED

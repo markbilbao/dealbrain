@@ -243,6 +243,28 @@ This distinction protects the September target without sacrificing integrity.
 - No merchant connector may be production-certified or used to support a named shopping-market claim unless relevant permissions are explicitly declared, evidence-backed, and fail-closed enforced.
 - PH source certification must record effective-cost components with three distinct facts: technical/source field exposure (factual path evidence; not `CapabilityPolicyState`); contractual/policy authorization using existing Sprint 31 states (`allowed` / `restricted` / `prohibited` / `unknown`); and offer/shopper applicability where relevant. Do not invent a second authorization system. Provider approval and affiliate approval do not imply technical exposure or policy permission for listing price, discount, voucher, shipping, or checkout-cost fields.
 
+**Production UCP profile sequencing (Sprint 32 vs Sprint 41):** Sprint 32 may continue Philippines capability-policy and certification preparation from legitimate staging and live technical evidence while the production UCP profile is unreachable. On 2026-09-23 the owner read-only check of `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` returned HTTP/2 404 (`content-type = application/json`). `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains false. That profile is not deployed, validated, negotiated, or production certified.
+
+PRODUCTION PROFILE URL CHECKED = yes
+
+PRODUCTION PROFILE HTTP STATUS = 404
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION PROFILE VALIDATED = no
+
+PRODUCTION PROFILE NEGOTIATED = no
+
+PRODUCTION CERTIFIED = no
+
+AWS MUTATION = no
+
+DEPLOYMENT = no
+
+SHOPIFY CALL = no
+
+Production AWS/environment provisioning, the production deploy path, and production deploy/rollback validation — including deploying that production profile and validating it over HTTPS — remain Sprint 41. Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32. Sprint 32 must not force an early production deployment merely to make the production profile reachable. Sprint 32 acceptance criteria are unchanged. Final production validation and production certification remain incomplete until those later production gates are satisfied. Sprint 41 implementation is not started by this sequencing note.
+
 (Sprint 30 is a closed audit identity; do not re-open it as an implementation sprint.)
 
 ---

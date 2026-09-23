@@ -955,3 +955,38 @@ SPRINT 38 STARTED = no
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md) |
+
+## 2026-09-23 production profile HTTP 404 and capability-policy prep addendum
+
+This addendum does **not** rewrite earlier snapshots. It records an owner read-only production profile check and a documentary Sprint 31 capability-policy map. It does **not** deploy, does **not** call Shopify, does **not** certify Shopify, does **not** close Sprint 32, and does **not** start Sprint 38 or Sprint 41.
+
+PRODUCTION PROFILE URL CHECKED = yes
+
+PRODUCTION PROFILE HTTP STATUS = 404
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION PROFILE VALIDATED = no
+
+PRODUCTION PROFILE NEGOTIATED = no
+
+PRODUCTION CERTIFIED = no
+
+AWS MUTATION = no
+
+DEPLOYMENT = no
+
+SHOPIFY CALL = no
+
+| Field | Value |
+|-------|-------|
+| Production URL | `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| HTTP | HTTP/2 404; `content-type = application/json` |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | **False** |
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True** |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **True** for the staging negotiation only |
+| Production profile deployment | Sprint 41. Not pulled forward into Sprint 32. |
+| Capability-policy map | Existing Sprint 31 states only. No row is `allowed`. Query-time uses are `restricted`. Index, cache, training, promoted placement, affiliate ranking, probe `lookup_catalog`, and raw persistence are `prohibited`. Discount, voucher, shipping-amount, and checkout-cost permissions are `unknown`. |
+| Production providers / certifications | Still **zero** |
+| Sprint 32 / Sprint 38 / Sprint 41 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. Sprint 41 remains unstarted. |
+| Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) |
