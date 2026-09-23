@@ -287,10 +287,62 @@ SPRINT 38 STARTED = no
 
 `piqsavi_profile_is_shopify_negotiated()` is now **True** because the fetch milestone is true and at least one trusted PiqSavi environment is deployed. There is no global `PIQSAVI_UCP_AGENT_PROFILE_DEPLOYED` flag. Production live `--agent-profile-source piqsavi` remains **FAIL CLOSED**. Arbitrary URLs fail closed. Shopify technical fixture behavior is unchanged. This workspace did **not** call Shopify, deploy, or mutate AWS. Sprint 32 remains open. Sprint 38 remains unstarted.
 
-**Next sequence (not performed in this PR):**
+**Next sequence recorded on 2026-09-22 (historical for that slice; superseded below):**
 
 G. Owner-validate the exact production profile URL, then record `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`.
 H. Only after that continue capability-policy / production certification work.
+
+### 2026-09-23 production profile HTTP 404 and Sprint 41 sequencing (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. The owner performed a read-only HTTPS check of the exact production profile URL `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`.
+
+Result: HTTP/2 404. `content-type = application/json`. No deployment or mutation was performed.
+
+PRODUCTION PROFILE URL CHECKED = yes
+
+PRODUCTION PROFILE HTTP STATUS = 404
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION PROFILE VALIDATED = no
+
+PRODUCTION PROFILE NEGOTIATED = no
+
+PRODUCTION CERTIFIED = no
+
+AWS MUTATION = no
+
+DEPLOYMENT = no
+
+SHOPIFY CALL = no
+
+`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains **False**. Do not mark the production profile deployed, validated, negotiated, or production certified. The exact production URL remains **FAIL CLOSED**.
+
+The master roadmap assigns production AWS/environment provisioning, the production deploy path, and production deploy/rollback validation to **Sprint 41**. Sprint 32 must **not** force an early production deployment merely to make the production UCP profile reachable.
+
+Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32.
+
+Staging evidence remains available for certification preparation:
+
+- PH technical search coverage: 12/12 useful queries
+- Diversified `get_product`: 5/5 across five categories
+- PiqSavi staging profile: deployed and owner HTTPS-validated
+- Shopify staging negotiation: successful
+- Controlled retry: HTTP 200, `error = null`, `isError = false`, `product_count = 3`
+- `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`
+
+That staging/live technical evidence does **not** certify production.
+
+**Operative sequence (supersedes the 2026-09-22 items G and H for current work):**
+
+G. Record this production-profile HTTP 404 truthfully. Keep `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`.
+H. Defer production-profile deployment and production HTTPS validation to Sprint 41. Do not pull that deploy into Sprint 32.
+I. Continue Sprint 32 provider capability-policy and certification preparation on the existing Sprint 31 model, using legitimate staging and live technical evidence.
+J. Keep final production validation and production certification incomplete until later production gates, including Sprint 41, are satisfied.
+
+Sprint 32 acceptance criteria are unchanged. Sprint 32 is **not complete**. Sprint 38 remains unstarted. Sprint 41 implementation is not started.
+
+The capability-policy preparation map is documentary only. It uses existing Sprint 31 states (`allowed` / `restricted` / `prohibited` / `unknown`). It does not create a second policy system and does not populate production provider, certification, or routing registries. Technical exposure is not permission and does not forbid an `allowed` policy. The 2026-09-18 rights audit's query-time uses that are `allowed` with operating limits stay `allowed`; those limits are restrictions, not a conversion to `restricted`. `restricted` remains the state where the audit itself uses that state, including normalization and short-lived retention. `lookup_catalog` is `restricted` because the tool is documented and bulk indexing stays out of bounds; the Sprint 32 probe separately disables it and does not call it. Promoted placement is provider-`unknown` because enrollment is absent, and PiqSavi keeps it disabled. Commission-based organic ranking is a PiqSavi integrity rule, not a Shopify prohibition. Search-result caching, a persistent product index, and AI training without the required consent stay `prohibited`. Discount, voucher, shipping-amount, free-shipping, and checkout-cost permissions remain `unknown`. No documentary row is a production certification. Canonical shopper/offer applicability is not established.
 
 ### Closure blockers (current)
 
@@ -309,6 +361,7 @@ H. Only after that continue capability-policy / production certification work.
 - 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. Owner live 12-query PH search coverage **PH LIVE TECHNICAL COVERAGE VALIDATED** (12/12 `USEFUL_PH_OFFER`; Anonymous; no credentials; no scraping/pagination/bulk lookup). Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. That is **not** production certification and does **not** close Sprint 32. The staging PiqSavi UCP profile is **STAGING DEPLOYED / OWNER HTTPS-VALIDATED** (`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`; Deploy Staging run `35430542107`; SHA `e5654a63fe650fd21c219a24270455f8902519a0`; later corrected-profile redeploy Deploy Staging #40, run `35439563878`, SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620`). The production profile is **NOT validated/deployed** (`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`). `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True` after the later successful staging retry. Live PiqSavi-profile Shopify negotiation may unlock only the exact deployed staging URL and remains fail-closed for production and arbitrary URLs. This is **not** production-profile negotiation or production certification. Sprint 31 policy rows and remaining certification gates are still required. Sprint 38 remains unstarted.
 - 2026-09-19 owner first PiqSavi-profile Shopify discovery attempt failed after Deploy Staging #39: staging profile publicly reachable HTTP/2 200; one `search_catalog` (`wireless earbuds`); Shopify returned HTTP 422, JSON-RPC `-32001`, `UCP discovery failed`, `profile_malformed`, `Missing services`. No product result. No `get_product`. No `lookup_catalog`. No pagination. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = no. PRODUCTION CERTIFIED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` remains false. Sprint 32 remains open. Sprint 38 remains unstarted.
 - 2026-09-22 owner controlled Shopify retry after Deploy Staging #40 succeeded: staging profile publicly reachable with official `ucp.services` + `payment_handlers`; one `search_catalog` (`wireless earbuds`); Shopify returned HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, `product_count = 3`. No `get_product`. No `lookup_catalog`. No pagination. No raw product payload stored. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = yes. LIVE SEARCH_CATALOG RESPONSE = yes. PRODUCTS RETURNED = 3. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION CERTIFIED = no. SPRINT 32 COMPLETE = no. SPRINT 38 STARTED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`. Sprint 32 remains open. Sprint 38 remains unstarted.
+- 2026-09-23 owner read-only production profile check: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` returned HTTP/2 404, `content-type = application/json`. PRODUCTION PROFILE URL CHECKED = yes. PRODUCTION PROFILE HTTP STATUS = 404. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION PROFILE VALIDATED = no. PRODUCTION PROFILE NEGOTIATED = no. PRODUCTION CERTIFIED = no. AWS MUTATION = no. DEPLOYMENT = no. SHOPIFY CALL = no. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains False. Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32. Capability-policy preparation may continue from staging and live technical evidence. Production registries remain empty. Sprint 32 remains open. Sprint 38 remains unstarted. Sprint 41 remains unstarted.
 
 ### Production defaults
 

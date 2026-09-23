@@ -1,6 +1,6 @@
 # Sprint 41 — Production Environment & Deploy Path
 
-**Status:** Planned
+**Status:** Planned — not started. Sprint 32 must not pull production deploy forward.
 **Primary owner / domain:** Ops (extends Sprint 25 infra ownership; additive)
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P0-2
@@ -20,10 +20,13 @@ Provision isolated production AWS and validate production deploy/rollback workfl
 - Environment isolation proof (staging cannot read prod secrets)
 - Preserve staging deploy/rollback architecture
 - Launch acceptance requires **real evidence** for: isolated production AWS; DB; secrets; IAM; deploy path; rollback path; DNS; TLS; public hostname; migration strategy; appropriate CORS/host/security configuration
+- Production deployment and owner HTTPS validation of the exact PiqSavi UCP agent profile `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json`. Sprint 32 recorded an owner read-only HTTP/2 404 on 2026-09-23 (`content-type = application/json`) and left `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. That check does not start this sprint and does not authorize a production deploy.
 - Infrastructure-as-code alone is not launch proof
 
 ## Explicit non-goals
 
+- Starting this sprint from a Sprint 32 documentation or certification-prep change
+- Treating the 2026-09-23 production profile HTTP 404 as a reason to deploy production early
 - Multi-region
 - Redefining /ready semantics
 - Domain engine changes

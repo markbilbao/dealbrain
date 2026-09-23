@@ -40,6 +40,9 @@ PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED: Final = False
 # deployed PiqSavi profile URL. Staging succeeded 2026-09-22. This is not
 # production-profile negotiation or production certification.
 SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = True
+# The 2026-09-23 production HTTP 404 is documentary Sprint 32 evidence.
+# It is not imported here and must not fail this module if production
+# deployment later becomes true in Sprint 41.
 TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS: Final[frozenset[str]] = frozenset(
     {
         PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,

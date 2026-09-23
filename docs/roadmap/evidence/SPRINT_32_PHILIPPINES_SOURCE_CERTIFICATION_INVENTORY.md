@@ -474,6 +474,32 @@ SPRINT 38 STARTED = no
 
 Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
 
+### 2026-09-23 production profile HTTP 404 (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. The owner read-only check of `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` returned HTTP/2 404 with `content-type = application/json`.
+
+PRODUCTION PROFILE URL CHECKED = yes
+
+PRODUCTION PROFILE HTTP STATUS = 404
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION PROFILE VALIDATED = no
+
+PRODUCTION PROFILE NEGOTIATED = no
+
+PRODUCTION CERTIFIED = no
+
+AWS MUTATION = no
+
+DEPLOYMENT = no
+
+SHOPIFY CALL = no
+
+`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`. Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32. Capability-policy preparation uses the existing Sprint 31 states and does not populate production registries. Sprint 32 remains open. Sprint 32 is **not complete**. Sprint 38 remains unstarted. Sprint 41 remains unstarted.
+
+Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md).
+
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
@@ -488,4 +514,5 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 - The staging PiqSavi UCP profile is owner-validated. The production PiqSavi UCP profile is **not** owner-validated. Shopify successfully negotiated the staging PiqSavi profile. That is not production certification.
 - Owner first Shopify discovery attempt against the staging PiqSavi profile failed: HTTP 422, JSON-RPC `-32001`, `profile_malformed`, `Missing services`. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = no. PRODUCTION CERTIFIED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` remains false.
 - Owner later Shopify retry after Deploy Staging #40 succeeded: HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, `product_count = 3`. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = yes. LIVE SEARCH_CATALOG RESPONSE = yes. PRODUCTS RETURNED = 3. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION CERTIFIED = no. SPRINT 32 COMPLETE = no. SPRINT 38 STARTED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`.
+- Owner 2026-09-23 production profile check returned HTTP/2 404. PRODUCTION PROFILE URL CHECKED = yes. PRODUCTION PROFILE HTTP STATUS = 404. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION PROFILE VALIDATED = no. PRODUCTION PROFILE NEGOTIATED = no. PRODUCTION CERTIFIED = no. AWS MUTATION = no. DEPLOYMENT = no. SHOPIFY CALL = no. Production profile deployment belongs to Sprint 41 and is not pulled forward into Sprint 32.
 - Sprint 32 is **not complete**.

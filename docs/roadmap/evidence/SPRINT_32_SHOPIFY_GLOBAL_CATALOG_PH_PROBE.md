@@ -294,7 +294,7 @@ This heading is the 2026-09-18 local-implementation snapshot. It does **not** re
 | Live `--agent-profile-source piqsavi` | Allowed only when `piqsavi_profile_deployed_for_url(exact selected trusted URL)` is true. Staging may unlock. Production remains **FAIL CLOSED**. Arbitrary URLs fail closed. |
 | Shopify test fixture | `https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json` remains **TECHNICAL TEST ONLY** and is still the PH probe default |
 | PiqSavi-owned profile | Explicit `--agent-profile-source piqsavi` only. Evidence source is `piqsavi`; usage is `PIQSAVI_OWNED_PROFILE`. Deployment/fetch truth is in the lifecycle booleans. Live default is **not** switched to PiqSavi. Offline fixture mode may still select `piqsavi`. Staging URL may unlock when deployed; production remains fail-closed. |
-| Next sequence (not performed here) | G owner-validate production URL then record `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED`; H capability-policy / production certification |
+| Next sequence | Production profile HTTP/2 404 recorded 2026-09-23. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains False. Production profile deployment and HTTPS validation belong to Sprint 41 and are not pulled into Sprint 32. Capability-policy preparation continues from staging and live technical evidence. Production certification remains incomplete. |
 | Local tests | Focused profile route + PH probe contract tests, including fail-closed zero-network proof |
 | Live Shopify call in this slice | None |
 | Shopify fetched PiqSavi profile | Yes for staging only. Not production. |
@@ -503,6 +503,51 @@ SPRINT 38 STARTED = no
 | Sprint 32 | Remains **OPEN** |
 | Sprint 38 | Remains **UNSTARTED** |
 
+## 2026-09-23 production profile HTTP 404 (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. The owner performed a read-only HTTPS check. This workspace did **not** call Shopify, deploy, or mutate AWS.
+
+PRODUCTION PROFILE URL CHECKED = yes
+
+PRODUCTION PROFILE HTTP STATUS = 404
+
+PRODUCTION PROFILE DEPLOYED = no
+
+PRODUCTION PROFILE VALIDATED = no
+
+PRODUCTION PROFILE NEGOTIATED = no
+
+PRODUCTION CERTIFIED = no
+
+AWS MUTATION = no
+
+DEPLOYMENT = no
+
+SHOPIFY CALL = no
+
+| Field | Value |
+|-------|-------|
+| URL checked | `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` |
+| HTTP | HTTP/2 **404** |
+| content-type | `application/json` |
+| PRODUCTION PROFILE DEPLOYED | **no** |
+| PRODUCTION PROFILE VALIDATED | **no** |
+| PRODUCTION PROFILE NEGOTIATED | **no** |
+| PRODUCTION CERTIFIED | **no** |
+| `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` | **False** |
+| `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True** |
+| `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **True** for staging only |
+| Deployment owner | Sprint 41 production environment/deployment path. Not pulled forward into Sprint 32. |
+| Capability-policy prep | Continues on the existing Sprint 31 model using staging and live technical evidence. No production registry rows. |
+| AWS MUTATION | **no** |
+| DEPLOYMENT | **no** |
+| SHOPIFY CALL | **no** |
+| Sprint 32 | Remains **OPEN** |
+| Sprint 38 | Remains **UNSTARTED** |
+| Sprint 41 | Remains **Planned** / unstarted |
+
+Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32.
+
 ## Owner live command
 
 Credentials: **none**. Do not create a Partner account, Dev Dashboard token, or PiqSavi profile for this Anonymous probe.
@@ -553,6 +598,13 @@ PRODUCTION CERTIFIED = NO —
 FIRST DISCOVERY ATTEMPT PROFILE MALFORMED / MISSING SERVICES —
 LATER CONTROLLED RETRY HTTP 200 —
 SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = TRUE —
+PRODUCTION PROFILE URL CHECKED = YES —
+PRODUCTION PROFILE HTTP STATUS = 404 —
+PRODUCTION PROFILE DEPLOYED = NO —
+PRODUCTION PROFILE VALIDATED = NO —
+PRODUCTION PROFILE NEGOTIATED = NO —
 NOT PRODUCTION CERTIFICATION —
+PRODUCTION PROFILE DEPLOYMENT BELONGS TO SPRINT 41 —
 SPRINT 32 REMAINS OPEN —
-SPRINT 38 UNSTARTED
+SPRINT 38 UNSTARTED —
+SPRINT 41 UNSTARTED
