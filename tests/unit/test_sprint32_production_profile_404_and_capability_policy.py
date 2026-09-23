@@ -5,7 +5,9 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from app.domain.entities.research_execution import ResearchCapability
+import pytest
+from app.domain.entities.decision_snapshot import AffiliateNeutralitySnapshot
+from app.domain.entities.research_execution import ResearchCapability, ResearchProviderCertification
 from app.research.certification import production_research_provider_certification_catalog
 from app.research.certification_evidence import (
     production_research_provider_certification_evidence_catalog,
@@ -16,19 +18,24 @@ from app.research.shopify_global_catalog_capability_policy import (
     POLICY_STATES,
     PRODUCTION_CERTIFIED,
     SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID,
+    ShopifyCapabilityPolicyRow,
+    piqsavi_internal_operating_rules,
     shopify_capability_policy_grants_production,
     shopify_capability_policy_index,
     shopify_global_catalog_capability_policy_rows,
     shopify_policies_by_state,
+)
+from app.research.shopify_global_catalog_ph_probe import (
+    FORBIDDEN_LOOKUP_TOOL,
+    ProbeContractError,
+    build_jsonrpc_request,
+    build_search_catalog_arguments,
 )
 from app.ucp.agent_profile import (
     PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED,
     PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
     PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED,
     PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,
-    PRODUCTION_PROFILE_CHECK_DATE,
-    PRODUCTION_PROFILE_DEPLOYMENT_OWNER_SPRINT,
-    PRODUCTION_PROFILE_HTTP_CHECK,
     SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE,
     piqsavi_profile_deployed_for_url,
     piqsavi_profile_is_shopify_negotiated,
@@ -41,6 +48,7 @@ SPRINT41 = ROOT / "docs/roadmap/sprints/SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.
 ROADMAP = ROOT / "docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md"
 PROBE_DOC = ROOT / "docs/roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md"
 POLICY_MODULE = ROOT / "app/research/shopify_global_catalog_capability_policy.py"
+PROFILE_MODULE = ROOT / "app/ucp/agent_profile.py"
 CERTIFICATION_MODULE = ROOT / "app/research/certification.py"
 REGISTRY_MODULE = ROOT / "app/research/registry.py"
 ROUTING_MODULE = ROOT / "app/research/routing.py"
@@ -65,10 +73,8 @@ REQUIRED_ROWS = (
     "persistent_product_index",
     "ai_training",
     "promoted_placement",
-    "affiliate_neutrality",
     "get_product",
     "lookup_catalog",
-    "raw_response_persistence",
 )
 
 EVIDENCE_LINES = (
@@ -86,30 +92,39 @@ EVIDENCE_LINES = (
 )
 
 
-def test_production_profile_404_keeps_deployed_constant_false() -> None:
-    check = PRODUCTION_PROFILE_HTTP_CHECK
-    assert PRODUCTION_PROFILE_CHECK_DATE == "2026-09-23"
-    assert check.url == PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
-    assert check.url_checked is True
-    assert check.http_status == 404
-    assert check.content_type == "application/json"
-    assert check.deployed is False
-    assert check.validated is False
-    assert check.negotiated is False
-    assert check.production_certified is False
-    assert check.aws_mutation is False
-    assert check.deployment is False
-    assert check.shopify_call is False
-    assert check.deployment_owner_sprint == 41
-    assert PRODUCTION_PROFILE_DEPLOYMENT_OWNER_SPRINT == 41
+def test_production_profile_404_keeps_deployed_constant_false_today() -> None:
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
     assert piqsavi_profile_is_shopify_negotiated() is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
-    assert piqsavi_profile_deployed_for_url(check.url + "/") is False
-    assert piqsavi_profile_deployed_for_url(check.url + "?deployed=true") is False
+    production = PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL
+    assert piqsavi_profile_deployed_for_url(production + "/") is False
+    assert piqsavi_profile_deployed_for_url(production + "?deployed=true") is False
+
+
+def test_historical_404_does_not_block_a_future_production_deployed_constant() -> None:
+    source = PROFILE_MODULE.read_text(encoding="utf-8")
+    assert "ProductionProfileHttpCheck" not in source
+    assert "PRODUCTION_PROFILE_HTTP_CHECK" not in source
+    assert "PRODUCTION_PROFILE_CHECK_DATE" not in source
+    assert "PRODUCTION_PROFILE_DEPLOYMENT_OWNER_SPRINT" not in source
+    assert "must remain false" not in source.casefold()
+    needle = "PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED: Final = False"
+    assert needle in source
+    patched = source.replace(needle, needle.replace("False", "True"), 1)
+    namespace: dict[str, object] = {
+        "__name__": "piqsavi_profile_future_deploy_probe",
+        "__file__": str(PROFILE_MODULE),
+    }
+    exec(compile(patched, str(PROFILE_MODULE), "exec"), namespace)
+    assert namespace["PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED"] is True
+    deployed_for_url = namespace["piqsavi_profile_deployed_for_url"]
+    assert deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is True
+    assert deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
+    assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
 
 
 def test_production_404_evidence_is_recorded_without_a_deploy_claim() -> None:
@@ -154,50 +169,84 @@ def test_roadmap_defers_production_profile_deploy_to_sprint_41() -> None:
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
 
 
-def test_shopify_capability_map_uses_sprint31_states_and_does_not_allow_unknowns() -> None:
+def _sample_row(**overrides: object) -> ShopifyCapabilityPolicyRow:
+    payload: dict[str, object] = {
+        "row_id": "sample",
+        "label": "sample",
+        "research_capability": None,
+        "technical_exposure": "observed",
+        "policy": "allowed",
+        "shopper_applicability": "not_applicable",
+        "evidence_note": "structural sample",
+        "restrictions": ("query-time",),
+    }
+    payload.update(overrides)
+    return ShopifyCapabilityPolicyRow(**payload)  # type: ignore[arg-type]
+
+
+def test_shopify_capability_map_keeps_exposure_policy_and_probe_rules_apart() -> None:
     rows = shopify_global_catalog_capability_policy_rows()
     index = shopify_capability_policy_index()
     grouped = shopify_policies_by_state()
     assert set(index) >= set(REQUIRED_ROWS)
-    assert grouped["allowed"] == ()
+    assert "affiliate_neutrality" not in index
+    assert "raw_response_persistence" not in index
+    assert grouped["allowed"]
     assert shopify_capability_policy_grants_production() is False
     assert PRODUCTION_CERTIFIED is False
     for row in rows:
         assert row.policy in POLICY_STATES
-        assert row.policy != "allowed"
         assert row.production_eligible is False
         assert row.shopper_applicability != "applicable"
-        if row.technical_exposure == "observed":
-            assert row.policy != "allowed"
         if row.policy == "unknown":
-            assert row.shopper_applicability == "unknown"
-    assert index["product_discovery"].research_capability is ResearchCapability.PRODUCT_DISCOVERY
-    assert index["product_discovery"].technical_exposure == "observed"
-    assert index["product_discovery"].policy == "restricted"
-    assert index["current_pricing"].policy == "restricted"
+            assert row.shopper_applicability != "applicable"
+    observed_policies = {row.policy for row in rows if row.technical_exposure == "observed"}
+    assert "allowed" in observed_policies
+    assert len(observed_policies) > 1
+    allowed_observed = _sample_row(technical_exposure="observed", policy="allowed")
+    observed_restricted = _sample_row(
+        row_id="other",
+        technical_exposure="observed",
+        policy="restricted",
+    )
+    assert allowed_observed.policy == "allowed"
+    assert observed_restricted.policy == "restricted"
+    assert allowed_observed.technical_exposure == observed_restricted.technical_exposure
+    with pytest.raises(ValueError, match="unknown permission"):
+        _sample_row(policy="unknown", shopper_applicability="applicable")
+    discovery = index["product_discovery"]
+    assert discovery.research_capability is ResearchCapability.PRODUCT_DISCOVERY
+    assert discovery.technical_exposure == "observed"
+    assert discovery.policy == "allowed"
+    assert "query-time" in discovery.restrictions
+    assert index["current_pricing"].policy == "allowed"
     assert index["current_pricing"].research_capability is ResearchCapability.CURRENT_PRICING
-    assert index["availability"].policy == "restricted"
-    assert index["query_time_comparison"].policy == "restricted"
+    assert "do not cache search results" in index["current_pricing"].restrictions
+    assert index["availability"].policy == "allowed"
+    assert index["query_time_comparison"].policy == "allowed"
+    assert index["get_product"].policy == "allowed"
+    assert index["get_product"].technical_exposure == "observed"
     assert index["normalization_within_piqsavi"].technical_exposure == "unknown"
     assert index["normalization_within_piqsavi"].policy == "restricted"
+    assert index["short_lived_retention"].policy == "restricted"
+    assert index["ships_to_ph"].policy == "allowed"
     assert index["ships_to_ph"].shopper_applicability == "unknown"
     assert index["ships_to_ph"].research_capability is None
     assert index["destination_shipping_amount"].policy == "unknown"
-    assert index["destination_shipping_amount"].research_capability is ResearchCapability.SHIPPING
-    for row_id in (
-        "caching_search_results",
-        "persistent_product_index",
-        "ai_training",
-        "promoted_placement",
-        "affiliate_neutrality",
-        "lookup_catalog",
-        "raw_response_persistence",
-    ):
+    shipping = index["destination_shipping_amount"]
+    assert shipping.research_capability is ResearchCapability.SHIPPING
+    lookup = index["lookup_catalog"]
+    assert lookup.policy == "restricted"
+    assert lookup.policy != "prohibited"
+    assert lookup.technical_exposure == "documented_not_observed"
+    placement = index["promoted_placement"]
+    assert placement.policy == "unknown"
+    assert placement.policy != "prohibited"
+    assert placement.technical_exposure == "documented_not_observed"
+    for row_id in ("caching_search_results", "persistent_product_index", "ai_training"):
         assert index[row_id].policy == "prohibited"
         assert index[row_id].shopper_applicability == "not_applicable"
-    assert index["lookup_catalog"].technical_exposure == "documented_not_observed"
-    assert index["get_product"].technical_exposure == "observed"
-    assert index["get_product"].policy == "restricted"
+    assert "unless required Shopify or merchant consent exists" in index["ai_training"].restrictions
     for row_id in (
         "seller_discount",
         "platform_discount",
@@ -208,9 +257,44 @@ def test_shopify_capability_map_uses_sprint31_states_and_does_not_allow_unknowns
     ):
         assert index[row_id].policy == "unknown"
         assert index[row_id].technical_exposure == "unknown"
+    rules = {rule.rule_id: rule for rule in piqsavi_internal_operating_rules()}
+    assert rules["probe_lookup_catalog_disabled"].mode == "disabled"
+    assert rules["promoted_placement_disabled"].mode == "disabled"
+    assert rules["probe_raw_payload_not_stored"].mode == "no_raw_payload"
+    assert rules["commission_based_organic_ranking"].mode == "integrity"
+    assert set(rules).isdisjoint(index)
+    AffiliateNeutralitySnapshot()
+    with pytest.raises(ValueError, match="affiliate influence"):
+        AffiliateNeutralitySnapshot(commission_influenced_ordering=True)
+    arguments = build_search_catalog_arguments("wireless earbuds")
+    with pytest.raises(ProbeContractError, match="lookup_catalog"):
+        build_jsonrpc_request(FORBIDDEN_LOOKUP_TOOL, arguments, request_id=2)
+    future_certification = ResearchProviderCertification(
+        provider_id="documentary-only",
+        capability=ResearchCapability.PRODUCT_DISCOVERY,
+        market="PH",
+        certification_version="not-registered",
+        status="certified",
+        policy="allowed",
+        source="shopify_global_catalog",
+        test_fixture=False,
+    )
+    assert future_certification.is_production_eligible is True
+    unknown_certification = ResearchProviderCertification(
+        provider_id="documentary-only",
+        capability=ResearchCapability.PRODUCT_DISCOVERY,
+        market="PH",
+        certification_version="not-registered",
+        status="certified",
+        policy="unknown",
+        source="shopify_global_catalog",
+        test_fixture=False,
+    )
+    assert unknown_certification.is_production_eligible is False
     registry = production_research_provider_registry()
     provider_ids = {provider.provider_id for provider in registry.list_providers()}
     assert SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID not in provider_ids
+    assert production_research_provider_certification_catalog().list_records() == ()
 
 
 def test_capability_prep_does_not_populate_production_registries_or_start_later_sprints() -> None:

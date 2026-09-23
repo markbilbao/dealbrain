@@ -15,7 +15,6 @@ and UCP maps ``get_product`` to Lookup. It is not permission to run bulk
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from typing import Any, Final
 
 PIQSAVI_UCP_VERSION: Final = "2026-08-25"
@@ -41,57 +40,9 @@ PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED: Final = False
 # deployed PiqSavi profile URL. Staging succeeded 2026-09-22. This is not
 # production-profile negotiation or production certification.
 SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE: Final = True
-# Owner read-only HTTPS check of the exact production profile on 2026-09-23.
-# HTTP 404 does not deploy, validate, negotiate, or certify production.
-# Production profile deployment belongs to Sprint 41 and is not pulled forward.
-PRODUCTION_PROFILE_CHECK_DATE: Final = "2026-09-23"
-PRODUCTION_PROFILE_DEPLOYMENT_OWNER_SPRINT: Final = 41
-
-
-@dataclass(frozen=True, slots=True)
-class ProductionProfileHttpCheck:
-    """Dated owner evidence. Not a deployment and not a lifecycle override."""
-
-    url: str
-    url_checked: bool
-    http_status: int
-    content_type: str
-    deployed: bool
-    validated: bool
-    negotiated: bool
-    production_certified: bool
-    aws_mutation: bool
-    deployment: bool
-    shopify_call: bool
-    deployment_owner_sprint: int
-
-    def __post_init__(self) -> None:
-        if self.url != PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL:
-            raise ValueError("production profile check must use the exact production URL")
-        if self.deployment_owner_sprint != PRODUCTION_PROFILE_DEPLOYMENT_OWNER_SPRINT:
-            raise ValueError("production profile deployment belongs to Sprint 41")
-        if self.deployed or self.validated or self.negotiated or self.production_certified:
-            raise ValueError("HTTP 404 production profile check cannot certify production")
-        if self.aws_mutation or self.deployment or self.shopify_call:
-            raise ValueError("production profile check must record no mutation or Shopify call")
-        if PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED:
-            raise ValueError("production profile deployed constant must remain false")
-
-
-PRODUCTION_PROFILE_HTTP_CHECK: Final = ProductionProfileHttpCheck(
-    url=PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL,
-    url_checked=True,
-    http_status=404,
-    content_type="application/json",
-    deployed=False,
-    validated=False,
-    negotiated=False,
-    production_certified=False,
-    aws_mutation=False,
-    deployment=False,
-    shopify_call=False,
-    deployment_owner_sprint=PRODUCTION_PROFILE_DEPLOYMENT_OWNER_SPRINT,
-)
+# The 2026-09-23 production HTTP 404 is documentary Sprint 32 evidence.
+# It is not imported here and must not fail this module if production
+# deployment later becomes true in Sprint 41.
 TRUSTED_PIQSAVI_UCP_AGENT_PROFILE_URLS: Final[frozenset[str]] = frozenset(
     {
         PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL,

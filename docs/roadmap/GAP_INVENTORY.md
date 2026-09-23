@@ -986,7 +986,7 @@ SHOPIFY CALL = no
 | `PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED` | **True** |
 | `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` | **True** for the staging negotiation only |
 | Production profile deployment | Sprint 41. Not pulled forward into Sprint 32. |
-| Capability-policy map | Existing Sprint 31 states only. No row is `allowed`. Query-time uses are `restricted`. Index, cache, training, promoted placement, affiliate ranking, probe `lookup_catalog`, and raw persistence are `prohibited`. Discount, voucher, shipping-amount, and checkout-cost permissions are `unknown`. |
+| Capability-policy map | Existing Sprint 31 states only. Query-time uses the audit marks allowed stay `allowed`, with restrictions recorded separately. Caching, persistent product index, and AI training without required consent stay `prohibited`. `lookup_catalog` is provider-`restricted` and probe-disabled. Promoted placement is provider-`unknown` and PiqSavi-disabled. Commission-based organic ranking is an internal integrity rule. Discount, voucher, shipping-amount, and checkout-cost permissions stay `unknown`. |
 | Production providers / certifications | Still **zero** |
 | Sprint 32 / Sprint 38 / Sprint 41 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. Sprint 41 remains unstarted. |
 | Authority | [`sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md`](sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md); [`GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md) |
