@@ -42,13 +42,21 @@ from app.research.shopify_global_catalog_normalization_harness import (
     OWNER_NORMALIZATION_CATEGORIES,
     ShopifyNormalizationHarnessBudget,
     ShopifyNormalizationHarnessError,
+    _assert_request_in_bounds,
     assert_owner_harness_profile,
     run_shopify_normalization_validation,
     stable_source_digest,
     staging_normalization_profile,
     write_normalization_summary,
 )
-from app.research.shopify_global_catalog_ph_probe import ANONYMOUS_USER_AGENT, FORBIDDEN_LOOKUP_TOOL
+from app.research.shopify_global_catalog_ph_probe import (
+    ANONYMOUS_USER_AGENT,
+    FORBIDDEN_LOOKUP_TOOL,
+    GET_PRODUCT_TOOL,
+    SEARCH_TOOL,
+    build_get_product_arguments,
+    build_search_catalog_arguments,
+)
 from app.research.shopify_global_catalog_reliability import (
     SHOPIFY_NORMALIZATION_CANDIDATE_ID,
     classify_conflicting_variant_identity,
@@ -78,6 +86,7 @@ SPRINT38 = ROOT / "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADAT
 SPRINT41 = ROOT / "docs/roadmap/sprints/SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md"
 CHECKED = datetime(2026, 9, 23, 12, 0, tzinfo=UTC)
 RAW_SENTINEL = "RAW_SHOPIFY_DESCRIPTION_SENTINEL"
+RETURNED_PAGE_CURSOR = "shopify-returned-next-cursor"
 
 
 def _variant(
@@ -248,7 +257,10 @@ def _diversified_transport() -> MemoryTransport:
             amount=amount,
             currency=currency,
         )
-        envelope = _envelope(product, pagination={"has_next_page": True})
+        envelope = _envelope(
+            product,
+            pagination={"has_next_page": True, "cursor": RETURNED_PAGE_CURSOR, "page": 2},
+        )
         by_query[query] = envelope
         by_id[product_id] = envelope
     keyboard_variants = [
@@ -270,7 +282,10 @@ def _diversified_transport() -> MemoryTransport:
         currency="EUR",
         variants=keyboard_variants,
     )
-    keyboard_envelope = _envelope(keyboard, pagination={"has_next_page": True})
+    keyboard_envelope = _envelope(
+        keyboard,
+        pagination={"has_next_page": True, "cursor": RETURNED_PAGE_CURSOR, "page": 2},
+    )
     by_query["mechanical keyboard"] = keyboard_envelope
     by_id["gid://shopify/p/norm-keyboard"] = keyboard_envelope
     return MemoryTransport(by_query, by_id)
@@ -726,6 +741,76 @@ def test_owner_harness_prohibits_lookup_and_pagination() -> None:
     assert budget.pagination_followed is True
 
 
+def _replace_response_pagination(transport: MemoryTransport, pagination: dict) -> None:
+    for envelope in transport.by_query.values():
+        envelope["result"]["structuredContent"]["pagination"] = pagination
+
+
+def _assert_first_page_budget(transport: MemoryTransport, summary) -> None:
+    assert summary.pagination_followed is False
+    assert summary.pagination_metadata_observed is True
+    assert summary.search_call_count == 5
+    assert summary.get_product_call_count == 5
+    assert summary.lookup_count == 0
+    assert summary.products_with_stable_source_product_id == 5
+    assert summary.variants_with_stable_source_variant_id == 6
+    names = [name for name, _arguments in transport.calls]
+    assert names.count(SEARCH_TOOL) == 5
+    assert names.count(GET_PRODUCT_TOOL) == 5
+    assert len(transport.calls) == 10
+    for _name, arguments in transport.calls:
+        pagination = arguments["catalog"].get("pagination") or {}
+        assert "cursor" not in pagination
+        assert "page" not in pagination
+        encoded = json.dumps(arguments)
+        assert RETURNED_PAGE_CURSOR not in encoded
+        assert '"page": 2' not in encoded
+    assert RETURNED_PAGE_CURSOR not in json.dumps(summary.to_dict())
+
+
+def test_response_cursor_does_not_fail_or_follow() -> None:
+    transport = _diversified_transport()
+    _replace_response_pagination(transport, {"cursor": RETURNED_PAGE_CURSOR})
+    summary = _run(transport)
+    _assert_first_page_budget(transport, summary)
+
+
+def test_has_next_page_does_not_fail_or_follow() -> None:
+    transport = _diversified_transport()
+    _replace_response_pagination(transport, {"has_next_page": True})
+    summary = _run(transport)
+    _assert_first_page_budget(transport, summary)
+
+
+def test_returned_page_metadata_is_not_copied_into_another_request() -> None:
+    transport = _diversified_transport()
+    _replace_response_pagination(
+        transport,
+        {"has_next_page": True, "cursor": RETURNED_PAGE_CURSOR, "page": 2},
+    )
+    summary = _run(transport)
+    _assert_first_page_budget(transport, summary)
+    assert summary.categories_normalized_successfully == tuple(
+        category_id for category_id, _query in OWNER_NORMALIZATION_CATEGORIES
+    )
+
+
+def test_outgoing_pagination_cursor_and_page_fail_closed() -> None:
+    profile = staging_normalization_profile()
+    search = build_search_catalog_arguments("wireless earbuds", profile=profile)
+    search["catalog"]["pagination"]["cursor"] = RETURNED_PAGE_CURSOR
+    with pytest.raises(ShopifyNormalizationHarnessError, match="pagination prohibited"):
+        _assert_request_in_bounds(SEARCH_TOOL, search)
+    page_two = build_search_catalog_arguments("gaming laptop", profile=profile)
+    page_two["catalog"]["pagination"]["page"] = 2
+    with pytest.raises(ShopifyNormalizationHarnessError, match="pagination prohibited"):
+        _assert_request_in_bounds(SEARCH_TOOL, page_two)
+    detail = build_get_product_arguments("gid://shopify/p/norm-earbuds", profile=profile)
+    detail["catalog"]["pagination"] = {"cursor": RETURNED_PAGE_CURSOR}
+    with pytest.raises(ShopifyNormalizationHarnessError, match="pagination prohibited"):
+        _assert_request_in_bounds(GET_PRODUCT_TOOL, detail)
+
+
 def test_owner_harness_requires_exact_staging_profile_and_does_not_call() -> None:
     profile = staging_normalization_profile()
     assert profile.url == PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL
@@ -758,6 +843,7 @@ def test_owner_harness_summary_preserves_identity_without_raw_payload(tmp_path: 
     assert summary.get_product_call_count == 5
     assert summary.lookup_count == 0
     assert summary.pagination_followed is False
+    assert summary.pagination_metadata_observed is True
     assert summary.raw_payload_persisted is False
     assert summary.raw_response_persistence is False
     assert summary.production_certification is False
@@ -806,16 +892,20 @@ def test_owner_harness_summary_preserves_identity_without_raw_payload(tmp_path: 
     for _name, arguments in transport.calls:
         catalog = arguments["catalog"]
         pagination = catalog.get("pagination") or {}
-        assert not pagination.get("cursor")
+        assert "cursor" not in pagination
+        assert "page" not in pagination
+        assert RETURNED_PAGE_CURSOR not in json.dumps(arguments)
         assert arguments["meta"]["ucp-agent"]["profile"] == PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL
     blob = json.dumps(summary.to_dict())
     assert RAW_SENTINEL not in blob
+    assert RETURNED_PAGE_CURSOR not in blob
     assert "gid://shopify/p/norm-earbuds" not in blob
     assert stable_source_digest("gid://shopify/p/norm-earbuds") in summary.source_id_digests
     outside = tmp_path / "summary"
     path = write_normalization_summary(summary, outside, live=False)
     written = path.read_text(encoding="utf-8")
     assert RAW_SENTINEL not in written
+    assert RETURNED_PAGE_CURSOR not in written
     assert "gid://shopify/" not in written
     with pytest.raises(Exception, match="repository"):
         write_normalization_summary(summary, ROOT / "not-committed-summary", live=False)
@@ -1073,6 +1163,9 @@ def test_persisted_summary_has_no_raw_shopify_ids_or_payload(tmp_path: Path) -> 
     written = path.read_text(encoding="utf-8")
     payload = json.loads(written)
     assert "gid://shopify/" not in written
+    assert RETURNED_PAGE_CURSOR not in written
+    assert payload["pagination_followed"] is False
+    assert payload["pagination_metadata_observed"] is True
     assert RAW_SENTINEL not in written
     assert '"raw_payload"' not in written
     assert '"description"' not in written

@@ -112,6 +112,12 @@ class ShopifyNormalizationHarnessBudget:
         raise ShopifyNormalizationHarnessError("lookup_catalog prohibited")
 
     def reject_pagination(self) -> None:
+        """Fail closed only when PiqSavi follows another page.
+
+        A cursor or ``has_next_page`` returned on the first page is ignored
+        metadata and must not call this method.
+        """
+
         self.pagination_followed = True
         raise ShopifyNormalizationHarnessError("pagination prohibited")
 
@@ -128,6 +134,7 @@ class ShopifyNormalizationValidationSummary:
     get_product_call_count: int
     lookup_count: int
     pagination_followed: bool
+    pagination_metadata_observed: bool
     raw_payload_persisted: bool
     categories_attempted: tuple[str, ...]
     categories_normalized_successfully: tuple[str, ...]
@@ -207,6 +214,7 @@ class ShopifyNormalizationValidationSummary:
             "get_product_call_count": self.get_product_call_count,
             "lookup_count": self.lookup_count,
             "pagination_followed": self.pagination_followed,
+            "pagination_metadata_observed": self.pagination_metadata_observed,
             "raw_payload_persisted": self.raw_payload_persisted,
             "categories_attempted": list(self.categories_attempted),
             "categories_normalized_successfully": list(self.categories_normalized_successfully),
@@ -371,6 +379,7 @@ def run_shopify_normalization_validation(
     held_apart = 0
     ambiguous = 0
     digests: set[str] = set()
+    pagination_metadata_observed = False
     selected: list[tuple[str, str, list[ShopifyNormalizedOffer], frozenset[str]]] = []
     search_variant_ids: set[str] = set()
     detail_variant_ids: set[str] = set()
@@ -384,7 +393,8 @@ def run_shopify_normalization_validation(
         _assert_request_in_bounds(SEARCH_TOOL, arguments)
         payload = transport.call_tool(SEARCH_TOOL, arguments)
         content = _accepted_content(payload)
-        _reject_followed_pagination(content, budget)
+        if _response_pagination_metadata_observed(content):
+            pagination_metadata_observed = True
         products = products_from_catalog_payload(payload)
         product = next((item for item in products if _text(item.get("id"))), None)
         if product is None:
@@ -412,7 +422,8 @@ def run_shopify_normalization_validation(
         _assert_request_in_bounds(GET_PRODUCT_TOOL, arguments)
         payload = transport.call_tool(GET_PRODUCT_TOOL, arguments)
         content = _accepted_content(payload)
-        _reject_followed_pagination(content, budget)
+        if _response_pagination_metadata_observed(content):
+            pagination_metadata_observed = True
         products = products_from_catalog_payload(payload)
         detail = next((item for item in products if _text(item.get("id"))), None)
         if detail is None or str(detail.get("id")) != product_id:
@@ -467,6 +478,7 @@ def run_shopify_normalization_validation(
         get_product_call_count=budget.get_product_calls,
         lookup_count=LOOKUP_CATALOG_CALLS,
         pagination_followed=False,
+        pagination_metadata_observed=pagination_metadata_observed,
         raw_payload_persisted=False,
         categories_attempted=tuple(
             category_id for category_id, _query in OWNER_NORMALIZATION_CATEGORIES
@@ -645,13 +657,30 @@ def _assert_request_in_bounds(tool_name: str, arguments: dict[str, Any]) -> None
         raise ShopifyNormalizationHarnessError("unexpected catalog endpoint")
 
 
-def _reject_followed_pagination(
-    content: dict[str, Any], budget: ShopifyNormalizationHarnessBudget
-) -> None:
+_RESPONSE_PAGINATION_METADATA_KEYS = frozenset(
+    {
+        "cursor",
+        "end_cursor",
+        "has_next_page",
+        "next",
+        "next_cursor",
+        "page",
+        "start_cursor",
+    }
+)
+
+
+def _response_pagination_metadata_observed(content: Mapping[str, Any]) -> bool:
+    """True when the first-page response carries next-page metadata.
+
+    That metadata is ignored. It does not mean PiqSavi requested another page,
+    and the cursor is not copied into a later request.
+    """
+
     pagination = content.get("pagination")
-    if isinstance(pagination, dict) and pagination.get("cursor"):
-        budget.reject_pagination()
-    # has_next_page is ignored. This harness does not request another page.
+    if not isinstance(pagination, dict):
+        return False
+    return any(key in pagination for key in _RESPONSE_PAGINATION_METADATA_KEYS)
 
 
 def _variant_ids(product: dict[str, Any]) -> tuple[str, ...]:
