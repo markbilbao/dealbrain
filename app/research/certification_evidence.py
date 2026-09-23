@@ -2,7 +2,8 @@
 
 Stores non-secret evidence that may later support a certification decision.
 Distinct from the certification catalog: evidence never authorizes planning,
-eligibility, or routing. Sprint 32.1 production evidence starts empty.
+eligibility, or routing. The production catalog holds later Sprint 32 Shopify
+Global Catalog PH evidence only. It does not certify that path.
 """
 
 from __future__ import annotations
@@ -136,9 +137,21 @@ def make_research_provider_certification_evidence(
 def production_research_provider_certification_evidence_catalog() -> (
     ResearchProviderCertificationEvidenceCatalog
 ):
-    """Fail-closed production evidence catalog. Empty until later Sprint 32 slices."""
+    """Production evidence catalog.
 
-    return ResearchProviderCertificationEvidenceCatalog(allow_test_evidence=False)
+    Later Sprint 32 Shopify Global Catalog PH evidence only. These rows do not
+    grant certification, eligibility, or routing. Provider, certification, and
+    routing factories stay empty.
+    """
+
+    from app.research.shopify_global_catalog_certification_evidence import (
+        shopify_global_catalog_certification_evidence_records,
+    )
+
+    return ResearchProviderCertificationEvidenceCatalog(
+        shopify_global_catalog_certification_evidence_records(),
+        allow_test_evidence=False,
+    )
 
 
 def research_provider_certification_evidence_catalog_for_tests(

@@ -6,11 +6,10 @@ import re
 from pathlib import Path
 
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 ROOT = Path(__file__).resolve().parents[2]
 AUDIT = ROOT / "docs/roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md"
@@ -141,7 +140,7 @@ def test_owner_live_coverage_addendum_keeps_historical_unverified_strings() -> N
     assert "Sprint 38 remains unstarted" in sprint32
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 
 

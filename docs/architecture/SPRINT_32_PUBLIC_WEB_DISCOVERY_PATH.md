@@ -103,4 +103,4 @@ Sprint 32 may describe and certify a data path. It must not implement live retri
 
 ## Production state
 
-Production registry, certification catalog, evidence catalog, and routing catalog remain empty. Documentary public-web evidence is incomplete and is not loaded by production factories.
+The production registry, certification catalog, and routing catalog remain empty. The production evidence catalog contains only non-certifying Shopify Global Catalog PH evidence from a later Sprint 32 slice. Documentary public-web evidence is incomplete and is not loaded by production factories.

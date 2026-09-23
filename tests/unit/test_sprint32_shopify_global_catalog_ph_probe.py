@@ -7,9 +7,6 @@ from pathlib import Path
 
 import pytest
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
 from app.research.shopify_global_catalog_ph_probe import (
@@ -68,6 +65,8 @@ from app.research.shopify_global_catalog_ph_probe import (
 )
 from scripts.shopify_global_catalog_ph_probe import main as probe_main
 from scripts.shopify_global_catalog_ph_probe import post_anonymous_catalog
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 ROOT = Path(__file__).resolve().parents[2]
 SPRINT32 = ROOT / "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md"
@@ -549,7 +548,7 @@ def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
     assert "OWNER LIVE PH COVERAGE TEST REQUIRED" not in probe_doc
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert "Sprint 38 remains unstarted" in sprint32
 
 
@@ -592,7 +591,7 @@ def test_owner_diversified_get_product_validation_is_recorded() -> None:
     assert "Sprint 38 remains **UNSTARTED**" in diversified
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
@@ -751,7 +750,7 @@ def test_production_catalogs_stay_empty_and_sprint32_stays_open() -> None:
     assert report.closes_sprint_32 is False
     assert report.starts_sprint_38 is False
     assert report.certifies_shopify is False
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_certification_catalog().list_records() == ()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
@@ -1087,7 +1086,7 @@ def test_sprint38_unstarted_and_production_catalogs_empty() -> None:
     assert report.production_certified is False
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
     assert "Sprint 32 remains open." in sprint32

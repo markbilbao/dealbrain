@@ -1,7 +1,7 @@
 # Sprint 32 — Philippines Source Certification Inventory
 
 **Document type:** Non-secret certification-evidence inventory  
-**Sprint slice:** 32.1–32.5 foundation complete. Sprint 32 is **not complete** (blocked on external certification).  
+**Sprint slice:** 32.1–32.5 foundation complete. Sprint 32 is **not complete** (not production-certified).
 **Date recorded:** 2026-09-02  
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
@@ -88,7 +88,7 @@ Owner-observed Shopee affiliate facts (affiliate dashboard access, Payment & Tax
 | Sprint 31 production provider registry | empty |
 | Sprint 31 production certification catalog | empty |
 | Sprint 31 production routing catalog | empty |
-| Sprint 32 production evidence catalog | empty |
+| Sprint 32 production evidence catalog | 4 Shopify Global Catalog PH evidence rows only (`recorded` capture; not certification). Shopee, Lazada, and public-web rows are not loaded. |
 | EXT-01 / EXT-06 | EXT-01 `applied` (2026-09-08 PH product-data requests; not approved); EXT-06 `not_started`; EXT-07 `n_a_beta` for September |
 | Public PH support claim | forbidden |
 
@@ -503,7 +503,7 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 ## Explicit non-claims
 
 - No production `ResearchProviderCertification` is created by this inventory.
-- No production evidence catalog rows are seeded.
+- Production evidence catalog rows are limited to Shopify Global Catalog PH evidence. They do not certify Shopify and they do not seed Shopee, Lazada, TikTok Shop, Amazon, Temu, or public-web rows.
 - No merchant HTTP, credentials, scraping, or live research is authorized.
 - Shopee remains uncertified and fail-closed.
 - Lazada remains uncertified and fail-closed.
@@ -516,3 +516,7 @@ Evidence: [`SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md`](SPRINT_32_SHOPIFY_GLO
 - Owner later Shopify retry after Deploy Staging #40 succeeded: HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, `product_count = 3`. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = yes. LIVE SEARCH_CATALOG RESPONSE = yes. PRODUCTS RETURNED = 3. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION CERTIFIED = no. SPRINT 32 COMPLETE = no. SPRINT 38 STARTED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`.
 - Owner 2026-09-23 production profile check returned HTTP/2 404. PRODUCTION PROFILE URL CHECKED = yes. PRODUCTION PROFILE HTTP STATUS = 404. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION PROFILE VALIDATED = no. PRODUCTION PROFILE NEGOTIATED = no. PRODUCTION CERTIFIED = no. AWS MUTATION = no. DEPLOYMENT = no. SHOPIFY CALL = no. Production profile deployment belongs to Sprint 41 and is not pulled forward into Sprint 32.
 - Sprint 32 is **not complete**.
+
+## 2026-09-23 Shopify access-stage and evidence addendum (does not close this sprint)
+
+This addendum does **not** rewrite earlier snapshots. It records that the documented Anonymous Global Catalog catalog mode has no separate application, no separate provider preapproval for ordinary catalog tools, and no merchant/API credential requirement. An agent profile remains required. Staging profile and staging technical connection are validated. Production profile remains undeployed. Four production evidence rows exist for `PRODUCT_DISCOVERY`, `OFFER_DISCOVERY`, `CURRENT_PRICING`, and `AVAILABILITY`. `completeness="recorded"` means capture is complete. It is not legal sufficiency or production certification. `SHIPPING` and `PROMOTION_EVIDENCE` are not evidenced as certified. Production provider, certification, and routing catalogs remain empty. EXT-01 remains `applied`. EXT-06 remains `not_started` and is not applicable to this Anonymous path. This workspace did not call Shopify and did not mutate AWS. Sprint 32 remains open. Sprint 38 remains unstarted. Sprint 41 remains unstarted.

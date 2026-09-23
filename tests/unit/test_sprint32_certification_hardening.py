@@ -39,6 +39,8 @@ from app.services.research_certification_decision import (
     ResearchProviderCertificationDecisionService,
 )
 
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
+
 ROOT = Path(__file__).resolve().parents[2]
 _AS_OF = date(2026, 9, 2)
 _REVIEWER = "Sprint 32.4 reviewer"
@@ -382,13 +384,16 @@ def test_fixture_and_documentary_combinations_stay_isolated() -> None:
     documentary = philippines_merchant_certification_evidence_catalog()
     production_evidence = production_research_provider_certification_evidence_catalog()
     assert documentary.list_records()
-    assert production_evidence.list_records() == ()
+    assert_production_shopify_evidence_only()
+    documentary_ids = {record.provider_id for record in documentary.list_records()}
+    production_ids = {record.provider_id for record in production_evidence.list_records()}
+    assert documentary_ids.isdisjoint(production_ids)
     assert production_research_provider_certification_catalog().list_records() == ()
 
 
 def test_sprint_32_4_production_defaults_remain_empty() -> None:
     assert len(philippines_merchant_certification_evidence_records()) == 15
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_routing_policy_catalog().list_records() == ()

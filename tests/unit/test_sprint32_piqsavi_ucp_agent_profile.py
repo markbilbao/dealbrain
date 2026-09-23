@@ -10,9 +10,6 @@ import pytest
 from app.core.config import Settings, get_settings
 from app.main import create_app
 from app.research.certification import production_research_provider_certification_catalog
-from app.research.certification_evidence import (
-    production_research_provider_certification_evidence_catalog,
-)
 from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
 from app.research.shopify_global_catalog_ph_probe import (
@@ -81,6 +78,8 @@ from app.ucp.agent_profile import (
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from scripts.shopify_global_catalog_ph_probe import main as probe_main
+
+from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 
 ROOT = Path(__file__).resolve().parents[2]
 SPRINT32 = ROOT / "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md"
@@ -406,7 +405,7 @@ def test_existing_ph_probe_limits_and_forbidden_tools_remain() -> None:
 def test_production_registries_remain_empty_and_sprints_remain_open() -> None:
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")
@@ -800,7 +799,7 @@ def test_sprint32_remains_open_and_sprint38_unstarted() -> None:
     assert "SPRINT 38 UNSTARTED" in probe_doc
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 
 
@@ -952,7 +951,7 @@ def test_owner_successful_piqsavi_profile_shopify_negotiation() -> None:
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
     assert production_research_provider_registry().list_providers() == ()
     assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_certification_evidence_catalog().list_records() == ()
+    assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
