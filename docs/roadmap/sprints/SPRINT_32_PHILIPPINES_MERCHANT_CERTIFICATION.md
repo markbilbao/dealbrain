@@ -369,7 +369,7 @@ The capability-policy preparation map is documentary only. It uses existing Spri
 
 ### Production defaults
 
-Certification records = 0. Production evidence = 4 Shopify Global Catalog PH rows (`PRODUCT_DISCOVERY`, `OFFER_DISCOVERY`, `CURRENT_PRICING`, `AVAILABILITY`; `completeness="recorded"` means capture is complete, not legal sufficiency or production certification). Providers = 0. Routing policies = 0. `SHIPPING` and `PROMOTION_EVIDENCE` remain uncertified and unknown. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
+Certification records = 0. Production evidence = 4 Shopify Global Catalog PH rows (`PRODUCT_DISCOVERY`, `OFFER_DISCOVERY`, `CURRENT_PRICING`, `AVAILABILITY`; `completeness="recorded"` means capture is complete, not legal sufficiency or production certification). Combined evidence date for those rows is 2026-09-22 because they use the 2026-09-22 staging negotiation. Review date is 2026-09-23. `ResearchProviderCertificationEvidence.restrictions` records only unresolved certification blockers and is empty on these four rows. Permanent allowed-mode operating conditions stay on the capability-policy map, the evidence notes, and attribution requirements. Providers = 0. Routing policies = 0. `SHIPPING` and `PROMOTION_EVIDENCE` remain uncertified and unknown. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
 
 ### Shopify Anonymous Global Catalog access stage (current)
 

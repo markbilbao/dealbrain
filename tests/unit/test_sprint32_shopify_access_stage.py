@@ -10,9 +10,14 @@ import pytest
 from app.domain.entities.decision_snapshot import AffiliateNeutralitySnapshot
 from app.domain.entities.research_certification_decision import CertificationDecisionRequest
 from app.domain.entities.research_execution import ResearchCapability
-from app.research.certification import production_research_provider_certification_catalog
+from app.research.certification import (
+    production_research_provider_certification_catalog,
+    research_provider_certification_catalog_for_tests,
+)
 from app.research.certification_evidence import (
+    make_research_provider_certification_evidence,
     production_research_provider_certification_evidence_catalog,
+    research_provider_certification_evidence_catalog_for_tests,
 )
 from app.research.market_access_path import (
     LegitimateAccessPath,
@@ -25,7 +30,10 @@ from app.research.market_access_path import (
     shopee_ext01_product_data_access_path,
     shopify_anonymous_global_catalog_access_path,
 )
-from app.research.registry import production_research_provider_registry
+from app.research.registry import (
+    production_research_provider_registry,
+    research_provider_registry_for_tests,
+)
 from app.research.routing import production_research_provider_routing_policy_catalog
 from app.research.shopify_global_catalog_access_stage import (
     APPLICATION_NOT_REQUIRED,
@@ -44,6 +52,8 @@ from app.research.shopify_global_catalog_capability_policy import (
 from app.research.shopify_global_catalog_certification_evidence import (
     SHOPIFY_EVIDENCE_CAPABILITIES,
     SHOPIFY_GLOBAL_CATALOG_SOURCE,
+    SHOPIFY_PERMANENT_OPERATING_CONDITIONS,
+    SHOPIFY_UNRESOLVED_CERTIFICATION_RESTRICTIONS,
     shopify_global_catalog_certification_evidence_records,
 )
 from app.research.shopify_global_catalog_ph_probe import (
@@ -66,7 +76,7 @@ from app.ucp.agent_profile import (
 from tests.unit.production_catalog_boundaries import assert_production_shopify_evidence_only
 from tests.unit.test_phase_29_4b_refine_session_recommendation import _owner
 from tests.unit.test_sprint31_certification_authority import _pricing_scope
-from tests.unit.test_sprint31_research_execution_router import _authorization
+from tests.unit.test_sprint31_research_execution_router import _authorization, _provider
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = (ROOT / "docs/roadmap/EXTERNAL_DEPENDENCY_REGISTER.md").read_text(encoding="utf-8")
@@ -249,15 +259,28 @@ def test_production_evidence_is_shopify_only_and_grants_nothing() -> None:
         assert record.market == "PH"
         assert record.source == SHOPIFY_GLOBAL_CATALOG_SOURCE
         assert record.completeness == "recorded"
-        assert record.evidence_date == date(2026, 9, 18)
+        assert record.evidence_date == date(2026, 9, 22)
         assert record.review_date == date(2026, 9, 23)
         assert record.reviewer
         assert "counsel approval" in record.reviewer
         assert record.program_reference
-        assert record.restrictions
+        assert record.restrictions == SHOPIFY_UNRESOLVED_CERTIFICATION_RESTRICTIONS == ()
         assert record.attribution_requirements
+        assert "retain source and seller attribution" in record.attribution_requirements
         assert record.review_after is None
         assert "evidence, not certification" in record.notes
+        for condition in SHOPIFY_PERMANENT_OPERATING_CONDITIONS:
+            assert condition in record.notes
+            assert condition not in record.restrictions
+        for absent in (
+            "shipping",
+            "promotion",
+            "voucher",
+            "production profile",
+            "provider not registered",
+            "Sprint 32",
+        ):
+            assert absent.casefold() not in " ".join(record.restrictions).casefold()
         assert record.grants_certification is False
         assert record.grants_eligibility is False
         assert record.is_decision_ready(as_of=date(2026, 9, 23)) is True
@@ -274,7 +297,7 @@ def test_production_evidence_is_shopify_only_and_grants_nothing() -> None:
     allowed = service.decide(_shopify_decision("allowed"))
     restricted = service.decide(_shopify_decision("restricted"))
     assert allowed.accepted is False
-    assert allowed.reason == "restrictions_unresolved"
+    assert allowed.reason == "provider_missing"
     assert allowed.certification is None
     assert restricted.accepted is False
     assert restricted.reason == "provider_missing"
@@ -291,6 +314,123 @@ def test_production_evidence_is_shopify_only_and_grants_nothing() -> None:
     )
     assert planned.plan is not None
     assert planned.plan.eligible_steps == ()
+    index = shopify_capability_policy_index()
+    assert index["product_discovery"].policy == "allowed"
+    assert index["query_time_comparison"].policy == "allowed"
+    assert index["current_pricing"].policy == "allowed"
+    assert index["availability"].policy == "allowed"
+    assert "query-time" in index["product_discovery"].restrictions
+    assert index["caching_search_results"].policy == "prohibited"
+    assert index["persistent_product_index"].policy == "prohibited"
+    assert index["ai_training"].policy == "prohibited"
+    assert index["short_lived_retention"].policy == "restricted"
+    assert index["lookup_catalog"].policy == "restricted"
+    assert index["normalization_within_piqsavi"].policy == "restricted"
+
+
+def test_synthetic_allowed_certification_succeeds_when_blockers_are_clear() -> None:
+    """Architecture path only. Test catalogs. Not a production Shopify certification."""
+
+    source_row = shopify_global_catalog_certification_evidence_records()[0]
+    assert source_row.capability is ResearchCapability.PRODUCT_DISCOVERY
+    assert source_row.restrictions == ()
+    provider_id = "test-shopify-like-allowed"
+    evidence = make_research_provider_certification_evidence(
+        provider_id=provider_id,
+        capability=source_row.capability,
+        market=source_row.market,
+        source=source_row.source,
+        evidence_source="tests/unit/test_sprint32_shopify_access_stage.py",
+        program_reference=source_row.program_reference,
+        evidence_date=source_row.evidence_date,
+        review_date=source_row.review_date,
+        reviewer="Sprint 32 synthetic architecture regression",
+        restrictions=(),
+        attribution_requirements=source_row.attribution_requirements,
+        completeness="recorded",
+        notes=source_row.notes,
+        test_fixture=True,
+    )
+    for condition in SHOPIFY_PERMANENT_OPERATING_CONDITIONS:
+        assert condition in evidence.notes
+        assert condition not in evidence.restrictions
+    provider = _provider(
+        provider_id,
+        markets=("PH",),
+        capabilities=(ResearchCapability.PRODUCT_DISCOVERY,),
+        sources=(SHOPIFY_GLOBAL_CATALOG_SOURCE,),
+    )
+    assert provider.descriptor.test_fixture is True
+    registry = research_provider_registry_for_tests((provider,))
+    certifications = research_provider_certification_catalog_for_tests(())
+    service = ResearchProviderCertificationDecisionService(
+        research_provider_certification_evidence_catalog_for_tests((evidence,)),
+        certifications,
+        registry,
+    )
+    result = service.decide(
+        CertificationDecisionRequest(
+            provider_id=provider_id,
+            capability=ResearchCapability.PRODUCT_DISCOVERY,
+            market="PH",
+            source=SHOPIFY_GLOBAL_CATALOG_SOURCE,
+            requested_status="certified",
+            requested_policy="allowed",
+            certification_version="synthetic-allowed-v1",
+            reviewer="Sprint 32 synthetic architecture regression",
+            decided_at=date(2026, 9, 23),
+        )
+    )
+    assert result.accepted is True
+    assert result.reason == "approved"
+    assert result.certification is not None
+    assert result.certification.status == "certified"
+    assert result.certification.policy == "allowed"
+    assert result.certification.test_fixture is True
+    assert result.certification.is_production_eligible is False
+    assert result.certification.provider_id == provider_id
+    assert registry.get(provider_id) is provider
+    assert certifications.list_records() == (result.certification,)
+    blocked = make_research_provider_certification_evidence(
+        provider_id=provider_id,
+        capability=source_row.capability,
+        market=source_row.market,
+        source=source_row.source,
+        evidence_source="tests/unit/test_sprint32_shopify_access_stage.py",
+        evidence_date=source_row.evidence_date,
+        review_date=source_row.review_date,
+        reviewer="Sprint 32 synthetic architecture regression",
+        restrictions=("query-time use only",),
+        completeness="recorded",
+        notes=source_row.notes,
+        test_fixture=True,
+    )
+    blocked_result = ResearchProviderCertificationDecisionService(
+        research_provider_certification_evidence_catalog_for_tests((blocked,)),
+        research_provider_certification_catalog_for_tests(()),
+        registry,
+    ).decide(
+        CertificationDecisionRequest(
+            provider_id=provider_id,
+            capability=ResearchCapability.PRODUCT_DISCOVERY,
+            market="PH",
+            source=SHOPIFY_GLOBAL_CATALOG_SOURCE,
+            requested_status="certified",
+            requested_policy="allowed",
+            certification_version="synthetic-allowed-v1",
+            reviewer="Sprint 32 synthetic architecture regression",
+            decided_at=date(2026, 9, 23),
+        )
+    )
+    assert blocked_result.accepted is False
+    assert blocked_result.reason == "restrictions_unresolved"
+    assert blocked_result.certification is None
+    assert_production_shopify_evidence_only()
+    assert len(production_research_provider_registry().list_providers()) == 0
+    assert len(production_research_provider_certification_catalog().list_records()) == 0
+    assert len(production_research_provider_routing_policy_catalog().list_records()) == 0
+    assert production_research_provider_registry().get("ph-shopify-global-catalog") is None
+    assert production_research_provider_registry().get(provider_id) is None
 
 
 def test_shipping_and_promotion_stay_unknown_and_fail_closed() -> None:

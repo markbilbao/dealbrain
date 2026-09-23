@@ -4,6 +4,11 @@ Real, non-test evidence for capabilities already supported by repository
 evidence. ``completeness="recorded"`` means capture is complete. It does not
 mean the use is legally sufficient, production certified, eligible, or routed.
 
+``restrictions`` means unresolved certification blockers. The trusted decision
+service refuses ``policy="allowed"`` while any restriction remains. Permanent
+allowed-mode operating conditions stay on the capability-policy map, these
+notes, and attribution requirements. They are not unresolved blockers.
+
 These rows load into the production evidence catalog only. They do not enter
 the production provider registry, certification catalog, or routing catalog.
 """
@@ -23,7 +28,7 @@ from app.research.shopify_global_catalog_capability_policy import (
 )
 
 SHOPIFY_GLOBAL_CATALOG_SOURCE = "shopify_global_catalog"
-SHOPIFY_EVIDENCE_DATE = date(2026, 9, 18)
+SHOPIFY_EVIDENCE_DATE = date(2026, 9, 22)
 SHOPIFY_EVIDENCE_REVIEW_DATE = date(2026, 9, 23)
 SHOPIFY_EVIDENCE_REVIEWER = "Non-secret engineering evidence classification (not counsel approval)"
 SHOPIFY_EVIDENCE_CAPABILITIES = (
@@ -48,46 +53,52 @@ _PROGRAM_REFERENCE = (
     "This reference does not record a partnership, endorsement, special approval, "
     "preferred-developer status, or production-app approval."
 )
-_RESTRICTIONS = (
-    "evidence only; not production certification",
-    "query-time use",
-    "re-query for freshness; do not cache Shopify Catalog search results or images",
+# Empty: no capability-specific unresolved blocker remains on these four rows.
+# Launch gates (undeployed production profile, unregistered provider, open
+# sprint) stay on their own lifecycle checks. Shipping and promotion stay
+# absent capabilities and are not restrictions of these rows.
+SHOPIFY_UNRESOLVED_CERTIFICATION_RESTRICTIONS: tuple[str, ...] = ()
+SHOPIFY_PERMANENT_OPERATING_CONDITIONS = (
+    "query-time use only",
+    "re-query for freshness",
+    "do not cache Shopify Catalog search results or images",
     "no persistent product index",
     "no AI training or model improvement without required consent",
+    "short-lived retention",
     "lookup_catalog remains restricted and is not a product index",
     "normalization within PiqSavi remains restricted",
-    "short-lived retention",
-    "shipping amount unknown and excluded",
-    "promotion and voucher evidence unknown and excluded",
-    "shopper applicability not established",
-    "production profile undeployed",
-    "production provider not registered",
 )
 _ATTRIBUTION = (
     "retain source and seller attribution",
     "do not imply Shopify partnership, endorsement, special approval, "
     "or preferred-developer status",
 )
+_OPERATING_NOTE = (
+    "Permanent allowed-mode operating conditions stay in these notes and in "
+    "the capability-policy map. They are not unresolved certification "
+    "restrictions: " + "; ".join(SHOPIFY_PERMANENT_OPERATING_CONDITIONS) + "."
+)
 _CAPABILITY_NOTES = {
     ResearchCapability.PRODUCT_DISCOVERY: (
         "12/12 owner PH search probes returned USEFUL_PH_OFFER. "
-        "Staging search_catalog negotiation returned HTTP 200, error null, "
-        "isError false, and product_count 3. "
-        "This row is evidence, not certification."
+        "Staging search_catalog negotiation on 2026-09-22 returned HTTP 200, "
+        "error null, isError false, and product_count 3. "
+        "This row is evidence, not certification. " + _OPERATING_NOTE
     ),
     ResearchCapability.OFFER_DISCOVERY: (
         "Documented comparison shopping uses catalog view offer. "
         "Owner probe offer records were technically useful under PH localization. "
-        "This row is evidence, not certification."
+        "This row is evidence, not certification. " + _OPERATING_NOTE
     ),
     ResearchCapability.CURRENT_PRICING: (
         "Owner live probe summaries record usable current price evidence. "
         "Returned currencies stay as returned. "
-        "This row is evidence, not certification, and is not a canonical shopper price."
+        "This row is evidence, not certification, and is not a canonical shopper price. "
+        + _OPERATING_NOTE
     ),
     ResearchCapability.AVAILABILITY: (
         "Owner live summaries record usable availability evidence on the PH searches. "
-        "This row is evidence, not certification."
+        "This row is evidence, not certification. " + _OPERATING_NOTE
     ),
 }
 
@@ -110,7 +121,7 @@ def shopify_global_catalog_certification_evidence_records() -> tuple[
                 evidence_date=SHOPIFY_EVIDENCE_DATE,
                 review_date=SHOPIFY_EVIDENCE_REVIEW_DATE,
                 reviewer=SHOPIFY_EVIDENCE_REVIEWER,
-                restrictions=_RESTRICTIONS,
+                restrictions=SHOPIFY_UNRESOLVED_CERTIFICATION_RESTRICTIONS,
                 attribution_requirements=_ATTRIBUTION,
                 completeness="recorded",
                 notes=_CAPABILITY_NOTES[capability],

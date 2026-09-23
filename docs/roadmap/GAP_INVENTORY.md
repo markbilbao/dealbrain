@@ -1003,7 +1003,7 @@ This addendum does **not** rewrite earlier snapshots. It records path applicabil
 | Agent profile required | True. Staging profile deployed and owner HTTPS-validated |
 | Technical connection | Validated in staging / live Shopify response already recorded |
 | Production profile | Undeployed (HTTP 404 remains the recorded production check) |
-| Production evidence | Four PH rows only: product discovery, offer discovery, current pricing, availability. Recorded capture is not certification |
+| Production evidence | Four PH rows only: product discovery, offer discovery, current pricing, availability. Evidence date 2026-09-22. Review date 2026-09-23. Recorded capture is not certification. Unresolved evidence restrictions are empty. Permanent query-time, no-cache, no-index, no-training, and short-lived conditions stay on the capability-policy map, evidence notes, and attribution requirements |
 | Shipping / promotion | Unknown and uncertified |
 | Production provider / certification / routing | Still **zero** |
 | EXT-01 | Remains `applied` for the 2026-09-08 Shopee and Lazada requests. Not approved. Not provisioned |
