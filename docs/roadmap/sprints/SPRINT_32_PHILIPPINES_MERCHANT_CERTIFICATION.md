@@ -26,6 +26,8 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1â
 | Production certification | none |
 | Live current-data validation | technical coverage exists for Shopify Global Catalog; production operational validation/certification incomplete |
 | Sprint 32 closure | blocked |
+| Canonical Shopify normalization | in-process adapter implemented; owner live validation still required |
+| Kill-switch engineering check | synthetic Sprint 31 behavior validated; operational closure still incomplete |
 
 The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, live Lazada research, or production-ready merchant integration.
 
@@ -342,6 +344,36 @@ J. Keep final production validation and production certification incomplete unti
 
 Sprint 32 acceptance criteria are unchanged. Sprint 32 is **not complete**. Sprint 38 remains unstarted. Sprint 41 implementation is not started.
 
+### 2026-09-23 Shopify canonical normalization, variant identity, and reliability validation (does not close this sprint)
+
+This slice adds an in-process Shopify Global Catalog normalization adapter. It accepts already validated in-memory product and variant structures. It does not perform HTTP. It does not persist the raw Shopify response. It does not create a Shopify product index.
+
+Existing architecture reused, and not replaced:
+
+- Sprint 18 `RuleBasedProductParser` and `ExactVariantProductMatcher`
+- `CanonicalMoneyLine` and `CanonicalOfferEconomics` integer `amount_minor`
+- Sprint 18 `DataProvenance`, `DataFreshness`, and `evaluate_freshness`
+- Sprint 31 `ResearchProviderDescriptor.is_operationally_available`, `KillSwitch`, `CircuitBreakerSnapshot`, `ConnectorOperationalStatus`, timeout/retry/backoff policies, and typed failure results
+
+Recorded behavior:
+
+- Shopify `product.id` and `variant.id` stay distinct. Parser output does not overwrite them. A different non-empty variant id is not merged because titles are similar.
+- Listing `price.amount` stays an integer minor-unit amount. It is not round-tripped through binary float and it is not rescaled for an assumed two-digit currency exponent.
+- The currency Shopify returned is preserved. PH/PHP query context does not rewrite another returned currency. Mixed currencies stay mixed.
+- Unknown shipping, tax, duty, import charge, voucher, seller discount, platform discount, and checkout cost stay unknown. Unknown shipping and tax are not zero. An unknown voucher does not reduce price. The canonical price state is `price_before_shipping`, not `final_effective_cost`.
+- `checked_at` is the time PiqSavi queried Shopify. A provider freshness timestamp is recorded only when the validated structure actually contains `source_timestamp`. This slice does not fabricate that timestamp from the local clock. Retained shopper-facing freshness remains not established, matching the capability-policy map. Fixture and synthetic observations are not labeled live.
+- Kill-switch, open-circuit, DISABLED, and UNAVAILABLE behavior is validated synthetically against the existing Sprint 31 operational predicate. Browser, request, and shopper input cannot disengage a server-owned kill switch. Those tests are engineering behavior. They are not live operational evidence and they do not certify Shopify.
+- Operational kill-switch closure remains incomplete. No production provider is registered, and no deployed Shopify path was exercised by this workspace.
+- An owner-run harness exists at `scripts/shopify_global_catalog_normalization_validation.py`. This workspace did not execute it. The harness allows at most 5 `search_catalog` calls and 5 `get_product` calls, prohibits `lookup_catalog` and pagination, and may later call only `https://catalog.shopify.com/api/ucp/mcp` with the exact deployed staging PiqSavi profile. It keeps Shopify payloads in memory and writes a minimized summary only.
+
+This workspace did not call Shopify, deploy, or mutate AWS. No production certification was created. No production routing policy was created.
+
+Production provider registry remains 0. Production certification catalog remains 0. Production evidence catalog remains 4. Production routing catalog remains 0.
+
+The next trusted production certification slice still requires a real non-fixture `ResearchProviderDescriptor` in the production provider registry. `ResearchProviderCertificationDecisionService` refuses that production write with `provider_missing` until the descriptor exists. This slice does not register one. The in-memory normalization candidate is explicitly non-authoritative.
+
+Sprint 32 remains open. Sprint 38 remains unstarted. Sprint 41 remains unstarted. Owner live normalization validation is still required.
+
 The capability-policy preparation map is documentary only. It uses existing Sprint 31 states (`allowed` / `restricted` / `prohibited` / `unknown`). It does not create a second policy system and does not populate production provider, certification, or routing registries. Technical exposure is not permission and does not forbid an `allowed` policy. The 2026-09-18 rights audit's query-time uses that are `allowed` with operating limits stay `allowed`; those limits are restrictions, not a conversion to `restricted`. `restricted` remains the state where the audit itself uses that state, including normalization and short-lived retention. `lookup_catalog` is `restricted` because the tool is documented and bulk indexing stays out of bounds; the Sprint 32 probe separately disables it and does not call it. Promoted placement is provider-`unknown` because enrollment is absent, and PiqSavi keeps it disabled. Commission-based organic ranking is a PiqSavi integrity rule, not a Shopify prohibition. Search-result caching, a persistent product index, and AI training without the required consent stay `prohibited`. Discount, voucher, shipping-amount, free-shipping, and checkout-cost permissions remain `unknown`. No documentary row is a production certification. Canonical shopper/offer applicability is not established.
 
 ### Closure blockers (current)
@@ -349,10 +381,10 @@ The capability-policy preparation map is documentary only. It uses existing Spri
 - No executable production provider
 - No trusted production certification
 - Production profile undeployed
-- Market-specific canonical normalization and product-variant matching evidence still incomplete
+- Canonical Shopify normalization and product/variant identity preservation are implemented on the existing Sprint 18 parser/matcher and canonical offer-economics model. Integer minor units are preserved. Unknown shipping, tax, voucher, and checkout costs stay fail-closed. Synthetic tests are not live market evidence. Owner live normalization validation is still required, so market-specific canonical normalization evidence remains incomplete.
 - Staging certification not yet complete
 - Monitoring / public coverage disclosure incomplete
-- Kill-switch closure evidence incomplete
+- Kill-switch engineering behavior is validated synthetically against Sprint 31 `ResearchProviderDescriptor.is_operationally_available`: an engaged kill switch, an open circuit breaker, DISABLED, and UNAVAILABLE are unavailable and ineligible, and browser/request/shopper input cannot disengage a server-owned kill switch. Operational kill-switch closure evidence remains incomplete because no production provider is registered and no deployed Shopify path was exercised. This is not production certification.
 - Later production validation remains
 - Unknown effective-cost components remain excluded and fail-closed
 - Shopify Global Catalog Anonymous catalog mode does not require a separate application, separate provider preapproval, or merchant/API credentials. That fact does not make the path production-ready or production-certified.
@@ -404,6 +436,8 @@ Sprint 32: OPEN.
 Sprint 38: UNSTARTED.
 
 Sprint 41: UNSTARTED.
+
+Canonical normalization adapter: implemented in-process. Owner live normalization validation: not run. Kill-switch operational closure: incomplete. This is not production certification.
 
 Do not call this path production ready.
 
