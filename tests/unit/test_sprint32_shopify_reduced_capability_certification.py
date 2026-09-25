@@ -287,9 +287,8 @@ def test_sprint_gates_and_harness_stay_unchanged() -> None:
     assert stage.sprint_38_status == "UNSTARTED"
     assert stage.sprint_41_status == "UNSTARTED"
     assert "Sprint 32 remains open." in sprint32
-    assert (
-        "COMPLETE / CLOSED"
-        in next(line for line in sprint32.splitlines() if line.startswith("**Status:**"))
+    assert "COMPLETE / CLOSED" in next(
+        line for line in sprint32.splitlines() if line.startswith("**Status:**")
     )
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
     sprint41_status = sprint41.split("**Status:**", 1)[1].splitlines()[0].strip()

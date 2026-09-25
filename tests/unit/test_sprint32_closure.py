@@ -115,12 +115,15 @@ def test_real_provider_kill_switch_engaged_is_unavailable(monkeypatch: pytest.Mo
     assert descriptor.provider_id == "ph-shopify-global-catalog"
     assert descriptor.test_fixture is False
     assert descriptor.is_operationally_available is False
-    assert real_provider_is_operationally_available(
-        descriptor,
-        browser_disengage_kill_switch=True,
-        request_disengage_kill_switch=True,
-        shopper_disengage_kill_switch=True,
-    ) is False
+    assert (
+        real_provider_is_operationally_available(
+            descriptor,
+            browser_disengage_kill_switch=True,
+            request_disengage_kill_switch=True,
+            shopper_disengage_kill_switch=True,
+        )
+        is False
+    )
     assert "kill_switch" in real_provider_eligibility_reasons(descriptor)
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     provider = production_research_provider_registry().get("ph-shopify-global-catalog")
