@@ -26,7 +26,7 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1â
 | Production certification | none |
 | Live current-data validation | technical coverage exists for Shopify Global Catalog; production operational validation/certification incomplete |
 | Sprint 32 closure | blocked |
-| Canonical Shopify normalization | in-process adapter implemented; owner live validation still required |
+| Canonical Shopify normalization | in-process adapter implemented; 2026-09-25 owner live attempt failed closed on HTTP 429; successful validation still required |
 | Kill-switch engineering check | synthetic Sprint 31 behavior validated; operational closure still incomplete |
 
 The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, live Lazada research, or production-ready merchant integration.
@@ -376,12 +376,31 @@ Sprint 32 remains open. Sprint 38 remains unstarted. Sprint 41 remains unstarted
 
 The capability-policy preparation map is documentary only. It uses existing Sprint 31 states (`allowed` / `restricted` / `prohibited` / `unknown`). It does not create a second policy system and does not populate production provider, certification, or routing registries. Technical exposure is not permission and does not forbid an `allowed` policy. The 2026-09-18 rights audit's query-time uses that are `allowed` with operating limits stay `allowed`; those limits are restrictions, not a conversion to `restricted`. `restricted` remains the state where the audit itself uses that state, including normalization and short-lived retention. `lookup_catalog` is `restricted` because the tool is documented and bulk indexing stays out of bounds; the Sprint 32 probe separately disables it and does not call it. Promoted placement is provider-`unknown` because enrollment is absent, and PiqSavi keeps it disabled. Commission-based organic ranking is a PiqSavi integrity rule, not a Shopify prohibition. Search-result caching, a persistent product index, and AI training without the required consent stay `prohibited`. Discount, voucher, shipping-amount, free-shipping, and checkout-cost permissions remain `unknown`. No documentary row is a production certification. Canonical shopper/offer applicability is not established.
 
+### 2026-09-25 owner live normalization validation attempt (does not close this sprint)
+
+Owner live normalization validation attempt on 2026-09-25:
+
+- Preflight passed.
+- The exact staging PiqSavi profile loaded.
+- The owner invoked the bounded live normalization harness in AWS CloudShell. AWS CloudShell was only the owner execution environment. Repository cloning and temporary tool installation inside that CloudShell environment are not staging or production infrastructure deployment or mutation.
+- Shopify Global Catalog returned HTTP 429.
+- The harness failed closed.
+- Successful 5/5 normalization validation was not obtained.
+- This is not a provider rejection of PiqSavi. The response was a rate limit.
+- Production certification remains false.
+- Sprint 32 remains open.
+- No PiqSavi AWS infrastructure/resource mutation and no deployment.
+- No Sprint 38 execution.
+- No Sprint 41 execution.
+
+How many Shopify calls completed before the HTTP 429 is not recorded here. Existing evidence does not prove that count. This attempt is not production certification and does not close Sprint 32.
+
 ### Closure blockers (current)
 
 - No executable production provider
 - No trusted production certification
 - Production profile undeployed
-- Canonical Shopify normalization and product/variant identity preservation are implemented on the existing Sprint 18 parser/matcher and canonical offer-economics model. Integer minor units are preserved. Unknown shipping, tax, voucher, and checkout costs stay fail-closed. Synthetic tests are not live market evidence. Owner live normalization validation is still required, so market-specific canonical normalization evidence remains incomplete.
+- Canonical Shopify normalization and product/variant identity preservation are implemented on the existing Sprint 18 parser/matcher and canonical offer-economics model. Integer minor units are preserved. Unknown shipping, tax, voucher, and checkout costs stay fail-closed. Synthetic tests are not live market evidence. The 2026-09-25 owner live attempt failed closed when Shopify Global Catalog returned HTTP 429. Successful 5/5 normalization validation was not obtained. That HTTP 429 is not a provider rejection. Owner live normalization validation is still required, so market-specific canonical normalization evidence remains incomplete.
 - Staging certification not yet complete
 - Monitoring / public coverage disclosure incomplete
 - Kill-switch engineering behavior is validated synthetically against Sprint 31 `ResearchProviderDescriptor.is_operationally_available`: an engaged kill switch, an open circuit breaker, DISABLED, and UNAVAILABLE are unavailable and ineligible, and browser/request/shopper input cannot disengage a server-owned kill switch. Operational kill-switch closure evidence remains incomplete because no production provider is registered and no deployed Shopify path was exercised. This is not production certification.
@@ -437,7 +456,7 @@ Sprint 38: UNSTARTED.
 
 Sprint 41: UNSTARTED.
 
-Canonical normalization adapter: implemented in-process. Owner live normalization validation: not run. Kill-switch operational closure: incomplete. This is not production certification.
+Canonical normalization adapter: implemented in-process. Owner live normalization validation: attempted 2026-09-25; Shopify returned HTTP 429; harness failed closed; successful 5/5 validation was not obtained; not a provider rejection; not production certification. Kill-switch operational closure: incomplete. This is not production certification.
 
 Do not call this path production ready.
 
