@@ -485,12 +485,12 @@ def test_production_profile_stays_fail_closed_and_no_shopify_client_is_imported(
 
 def test_sprint_32_stays_open_and_later_sprints_stay_unstarted() -> None:
     truth = shopify_anonymous_catalog_stage_truth()
-    assert truth["sprint_32"] == "OPEN"
+    assert truth["sprint_32"] == "COMPLETE / CLOSED"
     assert truth["sprint_38"] == "UNSTARTED"
     assert truth["sprint_41"] == "UNSTARTED"
     status = next(line for line in SPRINT32.splitlines() if line.startswith("**Status:**"))
-    assert "In progress" in status
-    assert "not complete" in status.casefold()
+    assert "COMPLETE / CLOSED" in status
+    assert "not production-deployment ready" in status.casefold()
     assert "Sprint 32 remains open." in SPRINT32
     assert "Sprint 38 remains unstarted" in SPRINT32
     assert "Sprint 41 remains unstarted" in SPRINT32

@@ -756,7 +756,7 @@ def test_production_catalogs_stay_empty_and_sprint32_stays_open() -> None:
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     assert "Sprint 32 is **not complete**" in sprint32
-    assert "In progress" in sprint32
+    assert "COMPLETE / CLOSED" in sprint32
     assert "PASSED TECHNICAL COVERAGE TEST" in sprint32
     assert "does **not** close Sprint 32" in sprint32
     assert PROBE_DOC.exists()

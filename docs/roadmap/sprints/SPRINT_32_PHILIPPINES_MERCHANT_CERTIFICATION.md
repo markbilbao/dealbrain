@@ -1,6 +1,6 @@
 # Sprint 32 — Philippines Merchant Certification
 
-**Status:** In progress — not production-certified. Internal foundation slices 32.1–32.6 are complete. Sprint 32 is **not complete**.
+**Status:** COMPLETE / CLOSED (2026-09-25). Reduced Shopify Global Catalog Anonymous path only. Not production-deployment ready. Not launch ready. Live shopping is not enabled.
 **Primary owner / domain:** Marketplace eng + legal
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes to name PH
@@ -25,11 +25,16 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1�
 | Production provider | `ph-shopify-global-catalog` registered, operationally DISABLED |
 | Production certification | 4 trusted reduced-capability records; not production-deployment certification |
 | Live current-data validation | LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED for the reduced path; production operational validation remains |
-| Sprint 32 closure | blocked |
+| Sprint 32 closure | COMPLETE / CLOSED (2026-09-25) for the reduced path only |
 | Canonical Shopify normalization | LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED on owner attempt #3 (2026-09-25); attempts #1 and #2 remain failed closed on HTTP 429 |
-| Kill-switch engineering check | synthetic Sprint 31 behavior validated; operational closure still incomplete |
+| Kill-switch engineering check | PASSED on the real non-fixture descriptor in a controlled in-memory state. DEPLOYED OPERATIONAL KILL-SWITCH DRILL remains Sprint 38/41 |
+| Staging certification | SPRINT 32 STAGING CERTIFICATION = PASSED. REDUCED CAPABILITY SET ONLY. NOT PRODUCTION DEPLOYMENT READY |
 
-The trusted Philippines certification architecture is built and validated. A reduced Shopify Global Catalog capability set is trusted-certified and the provider identity is registered operationally DISABLED. Certified reduced capability set is not production deployment ready. Do not claim PH support, live Shopee research, live Lazada research, or production-ready merchant integration.
+The trusted Philippines certification architecture is built and validated. A reduced Shopify Global Catalog capability set is trusted-certified and the provider identity is registered operationally DISABLED. Certified reduced capability set is not production deployment ready. Sprint 32 is COMPLETE / CLOSED for that reduced path only. Do not claim PH support, live Shopee research, live Lazada research, Shopify partnership, Shopify endorsement, or production-ready merchant integration.
+
+Completion evidence: [`../evidence/SPRINT_32_COMPLETION.md`](../evidence/SPRINT_32_COMPLETION.md).
+
+Historical slices below recorded “Sprint 32 remains open” and “Sprint 32 is **not complete**” at the time they were written. Those sentences stay as history. They are not the current status.
 
 ### 2026-09-06 owner lock (documentation only; does not close this sprint)
 
@@ -460,14 +465,16 @@ Owner live normalization validation attempt #3 on 2026-09-25 succeeded. It is re
 
 ### Closure blockers (current)
 
-- Provider identity `ph-shopify-global-catalog` is registered and operationally DISABLED. Execution remains unavailable. Registration is not permission to execute.
-- Trusted reduced-capability certification exists for PRODUCT_DISCOVERY, OFFER_DISCOVERY, CURRENT_PRICING, and AVAILABILITY only. Certified reduced capability set is not production deployment ready.
-- Production profile undeployed
-- LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED for the exact reduced Shopify Global Catalog path on owner attempt #3. Attempts #1 and #2 remain historical HTTP 429 fail-closed runs and are not this pass. Ambiguous or insufficient comparisons stayed fail-closed. Unknown shipping, tax, voucher, and checkout costs stay fail-closed.
-- Staging certification not yet complete
-- Monitoring / public coverage disclosure incomplete
-- Kill-switch engineering behavior is validated synthetically against Sprint 31 `ResearchProviderDescriptor.is_operationally_available`: an engaged kill switch, an open circuit breaker, DISABLED, and UNAVAILABLE are unavailable and ineligible, and browser/request/shopper input cannot disengage a server-owned kill switch. Operational kill-switch closure evidence remains incomplete because the registered provider stays DISABLED and no deployed Shopify path was exercised. This is not production-deployment certification.
-- Later production validation remains
+Sprint 32-owned acceptance criteria for the selected reduced path are satisfied. Items owned by later sprints are not Sprint 32 blockers. Closing Sprint 32 does not make the provider operationally live.
+
+- Provider identity `ph-shopify-global-catalog` is registered and operationally DISABLED. Execution remains unavailable. Registration is not permission to execute. Live execution is Sprint 38.
+- Trusted reduced-capability certification exists for PRODUCT_DISCOVERY, OFFER_DISCOVERY, CURRENT_PRICING, and AVAILABILITY only. Certified reduced capability set is not production deployment ready. Production deployment is Sprint 41.
+- Production profile undeployed. Production UCP profile deployment and production HTTPS validation remain Sprint 41.
+- LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED for the exact reduced Shopify Global Catalog path on owner attempt #3 across five distinct categories. Attempts #1 and #2 remain historical HTTP 429 fail-closed runs and are not this pass. Ambiguous or insufficient comparisons stayed fail-closed. Unknown shipping, tax, voucher, and checkout costs stay fail-closed.
+- SPRINT 32 STAGING CERTIFICATION = PASSED. REDUCED CAPABILITY SET ONLY. NOT PRODUCTION DEPLOYMENT READY.
+- Monitoring records this provider as disabled. It is not healthy, live, available, or production-ready. Public coverage disclosure is the preparing-coverage sentence. PH is not in the production certified shopping-market catalog.
+- Engineering kill-switch validation PASSED on the real non-fixture `ph-shopify-global-catalog` descriptor in a controlled in-memory state. Browser, request, and shopper input cannot disengage it. DEPLOYED OPERATIONAL KILL-SWITCH DRILL remains Sprint 38/41. This is not production-deployment certification.
+- Later production validation remains Sprint 38, Sprint 41, Sprint 42, Sprint 44, and Sprint 45 as already documented. Current-data technical coverage validation exists for Shopify Global Catalog, but production operational validation/certification is incomplete.
 - Unknown effective-cost components remain excluded and fail-closed
 - Shopify Global Catalog Anonymous catalog mode does not require a separate application, separate provider preapproval, or merchant/API credentials. That fact does not make the path production-ready or production-certified.
 - Current-data technical coverage validation exists for Shopify Global Catalog, but production operational validation/certification is incomplete.
@@ -479,7 +486,7 @@ Owner live normalization validation attempt #3 on 2026-09-25 succeeded. It is re
 - 2026-09-18 source-rights reassessment: Shopify Global Catalog is a **rights survivor** (Outcome A, restricted query-time comparison). It is **not** production-certified. Owner live 12-query PH search coverage **PH LIVE TECHNICAL COVERAGE VALIDATED** (12/12 `USEFUL_PH_OFFER`; Anonymous; no credentials; no scraping/pagination/bulk lookup). Diversified 5/5 `get_product` validations completed across five distinct categories after PR #150. That is **not** production certification and does **not** close Sprint 32. The staging PiqSavi UCP profile is **STAGING DEPLOYED / OWNER HTTPS-VALIDATED** (`PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED = True`; Deploy Staging run `35430542107`; SHA `e5654a63fe650fd21c219a24270455f8902519a0`; later corrected-profile redeploy Deploy Staging #40, run `35439563878`, SHA `06be0411479c6c5dfba9d8cf94ca8bfc3b3e9620`). The production profile is **NOT validated/deployed** (`PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED = False`). `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True` after the later successful staging retry. Live PiqSavi-profile Shopify negotiation may unlock only the exact deployed staging URL and remains fail-closed for production and arbitrary URLs. This is **not** production-profile negotiation or production certification. Sprint 31 policy rows and remaining certification gates are still required. Sprint 38 remains unstarted.
 - 2026-09-19 owner first PiqSavi-profile Shopify discovery attempt failed after Deploy Staging #39: staging profile publicly reachable HTTP/2 200; one `search_catalog` (`wireless earbuds`); Shopify returned HTTP 422, JSON-RPC `-32001`, `UCP discovery failed`, `profile_malformed`, `Missing services`. No product result. No `get_product`. No `lookup_catalog`. No pagination. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = no. PRODUCTION CERTIFIED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE` remains false. Sprint 32 remains open. Sprint 38 remains unstarted.
 - 2026-09-22 owner controlled Shopify retry after Deploy Staging #40 succeeded: staging profile publicly reachable with official `ucp.services` + `payment_handlers`; one `search_catalog` (`wireless earbuds`); Shopify returned HTTP 200, JSON-RPC `error = null`, MCP `isError = false`, `product_count = 3`. No `get_product`. No `lookup_catalog`. No pagination. No raw product payload stored. PUBLIC PROFILE REACHABLE = yes. SHOPIFY DISCOVERY ATTEMPTED = yes. SUCCESSFUL UCP NEGOTIATION = yes. LIVE SEARCH_CATALOG RESPONSE = yes. PRODUCTS RETURNED = 3. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION CERTIFIED = no. SPRINT 32 COMPLETE = no. SPRINT 38 STARTED = no. `SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE = True`. Sprint 32 remains open. Sprint 38 remains unstarted.
-- 2026-09-23 owner read-only production profile check: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` returned HTTP/2 404, `content-type = application/json`. PRODUCTION PROFILE URL CHECKED = yes. PRODUCTION PROFILE HTTP STATUS = 404. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION PROFILE VALIDATED = no. PRODUCTION PROFILE NEGOTIATED = no. PRODUCTION CERTIFIED = no. AWS MUTATION = no. DEPLOYMENT = no. SHOPIFY CALL = no. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains False. Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32. Capability-policy preparation may continue from staging and live technical evidence. Production registries remain empty. Sprint 32 remains open. Sprint 38 remains unstarted. Sprint 41 remains unstarted.
+- 2026-09-23 owner read-only production profile check: `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` returned HTTP/2 404, `content-type = application/json`. PRODUCTION PROFILE URL CHECKED = yes. PRODUCTION PROFILE HTTP STATUS = 404. PRODUCTION PROFILE DEPLOYED = no. PRODUCTION PROFILE VALIDATED = no. PRODUCTION PROFILE NEGOTIATED = no. PRODUCTION CERTIFIED = no. AWS MUTATION = no. DEPLOYMENT = no. SHOPIFY CALL = no. `PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED` remains False. Production profile deployment belongs to the later Sprint 41 production environment/deployment path and is not being pulled forward into Sprint 32. Capability-policy preparation continued from staging and live technical evidence. That 2026-09-23 snapshot recorded empty production registries; the later reduced-path registration is one disabled provider, four evidence rows, and four trusted certifications, with routing still empty. Sprint 38 remains unstarted. Sprint 41 remains unstarted.
 
 ### Production defaults
 
@@ -513,13 +520,13 @@ Routing: none.
 
 Production certified: NO. Four trusted reduced-capability records are not production-deployment certification.
 
-Sprint 32: OPEN.
+Sprint 32: COMPLETE / CLOSED (2026-09-25) for the reduced path only.
 
 Sprint 38: UNSTARTED.
 
 Sprint 41: UNSTARTED.
 
-Canonical normalization adapter: implemented in-process. LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED on owner attempt #3. Attempts #1 and #2 failed closed on HTTP 429 and remain historical. Kill-switch operational closure: incomplete. Certified reduced capability set is not production deployment ready.
+Canonical normalization adapter: implemented in-process. LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED on owner attempt #3. Attempts #1 and #2 failed closed on HTTP 429 and remain historical. Engineering kill-switch validation: PASSED in memory on the real descriptor. DEPLOYED OPERATIONAL KILL-SWITCH DRILL remains Sprint 38/41. Certified reduced capability set is not production deployment ready.
 
 Do not call this path production ready.
 

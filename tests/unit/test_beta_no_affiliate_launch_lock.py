@@ -65,7 +65,6 @@ RANKING_MODULES = (
     "app/intelligence/shopping_assistant/recommendation.py",
 )
 INCOMPLETE_SPRINTS = (
-    "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md",
     "docs/roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md",
     "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md",
     "docs/roadmap/sprints/SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md",
@@ -164,7 +163,7 @@ def test_owner_lock_records_zero_affiliate_public_beta() -> None:
     assert "primarily roadmap/policy reconciliation plus a narrow launch-UI honesty change" in lock
     assert "app/consumer/canonical_presentation.py" in lock
     sprint32 = _read("docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md")
-    assert "**Status:** In progress" in sprint32
+    assert "**Status:** COMPLETE / CLOSED" in sprint32
     assert "Sprint 32 is **not complete**" in sprint32
     sprint45 = _read("docs/roadmap/sprints/SPRINT_45_CONTROLLED_GLOBAL_PUBLIC_BETA_LAUNCH.md")
     assert "**Status:** Planned" in sprint45
@@ -263,9 +262,14 @@ def test_incomplete_sprints_are_not_marked_complete() -> None:
         text = _read(relative)
         status_line = next(line for line in text.splitlines() if line.startswith("**Status:**"))
         assert "complete" not in status_line.lower() or "not complete" in status_line.lower()
-        assert "Sprint 32 is **not complete**" in _read(
+    sprint32_status = next(
+        line
+        for line in _read(
             "docs/roadmap/sprints/SPRINT_32_PHILIPPINES_MERCHANT_CERTIFICATION.md"
-        )
+        ).splitlines()
+        if line.startswith("**Status:**")
+    )
+    assert "COMPLETE / CLOSED" in sprint32_status
 
 
 def test_canonical_uuid_pages_omit_inactive_affiliate_disclosure() -> None:

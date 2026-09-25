@@ -323,5 +323,5 @@ def test_capability_prep_does_not_populate_production_registries_or_start_later_
     assert "Sprint 38 remains unstarted" in sprint32
     assert "Sprint 41 implementation is not started" in sprint32
     status = next(line for line in sprint32.splitlines() if line.startswith("**Status:**"))
-    assert "In progress" in status
-    assert "not complete" in status.casefold()
+    assert "COMPLETE / CLOSED" in status
+    assert "not production-deployment ready" in status.casefold()

@@ -1326,9 +1326,10 @@ def test_freshness_policy_and_sprint_status_remain_honest() -> None:
         "### Production defaults", 1
     )[0]
     assert "Owner live normalization validation is still required" not in blockers
-    assert "operational kill-switch closure evidence remains incomplete" in sprint32.casefold()
+    assert "Engineering kill-switch validation PASSED" in blockers
+    assert "DEPLOYED OPERATIONAL KILL-SWITCH DRILL remains Sprint 38/41" in blockers
     status = next(line for line in sprint32.splitlines() if line.startswith("**Status:**"))
-    assert "not complete" in status.casefold()
+    assert "COMPLETE / CLOSED" in status
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
     sprint41_status = sprint41.split("**Status:**", 1)[1].splitlines()[0].strip()
     assert sprint41_status.startswith("Planned")
