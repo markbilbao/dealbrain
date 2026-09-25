@@ -97,13 +97,15 @@ class ShopifyGlobalCatalogAccessStage:
         if self.signed_or_token_required_for_anonymous_catalog_tools:
             raise ValueError("Signed or Token tiers are not required for Anonymous catalog tools")
         if self.production_certified or self.production_ready:
-            raise ValueError("Anonymous catalog evidence is not production certification")
+            raise ValueError(
+                "reduced capability certification is not production deployment readiness"
+            )
         if self.promoted_placement_enrolled or self.promoted_placement_enabled:
             raise ValueError("promoted placement is not enrolled")
         if self.promoted_placement_policy != "unknown":
             raise ValueError("promoted placement policy stays unknown")
-        if self.production_provider_registered or self.executable_production_certification:
-            raise ValueError("production provider and executable certification stay absent")
+        if self.executable_production_certification:
+            raise ValueError("executable production certification stays absent")
         if self.routing_policy_registered:
             raise ValueError("routing policy stays absent")
         _reject_implied_shopify_approval(self.application_disposition)
@@ -181,7 +183,7 @@ def anonymous_global_catalog_access_stage() -> ShopifyGlobalCatalogAccessStage:
         promoted_placement_policy=PROMOTED_PLACEMENT_POLICY,
         signed_or_token_required_for_anonymous_catalog_tools=False,
         ph_technical_coverage_validated=True,
-        production_provider_registered=False,
+        production_provider_registered=True,
         executable_production_certification=False,
         routing_policy_registered=False,
         sprint_32_status=SPRINT_32_STATUS,
@@ -211,7 +213,7 @@ def shopify_anonymous_catalog_stage_truth() -> dict[str, str]:
         "production_profile": (
             "not deployed" if not stage.production_profile_deployed else "deployed"
         ),
-        "production_provider": "none",
+        "production_provider": "registered, operationally disabled",
         "executable_production_certification": "none",
         "routing": "none",
         "production_certified": "NO",

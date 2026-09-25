@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 
 import pytest
+from app.domain.entities.connector_reliability import ConnectorOperationalStatus
 from app.domain.entities.decision_snapshot import AffiliateNeutralitySnapshot
 from app.domain.entities.research_execution import ResearchCapability, ResearchProviderCertification
 from app.research.certification import production_research_provider_certification_catalog
@@ -292,13 +293,17 @@ def test_shopify_capability_map_keeps_exposure_policy_and_probe_rules_apart() ->
     assert unknown_certification.is_production_eligible is False
     registry = production_research_provider_registry()
     provider_ids = {provider.provider_id for provider in registry.list_providers()}
-    assert SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID not in provider_ids
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert provider_ids == {SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID}
+    stored = registry.get(SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID)
+    assert stored is not None
+    assert stored.descriptor.operational_status is ConnectorOperationalStatus.DISABLED
+    assert PRODUCTION_CERTIFIED is False
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
 
 
 def test_capability_prep_does_not_populate_production_registries_or_start_later_sprints() -> None:
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     policy_tree = ast.parse(POLICY_MODULE.read_text(encoding="utf-8"))

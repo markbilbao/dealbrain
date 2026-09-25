@@ -336,8 +336,8 @@ def test_no_direct_merchant_http_in_benchmark_implementation() -> None:
 
 def test_production_catalogs_stay_empty() -> None:
     assert_production_shopify_evidence_only()
-    assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 
 

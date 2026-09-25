@@ -169,8 +169,8 @@ def test_sprint31_still_rejects_duplicate_provider_id() -> None:
 
 
 def test_production_research_and_market_catalogs_remain_empty() -> None:
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     assert production_certified_shopping_markets().to_tuple() == ()

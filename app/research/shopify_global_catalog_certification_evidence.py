@@ -9,8 +9,9 @@ service refuses ``policy="allowed"`` while any restriction remains. Permanent
 allowed-mode operating conditions stay on the capability-policy map, these
 notes, and attribution requirements. They are not unresolved blockers.
 
-These rows load into the production evidence catalog only. They do not enter
-the production provider registry, certification catalog, or routing catalog.
+These rows load into the production evidence catalog only. They do not
+register a provider, write a certification, or create routing. A separate
+server-owned decision composes certifications from this evidence.
 """
 
 from __future__ import annotations
@@ -28,9 +29,10 @@ from app.research.shopify_global_catalog_capability_policy import (
 )
 
 SHOPIFY_GLOBAL_CATALOG_SOURCE = "shopify_global_catalog"
-SHOPIFY_EVIDENCE_DATE = date(2026, 9, 22)
-SHOPIFY_EVIDENCE_REVIEW_DATE = date(2026, 9, 23)
-SHOPIFY_EVIDENCE_REVIEWER = "Non-secret engineering evidence classification (not counsel approval)"
+SHOPIFY_EVIDENCE_DATE = date(2026, 9, 25)
+SHOPIFY_EVIDENCE_REVIEW_DATE = date(2026, 9, 25)
+SHOPIFY_EVIDENCE_REVIEWER = "PiqSavi owner / engineering evidence review (not counsel approval)"
+SHOPIFY_REDUCED_CAPABILITY_CERTIFICATION_VERSION = "shopify-global-catalog-ph-2026-09-25-v1"
 SHOPIFY_EVIDENCE_CAPABILITIES = (
     ResearchCapability.PRODUCT_DISCOVERY,
     ResearchCapability.OFFER_DISCOVERY,
@@ -41,6 +43,8 @@ SHOPIFY_EVIDENCE_CAPABILITIES = (
 _EVIDENCE_SOURCE = (
     "docs/roadmap/evidence/SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md"
     "; docs/roadmap/evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_PROBE.md"
+    "; docs/roadmap/evidence/"
+    "SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_NORMALIZATION_ATTEMPT_3.md"
     "; app/research/shopify_global_catalog_capability_policy.py"
 )
 _PROGRAM_REFERENCE = (
@@ -78,27 +82,43 @@ _OPERATING_NOTE = (
     "the capability-policy map. They are not unresolved certification "
     "restrictions: " + "; ".join(SHOPIFY_PERMANENT_OPERATING_CONDITIONS) + "."
 )
+_ATTEMPT_3_NOTE = (
+    "Owner live normalization attempt #3 on 2026-09-25 passed for the exact "
+    "reduced Shopify Global Catalog PH path. Five categories normalized. "
+    "Five search_catalog calls and five get_product calls completed. "
+    "lookup_catalog count is 0. Pagination was not followed. "
+    "Five selected product identities stayed stable from search to detail. "
+    "Five search variant identities were confirmed in detail. Detail exposed "
+    "nine variant identities. Fourteen offers kept integer minor-unit prices. "
+    "Returned currencies PHP and USD were preserved. Fourteen seller "
+    "identities were present. Fourteen availability results were non-unknown. "
+    "Eight different-variant conflicts were held apart. "
+    "ambiguous_or_insufficient_matches_count 5 stayed fail-closed and was not "
+    "declared an exact match. Shipping, tax, and voucher fabricated counts "
+    "are 0. Raw payload persistence is false. No persistent Shopify product "
+    "index was created. This row is evidence, not certification. "
+)
 _CAPABILITY_NOTES = {
     ResearchCapability.PRODUCT_DISCOVERY: (
         "12/12 owner PH search probes returned USEFUL_PH_OFFER. "
         "Staging search_catalog negotiation on 2026-09-22 returned HTTP 200, "
-        "error null, isError false, and product_count 3. "
-        "This row is evidence, not certification. " + _OPERATING_NOTE
+        "error null, isError false, and product_count 3. " + _ATTEMPT_3_NOTE + _OPERATING_NOTE
     ),
     ResearchCapability.OFFER_DISCOVERY: (
         "Documented comparison shopping uses catalog view offer. "
         "Owner probe offer records were technically useful under PH localization. "
-        "This row is evidence, not certification. " + _OPERATING_NOTE
+        + _ATTEMPT_3_NOTE
+        + _OPERATING_NOTE
     ),
     ResearchCapability.CURRENT_PRICING: (
         "Owner live probe summaries record usable current price evidence. "
         "Returned currencies stay as returned. "
-        "This row is evidence, not certification, and is not a canonical shopper price. "
-        + _OPERATING_NOTE
+        "This row is not a canonical shopper price. " + _ATTEMPT_3_NOTE + _OPERATING_NOTE
     ),
     ResearchCapability.AVAILABILITY: (
         "Owner live summaries record usable availability evidence on the PH searches. "
-        "This row is evidence, not certification. " + _OPERATING_NOTE
+        + _ATTEMPT_3_NOTE
+        + _OPERATING_NOTE
     ),
 }
 
@@ -118,6 +138,7 @@ def shopify_global_catalog_certification_evidence_records() -> tuple[
                 source=SHOPIFY_GLOBAL_CATALOG_SOURCE,
                 evidence_source=_EVIDENCE_SOURCE,
                 program_reference=_PROGRAM_REFERENCE,
+                certification_version=SHOPIFY_REDUCED_CAPABILITY_CERTIFICATION_VERSION,
                 evidence_date=SHOPIFY_EVIDENCE_DATE,
                 review_date=SHOPIFY_EVIDENCE_REVIEW_DATE,
                 reviewer=SHOPIFY_EVIDENCE_REVIEWER,

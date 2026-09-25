@@ -66,7 +66,7 @@ def test_philippines_merchant_snapshots_load_without_entering_production() -> No
     assert all(record.market == "PH" for record in records)
     assert all(record.completeness == "incomplete" for record in records)
     assert_production_shopify_evidence_only()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
 
 
 def test_unknown_api_rights_do_not_become_permitted() -> None:
@@ -182,7 +182,7 @@ def test_current_ph_merchants_cannot_be_certified_allowed() -> None:
 def test_sprint_32_3_production_catalogs_remain_empty() -> None:
     philippines_merchant_certification_evidence_records()
     philippines_merchant_certification_evidence_catalog()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()

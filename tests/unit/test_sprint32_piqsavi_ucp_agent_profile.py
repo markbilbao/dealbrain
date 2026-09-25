@@ -403,8 +403,8 @@ def test_existing_ph_probe_limits_and_forbidden_tools_remain() -> None:
 
 
 def test_production_registries_remain_empty_and_sprints_remain_open() -> None:
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     sprint32 = SPRINT32.read_text(encoding="utf-8")
@@ -797,8 +797,8 @@ def test_sprint32_remains_open_and_sprint38_unstarted() -> None:
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 
@@ -949,8 +949,8 @@ def test_owner_successful_piqsavi_profile_shopify_negotiation() -> None:
     assert piqsavi_profile_is_shopify_negotiated() is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_STAGING_URL) is True
     assert piqsavi_profile_deployed_for_url(PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_URL) is False
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     assert "Sprint 32 remains open." in sprint32

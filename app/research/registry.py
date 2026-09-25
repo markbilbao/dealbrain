@@ -1,6 +1,7 @@
 """Server-authoritative technical research provider registry.
 
-Deterministic, browser-immutable, and empty of production providers.
+Deterministic and browser-immutable. The production catalog holds the
+disabled Shopify Global Catalog PH identity only.
 Answers what implementations exist and what they can technically do.
 Certification is a separate catalog authority. Routing preference is a
 separate trusted policy catalog.
@@ -76,13 +77,20 @@ class ResearchProviderRegistry:
 
 
 def production_research_provider_registry() -> ResearchProviderRegistry:
-    """Fail-closed production catalog. No certified providers yet.
+    """Production catalog with the disabled Shopify Global Catalog PH provider.
 
-    Sprints 32–36 own populating certified merchant/market evidence.
+    Registration is not certification, routing, or permission to execute.
     Product Foundation fixtures and test providers are never registered.
     """
 
-    return ResearchProviderRegistry(allow_test_providers=False)
+    from app.research.shopify_global_catalog_provider import (
+        shopify_global_catalog_ph_provider,
+    )
+
+    return ResearchProviderRegistry(
+        (shopify_global_catalog_ph_provider(),),
+        allow_test_providers=False,
+    )
 
 
 def research_provider_registry_for_tests(

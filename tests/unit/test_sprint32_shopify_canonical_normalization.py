@@ -1266,8 +1266,8 @@ def test_library_modules_do_not_import_http_clients() -> None:
 
 
 def test_production_catalogs_remain_unchanged() -> None:
-    assert len(production_research_provider_registry().list_providers()) == 0
-    assert len(production_research_provider_certification_catalog().list_records()) == 0
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert len(production_research_provider_certification_evidence_catalog().list_records()) == 4
     assert len(production_research_provider_routing_policy_catalog().list_records()) == 0
     assert_production_shopify_evidence_only()
@@ -1290,10 +1290,11 @@ def test_production_catalogs_remain_unchanged() -> None:
             decided_at=date(2026, 9, 23),
         )
     )
-    assert result.accepted is False
-    assert result.reason == "provider_missing"
-    assert len(production_research_provider_registry().list_providers()) == 0
-    assert len(production_research_provider_certification_catalog().list_records()) == 0
+    assert result.accepted is True
+    assert result.reason == "approved"
+    assert result.certification is not None
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
 
 
 def test_affiliate_status_does_not_change_normalized_price() -> None:
@@ -1320,7 +1321,11 @@ def test_freshness_policy_and_sprint_status_remain_honest() -> None:
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
     assert "Sprint 41 remains unstarted" in sprint32
-    assert "Owner live normalization validation is still required." in sprint32
+    assert "LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED" in sprint32
+    blockers = sprint32.split("### Closure blockers (current)", 1)[1].split(
+        "### Production defaults", 1
+    )[0]
+    assert "Owner live normalization validation is still required" not in blockers
     assert "operational kill-switch closure evidence remains incomplete" in sprint32.casefold()
     status = next(line for line in sprint32.splitlines() if line.startswith("**Status:**"))
     assert "not complete" in status.casefold()

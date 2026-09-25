@@ -306,8 +306,8 @@ def test_fresh_output_directory_still_permits_the_harness(
 
 
 def test_production_catalogs_and_sprint_status_stay_unchanged() -> None:
-    assert len(production_research_provider_registry().list_providers()) == 0
-    assert len(production_research_provider_certification_catalog().list_records()) == 0
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert len(production_research_provider_certification_evidence_catalog().list_records()) == 4
     assert len(production_research_provider_routing_policy_catalog().list_records()) == 0
     sprint32 = SPRINT32.read_text(encoding="utf-8")

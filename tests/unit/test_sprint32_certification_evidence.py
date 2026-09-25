@@ -297,9 +297,9 @@ def test_test_evidence_cannot_enter_production_catalog() -> None:
 
 
 def test_sprint_32_1_does_not_populate_production_catalogs() -> None:
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     authorization = _authorization(_pricing_scope(source="shopee"))
     result = plan_authorized_research(

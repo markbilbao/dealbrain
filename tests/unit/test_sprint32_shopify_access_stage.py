@@ -150,7 +150,7 @@ def test_staging_connection_is_validated_and_production_stays_uncertified() -> N
     assert stage.production_ready is False
     assert truth["production_certified"] == "NO"
     assert truth["production_profile"] == "not deployed"
-    assert truth["production_provider"] == "none"
+    assert truth["production_provider"] == "registered, operationally disabled"
     assert truth["executable_production_certification"] == "none"
     assert truth["routing"] == "none"
     assert truth["production_ready"] == "NO"
@@ -259,8 +259,11 @@ def test_production_evidence_is_shopify_only_and_grants_nothing() -> None:
         assert record.market == "PH"
         assert record.source == SHOPIFY_GLOBAL_CATALOG_SOURCE
         assert record.completeness == "recorded"
-        assert record.evidence_date == date(2026, 9, 22)
-        assert record.review_date == date(2026, 9, 23)
+        assert record.evidence_date == date(2026, 9, 25)
+        assert record.review_date == date(2026, 9, 25)
+        assert "attempt #3" in record.notes
+        assert "fail-closed" in record.notes
+        assert "ambiguous_or_insufficient_matches_count 5" in record.notes
         assert record.reviewer
         assert "counsel approval" in record.reviewer
         assert record.program_reference
@@ -285,8 +288,8 @@ def test_production_evidence_is_shopify_only_and_grants_nothing() -> None:
         assert record.grants_eligibility is False
         assert record.is_decision_ready(as_of=date(2026, 9, 23)) is True
     assert_production_shopify_evidence_only()
-    assert len(production_research_provider_registry().list_providers()) == 0
-    assert len(production_research_provider_certification_catalog().list_records()) == 0
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert len(production_research_provider_certification_evidence_catalog().list_records()) == 4
     assert len(production_research_provider_routing_policy_catalog().list_records()) == 0
     service = ResearchProviderCertificationDecisionService(
@@ -297,12 +300,12 @@ def test_production_evidence_is_shopify_only_and_grants_nothing() -> None:
     allowed = service.decide(_shopify_decision("allowed"))
     restricted = service.decide(_shopify_decision("restricted"))
     assert allowed.accepted is False
-    assert allowed.reason == "provider_missing"
+    assert allowed.reason == "version_mismatch"
     assert allowed.certification is None
     assert restricted.accepted is False
-    assert restricted.reason == "provider_missing"
+    assert restricted.reason == "version_mismatch"
     assert restricted.certification is None
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     authorization = _authorization(_pricing_scope(source=SHOPIFY_GLOBAL_CATALOG_SOURCE))
     planned = plan_authorized_research(
         authorization,
@@ -426,10 +429,10 @@ def test_synthetic_allowed_certification_succeeds_when_blockers_are_clear() -> N
     assert blocked_result.reason == "restrictions_unresolved"
     assert blocked_result.certification is None
     assert_production_shopify_evidence_only()
-    assert len(production_research_provider_registry().list_providers()) == 0
-    assert len(production_research_provider_certification_catalog().list_records()) == 0
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert len(production_research_provider_routing_policy_catalog().list_records()) == 0
-    assert production_research_provider_registry().get("ph-shopify-global-catalog") is None
+    assert production_research_provider_registry().get("ph-shopify-global-catalog") is not None
     assert production_research_provider_registry().get(provider_id) is None
 
 

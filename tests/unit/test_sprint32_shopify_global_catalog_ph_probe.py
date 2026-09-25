@@ -546,8 +546,8 @@ def test_owner_live_coverage_is_recorded_without_closing_sprint() -> None:
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
     assert "OWNER LIVE PH COVERAGE TEST REQUIRED" not in probe_doc
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert "Sprint 38 remains unstarted" in sprint32
 
@@ -589,8 +589,8 @@ def test_owner_diversified_get_product_validation_is_recorded() -> None:
     assert "USEFUL_PH_OFFER" in diversified
     assert "Sprint 32 remains **OPEN**" in diversified
     assert "Sprint 38 remains **UNSTARTED**" in diversified
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     assert "Sprint 32 remains open." in sprint32
@@ -751,8 +751,8 @@ def test_production_catalogs_stay_empty_and_sprint32_stays_open() -> None:
     assert report.starts_sprint_38 is False
     assert report.certifies_shopify is False
     assert_production_shopify_evidence_only()
-    assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     assert "Sprint 32 is **not complete**" in sprint32
@@ -1084,8 +1084,8 @@ def test_sprint38_unstarted_and_production_catalogs_empty() -> None:
     _transport, report = _run_fixture_probe()
     assert report.starts_sprint_38 is False
     assert report.production_certified is False
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     sprint32 = SPRINT32.read_text(encoding="utf-8")
     probe_doc = PROBE_DOC.read_text(encoding="utf-8")

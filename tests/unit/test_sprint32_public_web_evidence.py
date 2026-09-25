@@ -222,7 +222,7 @@ def test_public_web_discovery_can_plan_without_creating_offer_pricing() -> None:
 
 
 def test_production_registry_still_has_no_public_web_provider() -> None:
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
 
 
 def test_unknown_provider_type_fails_closed() -> None:

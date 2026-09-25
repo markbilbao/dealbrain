@@ -374,7 +374,7 @@ def test_sprint_37_2_market_and_certification_regressions() -> None:
     assert selected.country_code == "PH"
     assert delivery.city == "Cebu City"
     assert "country" not in delivery.to_cookie_payload()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
 
 
 def test_production_fx_path_remains_zero() -> None:
@@ -382,7 +382,7 @@ def test_production_fx_path_remains_zero() -> None:
     assert production_fx_conversion_enabled() is False
     assert resolve_production_fx_quote("USD", "PHP") is None
     assert production_certified_shopping_markets().to_tuple() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
 
 
 def test_canonical_uuid_presentation_stays_php_same_currency() -> None:
