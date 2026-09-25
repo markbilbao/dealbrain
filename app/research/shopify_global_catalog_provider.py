@@ -19,11 +19,19 @@ from app.research.shopify_global_catalog_capability_policy import (
     SHOPIFY_GLOBAL_CATALOG_MARKET,
 )
 from app.research.shopify_global_catalog_certification_evidence import (
-    SHOPIFY_EVIDENCE_CAPABILITIES,
     SHOPIFY_GLOBAL_CATALOG_SOURCE,
 )
 
 SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID = SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID
+# Technical support is an authority of its own. It must not grow because the
+# evidence tuple grows. Production composition checks this set against evidence
+# and the capability-policy map before any certification write.
+SHOPIFY_GLOBAL_CATALOG_SUPPORTED_CAPABILITIES = (
+    ResearchCapability.PRODUCT_DISCOVERY,
+    ResearchCapability.OFFER_DISCOVERY,
+    ResearchCapability.CURRENT_PRICING,
+    ResearchCapability.AVAILABILITY,
+)
 
 
 def shopify_global_catalog_ph_provider() -> StaticResearchProvider:
@@ -33,7 +41,7 @@ def shopify_global_catalog_ph_provider() -> StaticResearchProvider:
         provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
         provider_type="merchant",
         supported_markets=(SHOPIFY_GLOBAL_CATALOG_MARKET,),
-        supported_capabilities=SHOPIFY_EVIDENCE_CAPABILITIES,
+        supported_capabilities=SHOPIFY_GLOBAL_CATALOG_SUPPORTED_CAPABILITIES,
         supported_sources=(SHOPIFY_GLOBAL_CATALOG_SOURCE,),
         operational_status=ConnectorOperationalStatus.DISABLED,
         test_fixture=False,
