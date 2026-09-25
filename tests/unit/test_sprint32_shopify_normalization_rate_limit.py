@@ -23,6 +23,8 @@ from scripts.shopify_global_catalog_normalization_validation import (
     SUCCESS_SUMMARY_NAME,
     ShopifyNormalizationRateLimitError,
     _LiveStagingCatalogTransport,
+)
+from scripts.shopify_global_catalog_normalization_validation import (
     main as harness_main,
 )
 
