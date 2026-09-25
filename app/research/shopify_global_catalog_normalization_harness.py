@@ -525,6 +525,7 @@ def write_normalization_summary(
     output_dir: Path,
     *,
     live: bool,
+    pacing: Mapping[str, Any] | None = None,
 ) -> Path:
     """Write the minimized summary only. Live output must stay outside Git."""
 
@@ -535,6 +536,8 @@ def write_normalization_summary(
             "normalization summary must not be written inside the repository"
         )
     payload = summary.to_dict()
+    if pacing:
+        payload.update(dict(pacing))
     assert_summary_has_no_raw_payload(payload)
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / "shopify-normalization-validation-summary.json"

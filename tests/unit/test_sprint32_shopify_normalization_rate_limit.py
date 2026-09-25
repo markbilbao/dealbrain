@@ -185,7 +185,16 @@ def test_call_accounting_distinguishes_attempted_and_completed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     recorder = _install(monkeypatch, [_ok(), _ok(), _response(429, headers={"Retry-After": "30"})])
-    transport = _LiveStagingCatalogTransport()
+
+    class _Instant:
+        def __call__(self) -> float:
+            return 0.0
+
+        def sleep(self, _seconds: float) -> None:
+            return None
+
+    clock = _Instant()
+    transport = _LiveStagingCatalogTransport(clock=clock, sleeper=clock.sleep)
     assert transport.call_tool(SEARCH_TOOL, {})["result"] == {}
     assert transport.call_tool(SEARCH_TOOL, {})["result"] == {}
     with pytest.raises(ShopifyNormalizationRateLimitError) as caught:

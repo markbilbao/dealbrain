@@ -8,9 +8,13 @@ Live mode calls only ``https://catalog.shopify.com/api/ucp/mcp`` with the
 exact deployed staging PiqSavi profile, at most 5 ``search_catalog`` calls
 and 5 ``get_product`` calls. No ``lookup_catalog``, no pagination, no
 credentials, and no raw Shopify payload is written. HTTP 429 fails closed
-with sanitized retry metadata and is not retried. A selected output
-directory that already contains either validation artifact is refused
-before any Shopify request. Prior evidence is not deleted or overwritten.
+with sanitized retry metadata and is not retried. Before each HTTP request
+after the first, the harness waits until 1.25 seconds have elapsed since
+the previous HTTP attempt. That interval is PiqSavi's conservative
+validation pacing, not an official Shopify rate limit, and it is not a
+retry. A selected output directory that already contains either validation
+artifact is refused before any Shopify request. Prior evidence is not
+deleted or overwritten.
 
 Usage (owner only):
   uv run python scripts/shopify_global_catalog_normalization_validation.py --live \\
@@ -23,6 +27,8 @@ import argparse
 import json
 import re
 import sys
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -63,6 +69,8 @@ _RETRY_AFTER_HTTP_DATE = re.compile(
 )
 
 DEFAULT_OUTPUT_DIR = Path("/tmp/piqsavi-shopify-normalization-validation")
+# PiqSavi conservative owner-validation cadence. Not an official Shopify limit.
+MIN_NETWORK_REQUEST_INTERVAL_SECONDS = 1.25
 _NOT_RUN_MESSAGE = (
     "Owner live Shopify normalization validation was not run. "
     "Pass --live only from an owner workstation. "
@@ -82,7 +90,10 @@ class ShopifyNormalizationRateLimitError(RuntimeError):
     logical_get_product_operations_attempted: int
     logical_get_product_operations_completed: int
     network_http_requests_attempted: int
+    pacing_sleep_count: int
+    total_pacing_sleep_seconds: float
     http_status: int = 429
+    minimum_request_interval_seconds: float = MIN_NETWORK_REQUEST_INTERVAL_SECONDS
 
     def __post_init__(self) -> None:
         if self.http_status != 429:
@@ -92,6 +103,44 @@ class ShopifyNormalizationRateLimitError(RuntimeError):
 
     def __str__(self) -> str:
         return "rate_limit"
+
+
+class ShopifyNetworkRequestPacer:
+    """Shared cadence across search_catalog and get_product HTTP attempts.
+
+    The first attempt is immediate. Later attempts sleep only the remainder
+    of ``MIN_NETWORK_REQUEST_INTERVAL_SECONDS`` since the previous attempt.
+    Sleep is pacing, not a retry, and it does not read Retry-After.
+    """
+
+    def __init__(
+        self,
+        *,
+        clock: Callable[[], float] | None = None,
+        sleeper: Callable[[float], None] | None = None,
+        interval_seconds: float = MIN_NETWORK_REQUEST_INTERVAL_SECONDS,
+    ) -> None:
+        self.minimum_request_interval_seconds = interval_seconds
+        self._clock = clock or time.monotonic
+        self._sleeper = sleeper or time.sleep
+        self._previous_attempt_at: float | None = None
+        self.pacing_sleep_count = 0
+        self.total_pacing_sleep_seconds = 0.0
+
+    def before_http_request(self) -> float:
+        """Sleep the remaining interval, then stamp this HTTP attempt."""
+
+        slept = 0.0
+        if self._previous_attempt_at is not None:
+            elapsed = self._clock() - self._previous_attempt_at
+            remaining = self.minimum_request_interval_seconds - elapsed
+            if remaining > 0:
+                self._sleeper(remaining)
+                slept = remaining
+                self.pacing_sleep_count += 1
+                self.total_pacing_sleep_seconds += remaining
+        self._previous_attempt_at = self._clock()
+        return slept
 
 
 class _CatalogHttpStatus(Exception):
@@ -107,11 +156,19 @@ class _LiveStagingCatalogTransport:
     """Anonymous JSON-RPC caller. No credentials. Owner --live path only.
 
     One logical tool operation attempts exactly one HTTP request. HTTP 429
-    fails closed and is not retried.
+    fails closed and is not retried. A shared pacer spaces HTTP attempts.
+    Changing tools does not reset that cadence.
     """
 
-    def __init__(self, *, timeout: float = 30.0) -> None:
+    def __init__(
+        self,
+        *,
+        timeout: float = 30.0,
+        clock: Callable[[], float] | None = None,
+        sleeper: Callable[[float], None] | None = None,
+    ) -> None:
         self.timeout = timeout
+        self._pacer = ShopifyNetworkRequestPacer(clock=clock, sleeper=sleeper)
         self._next_id = 1
         self.logical_search_operations_attempted = 0
         self.logical_search_operations_completed = 0
@@ -138,6 +195,7 @@ class _LiveStagingCatalogTransport:
                 request,
                 timeout=self.timeout,
                 record_http_attempt=self._record_http_attempt,
+                pacer=self._pacer,
             )
         except _CatalogHttpStatus as exc:
             if exc.status_code == 429:
@@ -161,6 +219,15 @@ class _LiveStagingCatalogTransport:
     def _record_http_attempt(self) -> None:
         self.network_http_requests_attempted += 1
 
+    def pacing_evidence(self) -> dict[str, float | int]:
+        """Sanitized cadence counts. No product identities."""
+
+        return {
+            "minimum_request_interval_seconds": self._pacer.minimum_request_interval_seconds,
+            "pacing_sleep_count": self._pacer.pacing_sleep_count,
+            "total_pacing_sleep_seconds": self._pacer.total_pacing_sleep_seconds,
+        }
+
     def _rate_limit_error(
         self,
         name: str,
@@ -180,6 +247,8 @@ class _LiveStagingCatalogTransport:
                 self.logical_get_product_operations_completed
             ),
             network_http_requests_attempted=self.network_http_requests_attempted,
+            pacing_sleep_count=self._pacer.pacing_sleep_count,
+            total_pacing_sleep_seconds=self._pacer.total_pacing_sleep_seconds,
         )
 
 
@@ -217,6 +286,7 @@ def _post_anonymous_catalog(
     *,
     timeout: float,
     record_http_attempt: Any,
+    pacer: ShopifyNetworkRequestPacer,
 ) -> dict[str, Any]:
     import httpx
 
@@ -225,6 +295,7 @@ def _post_anonymous_catalog(
         raise ProbeContractError("owner harness User-Agent drifted from the Sprint 32 probe")
     if "Authorization" in headers or any(key.lower().startswith("signature") for key in headers):
         raise ProbeContractError("owner harness must not send credentials or signatures")
+    pacer.before_http_request()
     record_http_attempt()
     try:
         response = httpx.post(
@@ -261,6 +332,9 @@ def rate_limit_failure_artifact(error: ShopifyNormalizationRateLimitError) -> di
         "logical_get_product_attempted": error.logical_get_product_operations_attempted,
         "logical_get_product_completed": error.logical_get_product_operations_completed,
         "network_http_requests_attempted": error.network_http_requests_attempted,
+        "minimum_request_interval_seconds": error.minimum_request_interval_seconds,
+        "pacing_sleep_count": error.pacing_sleep_count,
+        "total_pacing_sleep_seconds": error.total_pacing_sleep_seconds,
         "production_certification": False,
         "sprint_38_started": False,
         "sprint_32_closed": False,
@@ -318,6 +392,9 @@ def report_rate_limit_failure(
             f"{error.logical_get_product_operations_completed}"
         ),
         f"network_http_requests_attempted={error.network_http_requests_attempted}",
+        f"minimum_request_interval_seconds={error.minimum_request_interval_seconds}",
+        f"pacing_sleep_count={error.pacing_sleep_count}",
+        f"total_pacing_sleep_seconds={error.total_pacing_sleep_seconds}",
         "production_certification=false",
         "sprint_38_started=false",
         "sprint_32_closed=false",
@@ -364,13 +441,19 @@ def main(argv: list[str] | None = None) -> int:
         print(_PRIOR_ARTIFACT_REASON, file=sys.stderr)
         return 1
     profile = staging_normalization_profile()
+    transport = _LiveStagingCatalogTransport()
     try:
         summary = run_shopify_normalization_validation(
-            _LiveStagingCatalogTransport(),
+            transport,
             profile_url=profile.url,
             live=True,
         )
-        path = write_normalization_summary(summary, args.output_dir, live=True)
+        path = write_normalization_summary(
+            summary,
+            args.output_dir,
+            live=True,
+            pacing=transport.pacing_evidence(),
+        )
     except ShopifyNormalizationRateLimitError as exc:
         report_rate_limit_failure(exc, args.output_dir)
         return 1
@@ -381,6 +464,10 @@ def main(argv: list[str] | None = None) -> int:
     print("production_certification=false")
     print("sprint_38_started=false")
     print("raw_response_persistence=false")
+    evidence = transport.pacing_evidence()
+    print(f"minimum_request_interval_seconds={evidence['minimum_request_interval_seconds']}")
+    print(f"pacing_sleep_count={evidence['pacing_sleep_count']}")
+    print(f"total_pacing_sleep_seconds={evidence['total_pacing_sleep_seconds']}")
     return 0
 
 
