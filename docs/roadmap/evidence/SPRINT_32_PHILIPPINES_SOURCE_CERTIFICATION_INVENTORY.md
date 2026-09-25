@@ -6,7 +6,7 @@
 **Baseline:** `d890df24559325bb8d1289b6c2a01b590c9e50ab`  
 **Market:** PH  
 **Register row:** EXT-01 (Philippines **product-data** access) is `applied` (2026-09-08 request evidence). This inventory snapshot originally recorded `not_started`. `applied` ≠ approved / provisioned / certified.
-**Trusted production certification records:** **zero**
+**Trusted production certification records:** **4** reduced Shopify Global Catalog PH capabilities (`shopify-global-catalog-ph-2026-09-25-v1`). That is not production-deployment certification. Sprint 32 remains open.
 
 **Related:**
 
@@ -75,7 +75,7 @@ Owner-observed Shopee affiliate facts (affiliate dashboard access, Payment & Tax
 - Affiliate permission ≠ product-data permission.
 - Shopee Affiliate Open API ≠ Shopee Seller/ISV Open Platform.
 - Register EXT-01 is the Philippines **market** row. Counsel-form “EXT-01” is a Shopee **label** only.
-- Family-local identifiers (Sprint 4 `marketplace_name`, Sprint 18 `connector_id`, affiliate `merchant_id`) are recorded where they exist. No production Sprint 31 `provider_id` exists.
+- Family-local identifiers (Sprint 4 `marketplace_name`, Sprint 18 `connector_id`, affiliate `merchant_id`) are recorded where they exist. The only production Sprint 31 `provider_id` is `ph-shopify-global-catalog`, and it is operationally disabled.
 - Destination-sensitive `shipping` and `taxes_import` remain Sprint 37. They are listed as contemplated and blocked, not certified.
 - Commission / payout fields are not inventory authorization facts and must not affect certification or routing.
 
@@ -85,10 +85,10 @@ Owner-observed Shopee affiliate facts (affiliate dashboard access, Payment & Tax
 
 | Field | State |
 |-------|-------|
-| Sprint 31 production provider registry | empty |
-| Sprint 31 production certification catalog | empty |
+| Sprint 31 production provider registry | 1: `ph-shopify-global-catalog`, non-fixture, PH, operationally DISABLED |
+| Sprint 31 production certification catalog | 4 trusted reduced Shopify capabilities; not production-deployment ready |
 | Sprint 31 production routing catalog | empty |
-| Sprint 32 production evidence catalog | 4 Shopify Global Catalog PH evidence rows only (`recorded` capture; not certification). Shopee, Lazada, and public-web rows are not loaded. |
+| Sprint 32 production evidence catalog | 4 Shopify Global Catalog PH evidence rows only (`recorded` capture dated 2026-09-25; evidence is not itself certification). Shopee, Lazada, and public-web rows are not loaded. |
 | EXT-01 / EXT-06 | EXT-01 `applied` (2026-09-08 PH product-data requests; not approved); EXT-06 `not_started`; EXT-07 `n_a_beta` for September |
 | Public PH support claim | forbidden |
 

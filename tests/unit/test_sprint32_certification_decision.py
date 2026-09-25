@@ -151,7 +151,7 @@ def test_test_evidence_cannot_enter_production_certification() -> None:
     result = service.decide(_request())
     assert result.accepted is False
     assert result.reason == "fixture_forbidden"
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
 
 
 def test_evidence_does_not_infer_allowed_policy() -> None:
@@ -186,9 +186,10 @@ def test_provider_cannot_self_certify() -> None:
     assert not hasattr(StaticResearchProvider, "set_policy_allowed")
     assert not hasattr(provider, "certify_self")
     registry = production_research_provider_registry()
-    assert registry.list_providers() == ()
+    assert registry.get("test-merchant-a") is None
     certs = production_research_provider_certification_catalog()
-    assert certs.list_records() == ()
+    assert len(certs.list_records()) == 4
+    assert all(record.provider_id != "test-merchant-a" for record in certs.list_records())
     assert provider.descriptor.affiliate_commission_rate == 0.99
 
 
@@ -202,9 +203,9 @@ def test_certification_decision_does_not_create_routing_policy() -> None:
 
 
 def test_sprint_32_2_production_catalogs_remain_empty() -> None:
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 
 
@@ -244,13 +245,13 @@ def test_shopee_current_evidence_cannot_be_approved() -> None:
     assert result.accepted is False
     assert result.reason == "evidence_incomplete"
     assert result.certification is None
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
 
 
 def test_evidence_registration_does_not_populate_certification_or_plans() -> None:
     evidence = _ready_evidence()
     research_provider_certification_evidence_catalog_for_tests((evidence,))
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     provider = _pricing_provider(sources=("catalog-source",))
     planned = _plan(
         _authorization(_pricing_scope(source="catalog-source")),

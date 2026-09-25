@@ -146,8 +146,8 @@ def test_documentary_public_web_evidence_is_incomplete_and_not_production() -> N
         assert "search snippet is not canonical price evidence" in record.restrictions
         assert record.test_fixture is False
     assert_production_shopify_evidence_only()
-    assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 
 

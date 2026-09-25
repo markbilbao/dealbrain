@@ -16,6 +16,7 @@ from app.domain.entities.research_execution import (
     ResearchProviderDescriptor,
 )
 from app.research.certification import (
+    ResearchProviderCertificationCatalog,
     production_research_provider_certification_catalog,
     research_provider_certification_catalog_for_tests,
 )
@@ -160,8 +161,10 @@ def test_documentary_ph_id_cannot_certify_without_registered_provider() -> None:
     assert result.accepted is False
     assert result.reason == "provider_missing"
     assert result.certification is None
-    assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    fresh = production_research_provider_certification_catalog().list_records()
+    assert len(fresh) == 4
+    assert all(record.provider_id == "ph-shopify-global-catalog" for record in fresh)
+    assert production_research_provider_registry().get("ph-shopee") is None
 
 
 def test_empty_production_registry_cannot_bind_documentary_identity() -> None:
@@ -243,13 +246,15 @@ def test_test_catalog_does_not_require_a_production_provider() -> None:
     assert result.reason == "approved"
     assert result.certification is not None
     assert result.certification.test_fixture is True
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert production_research_provider_registry().get("test-merchant-a") is None
+    fresh = production_research_provider_certification_catalog().list_records()
+    assert len(fresh) == 4
+    assert all(record.test_fixture is False for record in fresh)
 
 
 def test_bound_production_provider_can_be_certified_in_isolated_catalogs() -> None:
     evidence = _recorded_evidence()
-    certs = production_research_provider_certification_catalog()
+    certs = ResearchProviderCertificationCatalog(allow_test_certifications=False)
     registry = ResearchProviderRegistry(
         [_production_provider()],
         allow_test_providers=False,
@@ -261,8 +266,10 @@ def test_bound_production_provider_can_be_certified_in_isolated_catalogs() -> No
     assert result.certification.provider_id == "bound-merchant"
     assert result.certification.test_fixture is False
     assert certs.list_records() == (result.certification,)
-    assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    fresh = production_research_provider_certification_catalog().list_records()
+    assert len(fresh) == 4
+    assert all(record.provider_id != "bound-merchant" for record in fresh)
+    assert production_research_provider_registry().get("bound-merchant") is None
 
 
 def test_kill_switch_does_not_block_structural_certification() -> None:
@@ -275,7 +282,9 @@ def test_kill_switch_does_not_block_structural_certification() -> None:
     assert result.accepted is True
     assert result.certification is not None
     assert result.certification.status == "certified"
-    assert production_research_provider_certification_catalog().list_records() == ()
+    fresh = production_research_provider_certification_catalog().list_records()
+    assert len(fresh) == 4
+    assert all(record.provider_id == "ph-shopify-global-catalog" for record in fresh)
 
 
 def test_current_ph_documentary_records_remain_incomplete() -> None:
@@ -388,12 +397,14 @@ def test_fixture_and_documentary_combinations_stay_isolated() -> None:
     documentary_ids = {record.provider_id for record in documentary.list_records()}
     production_ids = {record.provider_id for record in production_evidence.list_records()}
     assert documentary_ids.isdisjoint(production_ids)
-    assert production_research_provider_certification_catalog().list_records() == ()
+    fresh = production_research_provider_certification_catalog().list_records()
+    assert len(fresh) == 4
+    assert all(record.provider_id == "ph-shopify-global-catalog" for record in fresh)
 
 
-def test_sprint_32_4_production_defaults_remain_empty() -> None:
+def test_sprint_32_4_production_defaults_are_the_reduced_shopify_set() -> None:
     assert len(philippines_merchant_certification_evidence_records()) == 15
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
-    assert production_research_provider_registry().list_providers() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
     assert production_research_provider_routing_policy_catalog().list_records() == ()

@@ -287,8 +287,8 @@ def test_test_certifications_cannot_enter_production_catalog() -> None:
 
     production_registry = production_research_provider_registry()
     production_catalog = production_research_provider_certification_catalog()
-    assert production_registry.list_providers() == ()
-    assert production_catalog.list_records() == ()
+    assert len(production_registry.list_providers()) == 1
+    assert len(production_catalog.list_records()) == 4
     assert all(record.test_fixture for record in test_catalog.list_records())
     with pytest.raises(ValueError, match="test certifications"):
         production_catalog.register(_exact_cert(provider))

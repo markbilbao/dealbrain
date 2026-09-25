@@ -37,7 +37,8 @@ SHOPPER_APPLICABILITY_STATES: frozenset[str] = frozenset(
     {"applicable", "not_applicable", "unknown"}
 )
 
-# Documentary identity only. Not registered in the production provider registry.
+# Same provider id as the disabled production technical identity.
+# This map is still documentary policy evidence, not the certification catalog.
 SHOPIFY_GLOBAL_CATALOG_DOCUMENTARY_PROVIDER_ID = "ph-shopify-global-catalog"
 SHOPIFY_GLOBAL_CATALOG_MARKET = "PH"
 CERTIFICATION_PREP_ONLY = True
@@ -297,8 +298,10 @@ def shopify_global_catalog_capability_policy_rows() -> tuple[ShopifyCapabilityPo
             "restricted",
             "not_applicable",
             "API Terms limit transformation to application functionality and "
-            "do not transfer content ownership. Production normalization "
-            "evidence is still absent.",
+            "do not transfer content ownership. Owner live staging "
+            "normalization attempt #3 passed. This row stays restricted and "
+            "is not a certified capability. Production-environment "
+            "normalization remains a later gate.",
             ("application functionality only", "no content ownership"),
         ),
         _row(

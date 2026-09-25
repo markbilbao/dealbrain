@@ -132,9 +132,18 @@ def make_research_provider_certification(
 
 
 def production_research_provider_certification_catalog() -> ResearchProviderCertificationCatalog:
-    """Fail-closed production catalog. Zero certified providers until Sprints 32–36."""
+    """Production catalog of the trusted reduced Shopify PH capability set.
 
-    return ResearchProviderCertificationCatalog(allow_test_certifications=False)
+    Records are written only by ``ResearchProviderCertificationDecisionService``.
+    Certified reduced capabilities are not production-deployment readiness.
+    """
+
+    from app.research.shopify_global_catalog_production_composition import (
+        compose_shopify_reduced_capability_certifications,
+    )
+
+    catalog = ResearchProviderCertificationCatalog(allow_test_certifications=False)
+    return compose_shopify_reduced_capability_certifications(catalog)
 
 
 def research_provider_certification_catalog_for_tests(

@@ -32,9 +32,9 @@ def _provider(provider_id: str, *, test_fixture: bool = True) -> StaticResearchP
     )
 
 
-def test_production_registry_is_empty_and_refuses_test_fixtures() -> None:
+def test_production_registry_holds_disabled_shopify_and_refuses_test_fixtures() -> None:
     registry = production_research_provider_registry()
-    assert registry.list_providers() == ()
+    assert [item.provider_id for item in registry.list_providers()] == ["ph-shopify-global-catalog"]
     with pytest.raises(ValueError, match="test providers"):
         registry.register(_provider("test-amazon-ph"))
 

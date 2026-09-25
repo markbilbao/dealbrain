@@ -138,8 +138,8 @@ def test_owner_live_coverage_addendum_keeps_historical_unverified_strings() -> N
     assert "five distinct categories" in current_blockers
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
-    assert production_research_provider_registry().list_providers() == ()
-    assert production_research_provider_certification_catalog().list_records() == ()
+    assert len(production_research_provider_registry().list_providers()) == 1
+    assert len(production_research_provider_certification_catalog().list_records()) == 4
     assert_production_shopify_evidence_only()
     assert production_research_provider_routing_policy_catalog().list_records() == ()
 

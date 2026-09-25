@@ -21,15 +21,15 @@ Sprint 31 was formally owner-closed before Sprint 32 implementation began. 32.1â
 | 32.4 hardening | complete |
 | 32.5 reconciliation / validation | complete |
 | 32.6 public-web discovery evaluation path | internal foundation only â€” not certified |
-| Real PH product-data path | Anonymous Shopify Global Catalog access stages reconciled; not production-certified |
-| Production provider | none |
-| Production certification | none |
-| Live current-data validation | technical coverage exists for Shopify Global Catalog; production operational validation/certification incomplete |
+| Real PH product-data path | reduced Shopify Global Catalog capability set trusted-certified; not production-deployment ready |
+| Production provider | `ph-shopify-global-catalog` registered, operationally DISABLED |
+| Production certification | 4 trusted reduced-capability records; not production-deployment certification |
+| Live current-data validation | LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED for the reduced path; production operational validation remains |
 | Sprint 32 closure | blocked |
-| Canonical Shopify normalization | in-process adapter implemented; 2026-09-25 owner attempts #1 and #2 failed closed on HTTP 429; attempt #2 completed 5/5 search and 0/1 get_product; successful 5/5 validation still required |
+| Canonical Shopify normalization | LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED on owner attempt #3 (2026-09-25); attempts #1 and #2 remain failed closed on HTTP 429 |
 | Kill-switch engineering check | synthetic Sprint 31 behavior validated; operational closure still incomplete |
 
-The trusted Philippines certification architecture is built and validated. PiqSavi still has **no** real production-certified Philippines merchant-data path. Do not claim PH support, PH certification, live Shopee research, live Lazada research, or production-ready merchant integration.
+The trusted Philippines certification architecture is built and validated. A reduced Shopify Global Catalog capability set is trusted-certified and the provider identity is registered operationally DISABLED. Certified reduced capability set is not production deployment ready. Do not claim PH support, live Shopee research, live Lazada research, or production-ready merchant integration.
 
 ### 2026-09-06 owner lock (documentation only; does not close this sprint)
 
@@ -423,15 +423,50 @@ Owner live normalization validation attempt #2 on 2026-09-25, recorded separatel
 - No Sprint 38 execution.
 - No Sprint 41 execution.
 
+### 2026-09-25 owner live normalization validation attempt #3 (does not close this sprint)
+
+Owner live normalization validation attempt #3 on 2026-09-25 succeeded. It is recorded separately from attempts #1 and #2. Non-secret evidence: [`../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_NORMALIZATION_ATTEMPT_3.md`](../evidence/SPRINT_32_SHOPIFY_GLOBAL_CATALOG_PH_NORMALIZATION_ATTEMPT_3.md).
+
+- Owner execution. This workspace did not run the live harness.
+- AWS CloudShell was the execution environment only. Repository cloning and temporary tool installation inside that CloudShell environment are not staging or production infrastructure deployment or mutation.
+- Exact merged main: `5022c2ddac80d202db371d1e0e4fa26252e0c397`.
+- Exact deployed staging PiqSavi profile. `agent_profile_source = piqsavi`. `staging_profile_exact_url_classification = exact_deployed_staging`. Market = PH.
+- Preflight passed.
+- Pacing = PiqSavi conservative 1.25-second cadence. `minimum_request_interval_seconds = 1.25`. `pacing_sleep_count = 9`. Total pacing sleep was approximately 9.1589 seconds.
+- 5 `search_catalog` completed.
+- 5 `get_product` completed.
+- 0 `lookup_catalog`.
+- Pagination was not followed. Pagination metadata was observed.
+- All five categories normalized successfully: wireless earbuds, gaming laptop, mechanical keyboard, USB-C charger, phone case.
+- 5 distinct selected product identities stayed stable from search to detail.
+- 5 search variant identities were confirmed in detail.
+- Detail exposed 9 variant identities total.
+- 14 normalized offers preserved integer minor-unit pricing.
+- Returned currencies PHP and USD were preserved. `currencies_observed_count = 2`.
+- 14 seller identities were present.
+- 14 availability results were non-unknown. `availability_unknown_count = 0`. `availability_normalized_count = 14`.
+- 8 different-variant conflicts were correctly held apart.
+- 5 comparisons remained ambiguous or insufficient and were not declared exact. That count is fail-closed integrity, not failed normalization.
+- Shipping, tax, and voucher fabricated counts are 0.
+- Raw payload persistence is false. No persistent Shopify product index.
+- Source identity digests stay in the owner summary. They are not reconstructed here. Raw Shopify product and variant IDs are not stored.
+- `canonical_parsing_attempted_count = 14`. `exact_variant_comparisons_count = 13`.
+- Generated `2026-09-25T04:34:35.325772+00:00`.
+- `owner_live_validation = true`. `cursor_executed_live_harness = false`.
+- Production certification was false at the time of the owner run.
+- Sprint 38 was not started. Sprint 41 was not started.
+- LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED for the exact reduced Shopify Global Catalog path.
+- This attempt does not close Sprint 32 and does not make the path production-deployment ready.
+
 ### Closure blockers (current)
 
-- No executable production provider
-- No trusted production certification
+- Provider identity `ph-shopify-global-catalog` is registered and operationally DISABLED. Execution remains unavailable. Registration is not permission to execute.
+- Trusted reduced-capability certification exists for PRODUCT_DISCOVERY, OFFER_DISCOVERY, CURRENT_PRICING, and AVAILABILITY only. Certified reduced capability set is not production deployment ready.
 - Production profile undeployed
-- Canonical Shopify normalization and product/variant identity preservation are implemented on the existing Sprint 18 parser/matcher and canonical offer-economics model. Integer minor units are preserved. Unknown shipping, tax, voucher, and checkout costs stay fail-closed. Synthetic tests are not live market evidence. The 2026-09-25 owner live attempt #1 failed closed when Shopify Global Catalog returned HTTP 429; how many calls completed before that 429 is not recorded. Attempt #2 the same day also failed closed: 5 `search_catalog` operations completed, then HTTP 429 on the first `get_product` (JSON-RPC request id 6, network HTTP request #6, Retry-After = 1 second), so 0 `get_product` operations completed. Successful 5/5 normalization validation was not obtained. Those five searches are not full certification success because detail/`get_product` validation did not complete. That HTTP 429 is rate limiting, not a provider rejection. Owner live normalization validation is still required, so market-specific canonical normalization evidence remains incomplete.
+- LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED for the exact reduced Shopify Global Catalog path on owner attempt #3. Attempts #1 and #2 remain historical HTTP 429 fail-closed runs and are not this pass. Ambiguous or insufficient comparisons stayed fail-closed. Unknown shipping, tax, voucher, and checkout costs stay fail-closed.
 - Staging certification not yet complete
 - Monitoring / public coverage disclosure incomplete
-- Kill-switch engineering behavior is validated synthetically against Sprint 31 `ResearchProviderDescriptor.is_operationally_available`: an engaged kill switch, an open circuit breaker, DISABLED, and UNAVAILABLE are unavailable and ineligible, and browser/request/shopper input cannot disengage a server-owned kill switch. Operational kill-switch closure evidence remains incomplete because no production provider is registered and no deployed Shopify path was exercised. This is not production certification.
+- Kill-switch engineering behavior is validated synthetically against Sprint 31 `ResearchProviderDescriptor.is_operationally_available`: an engaged kill switch, an open circuit breaker, DISABLED, and UNAVAILABLE are unavailable and ineligible, and browser/request/shopper input cannot disengage a server-owned kill switch. Operational kill-switch closure evidence remains incomplete because the registered provider stays DISABLED and no deployed Shopify path was exercised. This is not production-deployment certification.
 - Later production validation remains
 - Unknown effective-cost components remain excluded and fail-closed
 - Shopify Global Catalog Anonymous catalog mode does not require a separate application, separate provider preapproval, or merchant/API credentials. That fact does not make the path production-ready or production-certified.
@@ -448,7 +483,7 @@ Owner live normalization validation attempt #2 on 2026-09-25, recorded separatel
 
 ### Production defaults
 
-Certification records = 0. Production evidence = 4 Shopify Global Catalog PH rows (`PRODUCT_DISCOVERY`, `OFFER_DISCOVERY`, `CURRENT_PRICING`, `AVAILABILITY`; `completeness="recorded"` means capture is complete, not legal sufficiency or production certification). Combined evidence date for those rows is 2026-09-22 because they use the 2026-09-22 staging negotiation. Review date is 2026-09-23. `ResearchProviderCertificationEvidence.restrictions` records only unresolved certification blockers and is empty on these four rows. Permanent allowed-mode operating conditions stay on the capability-policy map, the evidence notes, and attribution requirements. Providers = 0. Routing policies = 0. `SHIPPING` and `PROMOTION_EVIDENCE` remain uncertified and unknown. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories).
+Certification records = 4 trusted reduced-capability records for `ph-shopify-global-catalog` / PH / `shopify_global_catalog` (`PRODUCT_DISCOVERY`, `OFFER_DISCOVERY`, `CURRENT_PRICING`, `AVAILABILITY`), version `shopify-global-catalog-ph-2026-09-25-v1`, written only by `ResearchProviderCertificationDecisionService`. Production evidence = 4 Shopify Global Catalog PH rows for the same targets. Evidence date and review date are 2026-09-25. Reviewer is PiqSavi owner / engineering evidence review (not counsel approval). `completeness="recorded"` means capture is complete, not legal sufficiency and not production-deployment readiness. `ResearchProviderCertificationEvidence.restrictions` records only unresolved certification blockers and is empty on these four rows. Permanent allowed-mode operating conditions stay on the capability-policy map, the evidence notes, and attribution requirements. Providers = 1, operationally DISABLED, non-fixture. Routing policies = 0. `SHIPPING`, `TAXES_IMPORT`, and `PROMOTION_EVIDENCE` remain uncertified and unknown. Documentary PH merchant evidence records = 15 (incomplete; not loaded by production factories). Documentary PH public-web evidence records = 3 (incomplete; not loaded by production factories). Certified reduced capability set is not production deployment ready.
 
 ### Shopify Anonymous Global Catalog access stage (current)
 
@@ -470,13 +505,13 @@ Capability-policy evidence: recorded/prepared.
 
 Production profile: not deployed.
 
-Production provider: none.
+Production provider: registered, operationally disabled.
 
 Executable production certification: none.
 
 Routing: none.
 
-Production certified: NO.
+Production certified: NO. Four trusted reduced-capability records are not production-deployment certification.
 
 Sprint 32: OPEN.
 
@@ -484,7 +519,7 @@ Sprint 38: UNSTARTED.
 
 Sprint 41: UNSTARTED.
 
-Canonical normalization adapter: implemented in-process. Owner live normalization validation: attempted twice on 2026-09-25. Attempt #1 failed closed on HTTP 429 without a recorded completed-call count. Attempt #2 used the exact merged harness from main in AWS CloudShell, a fresh output directory, and a passing preflight; 5/5 `search_catalog` completed and 0/1 `get_product` completed after HTTP 429 on network request #6 (JSON-RPC request id 6, Retry-After = 1 second). The harness failed closed with no automatic retry and no raw payload persisted. Successful 5/5 validation was not obtained. The completed searches are not full certification success. This is rate limiting, not a provider rejection, and not production certification. Kill-switch operational closure: incomplete. This is not production certification.
+Canonical normalization adapter: implemented in-process. LIVE MARKET-SPECIFIC NORMALIZATION VALIDATION = PASSED on owner attempt #3. Attempts #1 and #2 failed closed on HTTP 429 and remain historical. Kill-switch operational closure: incomplete. Certified reduced capability set is not production deployment ready.
 
 Do not call this path production ready.
 

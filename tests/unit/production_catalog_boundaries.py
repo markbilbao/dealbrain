@@ -16,7 +16,9 @@ from app.research.shopify_global_catalog_certification_evidence import (
 
 
 def assert_production_shopify_evidence_only() -> None:
-    """Evidence is Shopify-only and grants nothing. Other production catalogs stay empty."""
+    """Shopify evidence grants nothing. Production catalogs match the reduced set."""
+
+    from app.domain.entities.connector_reliability import ConnectorOperationalStatus
 
     records = production_research_provider_certification_evidence_catalog().list_records()
     assert records == shopify_global_catalog_certification_evidence_records()
@@ -26,6 +28,11 @@ def assert_production_shopify_evidence_only() -> None:
     assert all(record.grants_certification is False for record in records)
     assert all(record.grants_eligibility is False for record in records)
     assert all(record.test_fixture is False for record in records)
-    assert production_research_provider_certification_catalog().list_records() == ()
-    assert production_research_provider_registry().list_providers() == ()
+    providers = production_research_provider_registry().list_providers()
+    assert len(providers) == 1
+    assert providers[0].provider_id == "ph-shopify-global-catalog"
+    assert providers[0].descriptor.operational_status is ConnectorOperationalStatus.DISABLED
+    certifications = production_research_provider_certification_catalog().list_records()
+    assert len(certifications) == 4
+    assert {record.capability for record in certifications} == set(SHOPIFY_EVIDENCE_CAPABILITIES)
     assert production_research_provider_routing_policy_catalog().list_records() == ()
