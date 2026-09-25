@@ -382,15 +382,14 @@ Owner live normalization validation attempt on 2026-09-25:
 
 - Preflight passed.
 - The exact staging PiqSavi profile loaded.
-- The owner invoked the bounded live normalization harness.
+- The owner invoked the bounded live normalization harness in AWS CloudShell. AWS CloudShell was only the owner execution environment. Repository cloning and temporary tool installation inside that CloudShell environment are not staging or production infrastructure deployment or mutation.
 - Shopify Global Catalog returned HTTP 429.
 - The harness failed closed.
 - Successful 5/5 normalization validation was not obtained.
 - This is not a provider rejection of PiqSavi. The response was a rate limit.
 - Production certification remains false.
 - Sprint 32 remains open.
-- No AWS mutation.
-- No deployment.
+- No PiqSavi AWS infrastructure/resource mutation and no deployment.
 - No Sprint 38 execution.
 - No Sprint 41 execution.
 

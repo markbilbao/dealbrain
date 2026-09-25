@@ -235,6 +235,67 @@ def test_non_429_http_failure_does_not_write_success_or_rate_limit_artifact(
     _assert_no_sensitive_text(captured.err)
 
 
+def _seed(path: Path, text: str) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return text
+
+
+def test_preexisting_success_summary_blocks_before_any_request(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    recorder = _install(monkeypatch, [_response(429, headers={"Retry-After": "17"})])
+    prior = tmp_path / SUCCESS_SUMMARY_NAME
+    original = _seed(prior, '{"production_certification": false, "note": "prior-success"}\n')
+    code = harness_main(["--live", "--output-dir", str(tmp_path)])
+    captured = capsys.readouterr()
+    assert code == 1
+    assert recorder.calls == []
+    assert captured.err.strip() == "output_directory_contains_prior_validation_artifact"
+    assert prior.read_text(encoding="utf-8") == original
+    assert not (tmp_path / FAILURE_ARTIFACT_NAME).exists()
+    _assert_no_sensitive_text(captured.err + captured.out)
+
+
+def test_preexisting_failure_artifact_blocks_before_any_request(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    recorder = _install(monkeypatch, [_ok()])
+    prior = tmp_path / FAILURE_ARTIFACT_NAME
+    original = _seed(
+        prior,
+        '{"failure_kind": "rate_limit", "raw_payload_persisted": false, "note": "prior-failure"}\n',
+    )
+    unrelated = tmp_path / "notes.txt"
+    unrelated.write_text("gid://shopify/Product/secret-product Secret Earbuds\n", encoding="utf-8")
+    code = harness_main(["--live", "--output-dir", str(tmp_path)])
+    captured = capsys.readouterr()
+    assert code == 1
+    assert recorder.calls == []
+    assert captured.err.strip() == "output_directory_contains_prior_validation_artifact"
+    assert prior.read_text(encoding="utf-8") == original
+    assert not (tmp_path / SUCCESS_SUMMARY_NAME).exists()
+    assert unrelated.read_text(encoding="utf-8").startswith("gid://shopify/")
+    _assert_no_sensitive_text(captured.err + captured.out)
+
+
+def test_fresh_output_directory_still_permits_the_harness(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    recorder = _install(monkeypatch, [_response(429, headers={"Retry-After": "4"})])
+    output = tmp_path / "fresh"
+    code = harness_main(["--live", "--output-dir", str(output)])
+    assert code == 1
+    assert len(recorder.calls) == 1
+    assert (output / FAILURE_ARTIFACT_NAME).is_file()
+    assert not (output / SUCCESS_SUMMARY_NAME).exists()
+
+
 def test_production_catalogs_and_sprint_status_stay_unchanged() -> None:
     assert len(production_research_provider_registry().list_providers()) == 0
     assert len(production_research_provider_certification_catalog().list_records()) == 0
@@ -251,8 +312,9 @@ def test_production_catalogs_and_sprint_status_stay_unchanged() -> None:
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
     assert "Sprint 41 remains unstarted" in sprint32
-    assert "No AWS mutation." in sprint32
-    assert "No deployment." in sprint32
+    assert "AWS CloudShell was only the owner execution environment." in sprint32
+    assert "No PiqSavi AWS infrastructure/resource mutation and no deployment." in sprint32
+    assert "No AWS mutation." not in sprint32
     assert "No Sprint 38 execution." in sprint32
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
     sprint41_status = sprint41.split("**Status:**", 1)[1].splitlines()[0].strip()

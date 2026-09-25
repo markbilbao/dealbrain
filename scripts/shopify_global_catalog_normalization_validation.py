@@ -8,7 +8,9 @@ Live mode calls only ``https://catalog.shopify.com/api/ucp/mcp`` with the
 exact deployed staging PiqSavi profile, at most 5 ``search_catalog`` calls
 and 5 ``get_product`` calls. No ``lookup_catalog``, no pagination, no
 credentials, and no raw Shopify payload is written. HTTP 429 fails closed
-with sanitized retry metadata and is not retried.
+with sanitized retry metadata and is not retried. A selected output
+directory that already contains either validation artifact is refused
+before any Shopify request. Prior evidence is not deleted or overwritten.
 
 Usage (owner only):
   uv run python scripts/shopify_global_catalog_normalization_validation.py --live \\
@@ -52,6 +54,7 @@ from app.research.shopify_global_catalog_ph_probe import (  # noqa: E402
 
 FAILURE_ARTIFACT_NAME = "shopify-normalization-validation-failure.json"
 SUCCESS_SUMMARY_NAME = "shopify-normalization-validation-summary.json"
+_PRIOR_ARTIFACT_REASON = "output_directory_contains_prior_validation_artifact"
 _RETRY_AFTER_DELTA_SECONDS = re.compile(r"^\d{1,8}$")
 _RETRY_AFTER_HTTP_DATE = re.compile(
     r"^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} "
@@ -281,6 +284,17 @@ def write_rate_limit_failure_artifact(
     return path
 
 
+def output_directory_has_prior_validation_artifact(output_dir: Path) -> bool:
+    """True when either known validation artifact is already present.
+
+    Only those two filenames are checked. Directory contents are not listed
+    and existing files are not read, deleted, or overwritten.
+    """
+
+    names = (SUCCESS_SUMMARY_NAME, FAILURE_ARTIFACT_NAME)
+    return any((output_dir / name).is_file() for name in names)
+
+
 def report_rate_limit_failure(
     error: ShopifyNormalizationRateLimitError,
     output_dir: Path,
@@ -346,6 +360,9 @@ def main(argv: list[str] | None = None) -> int:
     if not args.live:
         print(_NOT_RUN_MESSAGE)
         return 2
+    if output_directory_has_prior_validation_artifact(args.output_dir):
+        print(_PRIOR_ARTIFACT_REASON, file=sys.stderr)
+        return 1
     profile = staging_normalization_profile()
     try:
         summary = run_shopify_normalization_validation(
