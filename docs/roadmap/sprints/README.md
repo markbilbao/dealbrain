@@ -15,7 +15,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | 34 | [Singapore Merchant Certification](SPRINT_34_SINGAPORE_MERCHANT_CERTIFICATION.md) |
 | 35 | [United Kingdom Merchant Certification](SPRINT_35_UNITED_KINGDOM_MERCHANT_CERTIFICATION.md) |
 | 36 | [Canada Merchant Certification](SPRINT_36_CANADA_MERCHANT_CERTIFICATION.md) |
-| 37 | [MarketContext, Currency & Localization](SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md) — in progress (37.1–37.4 merged/implemented; live destination re-evaluation and production FX still unavailable); not complete |
+| 37 | [MarketContext, Currency & Localization](SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md) — **COMPLETE / CLOSED** (2026-09-26) for the PH-only public beta. Live destination re-evaluation remains Sprint 38. Production FX remains unavailable. Public PH shopping coverage is not enabled. Close record: [`../evidence/SPRINT_37_COMPLETION.md`](../evidence/SPRINT_37_COMPLETION.md) |
 | 38 | [Connector Reliability & Honest Degradation](SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
 | 39 | [Analytics, Feedback & Support](SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md) — product-validation learning; affiliate conversion not a launch-acceptance metric |
 | 40 | [Security & Abuse Hardening](SPRINT_40_SECURITY_ABUSE_HARDENING.md) |

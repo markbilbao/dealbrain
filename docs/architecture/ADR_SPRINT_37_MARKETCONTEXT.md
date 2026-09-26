@@ -1,6 +1,6 @@
 # ADR — Sprint 37.1 MarketContext composition
 
-**Status:** Accepted for Sprint 37.1; 37.2–37.4 addenda recorded. Sprint 37 is **not complete**.
+**Status:** Accepted. Sprint 37 is COMPLETE / CLOSED (2026-09-26) for the PH-only public beta. Live destination re-evaluation and production FX remain unavailable.
 **Date:** 2026-09-03
 **Baseline recorded:** `ba05aa7e205eab69a2f727e28b6b97d0d3b130ff`
 **Related:** [`../roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](../roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md)
@@ -51,6 +51,8 @@ Source offer currency is monetary truth. Preferred/display currency (PHP on PH M
 ## Out of scope
 
 Live FX provider / EXT-23 credentials and production quotes, live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.
+
+The 2026-09-26 PH-only closure keeps that boundary. EXT-23 remains `not_started`. Production FX conversion remains disabled. US, SG, UK, and CA stay omitted and were not QA'd as supported. FR-CA is not applicable because Canada is omitted. `DESTINATION_REEVALUATION_IMPLEMENTED` remains False. Live evidence-backed re-evaluation remains Sprint 38. Production secret attachment, if conversion is later enabled, remains Sprint 41.
 
 ## 37.4 addendum — destination re-evaluation readiness
 

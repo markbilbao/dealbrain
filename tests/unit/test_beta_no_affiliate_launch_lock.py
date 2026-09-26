@@ -65,7 +65,6 @@ RANKING_MODULES = (
     "app/intelligence/shopping_assistant/recommendation.py",
 )
 INCOMPLETE_SPRINTS = (
-    "docs/roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md",
     "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md",
     "docs/roadmap/sprints/SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md",
     "docs/roadmap/sprints/SPRINT_40_SECURITY_ABUSE_HARDENING.md",
