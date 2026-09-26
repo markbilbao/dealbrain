@@ -78,8 +78,8 @@ def test_capability_matrix_uses_only_sprint31_states() -> None:
 def test_sprint32_status_remains_in_progress_and_links_audit() -> None:
     text = _read(SPRINT32)
     status_line = next(line for line in text.splitlines() if line.startswith("**Status:**"))
-    assert "In progress" in status_line
-    assert "not complete" in status_line.lower()
+    assert "COMPLETE / CLOSED" in status_line
+    assert "not production-deployment ready" in status_line.lower()
     assert "Sprint 32 is **not complete**" in text
     assert "SPRINT_32_PH_SOURCE_RIGHTS_AUDIT_2026-09-18.md" in text
     assert "rights survivor" in text.lower()

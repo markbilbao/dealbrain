@@ -58,4 +58,29 @@ Extension guide for official connectors
 3. Redact secrets from error details.
 4. Add tests for healthy / degraded / unavailable / unconfigured paths.
 5. Never mark a stub or scraper as healthy live.
+
+Shopify Global Catalog PH provider status (Sprint 32 closure, 2026-09-25)
+------------------------------------------------------------------------
+This is the current connector-health record for the only production research
+provider. It is not a second monitoring system and it does not probe Shopify.
+
+| Field | Current value |
+|-------|----------------|
+| provider_id | ``ph-shopify-global-catalog`` |
+| market | PH |
+| certified capabilities | 4 (PRODUCT_DISCOVERY, OFFER_DISCOVERY, CURRENT_PRICING, AVAILABILITY) |
+| operational_status | DISABLED |
+| routing | none |
+| live execution | unavailable |
+| production profile | undeployed |
+
+Monitoring must not call this provider healthy, live, available, or
+production-ready while it is disabled. Registration and trusted
+reduced-capability certification do not make the connector healthy.
+
+Sprint 38 transition, not implemented here: when execution becomes
+operational, connector health, execution traces, partial failure, 429,
+timeout, quota, breaker, and kill-switch runtime monitoring become Sprint 38
+responsibilities. Production alerts also remain Sprint 38 / 42. The deployed
+operational kill-switch drill remains Sprint 38 / 41. Sprint 38 is unstarted.
 """

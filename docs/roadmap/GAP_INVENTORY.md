@@ -1009,3 +1009,22 @@ This addendum does **not** rewrite earlier snapshots. It records path applicabil
 | EXT-01 | Remains `applied` for the 2026-09-08 Shopee and Lazada requests. Not approved. Not provisioned |
 | Sprint 32 / Sprint 38 / Sprint 41 | Sprint 32 remains **OPEN**. Sprint 38 remains unstarted. Sprint 41 remains unstarted. |
 | Production ready | No |
+
+## 2026-09-25 Sprint 32 closure addendum
+
+This addendum does **not** rewrite earlier snapshots. It records Sprint 32 closure for the reduced Shopify Global Catalog Anonymous path. It does **not** start Sprint 38, does **not** start Sprint 41, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 32 | COMPLETE / CLOSED (2026-09-25). Reduced capability set only. Not production-deployment ready. Not launch ready. |
+| Selected path | Shopify Global Catalog Anonymous reduced capability path |
+| Certified capabilities | PRODUCT_DISCOVERY, OFFER_DISCOVERY, CURRENT_PRICING, AVAILABILITY |
+| Provider | `ph-shopify-global-catalog`, registered, operational_status DISABLED |
+| Production evidence / certification / routing | 4 / 4 / 0 |
+| Public certified shopping markets | 0 |
+| Staging certification | PASSED. REDUCED CAPABILITY SET ONLY. NOT PRODUCTION DEPLOYMENT READY |
+| Live execution | Unavailable. Sprint 38 remains UNSTARTED / Planned |
+| Production profile | Undeployed. Sprint 41 remains UNSTARTED / Planned |
+| Public PH disclosure | Preparing shopping-source coverage. PH is not live |
+| Stale claims removed from current status | A production provider now exists and is disabled. Trusted reduced-capability certification now exists. Owner live normalization attempt #3 passed. Those facts are not production readiness. |
+| Authority | [`evidence/SPRINT_32_COMPLETION.md`](evidence/SPRINT_32_COMPLETION.md) |

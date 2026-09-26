@@ -1,6 +1,6 @@
 # Sprint 31 — Merchant Platform Unification
 
-**Status:** Formally owner-closed. Historical gate satisfied; Sprint 32 is now in progress and is **not complete**. The research execution router / provider contract remains merged (planning-only). Provider capability, trusted certification, and trusted routing policy remain distinct authorities (production catalogs empty). Live execution remains **not implemented**. Sprints 32–36 still own provider/market certification evidence.
+**Status:** Formally owner-closed. Historical gate satisfied. Sprint 32 is COMPLETE / CLOSED (2026-09-25) for the reduced Shopify path only and is not production-deployment ready. The research execution router / provider contract remains merged (planning-only). Provider capability, trusted certification, and trusted routing policy remain distinct authorities. Production state is one disabled provider, four evidence rows, four trusted certifications, and zero routing policies. Live execution remains **not implemented**. Sprints 33–36 still own their market certification evidence. Sprint 38 and Sprint 41 remain unstarted.
 
 **Architecture:** [`../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](../../architecture/SPRINT_31_RESEARCH_EXECUTION_ROUTER.md)
 **Unification ADR / 4/18 review:** [`../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md`](../../architecture/ADR_SPRINT_31_CONNECTOR_UNIFICATION.md)
@@ -200,7 +200,7 @@ Sprint 38 remains responsible for cross-connector production hardening and hones
 
 Go if unification merged, reliability contracts published, capability/policy model + fail-closed harness expectations published, and suite exists — else 32–36 blocked.
 
-Closure evidence for the remaining documentation P0 items was implemented and later owner-closed. Sprint 32 is now in progress and remains open. It is not blocked on Sprint 31, and it is not blocked on a Shopify application, preapproval, or credential stage that the documented Anonymous catalog mode does not require. Production certification remains incomplete.
+Closure evidence for the remaining documentation P0 items was implemented and later owner-closed. Sprint 32 is COMPLETE / CLOSED for the reduced Shopify path and is not production-deployment ready. It was not blocked on Sprint 31, and it was not blocked on a Shopify application, preapproval, or credential stage that the documented Anonymous catalog mode does not require. Production deployment certification remains incomplete and belongs to later sprints.
 
 ## Rollback or contingency
 

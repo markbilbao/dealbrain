@@ -793,7 +793,7 @@ def test_sprint32_remains_open_and_sprint38_unstarted() -> None:
     assert "Sprint 32 remains open." in sprint32
     assert "Sprint 38 remains unstarted" in sprint32
     assert "Sprint 32 is **not complete**" in sprint32
-    assert "In progress" in sprint32
+    assert "COMPLETE / CLOSED" in sprint32
     assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
