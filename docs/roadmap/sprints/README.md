@@ -16,7 +16,7 @@ Normative detail for the master roadmap. If conflict arises, [`../GLOBAL_PUBLIC_
 | 35 | [United Kingdom Merchant Certification](SPRINT_35_UNITED_KINGDOM_MERCHANT_CERTIFICATION.md) |
 | 36 | [Canada Merchant Certification](SPRINT_36_CANADA_MERCHANT_CERTIFICATION.md) |
 | 37 | [MarketContext, Currency & Localization](SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md) — **COMPLETE / CLOSED** (2026-09-26) for the PH-only public beta. Live destination re-evaluation remains Sprint 38. Production FX remains unavailable. Public PH shopping coverage is not enabled. Close record: [`../evidence/SPRINT_37_COMPLETION.md`](../evidence/SPRINT_37_COMPLETION.md) |
-| 38 | [Connector Reliability & Honest Degradation](SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+| 38 | [Connector Reliability & Honest Degradation](SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) — **IN PROGRESS** (2026-09-26). Engineering foundation only. Not COMPLETE / CLOSED. Live mode stays fail-closed. No Shopify call. Routing stays 0. Public PH shopping coverage stays disabled |
 | 39 | [Analytics, Feedback & Support](SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md) — product-validation learning; affiliate conversion not a launch-acceptance metric |
 | 40 | [Security & Abuse Hardening](SPRINT_40_SECURITY_ABUSE_HARDENING.md) |
 | 41 | [Production Environment & Deploy Path](SPRINT_41_PRODUCTION_ENVIRONMENT_DEPLOY.md) |

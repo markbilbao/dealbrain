@@ -1045,3 +1045,20 @@ This addendum does **not** rewrite earlier snapshots. It records Sprint 37 closu
 | Certified shopping markets | 0 |
 | Sprint 38 / Sprint 41 | Unstarted / Planned |
 | Authority | [`evidence/SPRINT_37_COMPLETION.md`](evidence/SPRINT_37_COMPLETION.md) |
+
+## 2026-09-26 Sprint 38 engineering-foundation addendum
+
+This addendum does **not** rewrite earlier snapshots. It records that Sprint 38 engineering has started. It does **not** complete Sprint 38, does **not** start Sprint 41, does **not** reopen Sprint 32 or Sprint 37, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 | IN PROGRESS. Engineering foundation only. Not COMPLETE / CLOSED. |
+| Live mode | Fail-closed. `SHOPPING_RESEARCH_EXECUTION_MODE` stays disabled. |
+| Shopify execution | Refused before any network call. `execute()` remains unimplemented for HTTP. |
+| Routing / provider | Routing 0. `ph-shopify-global-catalog` stays DISABLED. |
+| Public certified shopping markets | 0 |
+| `DESTINATION_REEVALUATION_IMPLEMENTED` | False |
+| EXT-23 / production FX | Unchanged. EXT-23 `not_started`. Production FX disabled. |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts and paging remain Sprint 42. |
+| Multi-connector live evidence | Preserved as future scope. Scripted multi-provider tests are non-live. |
+| Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |

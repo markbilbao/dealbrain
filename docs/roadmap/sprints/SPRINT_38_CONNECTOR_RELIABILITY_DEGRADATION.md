@@ -1,9 +1,25 @@
 # Sprint 38 — Connector Reliability & Honest Degradation
 
-**Status:** Planned
+**Status:** IN PROGRESS (2026-09-26). Engineering foundation only. Not COMPLETE / CLOSED. Live mode stays fail-closed. No Shopify call. Routing stays 0. Public PH shopping coverage stays disabled.
 **Primary owner / domain:** Marketplace reliability / ops
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes with live HTTP / multi-connector launch
+
+## Current engineering foundation (2026-09-26)
+
+Sprint 38 has started. It is not complete. The current public beta has one certified PH connector, `ph-shopify-global-catalog`, and that provider stays DISABLED. Routing stays 0. Public certified shopping markets stay 0. `SHOPPING_RESEARCH_EXECUTION_MODE` stays disabled. This foundation does not call Shopify and does not deploy.
+
+Classification for the current PH-only scope:
+
+- A. Reuse Sprint 31 timeout, retry, breaker, and kill-switch contracts, Sprint 31 planning-only execution, Sprint 32 reduced certification, and Sprint 37 fail-closed destination re-evaluation. Do not duplicate those systems.
+- B. Implement now: execution identity and states, owner-bound idempotent confirmation, truthful non-live traces, the live-mode fail-closed gate, a Shopify execution refusal that does not perform HTTP, scripted timeout / 429 / 5xx / retry / breaker / kill-switch behavior, one-connector no-merchants-available behavior, prior-decision preservation, connector health distinct from `/ready`, and Shopify cache refusal.
+- C. Owner validation after this foundation, not in this change: a real Shopify call once routing, operational eligibility, and a deployed profile exist.
+- D. Sprint 41: production deploy, production UCP profile, AWS/DNS/TLS, and the deployed kill-switch drill.
+- E. Sprint 42: alerts, paging, synthetic production probes, and incident-runbook proof. EXT-25 stays optional.
+- F. Not a blocker for this one-connector beta: affiliate-provider failure, because affiliate monetization is out of launch scope.
+- G. Preserved and not a close of this beta: multi-connector chaos, production evidence across multiple connectors and markets, and cross-merchant aggregation as a live shopper claim. Deterministic multi-provider tests may exercise the orchestration. Those tests are not live connectors and are not launch evidence.
+
+One certified connector failing is no live merchant result. It is not a successful multi-merchant partial result. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False until a validated evidence-backed executor exists.
 
 ## Objective
 

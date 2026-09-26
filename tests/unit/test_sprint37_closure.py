@@ -66,7 +66,9 @@ def test_live_destination_reevaluation_stays_deferred() -> None:
     assert live_destination_reevaluation_available() is False
     text = COMPLETION.read_text(encoding="utf-8")
     assert "DEFERRED TO SPRINT 38" in text
-    assert _status(SPRINT38).split("**Status:**", 1)[1].strip() == "Planned"
+    sprint38 = _status(SPRINT38).split("**Status:**", 1)[1].strip()
+    assert sprint38.startswith("IN PROGRESS")
+    assert not sprint38.startswith("COMPLETE")
     assert SPRINT_38_STATUS == "UNSTARTED"
 
 
