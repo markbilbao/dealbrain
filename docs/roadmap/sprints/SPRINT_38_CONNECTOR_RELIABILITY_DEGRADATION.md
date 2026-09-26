@@ -1,6 +1,6 @@
 # Sprint 38 — Connector Reliability & Honest Degradation
 
-**Status:** IN PROGRESS (2026-09-26). Engineering foundation only. Not COMPLETE / CLOSED. Live mode stays fail-closed. No Shopify call. Routing stays 0. Public PH shopping coverage stays disabled.
+**Status:** IN PROGRESS (2026-09-26). Engineering foundation plus authorization/planning/execution handoff. Not COMPLETE / CLOSED. Live execution is NOT OPERATIONAL. No Shopify call. Routing stays 0. Public PH shopping coverage stays disabled.
 **Primary owner / domain:** Marketplace reliability / ops
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes with live HTTP / multi-connector launch
@@ -22,6 +22,20 @@ Classification for the current PH-only scope:
 - G. Preserved and not a close of this beta: multi-connector chaos, production evidence across multiple connectors and markets, and cross-merchant aggregation as a live shopper claim. Deterministic multi-provider tests may exercise the orchestration. Those tests are not live connectors and are not launch evidence.
 
 One certified connector failing is no live merchant result. It is not a successful multi-merchant partial result. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False until a validated evidence-backed executor exists.
+
+## Authorization / planning / execution handoff (2026-09-26)
+
+This slice connects the existing Ask PiqSavi chain to Sprint 38 preparation. It does not make live execution operational.
+
+The server-authored `ResearchAuthorization` remains the confirmation authority. Explicit confirmation still creates that authorization. Sprint 38 does not parse a second confirmation token. Execution identity is derived from `authorization.idempotency_key`. A client confirmation token is not execution identity. The scripted `ResearchExecutionLedger.confirm` path remains chaos-test bookkeeping and is not the shopper authority.
+
+Preparation accepts the trusted `ResearchExecutionPlan` built from the authorization handoff. Browser market, capability, source, and provider values cannot replace the plan step. The live-mode gate reads the plan step target and stays closed: mode disabled, provider disabled, routing absent, public market not activated.
+
+`execute_research_plan` prepares or refuses without network I/O. A valid plan returns `prepared_but_live_unavailable` (or a blocked outcome when the plan has no eligible step). It does not mark a provider attempted, does not set `source_checked`, does not populate the authoritative trace, and does not mark execution completed. `mark_research_authorization_consumed` is not called. The authorization stays `authorized_pending_execution` because no live attempt started. Consumption remains the later single-logical-execution boundary, when a live connector attempt actually starts.
+
+The authoritative production trace is `app.domain.entities.research_execution.ResearchExecutionTrace`. It stays empty. The scripted `ExecutionTrace` cannot be projected onto that model when it records an attempt, so the two cannot disagree.
+
+The shopper confirmation answer still says execution is not available and that no sources were checked. No new canonical decision snapshot is created. Sprint 41 stays UNSTARTED.
 
 ## Objective
 

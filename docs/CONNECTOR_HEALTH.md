@@ -85,5 +85,7 @@ refuses Shopify execution without a network call. Production alerts and
 paging remain Sprint 42. The deployed operational kill-switch drill remains
 Sprint 38 / 41. Sprint 38 overall status is IN PROGRESS. Live research
 operational status is a separate fact, ``NOT OPERATIONAL``. Routing remains
-absent and production readiness remains false.
+absent and production readiness remains false. Authorization and planning
+handoff can prepare a request and still must not describe this disabled
+provider as attempted, checked, or live.
 """

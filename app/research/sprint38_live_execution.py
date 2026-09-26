@@ -1,7 +1,14 @@
 """Sprint 38 live-research foundation.
 
-Planning stays in Sprint 31. This module adds execution identity, a
-fail-closed live-mode gate, truthful traces, and honest degradation.
+Planning stays in Sprint 31. Ask PiqSavi execution identity is the server
+``ResearchAuthorization.idempotency_key``. ``ResearchExecutionLedger.confirm``
+is scripted chaos-test bookkeeping only. It is not the shopper confirmation
+authority and must not accept a client token as the production execution id.
+
+This module adds a fail-closed live-mode gate, scripted non-live traces, and
+honest degradation. The authoritative production trace remains
+``ResearchExecutionTrace`` in the domain model. ``ExecutionTrace`` here is not
+a second production authority.
 
 It does not perform HTTP, call Shopify, enable production routing, deploy a
 profile, or mark destination re-evaluation implemented. Deterministic scripted
@@ -503,7 +510,12 @@ def _execution_id(owner_id: str, confirmation_key: str) -> str:
 
 
 class ResearchExecutionLedger:
-    """One execution per owner, confirmation key, and decision. No pre-confirmation work."""
+    """Scripted chaos-test ledger. Not the Ask PiqSavi execution authority.
+
+    Production preparation keys off the server authorization idempotency key
+    in ``app.services.research_execution``. A caller confirmation string passed
+    here does not authorize a shopper execution.
+    """
 
     def __init__(self) -> None:
         self._records: dict[tuple[str, str], LiveResearchExecution] = {}

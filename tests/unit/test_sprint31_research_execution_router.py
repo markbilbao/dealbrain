@@ -269,8 +269,14 @@ def test_valid_authorization_with_certified_provider_is_ready_and_not_executed()
     assert plan.outside_set_product_names == ("AirPods Max",)
     assert "usb-c" not in " ".join(plan.outside_set_product_names).lower()
     assert "2024" not in " ".join(plan.outside_set_product_names)
-    with pytest.raises(NotImplementedError, match="not implemented"):
-        execute_research_plan(plan)
+    preparation = execute_research_plan(plan)
+    assert preparation.outcome == "blocked_authorization"
+    assert preparation.reason == "not_found"
+    assert preparation.execution_started is False
+    assert preparation.connectors_invoked is False
+    assert preparation.source_checked is False
+    assert preparation.attempted is False
+    assert preparation.trace.steps == ()
     trace = empty_execution_trace(plan.plan_id)
     assert trace.attempted_sources == ()
     assert trace.steps == ()
