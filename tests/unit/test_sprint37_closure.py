@@ -17,6 +17,7 @@ from app.market.support import production_certified_shopping_markets
 from app.research.registry import production_research_provider_registry
 from app.research.routing import production_research_provider_routing_policy_catalog
 from app.research.shopify_global_catalog_access_stage import (
+    SPRINT_38_LIVE_EXECUTION_STATUS,
     SPRINT_38_STATUS,
     SPRINT_41_STATUS,
 )
@@ -66,8 +67,11 @@ def test_live_destination_reevaluation_stays_deferred() -> None:
     assert live_destination_reevaluation_available() is False
     text = COMPLETION.read_text(encoding="utf-8")
     assert "DEFERRED TO SPRINT 38" in text
-    assert _status(SPRINT38).split("**Status:**", 1)[1].strip() == "Planned"
-    assert SPRINT_38_STATUS == "UNSTARTED"
+    sprint38 = _status(SPRINT38).split("**Status:**", 1)[1].strip()
+    assert sprint38.startswith("IN PROGRESS")
+    assert not sprint38.startswith("COMPLETE")
+    assert SPRINT_38_STATUS == "IN PROGRESS"
+    assert SPRINT_38_LIVE_EXECUTION_STATUS == "NOT OPERATIONAL"
 
 
 def test_production_fx_and_ext23_stay_unavailable() -> None:

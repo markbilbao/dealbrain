@@ -78,9 +78,12 @@ Monitoring must not call this provider healthy, live, available, or
 production-ready while it is disabled. Registration and trusted
 reduced-capability certification do not make the connector healthy.
 
-Sprint 38 transition, not implemented here: when execution becomes
-operational, connector health, execution traces, partial failure, 429,
-timeout, quota, breaker, and kill-switch runtime monitoring become Sprint 38
-responsibilities. Production alerts also remain Sprint 38 / 42. The deployed
-operational kill-switch drill remains Sprint 38 / 41. Sprint 38 is unstarted.
+Sprint 38 engineering foundation (2026-09-26) is **IN PROGRESS** and is not
+complete. Connector health for this disabled provider stays not healthy, not
+live, and not available. The foundation adds a separate health report and
+refuses Shopify execution without a network call. Production alerts and
+paging remain Sprint 42. The deployed operational kill-switch drill remains
+Sprint 38 / 41. Sprint 38 overall status is IN PROGRESS. Live research
+operational status is a separate fact, ``NOT OPERATIONAL``. Routing remains
+absent and production readiness remains false.
 """

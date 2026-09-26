@@ -284,13 +284,16 @@ def test_sprint_gates_and_harness_stay_unchanged() -> None:
     assert stage.executable_production_certification is False
     assert stage.production_provider_registered is True
     assert stage.sprint_32_status == "COMPLETE / CLOSED"
-    assert stage.sprint_38_status == "UNSTARTED"
+    assert stage.sprint_38_status == "IN PROGRESS"
+    assert stage.sprint_38_live_execution_status == "NOT OPERATIONAL"
     assert stage.sprint_41_status == "UNSTARTED"
     assert "Sprint 32 remains open." in sprint32
     assert "COMPLETE / CLOSED" in next(
         line for line in sprint32.splitlines() if line.startswith("**Status:**")
     )
-    assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = sprint38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
     sprint41_status = sprint41.split("**Status:**", 1)[1].splitlines()[0].strip()
     assert sprint41_status.startswith("Planned")
     assert "not started" in sprint41_status.casefold()

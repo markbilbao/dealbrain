@@ -417,7 +417,9 @@ def test_production_registries_remain_empty_and_sprints_remain_open() -> None:
     assert "PRODUCTION PROFILE NOT VALIDATED" in probe_doc
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
-    assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = sprint38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
     assert PIQSAVI_UCP_AGENT_PROFILE_STAGING_DEPLOYED is True
     assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
     assert SHOPIFY_HAS_FETCHED_PIQSAVI_PROFILE is True
@@ -794,7 +796,9 @@ def test_sprint32_remains_open_and_sprint38_unstarted() -> None:
     assert "Sprint 38 remains unstarted" in sprint32
     assert "Sprint 32 is **not complete**" in sprint32
     assert "COMPLETE / CLOSED" in sprint32
-    assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = sprint38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
     assert "SPRINT 32 REMAINS OPEN" in probe_doc
     assert "SPRINT 38 UNSTARTED" in probe_doc
     assert len(production_research_provider_registry().list_providers()) == 1
