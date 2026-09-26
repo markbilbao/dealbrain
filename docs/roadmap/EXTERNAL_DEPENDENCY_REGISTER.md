@@ -108,7 +108,7 @@ Technical current-main staging proof does **not** advance any EXT row and is **n
 - EXT-19 / EXT-20 / EXT-21 — counsel engaged; conditional review is not unconditional approval. EXT-19 remains `applied`. EXT-20 / EXT-21 are `applied` for owner-authorized content-layer publication. Staging `/privacy` `/terms` 200 verified 2026-09-11 on Deploy Staging #35. Production live URL remains cutover.
 - EXT-24 — paging destination not started
 - EXT-29 — Search Console not started
-- EXT-15 / EXT-16 / EXT-22 / EXT-23 / EXT-25 — optional; reduce claims rather than delay launch. **EXT-07 is not a September launch blocker** (2026-09-07): public beta launches without affiliate monetization; EXT-07 is `n_a_beta` / GREEN for September.
+- EXT-15 / EXT-16 / EXT-22 / EXT-23 / EXT-25 — optional; reduce claims rather than delay launch. **EXT-07 is not a September launch blocker** (2026-09-07): public beta launches without affiliate monetization; EXT-07 is `n_a_beta` / GREEN for September. **EXT-23 remains `not_started`.** Sprint 37 closure on 2026-09-26 selects the documented fallback: no cross-currency compare, and disclose conversion unavailable. That closure does not provision an FX provider, store FX credentials, or enable production conversion.
 
 **GREEN (for the stated claim only):**
 

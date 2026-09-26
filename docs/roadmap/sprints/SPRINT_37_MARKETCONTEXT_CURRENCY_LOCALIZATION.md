@@ -1,10 +1,17 @@
 # Sprint 37 — MarketContext, Currency & Localization
 
-**Status:** In progress — 37.1–37.3 merged; 37.4 destination re-evaluation readiness implemented. Live evidence-backed destination re-evaluation remains unavailable. Sprint 37 is **not complete**. P1-1B is partially progressed and **not** fully closed. P1-2 is **not** fully closed.
+**Status:** COMPLETE / CLOSED (2026-09-26) for the PH-only public beta scope. Live destination re-evaluation remains unavailable and is Sprint 38. Production FX remains unavailable. Public PH shopping coverage is not enabled.
 **Primary owner / domain:** Product platform / marketplace
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes — P1-1B, P1-2; multinational honesty
 **Architecture:** [`../../architecture/ADR_SPRINT_37_MARKETCONTEXT.md`](../../architecture/ADR_SPRINT_37_MARKETCONTEXT.md)
+**Close record:** [`../evidence/SPRINT_37_COMPLETION.md`](../evidence/SPRINT_37_COMPLETION.md)
+
+## Current closure (2026-09-26)
+
+Sprint 37 is COMPLETE / CLOSED for the PH-only public beta. Historical slices below recorded that they did not close the sprint. Those sentences stay as history.
+
+P1-1B and P1-2 are closed for this scope: unsupported markets stay disclosed and connector-ineligible, and unknown shipping is not free. US, SG, UK, and CA stay omitted. FR-CA is not applicable because Canada is omitted. EXT-23 stays `not_started`; the selected FX behavior is fail-closed conversion-unavailable. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False. Live evidence-backed re-evaluation is Sprint 38. Production FX secrets, if a provider is later chosen, stay Sprint 41. Claims review stays Sprint 44. The certified shopping-market catalog stays empty.
 
 ## 37.1 record (owner slice; not a repository-defined sub-sprint before this work)
 

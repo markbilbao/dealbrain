@@ -1,6 +1,6 @@
 # ADR — Sprint 37.1 MarketContext composition
 
-**Status:** Accepted for Sprint 37.1; 37.2–37.4 addenda recorded. Sprint 37 is **not complete**.
+**Status:** Accepted. Sprint 37 is COMPLETE / CLOSED (2026-09-26) for the PH-only public beta. Live destination re-evaluation and production FX remain unavailable.
 **Date:** 2026-09-03
 **Baseline recorded:** `ba05aa7e205eab69a2f727e28b6b97d0d3b130ff`
 **Related:** [`../roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md`](../roadmap/sprints/SPRINT_37_MARKETCONTEXT_CURRENCY_LOCALIZATION.md)

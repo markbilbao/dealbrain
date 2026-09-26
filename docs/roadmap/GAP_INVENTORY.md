@@ -1028,3 +1028,18 @@ This addendum does **not** rewrite earlier snapshots. It records Sprint 32 closu
 | Public PH disclosure | Preparing shopping-source coverage. PH is not live |
 | Stale claims removed from current status | A production provider now exists and is disabled. Trusted reduced-capability certification now exists. Owner live normalization attempt #3 passed. Those facts are not production readiness. |
 | Authority | [`evidence/SPRINT_32_COMPLETION.md`](evidence/SPRINT_32_COMPLETION.md) |
+
+## 2026-09-26 Sprint 37 PH-only closure addendum
+
+This addendum does **not** rewrite earlier snapshots. It records Sprint 37 closure for the PH-only public beta. It does **not** start Sprint 38, does **not** start Sprint 41, does **not** reopen Sprint 32, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 37 | COMPLETE / CLOSED (2026-09-26). PH-only scope. Not live re-evaluation. Not production FX. |
+| P1-1B / P1-2 | Closed for this scope. Unsupported markets stay ineligible. Unknown shipping is not free. |
+| US / SG / UK / CA / FR-CA | Not applicable. Those markets stay omitted. |
+| EXT-23 | Remains `not_started`. Fail-closed fallback is the selected behavior. |
+| `DESTINATION_REEVALUATION_IMPLEMENTED` | False. Live path is Sprint 38. |
+| Certified shopping markets | 0 |
+| Sprint 38 / Sprint 41 | Unstarted / Planned |
+| Authority | [`evidence/SPRINT_37_COMPLETION.md`](evidence/SPRINT_37_COMPLETION.md) |
