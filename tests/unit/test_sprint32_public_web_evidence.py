@@ -217,8 +217,11 @@ def test_public_web_discovery_can_plan_without_creating_offer_pricing() -> None:
     )
     assert plan.source_checked is False
     assert plan.execution_implemented is False
-    with pytest.raises(NotImplementedError, match="Sprint 38"):
-        execute_research_plan(plan)
+    preparation = execute_research_plan(plan)
+    assert preparation.connectors_invoked is False
+    assert preparation.attempted is False
+    assert preparation.source_checked is False
+    assert preparation.trace.attempted_sources == ()
 
 
 def test_production_registry_still_has_no_public_web_provider() -> None:

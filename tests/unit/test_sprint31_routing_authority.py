@@ -125,8 +125,10 @@ def test_routing_priority_does_not_certify() -> None:
     assert plan.eligible_steps == ()
     assert plan.plan_ready is False
     assert any(item.reason == "certification_missing" for item in plan.blocked_requirements)
-    with pytest.raises(NotImplementedError):
-        execute_research_plan(plan)
+    preparation = execute_research_plan(plan)
+    assert preparation.connectors_invoked is False
+    assert preparation.execution_started is False
+    assert preparation.trace.steps == ()
 
 
 def test_certification_version_does_not_change_routing_preference() -> None:

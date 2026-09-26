@@ -194,7 +194,7 @@ def test_sprint31_execution_remains_unimplemented() -> None:
     provider = _test_provider("test-no-execute")
     with pytest.raises(NotImplementedError, match="cannot execute research"):
         provider.execute(None)  # type: ignore[arg-type]
-    with pytest.raises(NotImplementedError, match="not implemented"):
+    with pytest.raises(ValueError, match="plan is required"):
         execute_research_plan(None)  # type: ignore[arg-type]
 
 

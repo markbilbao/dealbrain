@@ -299,7 +299,7 @@ def test_shopify_execution_does_not_call_shopify() -> None:
     provider = production_research_provider_registry().list_providers()[0]
     with pytest.raises(NotImplementedError, match="Sprint 38"):
         provider.execute(None)  # type: ignore[arg-type]
-    with pytest.raises(NotImplementedError, match="Sprint 38"):
+    with pytest.raises(ValueError, match="plan is required"):
         execute_research_plan(None)  # type: ignore[arg-type]
 
 
