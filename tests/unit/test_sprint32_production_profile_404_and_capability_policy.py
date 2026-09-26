@@ -166,7 +166,9 @@ def test_roadmap_defers_production_profile_deploy_to_sprint_41() -> None:
     assert "does not start this sprint" in sprint41
     assert "Sprint 32 must not pull production deploy forward" in sprint41
     sprint38 = SPRINT38.read_text(encoding="utf-8")
-    assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = sprint38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
 
 
 def _sample_row(**overrides: object) -> ShopifyCapabilityPolicyRow:

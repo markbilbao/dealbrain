@@ -1330,7 +1330,9 @@ def test_freshness_policy_and_sprint_status_remain_honest() -> None:
     assert "DEPLOYED OPERATIONAL KILL-SWITCH DRILL remains Sprint 38/41" in blockers
     status = next(line for line in sprint32.splitlines() if line.startswith("**Status:**"))
     assert "COMPLETE / CLOSED" in status
-    assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = sprint38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
     sprint41_status = sprint41.split("**Status:**", 1)[1].splitlines()[0].strip()
     assert sprint41_status.startswith("Planned")
     assert "not started" in sprint41_status.casefold()

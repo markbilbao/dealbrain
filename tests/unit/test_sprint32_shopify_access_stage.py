@@ -496,7 +496,9 @@ def test_sprint_32_stays_open_and_later_sprints_stay_unstarted() -> None:
     assert "Sprint 41 remains unstarted" in SPRINT32
     assert "No merchant has a real approved product-data / API path" not in SPRINT32
     assert "production ready" in SPRINT32.casefold()
-    assert SPRINT38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = SPRINT38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
     sprint41_status = SPRINT41.split("**Status:**", 1)[1].splitlines()[0].strip()
     assert sprint41_status.startswith("Planned")
     assert "not started" in sprint41_status.casefold()

@@ -325,7 +325,9 @@ def test_production_catalogs_and_sprint_status_stay_unchanged() -> None:
     assert "No PiqSavi AWS infrastructure/resource mutation and no deployment." in sprint32
     assert "No AWS mutation." not in sprint32
     assert "No Sprint 38 execution." in sprint32
-    assert sprint38.split("**Status:**", 1)[1].splitlines()[0].strip() == "Planned"
+    sprint38_status = sprint38.split("**Status:**", 1)[1].splitlines()[0].strip()
+    assert sprint38_status.startswith("IN PROGRESS")
+    assert not sprint38_status.startswith("COMPLETE")
     sprint41_status = sprint41.split("**Status:**", 1)[1].splitlines()[0].strip()
     assert sprint41_status.startswith("Planned")
     assert "not started" in sprint41_status.casefold()
