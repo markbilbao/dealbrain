@@ -11,6 +11,10 @@ live attempt actually starts. A closed live mode, a disabled provider, absent
 routing, and a blocked plan leave the authorization
 ``authorized_pending_execution``.
 
+One preparation binding pins one plan to the authorization. The same plan
+reuses that binding. A different plan is ``authorization_plan_conflict`` and
+does not replace the stored plan. The ledger is in-process only.
+
 The authoritative production trace is
 ``app.domain.entities.research_execution.ResearchExecutionTrace``. It stays
 empty. The scripted ``ExecutionTrace`` in ``sprint38_live_execution`` is
@@ -153,8 +157,21 @@ class AuthorizedExecutionBinding:
             raise ValueError("this slice cannot mark an execution running or completed")
 
 
+class AuthorizationPlanConflict(Exception):
+    """The authorization is already pinned to a different prepared plan."""
+
+    def __init__(self, binding: AuthorizedExecutionBinding) -> None:
+        self.binding = binding
+        super().__init__("authorization_plan_conflict")
+
+
 class AuthorizedExecutionLedger:
-    """Idempotent bindings keyed by the server authorization idempotency key."""
+    """In-process preparation bindings keyed by the server authorization key.
+
+    Not durable live-execution storage. One binding pins one plan. A different
+    plan for the same authorization is rejected and the stored binding is left
+    unchanged. Trusted replanning remains future Sprint 38 work.
+    """
 
     def __init__(self) -> None:
         self._by_authorization_key: dict[str, AuthorizedExecutionBinding] = {}
@@ -170,6 +187,8 @@ class AuthorizedExecutionLedger:
         if existing is not None:
             if existing.decision_id != decision_id:
                 raise ValueError("authorization identity does not match the stored execution")
+            if existing.plan_id != plan_id:
+                raise AuthorizationPlanConflict(existing)
             return existing
         binding = AuthorizedExecutionBinding(
             execution_id=authorized_execution_id(authorization_idempotency_key),
@@ -367,11 +386,19 @@ def execute_research_plan(
         )
 
     store = ledger if ledger is not None else production_authorized_execution_ledger()
-    binding = store.bind(
-        authorization_idempotency_key=authorization.idempotency_key,
-        decision_id=authorization.decision_id,
-        plan_id=plan.plan_id,
-    )
+    try:
+        binding = store.bind(
+            authorization_idempotency_key=authorization.idempotency_key,
+            decision_id=authorization.decision_id,
+            plan_id=plan.plan_id,
+        )
+    except AuthorizationPlanConflict:
+        return _refusal(
+            outcome="blocked_authorization",
+            reason="authorization_plan_conflict",
+            decision_id=authorization.decision_id,
+            authorization_status=authorization.status,
+        )
     outcome, reasons, targets = _assess_plan(
         plan,
         registry=registry or production_research_provider_registry(),
@@ -386,7 +413,7 @@ def execute_research_plan(
         decision_id=authorization.decision_id,
         execution_id=binding.execution_id,
         authorization_status=authorization.status,
-        plan_id=plan.plan_id,
+        plan_id=binding.plan_id,
         trace=trace,
         blocking_reasons=reasons,
         assessed_targets=targets,

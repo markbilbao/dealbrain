@@ -34,6 +34,7 @@ from app.services.research_authorization import (
 from app.services.research_execution import (
     AUTHORIZATION_CONSUMPTION_ON_PREPARATION,
     AuthorizedExecutionLedger,
+    _plan_matches_authorization,
     execute_research_plan,
     prepare_confirmed_research,
     project_to_authoritative_trace,
@@ -53,6 +54,8 @@ from tests.unit.test_research_authorization_handoff import _confirm
 from tests.unit.test_sprint31_research_execution_router import (
     _authorization,
     _plan,
+    _provider,
+    _registry,
     _scope,
 )
 
@@ -322,6 +325,102 @@ def test_authorization_failures_do_not_start_execution() -> None:
     assert consumed.execution_started is False
     assert len(ledger) == 0
     assert auth.status == "authorized_pending_execution"
+
+
+def test_preparation_binding_pins_one_plan(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _blocked(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("network or connector call")
+
+    monkeypatch.setattr(socket, "socket", _blocked)
+    monkeypatch.setattr(socket, "create_connection", _blocked)
+    monkeypatch.setattr(StaticResearchProvider, "execute", _blocked)
+
+    ledger = AuthorizedExecutionLedger()
+    service, snapshots, conversations, snapshot = _service()
+    service._execution_ledger = ledger
+    before = (
+        snapshot.content_sha256,
+        snapshot.canonical_piqscore_set_sha256,
+        snapshot.recommendation.snapshot_sha256,
+        snapshot.evaluated_product_ids,
+        snapshot.recommendation.best_piq_product_id,
+        snapshot.offer_economics,
+    )
+    first = service.handle(
+        {"query": "What about AirPods Max?", "decision_id": DECISION_ID},
+        owner=_owner(),
+        snapshot=snapshot,
+    )
+    assert first is not None
+    confirmed = _confirm(service, first)
+    assert confirmed is not None
+    context = conversations.get(first.conversation_id)
+    assert context is not None
+    auth = context.research_authorizations[0]
+    proposal = context.research_proposal
+    pinned = ledger.get(auth.idempotency_key)
+    assert pinned is not None
+    planned = plan_authorized_research(
+        auth,
+        owner=_owner(),
+        conversation_id=auth.conversation_id,
+        decision_id=auth.decision_id,
+        canonical_context_version=auth.canonical_context_version,
+        proposal=proposal,
+        trusted_market=TrustedMarketContext(country_code="PH"),
+        registry=production_research_provider_registry(),
+    )
+    assert planned.plan is not None
+    same = execute_research_plan(
+        planned.plan,
+        proposal=proposal,
+        **_prepare_kwargs(auth, ledger),
+    )
+    assert same.execution_id == pinned.execution_id
+    assert same.plan_id == pinned.plan_id
+    assert len(ledger) == 1
+    assert _plan_matches_authorization(planned.plan, auth)
+
+    other = _plan(auth, registry=_registry(_provider("plan-pin-other")), proposal=proposal).plan
+    assert other is not None
+    assert other.plan_id != pinned.plan_id
+    assert _plan_matches_authorization(other, auth)
+    conflict = execute_research_plan(
+        other,
+        proposal=proposal,
+        **_prepare_kwargs(auth, ledger),
+    )
+    assert conflict.reason == "authorization_plan_conflict"
+    assert conflict.execution_id is None
+    assert conflict.execution_started is False
+    assert conflict.connectors_invoked is False
+    assert conflict.attempted is False
+    assert conflict.source_checked is False
+    assert conflict.live is False
+    assert len(ledger) == 1
+    stored = ledger.get(auth.idempotency_key)
+    assert stored is pinned
+    assert stored.plan_id == pinned.plan_id
+    assert stored.execution_id == pinned.execution_id
+    assert auth.status == "authorized_pending_execution"
+    reloaded = conversations.get(first.conversation_id)
+    assert reloaded is not None
+    assert reloaded.research_authorizations[0].status == "authorized_pending_execution"
+    loaded = snapshots.get(DECISION_ID, 1)
+    assert loaded is not None
+    assert loaded.content_sha256 == before[0]
+    assert loaded.canonical_piqscore_set_sha256 == before[1]
+    assert loaded.recommendation.snapshot_sha256 == before[2]
+    assert loaded.evaluated_product_ids == before[3]
+    assert loaded.recommendation.best_piq_product_id == before[4]
+    assert loaded.offer_economics == before[5]
+    with pytest.raises(ValueError, match="authorization identity"):
+        ledger.bind(
+            authorization_idempotency_key=auth.idempotency_key,
+            decision_id="decision-other",
+            plan_id=pinned.plan_id,
+        )
+    assert ledger.get(auth.idempotency_key) is pinned
 
 
 def test_same_authorization_reuses_one_binding_and_trace_stays_empty() -> None:
