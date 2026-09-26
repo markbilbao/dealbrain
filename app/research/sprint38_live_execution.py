@@ -6,6 +6,10 @@ fail-closed live-mode gate, truthful traces, and honest degradation.
 It does not perform HTTP, call Shopify, enable production routing, deploy a
 profile, or mark destination re-evaluation implemented. Deterministic scripted
 providers are non-live orchestration tests, not launch evidence.
+
+The scripted circuit breaker is in-memory chaos-test state on that connector
+object. It is not a persistent production breaker across shopper requests.
+Persistent production breaker hardening remains Sprint 38 work before closure.
 """
 
 from __future__ import annotations
@@ -45,6 +49,10 @@ from app.research.routing import (
     ResearchProviderRoutingPolicyCatalog,
     production_research_provider_routing_policy_catalog,
 )
+from app.research.shopify_global_catalog_capability_policy import SHOPIFY_GLOBAL_CATALOG_MARKET
+from app.research.shopify_global_catalog_certification_evidence import (
+    SHOPIFY_GLOBAL_CATALOG_SOURCE,
+)
 from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
 from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 
@@ -53,6 +61,8 @@ SHOPPING_RESEARCH_EXECUTION_MODE = "disabled"
 SHOPIFY_LIVE_CALL_PERMITTED = False
 SHOPIFY_PERSISTENT_CACHE_ALLOWED = False
 LIVE_RESEARCH_EXECUTION_OPERATIONAL = False
+PRODUCTION_BREAKER_PERSISTED = False
+_SHOPIFY_REFUSAL_CAPABILITY = ResearchCapability.CURRENT_PRICING
 
 ExecutionState = Literal["queued", "running", "partial", "completed", "failed", "cancelled"]
 ScriptedKind = Literal["success", "timeout", "rate_limit", "server_error", "credential"]
@@ -195,6 +205,28 @@ class ConfirmationRefusal:
 
 
 @dataclass(frozen=True, slots=True)
+class ExecutionRefusal:
+    """run() rejected the request before any connector call."""
+
+    started: bool
+    reason: str
+    connectors_invoked: bool = False
+
+    def __post_init__(self) -> None:
+        if self.started or self.connectors_invoked:
+            raise ValueError("refused execution must not run connectors")
+
+
+@dataclass(frozen=True, slots=True)
+class LiveResearchTarget:
+    """Exact research need. The live gate does not accept a global any-connector flag."""
+
+    market: str
+    capability: ResearchCapability
+    source: str
+
+
+@dataclass(frozen=True, slots=True)
 class DecisionPreservation:
     prior_decision_id: str
     current_decision_id: str
@@ -217,7 +249,12 @@ class ScriptedResponse:
 
 @dataclass
 class ScriptedConnector:
-    """Non-live test connector. Must not be registered as production."""
+    """Non-live test connector. Must not be registered as production.
+
+    ``circuit_breaker`` changes only on this object during a scripted run.
+    That is deterministic chaos-test behavior. ``PRODUCTION_BREAKER_PERSISTED``
+    stays false: a later shopper request does not inherit this object.
+    """
 
     provider_id: str
     responses: tuple[ScriptedResponse, ...]
@@ -286,64 +323,107 @@ class ShopifyCacheAdmission:
 def assess_live_research_mode(
     *,
     mode: str,
+    requested: LiveResearchTarget,
     registry: ResearchProviderRegistry,
     certifications: ResearchProviderCertificationCatalog,
     routing: ResearchProviderRoutingPolicyCatalog,
     certified_markets: CertifiedShoppingMarketCatalog,
     trace_handling_present: bool,
 ) -> LiveModeAssessment:
-    """Fail closed unless every live-mode condition is true together."""
+    """Fail closed unless the exact requested market, capability, and source qualify."""
 
     reasons: list[str] = []
     if mode != "live":
         reasons.append("mode_not_live")
     if not trace_handling_present:
         reasons.append("trace_handling_absent")
-    real_certified = [
+    if requested.market not in certified_markets.certified_iso_markets:
+        reasons.append("market_not_eligible")
+    matching = [
         record
         for record in certifications.list_records()
-        if record.is_production_eligible and not record.test_fixture
+        if record.capability == requested.capability
+        and record.market == requested.market
+        and record.source == requested.source
+        and record.source_scope == "exact"
     ]
-    if not real_certified:
+    real = [
+        record for record in matching if record.is_production_eligible and not record.test_fixture
+    ]
+    if not real:
         reasons.append("no_certified_real_connector")
-    fixture_blocked = any(record.test_fixture for record in certifications.list_records())
-    operational = False
-    routed = False
-    market_ok = False
-    for record in real_certified:
-        provider = registry.get(record.provider_id)
-        if provider is None:
-            continue
-        descriptor = provider.descriptor
-        if descriptor.test_fixture:
-            fixture_blocked = True
-            continue
-        if record.market not in certified_markets.certified_iso_markets:
-            continue
-        market_ok = True
-        policy = routing.lookup(record.provider_id)
-        if policy is None or policy.test_fixture:
-            continue
-        routed = True
-        if descriptor.is_operationally_available:
-            operational = True
-    if real_certified and not market_ok:
-        reasons.append("market_not_eligible")
-    if real_certified and not routed:
-        reasons.append("routing_absent")
-    if real_certified and not operational:
-        reasons.append("provider_not_operationally_eligible")
-    if fixture_blocked:
-        reasons.append("fixture_cannot_satisfy_live_gate")
+        if any(record.test_fixture for record in matching):
+            reasons.append("fixture_cannot_satisfy_live_gate")
+    else:
+        reasons.extend(
+            _eligibility_gaps(
+                real,
+                requested=requested,
+                registry=registry,
+                routing=routing,
+            )
+        )
     unique = tuple(dict.fromkeys(reasons))
     return LiveModeAssessment(enabled=not unique, mode=mode, reasons=unique, fixture_accepted=False)
 
 
-def production_live_mode_assessment() -> LiveModeAssessment:
-    """Production gate. Certification records alone do not open it."""
+def _eligibility_gaps(
+    records: list[ResearchProviderCertification],
+    *,
+    requested: LiveResearchTarget,
+    registry: ResearchProviderRegistry,
+    routing: ResearchProviderRoutingPolicyCatalog,
+) -> tuple[str, ...]:
+    """Gaps for the requested target. An unrelated catalog row is ignored."""
+
+    seen: list[str] = []
+    for record in records:
+        local: list[str] = []
+        provider = registry.get(record.provider_id)
+        if provider is None:
+            local.append("provider_not_registered")
+        else:
+            local.extend(_technical_support_gaps(provider.descriptor, requested))
+            policy = routing.lookup(record.provider_id)
+            if policy is None or policy.test_fixture:
+                local.append("routing_absent")
+            if not provider.descriptor.is_operationally_available:
+                local.append("provider_not_operationally_eligible")
+        if not local:
+            return ()
+        for reason in local:
+            if reason not in seen:
+                seen.append(reason)
+    return tuple(seen)
+
+
+def _technical_support_gaps(
+    descriptor: ResearchProviderDescriptor,
+    requested: LiveResearchTarget,
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if descriptor.test_fixture:
+        reasons.append("fixture_cannot_satisfy_live_gate")
+    if requested.capability not in descriptor.supported_capabilities:
+        reasons.append("provider_capability_not_supported")
+    if requested.market not in descriptor.supported_markets:
+        reasons.append("provider_market_not_supported")
+    if requested.source not in descriptor.supported_sources:
+        reasons.append("source_not_supported")
+    return tuple(reasons)
+
+
+def production_live_mode_assessment(
+    *,
+    capability: ResearchCapability = _SHOPIFY_REFUSAL_CAPABILITY,
+    market: str = SHOPIFY_GLOBAL_CATALOG_MARKET,
+    source: str = SHOPIFY_GLOBAL_CATALOG_SOURCE,
+) -> LiveModeAssessment:
+    """Production gate for one exact target. Defaults are the Shopify PH price target."""
 
     return assess_live_research_mode(
         mode=SHOPPING_RESEARCH_EXECUTION_MODE,
+        requested=LiveResearchTarget(market=market, capability=capability, source=source),
         registry=production_research_provider_registry(),
         certifications=production_research_provider_certification_catalog(),
         routing=production_research_provider_routing_policy_catalog(),
@@ -366,7 +446,12 @@ def refuse_shopify_execution() -> ShopifyExecutionRefusal:
         reasons.append("production_profile_undeployed")
     if not SHOPIFY_LIVE_CALL_PERMITTED:
         reasons.append("live_shopify_call_not_permitted")
-    if not production_live_mode_assessment().enabled:
+    assessment = production_live_mode_assessment(
+        capability=_SHOPIFY_REFUSAL_CAPABILITY,
+        market=SHOPIFY_GLOBAL_CATALOG_MARKET,
+        source=SHOPIFY_GLOBAL_CATALOG_SOURCE,
+    )
+    if not assessment.enabled:
         reasons.append("live_mode_closed")
     if not production_certified_shopping_markets().is_certified("PH"):
         reasons.append("public_market_not_activated")
@@ -397,7 +482,11 @@ def destination_reevaluation_execution_connected() -> bool:
     return (
         DESTINATION_REEVALUATION_IMPLEMENTED
         and live_destination_reevaluation_available()
-        and production_live_mode_assessment().enabled
+        and production_live_mode_assessment(
+            capability=_SHOPIFY_REFUSAL_CAPABILITY,
+            market=SHOPIFY_GLOBAL_CATALOG_MARKET,
+            source=SHOPIFY_GLOBAL_CATALOG_SOURCE,
+        ).enabled
         and LIVE_RESEARCH_EXECUTION_OPERATIONAL
     )
 
@@ -414,7 +503,7 @@ def _execution_id(owner_id: str, confirmation_key: str) -> str:
 
 
 class ResearchExecutionLedger:
-    """One execution per owner and confirmation key. No pre-confirmation work."""
+    """One execution per owner, confirmation key, and decision. No pre-confirmation work."""
 
     def __init__(self) -> None:
         self._records: dict[tuple[str, str], LiveResearchExecution] = {}
@@ -434,6 +523,11 @@ class ResearchExecutionLedger:
         key = (owner_id, confirmation_key)
         existing = self._records.get(key)
         if existing is not None:
+            if existing.decision_id != decision_id:
+                return ConfirmationRefusal(
+                    started=False,
+                    reason="confirmation_key_decision_conflict",
+                )
             return existing
         execution_id = _execution_id(owner_id, confirmation_key)
         execution = LiveResearchExecution(
@@ -464,16 +558,18 @@ class ResearchExecutionLedger:
         certified_connector_count: int,
         now: Callable[[], datetime] = _utcnow,
         failure_threshold: int = 3,
-    ) -> LiveResearchExecution:
-        """Run scripted connectors once. A terminal execution is not repeated."""
+    ) -> LiveResearchExecution | ExecutionRefusal:
+        """Run the stored confirmed execution once. A forged execution is refused."""
 
         current = self._records.get((execution.owner_id, execution.confirmation_key))
-        if current is not None and current.state != "queued":
+        if current is None or not _is_authoritative(current, execution):
+            return ExecutionRefusal(started=False, reason="explicit_confirmation_required")
+        if current.state != "queued":
             return current
-        if execution.state != "queued":
-            return execution
+        if certified_connector_count != len(connectors):
+            return ExecutionRefusal(started=False, reason="connector_count_mismatch")
         started = now()
-        running = _replace(execution, state="running")
+        running = _replace(current, state="running")
         steps = tuple(
             _run_connector(connector, now=now, failure_threshold=failure_threshold)
             for connector in connectors
@@ -488,6 +584,16 @@ class ResearchExecutionLedger:
         completed = _finish(running, trace, certified_connector_count=certified_connector_count)
         self._records[(execution.owner_id, execution.confirmation_key)] = completed
         return completed
+
+
+def _is_authoritative(stored: LiveResearchExecution, supplied: LiveResearchExecution) -> bool:
+    return (
+        stored.explicit_confirmation is True
+        and supplied.owner_id == stored.owner_id
+        and supplied.confirmation_key == stored.confirmation_key
+        and supplied.execution_id == stored.execution_id
+        and supplied.decision_id == stored.decision_id
+    )
 
 
 def _replace(execution: LiveResearchExecution, *, state: ExecutionState) -> LiveResearchExecution:

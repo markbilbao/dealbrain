@@ -7,12 +7,14 @@
 
 ## Current engineering foundation (2026-09-26)
 
-Sprint 38 has started. It is not complete. The current public beta has one certified PH connector, `ph-shopify-global-catalog`, and that provider stays DISABLED. Routing stays 0. Public certified shopping markets stay 0. `SHOPPING_RESEARCH_EXECUTION_MODE` stays disabled. This foundation does not call Shopify and does not deploy.
+Sprint 38 has started. It is not complete. Overall engineering status is IN PROGRESS. Live research operational status is NOT OPERATIONAL. Those are separate facts: `SPRINT_38_STATUS` is IN PROGRESS, and `SPRINT_38_LIVE_EXECUTION_STATUS` is NOT OPERATIONAL. The current public beta has one certified PH connector, `ph-shopify-global-catalog`, and that provider stays DISABLED. Routing stays 0. Public certified shopping markets stay 0. `SHOPPING_RESEARCH_EXECUTION_MODE` stays disabled. This foundation does not call Shopify and does not deploy.
+
+The scripted circuit breaker is deterministic chaos-test state on one in-memory connector. It is not evidence of a persistent production breaker across separate shopper requests. Persistent production breaker hardening remains Sprint 38 work before closure.
 
 Classification for the current PH-only scope:
 
 - A. Reuse Sprint 31 timeout, retry, breaker, and kill-switch contracts, Sprint 31 planning-only execution, Sprint 32 reduced certification, and Sprint 37 fail-closed destination re-evaluation. Do not duplicate those systems.
-- B. Implement now: execution identity and states, owner-bound idempotent confirmation, truthful non-live traces, the live-mode fail-closed gate, a Shopify execution refusal that does not perform HTTP, scripted timeout / 429 / 5xx / retry / breaker / kill-switch behavior, one-connector no-merchants-available behavior, prior-decision preservation, connector health distinct from `/ready`, and Shopify cache refusal.
+- B. Implement now: execution identity and states, owner-bound idempotent confirmation, truthful non-live traces, the request-scoped live-mode fail-closed gate, a Shopify execution refusal that does not perform HTTP, scripted timeout / 429 / 5xx / retry / kill-switch behavior, an in-memory chaos-test breaker that is not a persistent production breaker, one-connector no-merchants-available behavior, prior-decision preservation, connector health distinct from `/ready`, and Shopify cache refusal.
 - C. Owner validation after this foundation, not in this change: a real Shopify call once routing, operational eligibility, and a deployed profile exist.
 - D. Sprint 41: production deploy, production UCP profile, AWS/DNS/TLS, and the deployed kill-switch drill.
 - E. Sprint 42: alerts, paging, synthetic production probes, and incident-runbook proof. EXT-25 stays optional.

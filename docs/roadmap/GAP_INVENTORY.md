@@ -1052,7 +1052,7 @@ This addendum does **not** rewrite earlier snapshots. It records that Sprint 38 
 
 | Field | Value |
 |-------|-------|
-| Sprint 38 | IN PROGRESS. Engineering foundation only. Not COMPLETE / CLOSED. |
+| Sprint 38 | IN PROGRESS. Engineering foundation only. Not COMPLETE / CLOSED. Live execution status is separately NOT OPERATIONAL. |
 | Live mode | Fail-closed. `SHOPPING_RESEARCH_EXECUTION_MODE` stays disabled. |
 | Shopify execution | Refused before any network call. `execute()` remains unimplemented for HTTP. |
 | Routing / provider | Routing 0. `ph-shopify-global-catalog` stays DISABLED. |
@@ -1060,5 +1060,5 @@ This addendum does **not** rewrite earlier snapshots. It records that Sprint 38 
 | `DESTINATION_REEVALUATION_IMPLEMENTED` | False |
 | EXT-23 / production FX | Unchanged. EXT-23 `not_started`. Production FX disabled. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts and paging remain Sprint 42. |
-| Multi-connector live evidence | Preserved as future scope. Scripted multi-provider tests are non-live. |
+| Scripted breaker | In-memory chaos-test state only. Not a persistent production breaker. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |

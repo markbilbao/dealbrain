@@ -284,7 +284,8 @@ def test_sprint_gates_and_harness_stay_unchanged() -> None:
     assert stage.executable_production_certification is False
     assert stage.production_provider_registered is True
     assert stage.sprint_32_status == "COMPLETE / CLOSED"
-    assert stage.sprint_38_status == "UNSTARTED"
+    assert stage.sprint_38_status == "IN PROGRESS"
+    assert stage.sprint_38_live_execution_status == "NOT OPERATIONAL"
     assert stage.sprint_41_status == "UNSTARTED"
     assert "Sprint 32 remains open." in sprint32
     assert "COMPLETE / CLOSED" in next(

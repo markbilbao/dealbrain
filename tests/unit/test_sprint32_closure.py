@@ -34,6 +34,7 @@ from app.research.shopify_global_catalog_sprint32_closure import (
     PUBLIC_PH_COVERAGE_DISCLOSURE,
     SELECTED_PATH,
     SPRINT_32_CLOSURE_DATE,
+    SPRINT_38_LIVE_EXECUTION_STATUS,
     SPRINT_38_STATUS,
     SPRINT_41_STATUS,
     STAGING_CERTIFICATION,
@@ -264,7 +265,8 @@ def test_production_counts_stay_fail_closed() -> None:
 
 
 def test_later_sprints_remain_unstarted() -> None:
-    assert SPRINT_38_STATUS == "UNSTARTED"
+    assert SPRINT_38_STATUS == "IN PROGRESS"
+    assert SPRINT_38_LIVE_EXECUTION_STATUS == "NOT OPERATIONAL"
     assert SPRINT_41_STATUS == "UNSTARTED"
     sprint38 = _status_line(SPRINT38).split("**Status:**", 1)[1].strip()
     assert sprint38.startswith("IN PROGRESS")

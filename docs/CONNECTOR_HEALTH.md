@@ -83,7 +83,7 @@ complete. Connector health for this disabled provider stays not healthy, not
 live, and not available. The foundation adds a separate health report and
 refuses Shopify execution without a network call. Production alerts and
 paging remain Sprint 42. The deployed operational kill-switch drill remains
-Sprint 38 / 41. Operational live execution remains unavailable. The Sprint 32
-access-stage constant ``SPRINT_38_STATUS`` stays ``UNSTARTED`` until live
-execution is actually operational.
+Sprint 38 / 41. Sprint 38 overall status is IN PROGRESS. Live research
+operational status is a separate fact, ``NOT OPERATIONAL``. Routing remains
+absent and production readiness remains false.
 """

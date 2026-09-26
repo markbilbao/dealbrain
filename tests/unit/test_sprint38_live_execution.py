@@ -37,8 +37,13 @@ from app.research.routing import (
 )
 from app.research.shopify_global_catalog_access_stage import SPRINT_41_STATUS
 from app.research.sprint38_live_execution import (
+    PRODUCTION_BREAKER_PERSISTED,
     SHOPPING_RESEARCH_EXECUTION_MODE,
     ConfirmationRefusal,
+    ExecutionRefusal,
+    ExecutionTrace,
+    LiveResearchExecution,
+    LiveResearchTarget,
     ResearchExecutionLedger,
     ScriptedConnector,
     ScriptedResponse,
@@ -74,13 +79,16 @@ def _descriptor(
     test_fixture: bool = False,
     status: ConnectorOperationalStatus = ConnectorOperationalStatus.AVAILABLE,
     kill_switch: KillSwitch | None = None,
+    markets: tuple[str, ...] = ("PH",),
+    capabilities: tuple[ResearchCapability, ...] = (ResearchCapability.CURRENT_PRICING,),
+    sources: tuple[str, ...] = ("global-catalog",),
 ) -> ResearchProviderDescriptor:
     return ResearchProviderDescriptor(
         provider_id=provider_id,
         provider_type="test" if test_fixture else "merchant",
-        supported_markets=("PH",),
-        supported_capabilities=(ResearchCapability.CURRENT_PRICING,),
-        supported_sources=("global-catalog",),
+        supported_markets=markets,
+        supported_capabilities=capabilities,
+        supported_sources=sources,
         operational_status=status,
         test_fixture=test_fixture,
         kill_switch=kill_switch or KillSwitch(),
@@ -107,9 +115,24 @@ def _assess(
     with_routing: bool = True,
     market_certified: bool = True,
     mode: str = "live",
+    requested_market: str = "PH",
+    requested_capability: ResearchCapability = ResearchCapability.CURRENT_PRICING,
+    requested_source: str = "global-catalog",
+    markets: tuple[str, ...] = ("PH",),
+    capabilities: tuple[ResearchCapability, ...] = (ResearchCapability.CURRENT_PRICING,),
+    sources: tuple[str, ...] = ("global-catalog",),
+    certified_markets: frozenset[str] | None = None,
+    extra_records: tuple[object, ...] = (),
 ) -> object:
     provider = StaticResearchProvider(
-        _descriptor(provider_id, test_fixture=test_fixture, status=status)
+        _descriptor(
+            provider_id,
+            test_fixture=test_fixture,
+            status=status,
+            markets=markets,
+            capabilities=capabilities,
+            sources=sources,
+        )
     )
     routing_records = ()
     if with_routing:
@@ -120,13 +143,21 @@ def _assess(
                 test_fixture=test_fixture,
             ),
         )
-    markets = frozenset({"PH"}) if market_certified else frozenset()
+    if certified_markets is None:
+        certified_markets = frozenset({"PH"}) if market_certified else frozenset()
+    primary = _catalog(provider_id, test_fixture=test_fixture)
+    records = (*primary.list_records(), *extra_records)  # type: ignore[attr-defined]
     return assess_live_research_mode(
         mode=mode,
+        requested=LiveResearchTarget(
+            market=requested_market,
+            capability=requested_capability,
+            source=requested_source,
+        ),
         registry=research_provider_registry_for_tests((provider,)),
-        certifications=_catalog(provider_id, test_fixture=test_fixture),  # type: ignore[arg-type]
+        certifications=research_provider_certification_catalog_for_tests(records),
         routing=research_provider_routing_policy_catalog_for_tests(routing_records),
-        certified_markets=CertifiedShoppingMarketCatalog(certified_iso_markets=markets),
+        certified_markets=CertifiedShoppingMarketCatalog(certified_iso_markets=certified_markets),
         trace_handling_present=True,
     )
 
@@ -159,6 +190,86 @@ def test_fixture_cannot_satisfy_live_gate() -> None:
     assert assessment.enabled is False
     assert "fixture_cannot_satisfy_live_gate" in assessment.reasons
     assert "no_certified_real_connector" in assessment.reasons
+
+
+def test_request_scoped_live_gate_isolates_market_capability_and_source() -> None:
+    ph_price = _assess("ph-real", test_fixture=False)
+    assert ph_price.enabled is True
+    assert ph_price.reasons == ()
+    us_price = _assess(
+        "ph-real",
+        test_fixture=False,
+        requested_market="US",
+        certified_markets=frozenset({"PH", "US"}),
+    )
+    assert us_price.enabled is False
+    assert "no_certified_real_connector" in us_price.reasons
+    shipping = _assess(
+        "ph-real",
+        test_fixture=False,
+        requested_capability=ResearchCapability.SHIPPING,
+    )
+    assert shipping.enabled is False
+    assert "no_certified_real_connector" in shipping.reasons
+    wrong_source = _assess(
+        "ph-real",
+        test_fixture=False,
+        requested_source="other-source",
+    )
+    assert wrong_source.enabled is False
+    assert "no_certified_real_connector" in wrong_source.reasons
+    capability_mismatch = _assess(
+        "ph-real",
+        test_fixture=False,
+        capabilities=(ResearchCapability.PRODUCT_DISCOVERY,),
+    )
+    assert capability_mismatch.enabled is False
+    assert "provider_capability_not_supported" in capability_mismatch.reasons
+    market_mismatch = _assess(
+        "ph-real",
+        test_fixture=False,
+        markets=("US",),
+        certified_markets=frozenset({"PH"}),
+    )
+    assert market_mismatch.enabled is False
+    assert "provider_market_not_supported" in market_mismatch.reasons
+
+
+def test_unrelated_fixture_does_not_open_or_block_the_requested_gate() -> None:
+    fixture = make_research_provider_certification(
+        provider_id="fixture-us",
+        capability=ResearchCapability.CURRENT_PRICING,
+        market="US",
+        certification_version="v1",
+        source="other-source",
+        test_fixture=True,
+    )
+    ph_price = _assess(
+        "ph-real",
+        test_fixture=False,
+        extra_records=(fixture,),
+        certified_markets=frozenset({"PH", "US"}),
+    )
+    assert ph_price.enabled is True
+    assert "fixture_cannot_satisfy_live_gate" not in ph_price.reasons
+    us_only = _assess(
+        "ph-real",
+        test_fixture=False,
+        requested_market="US",
+        requested_source="other-source",
+        extra_records=(fixture,),
+        certified_markets=frozenset({"PH", "US"}),
+    )
+    assert us_only.enabled is False
+    assert "fixture_cannot_satisfy_live_gate" in us_only.reasons
+    assert (
+        production_live_mode_assessment(
+            capability=ResearchCapability.CURRENT_PRICING,
+            market="PH",
+            source="shopify_global_catalog",
+        ).enabled
+        is False
+    )
 
 
 def test_synthetic_non_fixture_path_can_open_only_when_every_gate_is_met() -> None:
@@ -408,6 +519,166 @@ def test_repeated_confirmation_reuses_one_execution() -> None:
     assert repeated.state == finished.state
     assert connector._index == 1
     assert finished.replaces_prior_decision is False
+
+
+def _forged_execution(
+    *,
+    owner_id: str = "owner-1",
+    confirmation_key: str = "forged-key",
+    decision_id: str = "decision-forged",
+    execution_id: str = "research-exec:forged",
+) -> LiveResearchExecution:
+    return LiveResearchExecution(
+        execution_id=execution_id,
+        owner_id=owner_id,
+        decision_id=decision_id,
+        confirmation_key=confirmation_key,
+        state="queued",
+        explicit_confirmation=True,
+        trace=ExecutionTrace(
+            execution_id=execution_id,
+            steps=(),
+            started_at=None,
+            finished_at=None,
+        ),
+        replaces_prior_decision=False,
+        no_merchants_available=False,
+        disclosure=None,
+    )
+
+
+def test_forged_queued_execution_cannot_run_without_confirm() -> None:
+    connector = ScriptedConnector(
+        provider_id="only-source",
+        responses=(ScriptedResponse(kind="success", offers=("secret",)),),
+        retry_policy=shopify_retry_policy(),
+    )
+    ledger = ResearchExecutionLedger()
+    refused = ledger.run(
+        _forged_execution(),
+        (connector,),
+        certified_connector_count=1,
+        now=_Clock(),
+    )
+    assert isinstance(refused, ExecutionRefusal)
+    assert refused.started is False
+    assert refused.connectors_invoked is False
+    assert connector._index == 0
+
+
+def test_confirmation_key_does_not_cross_decisions_or_owners() -> None:
+    ledger = ResearchExecutionLedger()
+    first = ledger.confirm(
+        owner_id="owner-1",
+        confirmation_key="same-key",
+        decision_id="decision-a",
+        explicit_confirmation=True,
+    )
+    again = ledger.confirm(
+        owner_id="owner-1",
+        confirmation_key="same-key",
+        decision_id="decision-a",
+        explicit_confirmation=True,
+    )
+    assert first.execution_id == again.execution_id  # type: ignore[union-attr]
+    conflict = ledger.confirm(
+        owner_id="owner-1",
+        confirmation_key="same-key",
+        decision_id="decision-b",
+        explicit_confirmation=True,
+    )
+    assert isinstance(conflict, ConfirmationRefusal)
+    assert conflict.reason == "confirmation_key_decision_conflict"
+    assert conflict.execution is None
+    connector = ScriptedConnector(
+        provider_id="only-source",
+        responses=(ScriptedResponse(kind="success", offers=("one",)),),
+        retry_policy=shopify_retry_policy(),
+    )
+    forged_other_decision = ledger.run(
+        _forged_execution(
+            confirmation_key="same-key",
+            decision_id="decision-b",
+            execution_id="research-exec:other",
+        ),
+        (connector,),
+        certified_connector_count=1,
+        now=_Clock(),
+    )
+    assert isinstance(forged_other_decision, ExecutionRefusal)
+    assert connector._index == 0
+    other_owner = ledger.confirm(
+        owner_id="owner-2",
+        confirmation_key="same-key",
+        decision_id="decision-a",
+        explicit_confirmation=True,
+    )
+    assert other_owner.execution_id != first.execution_id  # type: ignore[union-attr]
+    assert other_owner.owner_id == "owner-2"  # type: ignore[union-attr]
+
+
+def test_caller_cannot_inflate_connector_count() -> None:
+    connector = ScriptedConnector(
+        provider_id="only-source",
+        responses=(ScriptedResponse(kind="server_error"),),
+        retry_policy=shopify_retry_policy(),
+    )
+    ledger = ResearchExecutionLedger()
+    execution = ledger.confirm(
+        owner_id="owner-1",
+        confirmation_key="confirm-count",
+        decision_id="decision-1",
+        explicit_confirmation=True,
+    )
+    refused = ledger.run(
+        execution,  # type: ignore[arg-type]
+        (connector,),
+        certified_connector_count=2,
+        now=_Clock(),
+    )
+    assert isinstance(refused, ExecutionRefusal)
+    assert refused.reason == "connector_count_mismatch"
+    assert connector._index == 0
+    finished = ledger.run(
+        execution,  # type: ignore[arg-type]
+        (connector,),
+        certified_connector_count=1,
+        now=_Clock(),
+    )
+    assert finished.state == "failed"  # type: ignore[union-attr]
+    assert finished.no_merchants_available is True  # type: ignore[union-attr]
+
+
+def test_scripted_breaker_is_not_persistent_production_state() -> None:
+    assert PRODUCTION_BREAKER_PERSISTED is False
+    first = ScriptedConnector(
+        provider_id="breaker-source",
+        responses=(
+            ScriptedResponse(kind="server_error"),
+            ScriptedResponse(kind="server_error"),
+        ),
+    )
+    ledger = ResearchExecutionLedger()
+    execution = ledger.confirm(
+        owner_id="owner-1",
+        confirmation_key="confirm-breaker",
+        decision_id="decision-1",
+        explicit_confirmation=True,
+    )
+    ledger.run(
+        execution,  # type: ignore[arg-type]
+        (first,),
+        certified_connector_count=1,
+        now=_Clock(),
+        failure_threshold=2,
+    )
+    assert first.circuit_breaker.state is CircuitBreakerState.OPEN
+    later_request = ScriptedConnector(
+        provider_id="breaker-source",
+        responses=(ScriptedResponse(kind="success", offers=("fresh",)),),
+        retry_policy=shopify_retry_policy(),
+    )
+    assert later_request.circuit_breaker.state is CircuitBreakerState.CLOSED
 
 
 def test_no_research_before_explicit_confirmation() -> None:

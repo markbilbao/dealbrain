@@ -35,7 +35,8 @@ PRODUCTION_PROFILE_UNDEPLOYED = "UNDEPLOYED"
 CONTRACTUAL_REDUCED_MODE_RECORDED = "recorded/prepared"
 PROMOTED_PLACEMENT_POLICY = "unknown"
 SPRINT_32_STATUS = "COMPLETE / CLOSED"
-SPRINT_38_STATUS = "UNSTARTED"
+SPRINT_38_STATUS = "IN PROGRESS"
+SPRINT_38_LIVE_EXECUTION_STATUS = "NOT OPERATIONAL"
 SPRINT_41_STATUS = "UNSTARTED"
 
 _FORBIDDEN_CLAIMS = (
@@ -82,6 +83,7 @@ class ShopifyGlobalCatalogAccessStage:
     routing_policy_registered: bool
     sprint_32_status: str
     sprint_38_status: str
+    sprint_38_live_execution_status: str
     sprint_41_status: str
     production_ready: bool
 
@@ -143,6 +145,7 @@ class ShopifyGlobalCatalogAccessStage:
             "routing_policy_registered": self.routing_policy_registered,
             "sprint_32_status": self.sprint_32_status,
             "sprint_38_status": self.sprint_38_status,
+            "sprint_38_live_execution_status": self.sprint_38_live_execution_status,
             "sprint_41_status": self.sprint_41_status,
             "production_ready": self.production_ready,
         }
@@ -188,6 +191,7 @@ def anonymous_global_catalog_access_stage() -> ShopifyGlobalCatalogAccessStage:
         routing_policy_registered=False,
         sprint_32_status=SPRINT_32_STATUS,
         sprint_38_status=SPRINT_38_STATUS,
+        sprint_38_live_execution_status=SPRINT_38_LIVE_EXECUTION_STATUS,
         sprint_41_status=SPRINT_41_STATUS,
         production_ready=False,
     )
@@ -219,6 +223,7 @@ def shopify_anonymous_catalog_stage_truth() -> dict[str, str]:
         "production_certified": "NO",
         "sprint_32": stage.sprint_32_status,
         "sprint_38": stage.sprint_38_status,
+        "sprint_38_live_execution": stage.sprint_38_live_execution_status,
         "sprint_41": stage.sprint_41_status,
         "production_ready": "NO",
     }
