@@ -173,6 +173,8 @@ Per-market sub-requirements (provider selection, legal review, credentials, sand
 | Localization QA for PH/US/SG/UK/CA; English baseline | `missing_from_roadmap` | 37 |
 | French-Canadian scope decision and disclosure | `missing_from_roadmap` | 37 |
 
+Current PH-only closure (2026-09-26), which supersedes the open-work reading of the FX, five-market, and FR-CA rows above: production FX stays unavailable and EXT-23 stays `not_started`; the selected behavior is fail-closed `conversion_unavailable`. US, SG, UK, and CA are omitted and were not QA'd as supported. FR-CA is not applicable because Canada is omitted. Live evidence-backed destination re-evaluation remains Sprint 38. See [`evidence/SPRINT_37_COMPLETION.md`](evidence/SPRINT_37_COMPLETION.md).
+
 ---
 
 ## F. Connector reliability and honest degradation

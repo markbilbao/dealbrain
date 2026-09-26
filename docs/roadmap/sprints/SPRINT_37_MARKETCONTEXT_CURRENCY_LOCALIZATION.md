@@ -87,7 +87,9 @@ P1-1B and P1-2 are closed for this scope: unsupported markets stay disclosed and
 
 ## Objective
 
-Ship a coherent MarketContext with honest currency, localization, unsupported-market behavior, and shipping-cost honesty for PH/US/SG/UK/CA.
+Current closure scope (2026-09-26): ship a coherent MarketContext for the PH-only public beta, with honest currency behavior, unsupported-market fail-closed behavior, and shipping-cost honesty.
+
+Historical / future scope: the original objective also named PH/US/SG/UK/CA. US, SG, UK, and CA are omitted from this beta. They are not part of this closure and were not QA'd as supported markets.
 
 ## Included requirements
 
@@ -113,17 +115,17 @@ Ship a coherent MarketContext with honest currency, localization, unsupported-ma
 - MarketContext fields: account country, detected country, selected shopping market, delivery destination, display currency, original merchant currency, locale, language, timezone, tax context, shipping destination
 - Selector + persistence + safe defaults
 - Formatting: currency/number/date-time; original currency preservation
-- FX provider; source timestamp; staleness threshold; missing-rate fail-closed; rounding; comparison-currency policy
-- Taxes/duties/delivery cost/shipping availability disclosures; landed-cost limitations
-- Regional variant disclosures (model, voltage/plug, warranty-region, seller-region)
-- Localization QA for five markets; English baseline
-- French-Canadian scope decision + disclosure
-- Country/market, currency, FX, locale, destination context, shipping-market honesty, unsupported-market behavior, cross-border cost semantics, delivery-location decision context
-- **Destination re-evaluation (locked):** if changing destination could materially change shipping/effective buying cost, PiqSavi must perform server-side re-evaluation using supported evidence. Do not implement client-side fake repricing. Potential result may change shipping, effective cost, qualification, and Best Piq. Canonical PiqScore changes only through a legitimate new/re-evaluated decision, not presentation manipulation.
+- FX for this closure: a production FX provider is optional and deferred. EXT-23 remains `not_started`. Current behavior is fail-closed `conversion_unavailable` when the preferred currency differs from the source currency and no trusted quote exists. Same-currency PHP presentation does not invent a rate. Source timestamp, staleness, rounding, and a comparison-currency policy apply only if production conversion is later enabled.
+- Taxes/duties/delivery cost/shipping availability disclosures; landed-cost limitations. Unknown shipping, tax, and import stay unknown.
+- Regional variant disclosures (model, voltage/plug, warranty-region, seller-region) remain future scope where a market is later named. They are not a PH-only closure claim.
+- Historical / future scope, not this closure: localization QA for five markets. US, SG, UK, and CA are omitted from this PH-only beta and were not QA'd as supported.
+- French-Canadian scope is not applicable because Canada is omitted. No FR-CA localization is implemented.
+- Country/market, currency, locale, destination context, shipping-market honesty, and unsupported-market behavior for the PH-only beta.
+- **Destination re-evaluation (current contract):** a destination change that could materially change shipping or effective cost triggers the server-authoritative re-evaluation requirement. While no live evidence-backed executor exists, the state is `required_unavailable`. The prior canonical decision, PiqScore, and Recommendation remain unchanged. Do not implement client-side fake repricing. Live evidence-backed re-evaluation is Sprint 38. `DESTINATION_REEVALUATION_IMPLEMENTED` remains False.
 
 ### 2026-09-06 owner lock — shipping and effective-cost honesty
 
-This lock strengthens existing P1-2 / destination-re-evaluation rules. It does **not** close Sprint 37, start a second price model, or pull Sprint 47 into pre-launch.
+Historical lock. On that date it did not close Sprint 37. Current closure scope is the 2026-09-26 PH-only record above. The lock still strengthens P1-2. It does not start a second price model or pull Sprint 47 into pre-launch.
 
 - Unknown shipping must never become ₱0, FREE, included, or assumed negligible unless evidence supports that state.
 - If destination-specific shipping is known, it participates in Sprint 29 canonical effective purchase cost.
@@ -140,7 +142,7 @@ This lock strengthens existing P1-2 / destination-re-evaluation rules. It does *
 
 ## External dependencies
 
-- EXT-23
+- EXT-23 remains `not_started`. It is optional. Under the selected PH-only fail-closed fallback it is not a Sprint 37 closure requirement. Production secret attachment, if production FX conversion is later enabled, belongs to Sprint 41.
 
 ## Implementation deliverables
 
@@ -154,7 +156,7 @@ This lock strengthens existing P1-2 / destination-re-evaluation rules. It does *
 - MarketContext ADR
 - FX policy
 - Shipping honesty policy
-- FR-CA decision record
+- FR-CA decision for this closure: not applicable, because Canada is omitted. Recorded in [`../evidence/SPRINT_37_COMPLETION.md`](../evidence/SPRINT_37_COMPLETION.md). No FR-CA localization is implemented.
 
 ## Required tests
 
@@ -166,25 +168,30 @@ This lock strengthens existing P1-2 / destination-re-evaluation rules. It does *
 
 ## Required staging evidence
 
-- Selector + FX + unsupported-market paths proven
-- Shipping honesty cases demonstrated
-- QA checklist for 5 markets
+Current PH-only closure evidence:
+
+- PH selector and PH default behavior
+- Unsupported-market fail-closed behavior
+- FX-unavailable / fail-closed behavior, with no live FX provider
+- Shipping honesty
+
+Do not read this list as proof of a live FX provider. Omitted markets were not QA'd as supported.
 
 ## Required production evidence
 
-- FX credentials in secrets
+FX credentials in production secrets are required only if production FX conversion is later enabled. They are not a Sprint 37 closure requirement under the selected PH-only fail-closed fallback. Production secret attachment, if later needed, belongs to Sprint 41. EXT-23 remains `not_started`. Production FX conversion remains disabled.
 
 ## Acceptance criteria
 
-- P1-1B closed: unsupported markets disclosed; no unsupported connector invocation; selection persists
-- P1-2 closed: shipping-known/unknown modeled; unknown ≠ free; UI discloses uncertainty
-- Unsafe FX comparisons fail closed
+- P1-1B closed for this scope: unsupported markets disclosed; no unsupported connector invocation; selection persists
+- P1-2 closed for this scope: shipping-known/unknown modeled; unknown ≠ free; UI discloses uncertainty
+- Unsafe FX comparisons fail closed. Production FX remains disabled. EXT-23 remains `not_started`.
 - Unsupported markets never show fixture-as-live
-- FR-CA decision published
-- Five-market EN QA checklist signed (for markets still named; omitted markets need not be QA’d as supported)
-- Destination change that could materially change shipping/effective cost triggers server-side re-evaluation
+- FR-CA is not applicable because Canada is omitted. No FR-CA localization is implemented.
+- Five-market supported QA is not applicable. US, SG, UK, and CA are omitted and were not QA'd as supported.
+- A destination change that could materially change shipping or effective cost triggers the server-authoritative re-evaluation requirement. While no live evidence-backed executor exists, the state is `required_unavailable`. The prior canonical decision, PiqScore, and Recommendation remain unchanged. Live evidence-backed re-evaluation is Sprint 38. `DESTINATION_REEVALUATION_IMPLEMENTED` remains False.
 - No client-side fake repricing
-- Canonical PiqScore changes only through a new/re-evaluated decision
+- Canonical PiqScore changes only through a new or re-evaluated decision, which this closure does not execute
 
 ## Predecessor sprints
 

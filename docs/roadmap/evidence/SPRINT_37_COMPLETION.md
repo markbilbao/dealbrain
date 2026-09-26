@@ -48,7 +48,7 @@ September supported-market target remains Philippines-first. US, SG, UK, and CA 
 | Shopify SHIPPING / TAXES_IMPORT certification | E | NOT APPLICABLE. Sprint 32 left those capabilities uncertified. Sprint 37 keeps unknown costs unknown |
 | Live evidence-backed destination re-evaluation | C. Sprint 38 | DEFERRED TO SPRINT 38. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False |
 | Production FX provider, live quotes, and EXT-23 provisioning | D. Later / optional | DEFERRED. EXT-23 stays `not_started`. Selected behavior is the register fallback: no cross-currency compare; disclose conversion unavailable |
-| FX credentials in production secrets | D | DEFERRED TO SPRINT 41. Not required while production conversion stays disabled |
+| FX credentials in production secrets | D | Not a Sprint 37 closure requirement. Required only if production FX conversion is later enabled. Secret attachment then belongs to Sprint 41. |
 | Final public claims review of shipping wording | D | DEFERRED TO SPRINT 44 |
 | Frozen supported-market list at launch | D | DEFERRED TO SPRINT 44 / 45 |
 
@@ -97,7 +97,7 @@ Product-facing selectable market remains PH only. The certified shopping-market 
 | Server-side destination-change contract without client repricing | PASS | 37.4 `required_unavailable`; canonical decision immutable |
 | Live evidence-backed destination re-evaluation | DEFERRED TO SPRINT 38 | Flag remains False. No executor added |
 | Production FX provider and EXT-23 live quotes | DEFERRED | EXT-23 `not_started`; fail-closed fallback selected |
-| FX credentials in production secrets | DEFERRED TO SPRINT 41 | Conversion disabled |
+| FX credentials in production secrets | NOT A SPRINT 37 CLOSURE REQUIREMENT | Required only if production conversion is later enabled. Secret attachment then belongs to Sprint 41. EXT-23 stays `not_started`. |
 | Shipping wording final claims review | DEFERRED TO SPRINT 44 | Sprint 37 implements the behavior; Sprint 44 verifies claims |
 | Public PH shopping coverage enabled | NOT APPLICABLE TO THIS CLOSE | Catalog stays empty |
 

@@ -52,6 +52,8 @@ Source offer currency is monetary truth. Preferred/display currency (PHP on PH M
 
 Live FX provider / EXT-23 credentials and production quotes, live destination re-evaluation, five-market QA, FR-CA, Sprint 33–36, Sprint 38 live execution, naming PH as a supported shopping market.
 
+The 2026-09-26 PH-only closure keeps that boundary. EXT-23 remains `not_started`. Production FX conversion remains disabled. US, SG, UK, and CA stay omitted and were not QA'd as supported. FR-CA is not applicable because Canada is omitted. `DESTINATION_REEVALUATION_IMPLEMENTED` remains False. Live evidence-backed re-evaluation remains Sprint 38. Production secret attachment, if conversion is later enabled, remains Sprint 41.
+
 ## 37.4 addendum — destination re-evaluation readiness
 
 Sprint 37.4 adds a server-authoritative destination-change assessment on the existing `DeliveryContext` / `destination_key` / `DestinationInvalidation` path.
