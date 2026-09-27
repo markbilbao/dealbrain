@@ -381,10 +381,12 @@ def mark_research_authorization_consumed(
     *,
     now: datetime,
 ) -> ResearchAuthorization:
-    """Single-logical-execution helper for future Sprints 31–38.
+    """Single-logical-execution helper for a live attempt that is about to start.
 
-    Ask confirmation must not call this. Repeated worker retries of the same
-    logical run should keep using ``authorization.idempotency_key``.
+    Ask confirmation must not call this. Sprint 38 preparation must not call
+    this when live mode is closed, the provider is disabled, routing is absent,
+    or a plan was only prepared. Repeated retries of the same logical run keep
+    using ``authorization.idempotency_key`` and do not consume it again.
     """
 
     if authorization.status != "authorized_pending_execution":

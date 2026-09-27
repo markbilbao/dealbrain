@@ -706,7 +706,12 @@ class ResearchExecutionTraceStep:
 
 @dataclass(frozen=True, slots=True)
 class ResearchExecutionTrace:
-    """Empty until Sprint 38 actually executes a certified plan."""
+    """Authoritative production trace. Empty until a live attempt exists.
+
+    Sprint 38 preparation returns this empty trace. A scripted execution trace
+    cannot be copied here while it claims an attempt. Populating steps remains
+    forbidden until live execution is operational.
+    """
 
     plan_id: str
     steps: tuple[ResearchExecutionTraceStep, ...] = ()

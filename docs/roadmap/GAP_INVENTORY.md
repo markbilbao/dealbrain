@@ -1061,4 +1061,5 @@ This addendum does **not** rewrite earlier snapshots. It records that Sprint 38 
 | EXT-23 / production FX | Unchanged. EXT-23 `not_started`. Production FX disabled. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts and paging remain Sprint 42. |
 | Scripted breaker | In-memory chaos-test state only. Not a persistent production breaker. |
+| Authorization handoff | Ask PiqSavi confirmation still creates `ResearchAuthorization`. Sprint 38 preparation derives execution identity from that server key and does not consume the authorization while live execution is unavailable. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |

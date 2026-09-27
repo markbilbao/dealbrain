@@ -144,8 +144,10 @@ def test_no_certification_record_blocks_technically_complete_provider() -> None:
     assert plan.eligible_steps == ()
     assert plan.plan_ready is False
     assert any(item.reason == "certification_missing" for item in plan.blocked_requirements)
-    with pytest.raises(NotImplementedError):
-        execute_research_plan(plan)
+    preparation = execute_research_plan(plan)
+    assert preparation.connectors_invoked is False
+    assert preparation.execution_started is False
+    assert preparation.trace.steps == ()
 
 
 def test_us_certification_does_not_certify_philippines() -> None:

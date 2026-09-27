@@ -73,6 +73,10 @@ from app.services.research_authorization import (
     invalidate_research_authorization,
     upsert_authorization,
 )
+from app.services.research_execution import (
+    ResearchExecutionPreparation,
+    prepare_confirmed_research,
+)
 
 ProposalLifecycle = Literal[
     "confirm",
@@ -267,6 +271,7 @@ class ProposalResult:
     lifecycle: ProposalLifecycle
     authorization: ResearchAuthorization | None = None
     authorization_created: bool = False
+    preparation: ResearchExecutionPreparation | None = None
 
 
 class ProposeResearchService:
@@ -279,11 +284,13 @@ class ProposeResearchService:
         *,
         clock=None,  # noqa: ANN001
         id_factory=None,  # noqa: ANN001
+        execution_ledger=None,  # noqa: ANN001
     ) -> None:
         self._snapshots = snapshots
         self._conversations = conversations
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
+        self._execution_ledger = execution_ledger
 
     def handle(
         self,
@@ -382,6 +389,11 @@ class ProposeResearchService:
             existing_authorizations=existing_authorizations,
             client_confirmation_token=client_confirmation_token,
             schema_version=schema_version,
+            selected_market=selected_market,
+            caller_market=_text_or_none(payload.get("country_code") or payload.get("market")),
+            caller_capability=_text_or_none(payload.get("capability")),
+            caller_source=_text_or_none(payload.get("source")),
+            caller_provider_id=_text_or_none(payload.get("provider_id")),
         )
         return self._to_response(
             question,
@@ -526,6 +538,11 @@ class ProposeResearchService:
         existing_authorizations: tuple[ResearchAuthorization, ...] = (),
         client_confirmation_token: str | None = None,
         schema_version: str | None = None,
+        selected_market: SelectedShoppingMarket | None = None,
+        caller_market: str | None = None,
+        caller_capability: str | None = None,
+        caller_source: str | None = None,
+        caller_provider_id: str | None = None,
     ) -> tuple[str | None, ProposalResult]:
         if self._conversations is None or owner is None:
             if result.lifecycle in {"confirm", "reconfirm"}:
@@ -627,11 +644,33 @@ class ProposeResearchService:
                     last_intent="general",
                     last_product_ids=allowed,
                 )
+                preparation = None
+                if (
+                    authorization is not None
+                    and authorization.is_pending_execution
+                    and working.lifecycle in {"confirm", "reconfirm"}
+                    and proposal is not None
+                ):
+                    preparation = prepare_confirmed_research(
+                        authorization,
+                        owner=owner,
+                        conversation_id=context.conversation_id,
+                        decision_id=authorization.decision_id,
+                        canonical_context_version=authorization.canonical_context_version,
+                        proposal=proposal,
+                        selected_market=selected_market,
+                        ledger=self._execution_ledger,
+                        caller_market=caller_market,
+                        caller_capability=caller_capability,
+                        caller_source=caller_source,
+                        caller_provider_id=caller_provider_id,
+                    )
                 stored_result = replace(
                     working,
                     proposal=stored_proposal if stored_proposal is not None else proposal,
                     authorization=authorization,
                     authorization_created=created,
+                    preparation=preparation,
                 )
                 return context.conversation_id, stored_result
             except ConversationVersionConflictError as exc:
@@ -793,6 +832,14 @@ class ProposeResearchService:
             processing["research_authorization_id"] = result.authorization.authorization_id
             processing["authorization_status"] = result.authorization.status
             processing["authorization_version"] = result.authorization.authorization_version
+        if result.preparation is not None:
+            public_preparation = result.preparation.to_public_dict()
+            processing["research_preparation"] = public_preparation
+            processing["research_preparation_outcome"] = result.preparation.outcome
+            processing["execution_started"] = False
+            processing["research_executed"] = False
+            processing["source_checked"] = False
+            processing["attempted"] = False
         return ShoppingAssistantResponse(
             query=question,
             intent="general",
@@ -816,6 +863,13 @@ class ProposeResearchService:
             processing=processing,
             generated_at=self._clock(),
         )
+
+
+def _text_or_none(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def is_research_request(question: str, packet: DecisionEvidencePacket | None = None) -> bool:
