@@ -88,4 +88,23 @@ operational status is a separate fact, ``NOT OPERATIONAL``. Routing remains
 absent and production readiness remains false. Authorization and planning
 handoff can prepare a request and still must not describe this disabled
 provider as attempted, checked, or live.
-"""
+
+Sprint 38 reliability state (2026-09-27) persists research-provider circuit
+breakers in the existing ``operational_entities`` store, namespace
+``research.provider_reliability``. That is separate from Sprint 18
+``marketplace_data.health``. No new table and no migration were added. The
+scripted connector breaker remains in-memory chaos-test state and is not this
+record. An absent row is closed and is not itself a seeded production failure.
+
+The current Shopify provider remains certified for the reduced capability set,
+operationally disabled, not healthy, merchant availability false, and live
+false. A closed breaker, certification, routing absence, and ``/ready`` do not
+change that. ``/ready`` stays independent of merchant availability. Kill switch
+and ``DISABLED`` are stronger than the breaker. Breaker-worthy categories are
+timeout, unavailable, and unknown. Rate limit, quota, credential, kill switch,
+circuit-open, and partial results are recorded and do not open the breaker.
+The certified Shopify path still does not retry. This slice does not probe,
+page, or call Shopify. Alerts, paging, synthetic probes, and incident
+operations remain Sprint 42. Durable authorized-execution records remain a
+later Sprint 38 slice. Sprint 38 stays IN PROGRESS. Live execution stays
+NOT OPERATIONAL.

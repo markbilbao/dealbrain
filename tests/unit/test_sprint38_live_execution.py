@@ -30,6 +30,10 @@ from app.research.registry import (
     production_research_provider_registry,
     research_provider_registry_for_tests,
 )
+from app.research.reliability_repository import (
+    InMemoryResearchReliabilityRepository,
+    OperationalResearchReliabilityRepository,
+)
 from app.research.routing import (
     make_research_provider_routing_policy,
     production_research_provider_routing_policy_catalog,
@@ -650,7 +654,9 @@ def test_caller_cannot_inflate_connector_count() -> None:
 
 
 def test_scripted_breaker_is_not_persistent_production_state() -> None:
-    assert PRODUCTION_BREAKER_PERSISTED is False
+    assert PRODUCTION_BREAKER_PERSISTED is True
+    assert OperationalResearchReliabilityRepository.persists_across_process_restart is True
+    assert InMemoryResearchReliabilityRepository.persists_across_process_restart is False
     first = ScriptedConnector(
         provider_id="breaker-source",
         responses=(
@@ -679,6 +685,16 @@ def test_scripted_breaker_is_not_persistent_production_state() -> None:
         retry_policy=shopify_retry_policy(),
     )
     assert later_request.circuit_breaker.state is CircuitBreakerState.CLOSED
+    assert (
+        InMemoryResearchReliabilityRepository()
+        .load(
+            "breaker-source",
+            "PH",
+            now=_NOW,
+        )
+        .state
+        is CircuitBreakerState.CLOSED
+    )
 
 
 def test_no_research_before_explicit_confirmation() -> None:

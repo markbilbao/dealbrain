@@ -83,6 +83,10 @@ EARLY_ACCESS_REGISTRATIONS = "early_access.registrations"
 SHOPPING_CONVERSATIONS = "shopping_assistant.conversations"
 SHOPPING_DECISION_SNAPSHOTS = "shopping_assistant.decision_snapshots"
 
+# Sprint 38 — research-provider breaker state (zero-DDL operational store).
+# Distinct from marketplace_data.health, which remains Sprint 18 sync health.
+RESEARCH_PROVIDER_RELIABILITY = "research.provider_reliability"
+
 USER_PLATFORM_STORES = (
     USERS,
     SESSIONS,
