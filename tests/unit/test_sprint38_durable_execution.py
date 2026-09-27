@@ -9,15 +9,21 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from app.consumer.decision_owner import OWNER_COOKIE, owner_cookie_payload
+from app.core.dependencies import get_shopping_decision_snapshot_repository
 from app.domain.entities.connector_reliability import ConnectorOperationalStatus
 from app.domain.exceptions import ShoppingAssistantNotFoundError
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.persistence.errors import PersistenceUnavailableError
+from app.infrastructure.persistence.operational_store import OperationalStore
 from app.infrastructure.persistence.session import reset_sync_engine
 from app.infrastructure.persistence.stores import RESEARCH_AUTHORIZED_EXECUTIONS
+from app.main import create_app
 from app.market.support import production_certified_shopping_markets
 from app.research.authorized_execution_repository import (
-    FUTURE_LIVE_START_BOUNDARY,
+    EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION,
+    FUTURE_LIVE_START_CLAIM,
+    FUTURE_LIVE_START_PHASES,
     HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED,
     AuthorizedExecutionRevisionConflict,
     DurableAuthorizedExecution,
@@ -42,10 +48,17 @@ from app.services.research_execution import (
     execute_research_plan,
 )
 from app.services.shopping_assistant_service import ShoppingAssistantService
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine, select
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from tests.unit.test_phase_29_4b_refine_session_recommendation import START, _owner
+from tests.unit.test_phase_29_4b_refine_session_recommendation import (
+    SONY_ID,
+    START,
+    _owner,
+    _presentation,
+)
 from tests.unit.test_sprint31_research_execution_router import (
     _authorization,
     _plan,
@@ -62,7 +75,6 @@ def _no_network(monkeypatch: pytest.MonkeyPatch) -> None:
         raise AssertionError("durable execution tests must not open a network connection")
 
     monkeypatch.setattr(socket, "create_connection", _blocked)
-    monkeypatch.setattr(socket, "socket", _blocked)
 
 
 @pytest.fixture()
@@ -464,6 +476,79 @@ def test_service_recreation_reuses_one_execution(sqlite_factory) -> None:
     assert _repo(sqlite_factory).row_count() == 1
 
 
+def _database_down(*_args: object, **_kwargs: object) -> None:
+    raise OperationalError("SELECT 1", {}, Exception("database unavailable"))
+
+
+def _sample_record() -> DurableAuthorizedExecution:
+    return DurableAuthorizedExecution(
+        execution_id="research-exec:" + ("ab" * 16),
+        authorization_id="authorization-outage",
+        authorization_version=1,
+        decision_id="decision-outage",
+        plan_id="plan-outage",
+        created_at=_NOW,
+        updated_at=_NOW,
+        revision=1,
+    )
+
+
+def test_sqlalchemy_operational_error_becomes_persistence_unavailable(
+    sqlite_factory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = _repo(sqlite_factory)
+    auth, plan = _prepared()
+    inserted: list[object] = []
+    execute_calls: list[object] = []
+    consumed: list[object] = []
+
+    def _insert(*args: object, **_kwargs: object) -> None:
+        inserted.append(args)
+        raise AssertionError("durable insert during a database outage")
+
+    def _provider_execute(self: StaticResearchProvider, step: object) -> None:
+        execute_calls.append(step)
+        raise AssertionError("connector execute")
+
+    monkeypatch.setattr(OperationalStore, "get_versioned", _database_down)
+    monkeypatch.setattr(OperationalStore, "insert_versioned", _insert)
+    monkeypatch.setattr(OperationalStore, "compare_and_swap", _database_down)
+    monkeypatch.setattr(StaticResearchProvider, "execute", _provider_execute)
+    monkeypatch.setattr(
+        "app.services.research_authorization.mark_research_authorization_consumed",
+        lambda *args, **_kwargs: consumed.append(args),
+    )
+
+    with pytest.raises(PersistenceUnavailableError):
+        repo.get(_sample_record().execution_id)
+    with pytest.raises(PersistenceUnavailableError):
+        _bind(repo, auth, plan)
+    with pytest.raises(PersistenceUnavailableError):
+        repo.save(_sample_record(), expected_revision=1)
+    assert inserted == []
+
+    refused = _execute(plan, auth, repo)
+    assert refused.outcome == "blocked_persistence"
+    assert refused.reason == "execution_persistence_unavailable"
+    assert refused.execution_id is None
+    assert refused.attempted is False
+    assert refused.source_checked is False
+    assert refused.live is False
+    assert refused.connectors_invoked is False
+    assert refused.execution_started is False
+    assert refused.authorization_consumed is False
+    assert refused.prior_decision_preserved is True
+    assert refused.prior_decision_id == auth.decision_id
+    assert auth.status == "authorized_pending_execution"
+    assert execute_calls == []
+    assert consumed == []
+
+    monkeypatch.setattr("app.infrastructure.persistence.session.sync_session", _database_down)
+    with pytest.raises(PersistenceUnavailableError):
+        repo.row_count()
+
+
 def test_in_memory_repository_does_not_survive_a_new_instance() -> None:
     auth, plan = _prepared()
     first = InMemoryAuthorizedExecutionRepository()
@@ -484,9 +569,75 @@ def test_status_flags_and_shopify_stay_closed() -> None:
     assert DESTINATION_REEVALUATION_IMPLEMENTED is False
     assert SPRINT_41_STATUS == "UNSTARTED"
     assert HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED is False
-    assert FUTURE_LIVE_START_BOUNDARY == (
-        "durable_execution_live_start",
-        "authorization_consumption",
-        "persisted_breaker_permission",
-        "connector_invocation",
+    assert EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION is False
+    assert FUTURE_LIVE_START_PHASES == (
+        "transactional_live_start_claim",
+        "external_connector_attempt",
+        "transactional_outcome_recording",
     )
+    assert "persist_live_start_claim" in FUTURE_LIVE_START_CLAIM
+    assert "connector_invocation" not in FUTURE_LIVE_START_CLAIM
+
+
+_OUTAGE_DECISION_ID = "00000000-0000-4000-8000-00000000038a"
+
+
+@pytest.mark.asyncio
+async def test_http_confirmation_fails_closed_when_execution_store_is_down(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    snapshot = replace(_presentation(), decision_id=_OUTAGE_DECISION_ID)
+    get_shopping_decision_snapshot_repository().add(snapshot)
+    execute_calls: list[object] = []
+
+    def _provider_execute(self: StaticResearchProvider, step: object) -> None:
+        execute_calls.append(step)
+        raise AssertionError("connector execute")
+
+    monkeypatch.setattr(StaticResearchProvider, "execute", _provider_execute)
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        client.cookies.set(OWNER_COOKIE, owner_cookie_payload(_owner()))
+        ask = await client.post(
+            "/api/v1/shopping-assistant/query",
+            json={
+                "query": "What about AirPods Max?",
+                "decision_id": _OUTAGE_DECISION_ID,
+                "surface": "results",
+            },
+        )
+        assert ask.status_code == 200, ask.text
+        body = ask.json()
+        monkeypatch.setattr(
+            "app.infrastructure.persistence.session.sync_session",
+            _database_down,
+        )
+        confirm = await client.post(
+            "/api/v1/shopping-assistant/query",
+            json={
+                "query": "Yes, research that",
+                "decision_id": _OUTAGE_DECISION_ID,
+                "conversation_id": body["conversation_id"],
+                "surface": "results",
+                "proposal_id": body["research_proposal"]["proposal_id"],
+                "proposal_version": body["research_proposal"]["proposal_version"],
+            },
+        )
+        assert confirm.status_code == 200, confirm.text
+        payload = confirm.json()
+        assert payload["execution_available"] is False
+        assert payload["research_handoff_status"] == "authorized_pending_execution"
+        assert payload["research_handoff_created"] is True
+        assert payload["processing"]["execution_started"] is False
+        assert payload["processing"]["source_checked"] is False
+        assert payload["processing"]["attempted"] is False
+        outcome = payload["processing"]["research_preparation_outcome"]
+        assert outcome == "blocked_persistence"
+        assert payload["processing"]["authorization_status"] == "authorized_pending_execution"
+        assert "Researching" not in payload["answer"]
+        assert execute_calls == []
+        monkeypatch.undo()
+        results = await client.get(f"/results/{_OUTAGE_DECISION_ID}")
+        assert results.status_code == 200
+        assert 'data-best-piq="' + SONY_ID in results.text

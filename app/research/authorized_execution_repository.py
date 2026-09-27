@@ -12,27 +12,39 @@ Creating the row does not consume the authorization and does not start a
 connector. A new repository, a new service, and a new database session load
 the same execution.
 
-Future live start, not implemented here, must be one transaction covering:
+Future live start is not implemented here. It is three phases, and connector
+HTTP is not inside a database transaction:
 
-A. the durable execution transition out of ``prepared_unavailable``
-B. authorization consumption
-C. persisted breaker permission
-D. connector invocation
+Phase 1, one transaction: validate the durable execution, claim it for one
+worker, enforce single-execution authorization semantics, enforce the
+persisted breaker, acquire the HALF_OPEN single-probe lease when applicable,
+persist the live-start claim, and commit.
 
-Those steps must commit or roll back together. This module does not fake
-that transaction.
+Phase 2, outside that transaction: only the worker holding the claim may
+invoke the connector.
 
-Before real HTTP is enabled, HALF_OPEN must also enforce one single-probe
-lease so multiple workers cannot use the one recovery opportunity at once.
-``HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED`` stays false. That lease is not
-built here.
+Phase 3, a later transaction: persist the outcome and trace facts, update
+breaker state, release the execution and half-open leases, and reconcile
+authorization state. The exact consumption point stays open for the next
+live-start slice. This design is at-most-one active claim plus recoverable
+state. It is not an exactly-once external HTTP guarantee.
+
+Before real HTTP is enabled, HALF_OPEN must enforce one single-probe lease
+so multiple workers cannot use the one recovery opportunity at once.
+``HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED`` stays false.
+
+Database unavailability at this boundary becomes
+``PersistenceUnavailableError`` via ``translate_db_error``. Preparation then
+returns ``blocked_persistence`` and does not fall back to an in-memory ledger.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Literal
+from typing import Literal, NoReturn
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -40,6 +52,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.persistence.errors import PersistenceConflictError
 from app.infrastructure.persistence.operational_store import OperationalStore
+from app.infrastructure.persistence.session import translate_db_error
 from app.infrastructure.persistence.session_bound import SessionBound
 from app.infrastructure.persistence.stores import RESEARCH_AUTHORIZED_EXECUTIONS
 from app.services.research_execution import (
@@ -49,11 +62,19 @@ from app.services.research_execution import (
 
 # Recorded requirement only. The lease is not implemented in this slice.
 HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED = False
-FUTURE_LIVE_START_BOUNDARY = (
-    "durable_execution_live_start",
-    "authorization_consumption",
+EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION = False
+FUTURE_LIVE_START_PHASES = (
+    "transactional_live_start_claim",
+    "external_connector_attempt",
+    "transactional_outcome_recording",
+)
+FUTURE_LIVE_START_CLAIM = (
+    "validate_durable_execution",
+    "single_worker_execution_claim",
+    "authorization_single_execution",
     "persisted_breaker_permission",
-    "connector_invocation",
+    "half_open_single_probe_lease",
+    "persist_live_start_claim",
 )
 
 
@@ -97,6 +118,25 @@ class DurableAuthorizedExecution:
             raise ValueError("this slice cannot mark an execution running or completed")
         if self.created_at.tzinfo is None or self.updated_at.tzinfo is None:
             raise ValueError("execution timestamps must be timezone-aware")
+
+
+def _translate_store_error(exc: Exception) -> NoReturn:
+    """Map driver failures. Plan and revision conflicts keep their own types."""
+
+    if isinstance(exc, (AuthorizationPlanConflict, AuthorizedExecutionRevisionConflict)):
+        raise exc
+    translated = translate_db_error(exc)
+    if translated is not exc:
+        raise translated from exc
+    raise exc
+
+
+@contextmanager
+def _store_boundary() -> Iterator[None]:
+    try:
+        yield
+    except Exception as exc:
+        _translate_store_error(exc)
 
 
 def _require_same_plan(
@@ -191,17 +231,18 @@ class OperationalAuthorizedExecutionRepository(SessionBound):
         super().__init__(session_factory=session_factory, session=session)
 
     def get(self, execution_id: str) -> DurableAuthorizedExecution | None:
-        with self._ops() as ops:
+        with _store_boundary(), self._ops() as ops:
             return _load(ops, execution_id)
 
     def row_count(self) -> int:
-        with self._ops() as ops:
-            count = ops._session.scalar(  # noqa: SLF001 — count stays inside the store session
-                select(func.count())
-                .select_from(OperationalEntityModel)
-                .where(OperationalEntityModel.store == RESEARCH_AUTHORIZED_EXECUTIONS)
-            )
-        return int(count or 0)
+        with _store_boundary():
+            with self._ops() as ops:
+                count = ops._session.scalar(  # noqa: SLF001 — count stays inside the store session
+                    select(func.count())
+                    .select_from(OperationalEntityModel)
+                    .where(OperationalEntityModel.store == RESEARCH_AUTHORIZED_EXECUTIONS)
+                )
+            return int(count or 0)
 
     def bind(
         self,
@@ -215,7 +256,7 @@ class OperationalAuthorizedExecutionRepository(SessionBound):
     ) -> DurableAuthorizedExecution:
         execution_id = authorized_execution_id(authorization_idempotency_key)
         try:
-            with self._ops() as ops:
+            with _store_boundary(), self._ops() as ops:
                 existing = _load(ops, execution_id)
                 if existing is not None:
                     return _require_same_plan(existing, decision_id=decision_id, plan_id=plan_id)
@@ -237,10 +278,11 @@ class OperationalAuthorizedExecutionRepository(SessionBound):
                 )
                 return record
         except PersistenceConflictError:
-            if self._session is not None:
-                self._session.rollback()
-            with self._ops() as ops:
-                winner = _load(ops, execution_id)
+            with _store_boundary():
+                if self._session is not None:
+                    self._session.rollback()
+                with self._ops() as ops:
+                    winner = _load(ops, execution_id)
             if winner is None:
                 raise
             return _require_same_plan(winner, decision_id=decision_id, plan_id=plan_id)
@@ -253,7 +295,7 @@ class OperationalAuthorizedExecutionRepository(SessionBound):
     ) -> DurableAuthorizedExecution:
         """Compare-and-swap one prepared row. Does not change plan or state."""
 
-        with self._ops() as ops:
+        with _store_boundary(), self._ops() as ops:
             current = _load(ops, record.execution_id)
             current_revision = 0 if current is None else current.revision
             if current is None or current_revision != expected_revision:

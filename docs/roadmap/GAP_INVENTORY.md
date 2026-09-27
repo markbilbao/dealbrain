@@ -1089,6 +1089,6 @@ This addendum does **not** rewrite earlier snapshots. The reliability-state row 
 | Authorized execution | Durable preparation on ``operational_entities`` / ``research.authorized_executions``. State entered is ``prepared_unavailable``. No new migration. The in-memory ledger is a test double. Production preparation uses the repository. |
 | Authorization | Stays ``authorized_pending_execution``. Durable existence does not consume it. |
 | Trace / HTTP | Authoritative trace stays empty. No source checked. No connector. No Shopify call. |
-| Future boundary | Live start still needs one transaction for the execution transition, authorization consumption, persisted breaker permission, and connector invocation. HALF_OPEN still needs a single-probe lease before HTTP. |
+| Future boundary | Live start is three phases: a transactional claim, a connector attempt outside that transaction, then a transactional outcome record. Connector HTTP is not inside one database transaction. The consumption point stays open. HALF_OPEN still needs a single-probe lease before HTTP. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |

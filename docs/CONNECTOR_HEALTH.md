@@ -127,6 +127,10 @@ Durable authorized-execution preparation (2026-09-27) stores one
 ``prepared_unavailable`` row in ``operational_entities`` /
 ``research.authorized_executions``. That row survives a new repository and a
 new database session. It does not consume the authorization, check a source,
-or perform HTTP. The future live-start transaction and the HALF_OPEN
-single-probe lease remain required before a connector attempt. Sprint 38
-stays IN PROGRESS. Live execution stays NOT OPERATIONAL.
+or perform HTTP. A database outage during preparation fails closed as
+``blocked_persistence`` and leaves the confirmation response non-live.
+Future live start is a claim transaction, then a connector attempt outside
+that transaction, then a later outcome transaction. Connector HTTP is not
+inside one database transaction. The HALF_OPEN single-probe lease remains
+required before a connector attempt. Sprint 38 stays IN PROGRESS. Live
+execution stays NOT OPERATIONAL.
