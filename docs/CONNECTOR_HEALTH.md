@@ -88,4 +88,38 @@ operational status is a separate fact, ``NOT OPERATIONAL``. Routing remains
 absent and production readiness remains false. Authorization and planning
 handoff can prepare a request and still must not describe this disabled
 provider as attempted, checked, or live.
-"""
+
+Sprint 38 reliability state (2026-09-27) persists research-provider circuit
+breakers in the existing ``operational_entities`` store, namespace
+``research.provider_reliability``. That is separate from Sprint 18
+``marketplace_data.health``. No new table and no migration were added. The
+scripted connector breaker remains in-memory chaos-test state and is not this
+record. An absent row is closed at revision 0. A stored row is the
+authoritative breaker for production research-provider health. Callers inject
+the repository. The health function does not open a database connection and
+does not invent a closed breaker when a row exists.
+
+``PRODUCTION_BREAKER_PERSISTED`` means the production repository survives
+process and service recreation. It does not mean production has been deployed,
+that a breaker row already exists, or that the breaker has been live-validated.
+
+Operational availability is provider status, kill switch, and a closed breaker.
+Merchant availability uses that serving contract. Healthy requires that
+eligibility plus a recorded successful attempt. Static ``AVAILABLE`` status is
+not a healthy claim. Live is actual live execution and stays false. The
+current Shopify provider remains certified for the reduced capability set,
+operationally disabled, not healthy, merchant availability false, and live
+false. A closed breaker, certification, routing absence, and ``/ready`` do not
+change that. ``/ready`` stays independent of merchant availability. Kill switch
+and ``DISABLED`` are stronger than the breaker. Breaker-worthy categories are
+timeout, unavailable, and unknown. Rate limit, quota, credential, kill switch,
+circuit-open, and partial results are recorded and do not open the breaker.
+The certified Shopify path still does not retry.
+
+A future live connector attempt must consult provider status, the kill switch,
+and the persisted breaker. A passed live-mode gate is not sufficient while the
+persisted breaker is open. That permission path does not perform HTTP, because
+live execution is not operational. This slice does not probe, page, or call
+Shopify. Alerts, paging, synthetic probes, and incident operations remain
+Sprint 42. Durable authorized-execution records remain a later Sprint 38
+slice. Sprint 38 stays IN PROGRESS. Live execution stays NOT OPERATIONAL.

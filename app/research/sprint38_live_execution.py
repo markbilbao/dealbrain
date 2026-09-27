@@ -15,8 +15,14 @@ profile, or mark destination re-evaluation implemented. Deterministic scripted
 providers are non-live orchestration tests, not launch evidence.
 
 The scripted circuit breaker is in-memory chaos-test state on that connector
-object. It is not a persistent production breaker across shopper requests.
-Persistent production breaker hardening remains Sprint 38 work before closure.
+object. It is not the production breaker. Production breaker rows live in
+``OperationalResearchReliabilityRepository`` on ``operational_entities``.
+``PRODUCTION_BREAKER_PERSISTED`` means that repository survives process and
+service recreation. It does not mean a production environment is deployed,
+that a breaker row already exists, or that the breaker has been live-validated.
+An in-memory dict, a scripted connector, or a fixture is not that evidence.
+Live execution remains not operational. The persisted breaker is not connected
+to HTTP. Durable authorized-execution records remain deferred.
 """
 
 from __future__ import annotations
@@ -52,6 +58,7 @@ from app.research.certification import (
 )
 from app.research.digest import stable_sha256
 from app.research.registry import ResearchProviderRegistry, production_research_provider_registry
+from app.research.reliability_repository import OperationalResearchReliabilityRepository
 from app.research.routing import (
     ResearchProviderRoutingPolicyCatalog,
     production_research_provider_routing_policy_catalog,
@@ -68,7 +75,11 @@ SHOPPING_RESEARCH_EXECUTION_MODE = "disabled"
 SHOPIFY_LIVE_CALL_PERMITTED = False
 SHOPIFY_PERSISTENT_CACHE_ALLOWED = False
 LIVE_RESEARCH_EXECUTION_OPERATIONAL = False
-PRODUCTION_BREAKER_PERSISTED = False
+# Repository durability across process and service recreation. Not deployment,
+# not an existing production row, and not live validation.
+PRODUCTION_BREAKER_PERSISTED = (
+    OperationalResearchReliabilityRepository.persists_across_process_restart
+)
 _SHOPIFY_REFUSAL_CAPABILITY = ResearchCapability.CURRENT_PRICING
 
 ExecutionState = Literal["queued", "running", "partial", "completed", "failed", "cancelled"]
@@ -259,8 +270,9 @@ class ScriptedConnector:
     """Non-live test connector. Must not be registered as production.
 
     ``circuit_breaker`` changes only on this object during a scripted run.
-    That is deterministic chaos-test behavior. ``PRODUCTION_BREAKER_PERSISTED``
-    stays false: a later shopper request does not inherit this object.
+    That is deterministic chaos-test behavior. A later scripted connector
+    with the same provider id starts closed. This object is not
+    ``OperationalResearchReliabilityRepository``.
     """
 
     provider_id: str
@@ -808,7 +820,11 @@ def _step(
 def aggregate_connector_health(
     descriptors: tuple[ResearchProviderDescriptor, ...],
 ) -> ConnectorHealthReport:
-    """Health is distinct from application readiness."""
+    """Operational eligibility is distinct from evidence-backed health.
+
+    A descriptor has no recorded successful attempt, so ``healthy`` stays
+    false. ``available`` is the static serving eligibility only.
+    """
 
     rows: list[ConnectorHealthRow] = []
     merchant_available = False
@@ -820,7 +836,7 @@ def aggregate_connector_health(
             ConnectorHealthRow(
                 provider_id=descriptor.provider_id,
                 operational_status=descriptor.operational_status.value,
-                healthy=available,
+                healthy=False,
                 live=False,
                 available=available,
                 kill_switch_engaged=descriptor.kill_switch.engaged,

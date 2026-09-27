@@ -1063,3 +1063,18 @@ This addendum does **not** rewrite earlier snapshots. It records that Sprint 38 
 | Scripted breaker | In-memory chaos-test state only. Not a persistent production breaker. |
 | Authorization handoff | Ask PiqSavi confirmation still creates `ResearchAuthorization`. Sprint 38 preparation derives execution identity from that server key and does not consume the authorization while live execution is unavailable. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+
+## 2026-09-27 Sprint 38 reliability-state addendum
+
+This addendum does **not** rewrite earlier snapshots. The 2026-09-26 scripted-breaker row remains true for the in-memory chaos-test connector. It does **not** complete Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 | IN PROGRESS. Not COMPLETE / CLOSED. Live execution status is separately NOT OPERATIONAL. |
+| Production breaker | Repository-backed on ``operational_entities`` / ``research.provider_reliability``. ``PRODUCTION_BREAKER_PERSISTED`` means that repository is durable across process and service recreation. It is not a deployed production row and not live validation. No new migration. Production health loads the stored row. |
+| Scripted breaker | Still in-memory chaos-test state. Not the production record. |
+| Authorized execution ledger | Still in-process. Durable execution records are deferred to a later Sprint 38 slice. |
+| Shopify / routing / markets | ``execute()`` still has no HTTP. Live calls stay 0. Routing stays 0. Provider stays DISABLED. Public certified shopping markets stay 0. |
+| ``/ready`` | Remains independent of merchant availability. |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
+| Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
