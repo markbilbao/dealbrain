@@ -17,9 +17,12 @@ providers are non-live orchestration tests, not launch evidence.
 The scripted circuit breaker is in-memory chaos-test state on that connector
 object. It is not the production breaker. Production breaker rows live in
 ``OperationalResearchReliabilityRepository`` on ``operational_entities``.
-That repository is why ``PRODUCTION_BREAKER_PERSISTED`` is true. An in-memory
-dict, a scripted connector, or a fixture is not that evidence. Live execution
-remains not operational. Durable authorized-execution records remain deferred.
+``PRODUCTION_BREAKER_PERSISTED`` means that repository survives process and
+service recreation. It does not mean a production environment is deployed,
+that a breaker row already exists, or that the breaker has been live-validated.
+An in-memory dict, a scripted connector, or a fixture is not that evidence.
+Live execution remains not operational. The persisted breaker is not connected
+to HTTP. Durable authorized-execution records remain deferred.
 """
 
 from __future__ import annotations
@@ -72,6 +75,8 @@ SHOPPING_RESEARCH_EXECUTION_MODE = "disabled"
 SHOPIFY_LIVE_CALL_PERMITTED = False
 SHOPIFY_PERSISTENT_CACHE_ALLOWED = False
 LIVE_RESEARCH_EXECUTION_OPERATIONAL = False
+# Repository durability across process and service recreation. Not deployment,
+# not an existing production row, and not live validation.
 PRODUCTION_BREAKER_PERSISTED = (
     OperationalResearchReliabilityRepository.persists_across_process_restart
 )
@@ -815,7 +820,11 @@ def _step(
 def aggregate_connector_health(
     descriptors: tuple[ResearchProviderDescriptor, ...],
 ) -> ConnectorHealthReport:
-    """Health is distinct from application readiness."""
+    """Operational eligibility is distinct from evidence-backed health.
+
+    A descriptor has no recorded successful attempt, so ``healthy`` stays
+    false. ``available`` is the static serving eligibility only.
+    """
 
     rows: list[ConnectorHealthRow] = []
     merchant_available = False
@@ -827,7 +836,7 @@ def aggregate_connector_health(
             ConnectorHealthRow(
                 provider_id=descriptor.provider_id,
                 operational_status=descriptor.operational_status.value,
-                healthy=available,
+                healthy=False,
                 live=False,
                 available=available,
                 kill_switch_engaged=descriptor.kill_switch.engaged,

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
+from typing import Protocol
 
 from app.core.countries import is_valid_country_code, normalize_country_code
 from app.domain.entities.connector_reliability import (
@@ -303,9 +304,28 @@ def assess_execution_permission(
     )
 
 
+class ReliabilityStateReader(Protocol):
+    """Load breaker state. Callers supply the repository. This does not connect."""
+
+    def load(
+        self,
+        provider_id: str,
+        market: str,
+        *,
+        now: datetime,
+    ) -> ProviderReliabilityState: ...
+
+
 @dataclass(frozen=True, slots=True)
 class ResearchProviderHealth:
-    """One provider. Certified, available, healthy, and live are separate facts."""
+    """One provider. Certified, eligible, healthy, and live are separate facts.
+
+    ``operationally_available`` is static and runtime eligibility: provider
+    status, kill switch, and a closed breaker. ``merchant_available`` is the
+    serving contract for merchant research and uses that same eligibility.
+    ``healthy`` requires a recorded successful attempt on top of eligibility.
+    ``live`` is actual live execution and stays false in this slice.
+    """
 
     provider_id: str
     market: str
@@ -337,10 +357,13 @@ class ResearchProviderHealth:
             raise ValueError(
                 "operational availability must follow status, kill switch, and breaker"
             )
-        if self.healthy is not available:
-            raise ValueError("healthy follows operational availability and ignores certification")
         if self.merchant_available is not available:
-            raise ValueError("merchant availability follows operational availability")
+            raise ValueError("merchant availability follows the serving contract")
+        if self.healthy is not _evidence_backed_healthy(
+            operationally_available=available,
+            last_success_at=self.last_success_at,
+        ):
+            raise ValueError("healthy requires eligibility and a recorded successful attempt")
         if self.live:
             raise ValueError("this reliability slice cannot claim a live provider")
         if self.certified is not self.certification_present:
@@ -379,9 +402,9 @@ def build_research_provider_health(
     certification_present: bool,
     test_fixture: bool,
 ) -> ResearchProviderHealth:
-    """Combine authoritative facts without treating certification as health."""
+    """Combine authoritative facts. Static availability is not health evidence."""
 
-    available = _merchant_available(
+    available = _operationally_available(
         operational_status=operational_status.value,
         kill_switch_engaged=kill_switch_engaged,
         breaker_state=breaker.state.value,
@@ -407,7 +430,10 @@ def build_research_provider_health(
         certified=certification_present,
         test_fixture=test_fixture,
         operationally_available=available,
-        healthy=available,
+        healthy=_evidence_backed_healthy(
+            operationally_available=available,
+            last_success_at=breaker.last_success_at,
+        ),
         merchant_available=available,
         live=False,
         live_block_reasons=tuple(reasons),
@@ -429,9 +455,15 @@ def aggregate_research_provider_health(
 def production_research_provider_health(
     *,
     now: datetime,
-    breaker: ProviderReliabilityState | None = None,
+    repository: ReliabilityStateReader,
 ) -> ResearchProviderHealthReport:
-    """Current production providers. The Shopify provider stays unavailable."""
+    """Current production providers. Breaker state is loaded from ``repository``.
+
+    A missing row is closed at revision 0. A stored row supplies its state,
+    revision, failure count, last failure, and last success. This function
+    does not open a database connection and does not accept a substitute
+    breaker snapshot.
+    """
 
     from app.research.certification import production_research_provider_certification_catalog
     from app.research.registry import production_research_provider_registry
@@ -444,14 +476,7 @@ def production_research_provider_health(
     for provider in production_research_provider_registry().list_providers():
         descriptor = provider.descriptor
         market = descriptor.supported_markets[0]
-        if (
-            breaker is not None
-            and breaker.provider_id == descriptor.provider_id
-            and breaker.market == market
-        ):
-            state = breaker
-        else:
-            state = closed_reliability_state(descriptor.provider_id, market, now=now)
+        state = repository.load(descriptor.provider_id, market, now=now)
         certified = any(
             record.provider_id == descriptor.provider_id and not record.test_fixture
             for record in certifications
@@ -472,6 +497,23 @@ def production_research_provider_health(
     return aggregate_research_provider_health(tuple(rows))
 
 
+def _operationally_available(
+    *,
+    operational_status: str,
+    kill_switch_engaged: bool,
+    breaker_state: str,
+    test_fixture: bool,
+) -> bool:
+    """Status, kill switch, and a closed breaker. Certification is not an input."""
+
+    return (
+        operational_status == ConnectorOperationalStatus.AVAILABLE.value
+        and not kill_switch_engaged
+        and breaker_state == CircuitBreakerState.CLOSED.value
+        and not test_fixture
+    )
+
+
 def _merchant_available(
     *,
     operational_status: str,
@@ -479,12 +521,24 @@ def _merchant_available(
     breaker_state: str,
     test_fixture: bool,
 ) -> bool:
-    return (
-        operational_status == ConnectorOperationalStatus.AVAILABLE.value
-        and not kill_switch_engaged
-        and breaker_state == CircuitBreakerState.CLOSED.value
-        and not test_fixture
+    """Serving contract. Eligibility is not a recorded healthy observation."""
+
+    return _operationally_available(
+        operational_status=operational_status,
+        kill_switch_engaged=kill_switch_engaged,
+        breaker_state=breaker_state,
+        test_fixture=test_fixture,
     )
+
+
+def _evidence_backed_healthy(
+    *,
+    operationally_available: bool,
+    last_success_at: datetime | None,
+) -> bool:
+    """A successful attempt is required. Static status is not health evidence."""
+
+    return operationally_available and last_success_at is not None
 
 
 def _require_aware(value: datetime, field_name: str) -> None:

@@ -11,7 +11,7 @@ or any other connector.
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime
 
 from sqlalchemy.orm import Session
@@ -168,7 +168,12 @@ class OperationalResearchReliabilityRepository:
 
 
 def production_reliability_repository(session: Session) -> OperationalResearchReliabilityRepository:
-    """Production factory. This is the persisted breaker, not an in-memory dict."""
+    """Production factory. This is the persisted breaker, not an in-memory dict.
+
+    Durability means a committed row survives a new repository and a new
+    database connection. It does not mean production has been deployed, that
+    a row already exists, or that the breaker has been live-validated.
+    """
 
     return OperationalResearchReliabilityRepository(session)
 
@@ -246,3 +251,85 @@ class ResearchReliabilityGate:
             saved = self._repository.save(decision.breaker, expected_revision=current.revision)
             return replace(decision, breaker=saved)
         return decision
+
+
+@dataclass(frozen=True, slots=True)
+class FutureLiveConnectorPermission:
+    """Permission for a future live attempt. This object does not call a connector.
+
+    A passed live-mode flag is not sufficient while the persisted breaker,
+    kill switch, or provider status blocks the attempt. HTTP remains unwired.
+    """
+
+    permitted: bool
+    block_reason: str | None
+    reliability: ReliabilityDecision
+    live_mode_enabled: bool
+    routing_present: bool
+    certification_present: bool
+    connector_invoked: bool = False
+    http_invoked: bool = False
+    live_execution_started: bool = False
+
+    def __post_init__(self) -> None:
+        if self.connector_invoked or self.http_invoked or self.live_execution_started:
+            raise ValueError("future live permission must not invoke a connector")
+        if self.permitted and self.block_reason is not None:
+            raise ValueError("a permitted future attempt cannot carry a block reason")
+        if not self.permitted and not self.block_reason:
+            raise ValueError("a blocked future attempt requires a reason")
+        if self.permitted and not self.reliability.execution_permitted:
+            raise ValueError("live mode cannot override a blocked persisted breaker")
+        if self.permitted and not self.live_mode_enabled:
+            raise ValueError("a disabled live mode cannot permit a connector attempt")
+
+
+def assess_persisted_live_permission(
+    repository: ResearchReliabilityRepository,
+    *,
+    provider_id: str,
+    market: str,
+    operational_status: ConnectorOperationalStatus,
+    kill_switch: KillSwitch,
+    now: datetime,
+    live_mode_enabled: bool,
+    routing_present: bool,
+    certification_present: bool,
+) -> FutureLiveConnectorPermission:
+    """Load the persisted breaker and apply it before any future live attempt.
+
+    Routing, certification, and a passed live-mode flag do not override an
+    open breaker, an engaged kill switch, or a provider that is not available.
+    This function does not perform HTTP.
+    """
+
+    reliability = ResearchReliabilityGate(repository).permission(
+        provider_id,
+        market,
+        operational_status=operational_status,
+        kill_switch=kill_switch,
+        now=now,
+    )
+    if not reliability.execution_permitted:
+        reason = reliability.block_reason
+        permitted = False
+    elif not routing_present:
+        reason = "routing_absent"
+        permitted = False
+    elif not certification_present:
+        reason = "certification_absent"
+        permitted = False
+    elif not live_mode_enabled:
+        reason = "mode_not_live"
+        permitted = False
+    else:
+        reason = None
+        permitted = True
+    return FutureLiveConnectorPermission(
+        permitted=permitted,
+        block_reason=reason,
+        reliability=reliability,
+        live_mode_enabled=live_mode_enabled,
+        routing_present=routing_present,
+        certification_present=certification_present,
+    )

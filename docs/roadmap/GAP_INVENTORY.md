@@ -1071,7 +1071,7 @@ This addendum does **not** rewrite earlier snapshots. The 2026-09-26 scripted-br
 | Field | Value |
 |-------|-------|
 | Sprint 38 | IN PROGRESS. Not COMPLETE / CLOSED. Live execution status is separately NOT OPERATIONAL. |
-| Production breaker | Repository-backed on ``operational_entities`` / ``research.provider_reliability``. ``PRODUCTION_BREAKER_PERSISTED`` is true for that repository. No new migration. |
+| Production breaker | Repository-backed on ``operational_entities`` / ``research.provider_reliability``. ``PRODUCTION_BREAKER_PERSISTED`` means that repository is durable across process and service recreation. It is not a deployed production row and not live validation. No new migration. Production health loads the stored row. |
 | Scripted breaker | Still in-memory chaos-test state. Not the production record. |
 | Authorized execution ledger | Still in-process. Durable execution records are deferred to a later Sprint 38 slice. |
 | Shopify / routing / markets | ``execute()`` still has no HTTP. Live calls stay 0. Routing stays 0. Provider stays DISABLED. Public certified shopping markets stay 0. |

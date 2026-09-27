@@ -22,6 +22,7 @@ from app.research.reliability_repository import (
     OperationalResearchReliabilityRepository,
     ReliabilityRevisionConflict,
     ResearchReliabilityGate,
+    assess_persisted_live_permission,
     production_reliability_repository,
 )
 from app.research.reliability_state import (
@@ -38,6 +39,7 @@ from app.research.reliability_state import (
     reliability_record_key,
 )
 from app.research.shopify_global_catalog_access_stage import SPRINT_41_STATUS
+from app.research.shopify_global_catalog_capability_policy import SHOPIFY_GLOBAL_CATALOG_MARKET
 from app.research.shopify_global_catalog_provider import (
     SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
     shopify_global_catalog_ph_provider,
@@ -53,6 +55,7 @@ from app.research.sprint38_live_execution import (
 )
 from app.services.launch_health_service import LaunchHealthService
 from app.services.research_execution import AuthorizedExecutionLedger
+from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import sessionmaker
 
@@ -390,7 +393,10 @@ def test_certification_does_not_imply_availability() -> None:
 
 
 def test_routing_absence_keeps_live_unavailable() -> None:
-    report = production_research_provider_health(now=_NOW)
+    report = production_research_provider_health(
+        now=_NOW,
+        repository=InMemoryResearchReliabilityRepository(),
+    )
     assert report.rows[0].routing_present is False
     assert "routing_absent" in report.rows[0].live_block_reasons
     assert report.rows[0].live is False
@@ -411,7 +417,10 @@ def test_ready_stays_true_while_merchant_availability_is_false() -> None:
     ready = LaunchHealthService().ready()
     assert ready["ready"] is True
     assert "merchant" not in ready
-    report = production_research_provider_health(now=_NOW)
+    report = production_research_provider_health(
+        now=_NOW,
+        repository=InMemoryResearchReliabilityRepository(),
+    )
     assert report.merchant_available is False
     assert report.live is False
     disabled = aggregate_research_provider_health(
@@ -569,13 +578,17 @@ def test_no_connector_or_network_call(monkeypatch: pytest.MonkeyPatch) -> None:
         kill_switch=KillSwitch(engaged=True),
         now=clock.now,
     )
-    production_research_provider_health(now=clock.now)
+    production_research_provider_health(
+        now=clock.now,
+        repository=InMemoryResearchReliabilityRepository(),
+    )
     assert calls["execute"] == 0
     assert SHOPIFY_LIVE_CALL_PERMITTED is False
 
 
 def test_fixture_state_is_not_production_persisted_evidence() -> None:
     assert PRODUCTION_BREAKER_PERSISTED is True
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
     assert InMemoryResearchReliabilityRepository.persists_across_process_restart is False
     assert OperationalResearchReliabilityRepository.persists_across_process_restart is True
     clock = _Clock()
@@ -606,7 +619,10 @@ def test_fixture_state_is_not_production_persisted_evidence() -> None:
 
 
 def test_shopify_production_status_stays_disabled() -> None:
-    report = production_research_provider_health(now=_NOW)
+    report = production_research_provider_health(
+        now=_NOW,
+        repository=InMemoryResearchReliabilityRepository(),
+    )
     row = report.rows[0]
     assert row.provider_id == SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
     assert row.operational_status == "disabled"
@@ -628,7 +644,10 @@ def test_shopify_production_status_stays_disabled() -> None:
 
 
 def test_one_connector_aggregate_stays_unavailable() -> None:
-    report = production_research_provider_health(now=_NOW)
+    report = production_research_provider_health(
+        now=_NOW,
+        repository=InMemoryResearchReliabilityRepository(),
+    )
     assert len(report.rows) == 1
     assert report.merchant_available is False
     assert report.live_evidence is False
@@ -671,17 +690,184 @@ def test_multi_provider_aggregation_is_not_live_evidence() -> None:
         certification_present=True,
     )
     report = aggregate_research_provider_health((available, disabled))
+    assert available.operationally_available is True
     assert available.merchant_available is True
-    assert available.healthy is True
+    assert available.healthy is False
+    assert available.last_success_at is None
     assert available.live is False
     assert report.merchant_available is True
     assert report.live is False
     assert report.live_evidence is False
     assert len(report.rows) == 2
-    production = production_research_provider_health(now=_NOW)
+    production = production_research_provider_health(
+        now=_NOW,
+        repository=InMemoryResearchReliabilityRepository(),
+    )
     assert len(production.rows) == 1
     assert production.merchant_available is False
     assert production.live_evidence is False
+
+
+def _open_named(
+    gate: ResearchReliabilityGate,
+    clock: _Clock,
+    provider_id: str,
+    market: str,
+) -> ProviderReliabilityState:
+    state = gate.load(provider_id, market, now=clock.now)
+    for _ in range(gate.policy.failure_threshold):
+        clock.advance(1)
+        state = gate.record_failure(
+            provider_id,
+            market,
+            ConnectorFailureKind.TIMEOUT,
+            now=clock.now,
+        )
+    assert state.state is CircuitBreakerState.OPEN
+    return state
+
+
+def test_production_health_loads_persisted_breaker(sqlite_factory) -> None:
+    clock = _Clock()
+    writer = sqlite_factory()
+    writer_gate = ResearchReliabilityGate(production_reliability_repository(writer))
+    opened = _open_named(
+        writer_gate,
+        clock,
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        SHOPIFY_GLOBAL_CATALOG_MARKET,
+    )
+    writer.commit()
+    writer.close()
+
+    reader = sqlite_factory()
+    composition = ResearchReliabilityGate(production_reliability_repository(reader))
+    report = production_research_provider_health(
+        now=clock.now,
+        repository=composition.repository,
+    )
+    row = report.rows[0]
+    assert row.breaker_state == "open"
+    assert row.breaker_revision == opened.revision
+    assert row.consecutive_failure_count == opened.consecutive_failure_count
+    assert row.last_failure_category == ConnectorFailureKind.TIMEOUT.value
+    assert row.merchant_available is False
+    assert row.healthy is False
+    assert row.operationally_available is False
+    assert row.live is False
+    reader.close()
+
+    transition = sqlite_factory()
+    transition_gate = ResearchReliabilityGate(production_reliability_repository(transition))
+    assert opened.reopen_at is not None
+    half = transition_gate.permission(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        SHOPIFY_GLOBAL_CATALOG_MARKET,
+        operational_status=ConnectorOperationalStatus.AVAILABLE,
+        kill_switch=KillSwitch(),
+        now=opened.reopen_at,
+    )
+    assert half.breaker.state is CircuitBreakerState.HALF_OPEN
+    assert half.connector_invoked is False
+    transition.commit()
+    transition.close()
+
+    health_session = sqlite_factory()
+    health_gate = ResearchReliabilityGate(production_reliability_repository(health_session))
+    half_row = production_research_provider_health(
+        now=opened.reopen_at,
+        repository=health_gate.repository,
+    ).rows[0]
+    assert half_row.breaker_state == "half_open"
+    assert half_row.breaker_revision == half.breaker.revision
+    assert half_row.consecutive_failure_count == opened.consecutive_failure_count
+    assert half_row.merchant_available is False
+    assert half_row.healthy is False
+    assert half_row.live is False
+
+
+def test_missing_breaker_row_is_closed_revision_zero(sqlite_factory) -> None:
+    repository = production_reliability_repository(sqlite_factory())
+    row = production_research_provider_health(now=_NOW, repository=repository).rows[0]
+    assert row.breaker_state == "closed"
+    assert row.breaker_revision == 0
+    assert row.consecutive_failure_count == 0
+    assert row.last_failure_category is None
+    assert row.last_success_at is None
+    assert row.healthy is False
+
+
+def test_static_available_status_is_not_healthy() -> None:
+    closed = _health_for(
+        closed_reliability_state("future-provider", "PH", now=_NOW),
+        status=ConnectorOperationalStatus.AVAILABLE,
+        routing_present=True,
+        certification_present=True,
+    )
+    assert closed.operationally_available is True
+    assert closed.merchant_available is True
+    assert closed.healthy is False
+    assert closed.live is False
+    succeeded = ProviderReliabilityState(
+        provider_id="future-provider",
+        market="PH",
+        updated_at=_NOW,
+        last_attempt_at=_NOW,
+        last_success_at=_NOW,
+    )
+    evidenced = _health_for(
+        succeeded,
+        status=ConnectorOperationalStatus.AVAILABLE,
+        routing_present=False,
+        certification_present=True,
+    )
+    assert evidenced.healthy is True
+    assert evidenced.live is False
+    assert evidenced.operationally_available is True
+    disabled = _health_for(succeeded, status=ConnectorOperationalStatus.DISABLED)
+    assert disabled.last_success_at == _NOW
+    assert disabled.operationally_available is False
+    assert disabled.healthy is False
+    assert disabled.merchant_available is False
+
+
+def test_open_persisted_breaker_blocks_future_live_permission(sqlite_factory) -> None:
+    clock = _Clock()
+    writer = sqlite_factory()
+    _open_named(
+        ResearchReliabilityGate(OperationalResearchReliabilityRepository(writer)),
+        clock,
+        "future-live-provider",
+        "PH",
+    )
+    writer.commit()
+    writer.close()
+
+    reader = sqlite_factory()
+    composition = ResearchReliabilityGate(production_reliability_repository(reader))
+    decision = assess_persisted_live_permission(
+        composition.repository,
+        provider_id="future-live-provider",
+        market="PH",
+        operational_status=ConnectorOperationalStatus.AVAILABLE,
+        kill_switch=KillSwitch(),
+        now=clock.now,
+        live_mode_enabled=True,
+        routing_present=True,
+        certification_present=True,
+    )
+    assert decision.permitted is False
+    assert decision.block_reason == "circuit_open"
+    assert decision.connector_invoked is False
+    assert decision.http_invoked is False
+    assert decision.live_execution_started is False
+    assert decision.live_mode_enabled is True
+    assert decision.routing_present is True
+    assert decision.certification_present is True
+    assert production_live_mode_assessment().enabled is False
+    assert SHOPPING_RESEARCH_EXECUTION_MODE == "disabled"
+    assert LIVE_RESEARCH_EXECUTION_OPERATIONAL is False
+    assert SHOPIFY_LIVE_CALL_PERMITTED is False
 
 
 def test_durable_authorized_execution_persistence_is_deferred() -> None:
