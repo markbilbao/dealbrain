@@ -37,6 +37,7 @@ from app.services.refine_session_recommendation import (
     compose_session_refinement,
     is_refinement_request,
 )
+from app.services.research_execution import AuthorizedExecutionLedger
 from app.services.shopping_assistant_service import ShoppingAssistantService
 from httpx import ASGITransport, AsyncClient
 
@@ -65,6 +66,7 @@ def _service(snapshot=None):
         conversations=conversations,
         clock=lambda: START,
         id_factory=lambda: str(uuid4()),
+        execution_ledger=AuthorizedExecutionLedger(),
     )
     return service, snapshots, conversations, snap
 

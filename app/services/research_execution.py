@@ -13,7 +13,10 @@ routing, and a blocked plan leave the authorization
 
 One preparation binding pins one plan to the authorization. The same plan
 reuses that binding. A different plan is ``authorization_plan_conflict`` and
-does not replace the stored plan. The ledger is in-process only.
+does not replace the stored plan. Production preparation writes that binding
+through ``OperationalAuthorizedExecutionRepository``. ``AuthorizedExecutionLedger``
+remains an in-memory test double and is not the production store. A
+persistence failure stays closed and does not fall back to that ledger.
 
 The authoritative production trace is
 ``app.domain.entities.research_execution.ResearchExecutionTrace``. It stays
@@ -24,7 +27,8 @@ chaos-test accounting and is not a second production trace.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from datetime import UTC, datetime
+from typing import Any, Literal, Protocol
 
 from app.domain.entities.research_authorization import ResearchAuthorization
 from app.domain.entities.research_execution import (
@@ -36,6 +40,7 @@ from app.domain.entities.research_execution import (
 )
 from app.domain.entities.research_proposal import ResearchProposal
 from app.domain.entities.shopping_assistant import ConversationOwner
+from app.infrastructure.persistence.errors import PersistenceError
 from app.market.selection import SelectedShoppingMarket, intended_default_shopping_market
 from app.market.support import production_certified_shopping_markets
 from app.research.certification import (
@@ -68,6 +73,7 @@ PreparationOutcome = Literal[
     "blocked_market",
     "blocked_capability",
     "blocked_authorization",
+    "blocked_persistence",
     "caller_target_rejected",
 ]
 
@@ -157,10 +163,18 @@ class AuthorizedExecutionBinding:
             raise ValueError("this slice cannot mark an execution running or completed")
 
 
+class PinnedExecution(Protocol):
+    """Plan pin shared by the in-memory double and the durable record."""
+
+    execution_id: str
+    decision_id: str
+    plan_id: str
+
+
 class AuthorizationPlanConflict(Exception):
     """The authorization is already pinned to a different prepared plan."""
 
-    def __init__(self, binding: AuthorizedExecutionBinding) -> None:
+    def __init__(self, binding: PinnedExecution) -> None:
         self.binding = binding
         super().__init__("authorization_plan_conflict")
 
@@ -182,7 +196,11 @@ class AuthorizedExecutionLedger:
         authorization_idempotency_key: str,
         decision_id: str,
         plan_id: str,
+        authorization_id: str = "",
+        authorization_version: int = 0,
+        now: datetime | None = None,
     ) -> AuthorizedExecutionBinding:
+        del authorization_id, authorization_version, now
         existing = self._by_authorization_key.get(authorization_idempotency_key)
         if existing is not None:
             if existing.decision_id != decision_id:
@@ -205,11 +223,29 @@ class AuthorizedExecutionLedger:
         return len(self._by_authorization_key)
 
 
-_PRODUCTION_LEDGER = AuthorizedExecutionLedger()
+class ExecutionBindingStore(Protocol):
+    """Preparation binding. Production uses the durable repository."""
+
+    def bind(
+        self,
+        *,
+        authorization_idempotency_key: str,
+        decision_id: str,
+        plan_id: str,
+        authorization_id: str = "",
+        authorization_version: int = 0,
+        now: datetime | None = None,
+    ) -> Any: ...
 
 
-def production_authorized_execution_ledger() -> AuthorizedExecutionLedger:
-    return _PRODUCTION_LEDGER
+def production_authorized_execution_repository() -> Any:
+    """Durable production binding. Not the in-memory ledger."""
+
+    from app.research.authorized_execution_repository import (
+        production_authorized_execution_repository as build,
+    )
+
+    return build()
 
 
 def authorized_execution_id(authorization_idempotency_key: str) -> str:
@@ -251,11 +287,12 @@ def prepare_confirmed_research(
     canonical_context_version: int,
     proposal: ResearchProposal | None = None,
     selected_market: SelectedShoppingMarket | None = None,
-    ledger: AuthorizedExecutionLedger | None = None,
+    ledger: ExecutionBindingStore | None = None,
     caller_market: str | None = None,
     caller_capability: str | None = None,
     caller_source: str | None = None,
     caller_provider_id: str | None = None,
+    now: datetime | None = None,
 ) -> ResearchExecutionPreparation:
     """Plan from the trusted authorization, then prepare or refuse execution.
 
@@ -297,6 +334,7 @@ def prepare_confirmed_research(
         caller_capability=caller_capability,
         caller_source=caller_source,
         caller_provider_id=caller_provider_id,
+        now=now,
     )
 
 
@@ -312,7 +350,7 @@ def execute_research_plan(
     expected_scope_digest: str | None = None,
     expected_proposal_id: str | None = None,
     expected_proposal_version: int | None = None,
-    ledger: AuthorizedExecutionLedger | None = None,
+    ledger: ExecutionBindingStore | None = None,
     caller_market: str | None = None,
     caller_capability: str | None = None,
     caller_source: str | None = None,
@@ -320,6 +358,7 @@ def execute_research_plan(
     registry: ResearchProviderRegistry | None = None,
     catalog: ResearchProviderCertificationCatalog | None = None,
     routing_policy: ResearchProviderRoutingPolicyCatalog | None = None,
+    now: datetime | None = None,
 ) -> ResearchExecutionPreparation:
     """Prepare or refuse a validated plan. Does not perform network I/O."""
 
@@ -385,17 +424,30 @@ def execute_research_plan(
             authorization_status=authorization.status,
         )
 
-    store = ledger if ledger is not None else production_authorized_execution_ledger()
+    prepared_at = now if now is not None else datetime.now(UTC)
+    from app.research.authorized_execution_repository import AuthorizedExecutionRevisionConflict
+
     try:
+        store = ledger if ledger is not None else production_authorized_execution_repository()
         binding = store.bind(
             authorization_idempotency_key=authorization.idempotency_key,
+            authorization_id=authorization.authorization_id,
+            authorization_version=authorization.authorization_version,
             decision_id=authorization.decision_id,
             plan_id=plan.plan_id,
+            now=prepared_at,
         )
     except AuthorizationPlanConflict:
         return _refusal(
             outcome="blocked_authorization",
             reason="authorization_plan_conflict",
+            decision_id=authorization.decision_id,
+            authorization_status=authorization.status,
+        )
+    except (PersistenceError, AuthorizedExecutionRevisionConflict):
+        return _refusal(
+            outcome="blocked_persistence",
+            reason="execution_persistence_unavailable",
             decision_id=authorization.decision_id,
             authorization_status=authorization.status,
         )

@@ -144,6 +144,7 @@ class ShoppingAssistantService:
         id_factory: Callable[[], str] | None = None,
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
         allowed_modes: list[str] | None = None,
+        execution_ledger: Any | None = None,
     ) -> None:
         catalog = get_catalog()
         known_names = [str(item["product_name"]) for item in catalog]
@@ -169,11 +170,16 @@ class ShoppingAssistantService:
             clock=self._clock,
             id_factory=self._id_factory,
         )
+        if execution_ledger is None:
+            from app.services.research_execution import production_authorized_execution_repository
+
+            execution_ledger = production_authorized_execution_repository()
         self._research_proposals = ProposeResearchService(
             snapshots=snapshot_repository,
             conversations=conversation_repository,
             clock=self._clock,
             id_factory=self._id_factory,
+            execution_ledger=execution_ledger,
         )
         self._confidence = confidence_calculator or ConfidenceCalculator()
         self._community = community_service

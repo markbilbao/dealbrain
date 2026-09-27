@@ -4,9 +4,11 @@ The production implementation uses the existing ``operational_entities``
 store and compare-and-swap. No new table is required. The in-memory
 implementation is for tests and does not survive process restart.
 
-Authorized execution records are not stored here. That durability decision
-is deferred to a later Sprint 38 slice. This module does not call Shopify
-or any other connector.
+Authorized execution records live in ``authorized_execution_repository``,
+not in this breaker store. This module does not call Shopify or any other
+connector. Before HTTP, HALF_OPEN still needs one single-probe lease so
+multiple workers cannot share the one recovery opportunity. That lease is
+not implemented here.
 """
 
 from __future__ import annotations
@@ -259,6 +261,7 @@ class FutureLiveConnectorPermission:
 
     A passed live-mode flag is not sufficient while the persisted breaker,
     kill switch, or provider status blocks the attempt. HTTP remains unwired.
+    HALF_OPEN still needs a single-probe lease before any real HTTP attempt.
     """
 
     permitted: bool

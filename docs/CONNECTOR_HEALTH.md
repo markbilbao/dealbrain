@@ -121,5 +121,12 @@ and the persisted breaker. A passed live-mode gate is not sufficient while the
 persisted breaker is open. That permission path does not perform HTTP, because
 live execution is not operational. This slice does not probe, page, or call
 Shopify. Alerts, paging, synthetic probes, and incident operations remain
-Sprint 42. Durable authorized-execution records remain a later Sprint 38
-slice. Sprint 38 stays IN PROGRESS. Live execution stays NOT OPERATIONAL.
+Sprint 42. Sprint 38 stays IN PROGRESS. Live execution stays NOT OPERATIONAL.
+
+Durable authorized-execution preparation (2026-09-27) stores one
+``prepared_unavailable`` row in ``operational_entities`` /
+``research.authorized_executions``. That row survives a new repository and a
+new database session. It does not consume the authorization, check a source,
+or perform HTTP. The future live-start transaction and the HALF_OPEN
+single-probe lease remain required before a connector attempt. Sprint 38
+stays IN PROGRESS. Live execution stays NOT OPERATIONAL.
