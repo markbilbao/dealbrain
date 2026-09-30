@@ -22,7 +22,9 @@ service recreation. It does not mean a production environment is deployed,
 that a breaker row already exists, or that the breaker has been live-validated.
 An in-memory dict, a scripted connector, or a fixture is not that evidence.
 Live execution remains not operational. The persisted breaker is not connected
-to HTTP. Durable authorized-execution records remain deferred.
+to HTTP. Durable authorized-execution preparation records live in
+``authorized_execution_repository``. Creating one does not consume an
+authorization or start a connector.
 """
 
 from __future__ import annotations

@@ -27,7 +27,7 @@ alembic downgrade -1
 |-------|---------------|----|----------------|------------|---------|-----------|
 | `operational_entities` | 23 (adapters for 17–21) | `id` | `store`, `entity_id`, `secondary_key`, `owner_id`, `payload`, `seq` | `(store, entity_id)`, `(store, secondary_key)` | `(store, owner_id)`, `(store, seq)` | Operational; backup with Postgres |
 
-Domain meaning is encoded in `store` namespaces (see `app/infrastructure/persistence/stores.py`). A new namespace on this table does not require a migration. Current zero-DDL namespaces include `shopping_assistant.conversations` and Sprint 38 `research.provider_reliability` (research-provider breaker state; not Sprint 18 `marketplace_data.health`).
+Domain meaning is encoded in `store` namespaces (see `app/infrastructure/persistence/stores.py`). A new namespace on this table does not require a migration. Current zero-DDL namespaces include `shopping_assistant.conversations`, Sprint 38 `research.provider_reliability` (research-provider breaker state; not Sprint 18 `marketplace_data.health`), and Sprint 38 `research.authorized_executions` (authorized-execution preparation records).
 
 Examples:
 

@@ -1,6 +1,6 @@
 # Sprint 38 — Connector Reliability & Honest Degradation
 
-**Status:** IN PROGRESS (2026-09-27). Engineering foundation, authorization/planning handoff, and repository-backed breaker state. Not COMPLETE / CLOSED. Live execution is NOT OPERATIONAL. No Shopify call. Routing stays 0. Public PH shopping coverage stays disabled. Durable authorized-execution records remain deferred.
+**Status:** IN PROGRESS (2026-09-27). Engineering foundation, authorization/planning handoff, repository-backed breaker state, and durable authorized-execution preparation. Not COMPLETE / CLOSED. Live execution is NOT OPERATIONAL. No Shopify call. Routing stays 0. Public PH shopping coverage stays disabled. Authorization consumption and live HTTP remain future work.
 **Primary owner / domain:** Marketplace reliability / ops
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Yes with live HTTP / multi-connector launch
@@ -54,6 +54,18 @@ The research-provider health view keeps certified, operationally available, heal
 Before a future live connector attempt, permission must include provider operational status, the kill switch, and the persisted breaker. Routing, certification, and a passed live-mode flag do not override an open breaker. ``assess_persisted_live_permission`` exposes that contract and does not invoke a connector. ``production_live_mode_assessment`` stays fail-closed because live mode is disabled. The persisted breaker is not connected to HTTP.
 
 ``AuthorizedExecutionLedger`` stays in-process. Durable execution identity before HTTP is deferred to a later Sprint 38 slice. This slice does not store raw principal ids, browser confirmation tokens, secrets, or Shopify responses. It does not add probes, paging, or alert destinations. Sprint 42 owns those. Sprint 41 stays UNSTARTED. Sprint 38 stays IN PROGRESS. Live execution stays NOT OPERATIONAL. ``SHOPIFY_LIVE_CALL_PERMITTED`` stays false. ``SHOPPING_RESEARCH_EXECUTION_MODE`` stays disabled. ``DESTINATION_REEVALUATION_IMPLEMENTED`` stays false.
+
+## Durable authorized-execution preparation (2026-09-27)
+
+This slice supersedes the reliability-section deferral of authorized-execution records for preparation only. It does not complete Sprint 38, does not start live HTTP, and does not consume an authorization.
+
+Production preparation now writes one ``prepared_unavailable`` row in the existing ``operational_entities`` store, namespace ``research.authorized_executions``. No Alembic migration was added. The lookup identity is the existing ``authorized_execution_id`` derived from the server authorization key. The raw key, raw principal id, session id, browser confirmation token, secrets, and Shopify payloads are not stored. The same authorization and the same plan reuse that row across a new repository, a new service, and a new database session. A different plan is ``authorization_plan_conflict`` and does not rewrite ``plan_id``. A stale revision does not overwrite a newer row. A persistence failure returns ``blocked_persistence`` and does not fall back to ``AuthorizedExecutionLedger``.
+
+The in-memory ledger remains a test double. ``ShoppingAssistantService`` production composition uses ``OperationalAuthorizedExecutionRepository``. Durable existence does not consume the authorization. Status stays ``authorized_pending_execution``. The authoritative ``ResearchExecutionTrace`` stays empty. No source is checked, no connector is invoked, and live stays false. The prior canonical decision stays unchanged.
+
+A database outage during preparation is ``PersistenceUnavailableError`` and the preparation outcome is ``blocked_persistence``. The confirmation response stays the truthful non-live authorization response. It does not become an internal server error, and it does not fall back to ``AuthorizedExecutionLedger``.
+
+Future live start is three phases and is not implemented. Phase 1 is one transaction that validates the durable execution, claims it for one worker, enforces single-execution authorization semantics, enforces the persisted breaker, acquires the HALF_OPEN single-probe lease when applicable, persists that claim, and commits. Phase 2 is the connector attempt and happens outside that database transaction. Only the worker holding the claim may call the connector. Phase 3 is a later transaction that records outcome and trace facts, updates breaker state, releases the execution and half-open leases, and reconciles authorization state. The exact authorization-consumption point stays open for the next live-start slice. This is at-most-one active claim plus recoverable state. It is not an exactly-once external HTTP guarantee. Connector HTTP is not inside one database transaction. Before real HTTP, HALF_OPEN must enforce a single-probe lease so multiple workers cannot use the one recovery opportunity. That lease is not implemented. Sprint 42 still owns alerts, paging, synthetic probes, and incident operations. Sprint 41 stays UNSTARTED. Sprint 38 stays IN PROGRESS. Live execution stays NOT OPERATIONAL.
 
 ## Objective
 

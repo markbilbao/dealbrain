@@ -1078,3 +1078,17 @@ This addendum does **not** rewrite earlier snapshots. The 2026-09-26 scripted-br
 | ``/ready`` | Remains independent of merchant availability. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+
+## 2026-09-27 Sprint 38 durable authorized-execution addendum
+
+This addendum does **not** rewrite earlier snapshots. The reliability-state row that deferred durable execution records remains the record of that slice. It does **not** complete Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 | IN PROGRESS. Not COMPLETE / CLOSED. Live execution status is separately NOT OPERATIONAL. |
+| Authorized execution | Durable preparation on ``operational_entities`` / ``research.authorized_executions``. State entered is ``prepared_unavailable``. No new migration. The in-memory ledger is a test double. Production preparation uses the repository. |
+| Authorization | Stays ``authorized_pending_execution``. Durable existence does not consume it. |
+| Trace / HTTP | Authoritative trace stays empty. No source checked. No connector. No Shopify call. |
+| Future boundary | Live start is three phases: a transactional claim, a connector attempt outside that transaction, then a transactional outcome record. Connector HTTP is not inside one database transaction. The consumption point stays open. HALF_OPEN still needs a single-probe lease before HTTP. |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
+| Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
