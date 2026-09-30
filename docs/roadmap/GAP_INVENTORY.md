@@ -1149,3 +1149,24 @@ This addendum does **not** rewrite earlier snapshots. It records the closure-rea
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Sprint 42 remains later operations work |
 | Next Sprint 38 task | One bounded engineering slice: positive composition, then validated outcome to evidence to canonical Results, with prior-decision preservation. No Shopify call. Flags stay closed. Then repeat the audit. Sprint 39 and Sprint 40 may run in parallel |
 | Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |
+
+## 2026-09-30 Sprint 38 B1/B2 engineering addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the bounded engineering slice for confirmed-research composition and canonical Results. It does **not** complete or close Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 closure | IN PROGRESS. Not COMPLETE / CLOSED. |
+| Audit verdict | SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 |
+| `SPRINT_38_ENGINEERING_STATUS` | ENGINEERING COMPLETE |
+| Live execution | NOT OPERATIONAL |
+| Class B engineering blockers | 0. B1 composition and B2 evidence-to-canonical-Results are implemented |
+| B1 | `ConfirmedResearchExecutionService` continues a prepared authorization through the live-start claim and the Shopify adapter when gates are open. Current production gates stop before the claim |
+| B2 | `research.execution_evidence` on existing `operational_entities`. No new SQL table. Evidence ids are `research-exec-evidence:{digest}`. `normalized_offer_digests` stay digests |
+| Canonical Results | Existing `CanonicalDecisionSnapshot` only. Same `decision_id`, server-assigned `context_version + 1`. PiqScore and Recommendation are copied. Outside-set evidence is `canonical_reevaluation_required`. Ambiguous variants preserve the prior decision |
+| Fixture separation | Fake transport evidence is `test_fixture=True` and `SourceMode.FIXTURE`. Production integration rejects it. It cannot activate the PH market or become launch evidence |
+| Production composition | Structurally wired. The permanent `production_execution_not_wired` fallback was removed. Current gates still refuse before transport |
+| Real Shopify validation | Blocked on Sprint 41 production profile plus routing and operational eligibility. Real calls stay 0 |
+| Routing / provider / public markets | Routing 0. Provider DISABLED. Public certified shopping markets 0 |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Sprint 42 remains later operations work |
+| Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |

@@ -1,12 +1,14 @@
 # Sprint 38 closure-readiness audit — 2026-09-30
 
-**Audit verdict:** SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN
+**Audit verdict:** SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41
 
 **Sprint closure status:** IN PROGRESS. Not COMPLETE / CLOSED.
 
-**Engineering status:** IN PROGRESS. `SPRINT_38_ENGINEERING_STATUS` is `IN PROGRESS`.
+**Engineering status:** ENGINEERING COMPLETE. `SPRINT_38_ENGINEERING_STATUS` is `ENGINEERING COMPLETE`.
 
-**Correction before merge:** The first draft of this audit, on `7b8b0421daeb2a5ea7869f28ef046459c9727c00`, called engineering complete and set Class B count to 0. That conclusion is withdrawn. The shopper call graph stops at `prepare_confirmed_research` / `prepared_unavailable`. It does not call `LiveStartClaimService` or `ShopifyCatalogExecutionService`. `execute_production_shopify_catalog` still discards the supplied transport and returns `production_execution_not_wired` even when the other block reasons would be empty. Sprint 41 lists "Domain engine changes" as an explicit non-goal, so that missing application and domain composition is Sprint 38 engineering.
+**Current truth after the B1/B2 slice:** Positive confirmed-research composition and durable execution evidence with canonical Results versioning are implemented. `ConfirmedResearchExecutionService` continues a prepared authorization through `LiveStartClaimService` and `ShopifyCatalogExecutionService` when every injected gate is open. Current production gates are closed, so a shopper confirmation still stops before a claim and before transport. The permanent `production_execution_not_wired` fallback was removed. `execute_production_shopify_catalog` refuses before transport while any gate is closed, and it can continue only when those gates are open and a server-owned continuation is supplied. Durable normalized evidence lives in `research.execution_evidence` on the existing `operational_entities` table. No database migration was added. `normalized_offer_digests` stay digests. A successful non-fixture production observation can append the next immutable `CanonicalDecisionSnapshot` for the same decision and owner. PiqScore and Recommendation snapshots are copied. A product outside the evaluated set, or a variant that does not map exactly, returns `canonical_reevaluation_required` or `ambiguous_variant` and preserves the prior decision. Fake transport evidence is `test_fixture=True` and cannot become a shopper-visible canonical live decision. Real Shopify validation remains blocked on Sprint 41.
+
+**Superseded pre-slice reading:** SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN. That reading recorded Class B count 2 before this slice. The first draft of this audit, on `7b8b0421daeb2a5ea7869f28ef046459c9727c00`, called engineering complete before the composition existed. That early conclusion was withdrawn, and this slice is the implementation that makes the engineering contract true. Sprint 41 lists "Domain engine changes" as an explicit non-goal. Engineering implementation did not need to wait for Sprint 41. Closure validation still does.
 
 **This audit does not close Sprint 38.** It reconciles two requirement eras in the sprint document. The 2026-09-26 PH-only scope, the Sprint 32 and Sprint 37 close records, and the Sprint 41 / 42 / 44 / 45 definitions supersede the original Sprint 38 acceptance template where they conflict on multi-connector chaos, probes, and paging. They do not remove the current contract that confirmed research uses the certified path and that completed research returns a canonical updated Results snapshot. The original template is retained in the sprint document and labeled historical for the superseded sentences only.
 
@@ -22,7 +24,7 @@ No Shopify call was made. No flag was enabled. No deploy was performed. Sprint 3
 
 | Meaning | Current value | What would make it true |
 |---------|---------------|-------------------------|
-| ENGINEERING COMPLETE | No | Positive shopper composition and validated-outcome-to-canonical-Results plumbing are still missing |
+| ENGINEERING COMPLETE | Yes. `SPRINT_38_ENGINEERING_STATUS` is `ENGINEERING COMPLETE` | B1 composition and B2 evidence-to-canonical-Results plumbing are implemented. This is not sprint closure |
 | SPRINT COMPLETE / CLOSED | No | Every current Sprint 38-owned acceptance criterion is satisfied, including the real validation that this audit leaves blocked |
 | LIVE OPERATIONAL | No. `LIVE_RESEARCH_EXECUTION_OPERATIONAL` is False | A real certified connector attempt is permitted and has run under the production gates |
 | PRODUCTION DEPLOYED | No | Sprint 41 production environment, deploy/rollback evidence, and the production UCP profile |
@@ -42,12 +44,12 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | F | Not applicable to the current one-connector PH beta; preserved as future multi-connector scope |
 | G | Historical or superseded wording, retained as history and labeled historical |
 
-**Class B count: 2.** Both items can be engineered behind the existing closed gates. This audit does not implement them.
+**Class B count: 0.** B1 and B2 are implemented. This audit does not close Sprint 38.
 
-| Id | Requirement | Why it is Sprint 38 |
-|----|-------------|---------------------|
-| B1 | Positive production shopper execution composition | A confirmed request must be able to continue from durable preparation to the live-start claim, authorization consumption, and the Shopify adapter when every production gate is true. Today the chain stops earlier. |
-| B2 | Successful live outcome → durable evidence reference → canonical updated Results | The adapter stores `normalized_offer_digests` and leaves `evidence_ids` empty. No resolvable evidence record is written, and no canonical updated Results snapshot is produced. The shopper path does not consume a successful outcome. |
+| Id | Requirement | Status |
+|----|-------------|--------|
+| B1 | Positive production shopper execution composition | Implemented. `ShoppingAssistantService` confirms through `ProposeResearchService`, which prepares the trusted plan and delegates the positive path to `ConfirmedResearchExecutionService`. Current production gates stop that path before `LiveStartClaimService`. An injected open policy can reach the claim, consume the authorization, and call the Shopify adapter with a fake transport. |
+| B2 | Successful live outcome → durable evidence reference → canonical updated Results | Implemented for a repository-verified non-fixture production observation. Evidence ids resolve in `research.execution_evidence`. The next canonical context version is server-assigned and append-only. Fixture and synthetic adapter output cannot pass the production live evidence gate. |
 
 ---
 
@@ -64,7 +66,7 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | `LIVE_RESEARCH_EXECUTION_OPERATIONAL` | False |
 | `DESTINATION_REEVALUATION_IMPLEMENTED` | False |
 | `SPRINT_38_STATUS` | IN PROGRESS |
-| `SPRINT_38_ENGINEERING_STATUS` | IN PROGRESS |
+| `SPRINT_38_ENGINEERING_STATUS` | ENGINEERING COMPLETE |
 | `SPRINT_38_LIVE_EXECUTION_STATUS` | NOT OPERATIONAL |
 | Sprint 41 | UNSTARTED |
 | Real Shopify calls in the adapter | 0 |
@@ -98,7 +100,7 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | Health facts stay distinct: certified, operationally available, healthy, merchant availability, live | `ResearchProviderHealth` | Sprint 38 | A | Satisfied | Does not block engineering completion | Healthy still requires a recorded successful attempt. Live stays false |
 | Fixture and synthetic paths are not labeled live | Adapter rejects `observation_kind == live` and `SourceMode.LIVE` for fake success | Sprint 38 | A | Satisfied | Does not block engineering completion | Sprint 45 release check remains E |
 | Query-time Shopify policy: no persistent cache and no persistent product index | `SHOPIFY_PERSISTENT_CACHE_ALLOWED` is False; `admit_shopify_catalog_cache` refuses | Sprint 38, under the Sprint 32 certified policy | A | Satisfied by explicit refusal | Does not block engineering completion | Do not add a cache to satisfy the old stale-cache sentence |
-| Fail-closed production composition refusal | `execute_production_shopify_catalog` discards the transport. Empty gate reasons still return `production_execution_not_wired` | Sprint 38 | A for the refusal. The missing positive branch is B1 | Refusal exists. Positive branch does not | B1 blocks engineering completion | Real HTTP execution remains C |
+| Fail-closed production composition refusal | `execute_production_shopify_catalog` refuses before transport while any gate is closed. The permanent `production_execution_not_wired` fallback was removed. An open gate list can call a server-owned continuation | Sprint 38 | A | Satisfied as application composition. Current repository gates still refuse | Does not block engineering completion | Real HTTP execution remains C |
 | Real Shopify owner validation | Not run. Real calls stay 0. Sprint 32 harness was not rerun | Sprint 38 validation, blocked | C | Pending | Blocks COMPLETE / CLOSED and LIVE OPERATIONAL. Does not remove the Class B engineering work | Requires routing, operational eligibility, and the Sprint 41 production UCP profile together. Also requires the explicit live switch. None of those are true |
 | B1. Positive production shopper execution composition | `ShoppingAssistantService` → `ProposeResearchService` → `prepare_confirmed_research` → `prepared_unavailable`. No call to `LiveStartClaimService` or `ShopifyCatalogExecutionService`. Adapter `execute` requires `BoundedFakeTransportPermit` | Sprint 38 engineering. Sprint 41 supplies environment, profile, and deployment only | B | Not implemented. Not implemented in this audit | Blocks engineering completion. Does not require a Shopify call to build or to test behind closed gates | Real execution of that branch, once the gates are true, is C |
 | Deployed operational kill-switch drill | Engineering test exists on the real descriptor in memory and in repository permission checks. No deployed drill | Sprint 41 for the deployed drill. Sprint 38 engineering behavior is A | C | Pending as deployed evidence | Blocks launch operations evidence. Does not block engineering completion | Sprint 41 production deploy. Code tests are not this drill |
@@ -145,7 +147,7 @@ Deployment and owner HTTPS validation of the production profile belong to Sprint
 
 A real Shopify owner validation is Class C. It stays pending, and this audit does not call Shopify. It cannot run now: routing is 0, the provider is DISABLED, the production profile is undeployed, and live mode is disabled.
 
-That pending validation does not make the missing shopper composition Class C. Sprint 38 engineering is not complete while B1 and B2 remain. The sprint stays IN PROGRESS and is not COMPLETE / CLOSED. Real execution validation remains blocked until Sprint 41. The engineering implementation of the positive branch does not wait for Sprint 41.
+That pending validation does not reopen B1 or B2. Sprint 38 engineering is complete for the application and domain composition. The sprint stays IN PROGRESS and is not COMPLETE / CLOSED. Real execution validation remains blocked until Sprint 41. The engineering implementation of the positive branch did not wait for Sprint 41.
 
 ### 5. Routing and provider activation
 
@@ -180,26 +182,26 @@ Connected today:
 5. The shopper answer says execution is not available and no source was checked.
 6. The authoritative trace stays empty. The authorization stays `authorized_pending_execution`.
 
-Implemented, and not composed into that shopper request:
+Composed behind closed production gates:
 
-7. Live-start claim.
+7. Live-start claim, reached only when the injected runtime policy has no block reason.
 8. Authorization consumption, which happens only inside a successful claim.
 9. Shopify execution adapter, which runs only with `BoundedFakeTransportPermit` and an injected transport.
 10. Authoritative trace and durable outcome on that adapter path.
-11. `execute_production_shopify_catalog`, which always refuses and never calls the transport.
+11. `execute_production_shopify_catalog`, which refuses before transport while any production gate is closed.
+12. Durable evidence records in `research.execution_evidence`.
+13. Canonical Results integration that appends the next immutable snapshot when the reloaded execution is a validated non-fixture success.
 
-Not connected:
+Still not connected to a real shopper result:
 
-12. Evidence-repository records for a validated observation.
-13. A new canonical Results snapshot.
 14. Destination re-evaluation against a live executor.
 15. Production UCP profile, routing, provider operational eligibility, public market activation, and the live switch.
 
-When every production gate is genuinely true, a confirmed Ask PiqSavi research request must be able to continue:
+When every production gate is genuinely true, a confirmed Ask PiqSavi research request can continue:
 
-proposal → explicit confirmation → authorization → trusted Sprint 31 plan → durable preparation → live-start claim → authorization consumption → Shopify execution adapter → durable trace and outcome.
+proposal → explicit confirmation → authorization → trusted Sprint 31 plan → durable preparation → live-start claim → authorization consumption → Shopify execution adapter → durable trace and outcome → resolvable evidence → canonical updated Results.
 
-Today that chain stops after durable preparation. The missing continuation from step 6 to steps 7–10 is B1. The missing continuation from a validated successful outcome to a durable evidence reference and a canonical updated Results snapshot is B2. Destination re-evaluation stays fail-closed. The production profile, routing, provider activation, public market, and live switch stay Class C or E.
+Current production gates stop that chain before the claim. B1 and B2 are implemented. Destination re-evaluation stays fail-closed. The production profile, routing, provider activation, public market, and live switch stay Class C or E.
 
 Adapter implemented is not production composition wired.
 
@@ -207,7 +209,7 @@ Adapter implemented is not production composition wired.
 
 The ownership is split. Executable production composition is not wholly Class C.
 
-Sprint 38 engineering implements the positive application and domain composition behind the existing gates. It connects the shopper path to the live-start claim and the Shopify adapter only when those gates pass. That branch is fully testable without live HTTP. It does not enable the provider, routing, or live mode, and it does not deploy or call Shopify. `execute_production_shopify_catalog` currently discards the supplied transport and returns `production_execution_not_wired` even when the other block-reason list would be empty. Closing that positive branch is B1. This audit does not implement it.
+Sprint 38 engineering implements the positive application and domain composition behind the existing gates. It connects the shopper path to the live-start claim and the Shopify adapter only when those gates pass. That branch is fully testable without live HTTP. It does not enable the provider, routing, or live mode, and it does not deploy or call Shopify. `execute_production_shopify_catalog` refuses before transport while any current gate is closed. The permanent `production_execution_not_wired` fallback was removed. B1 is implemented. This audit does not close Sprint 38.
 
 Sprint 41 provides the real production environment, deploys the production UCP profile, and makes production validation possible. Sprint 41 lists "Domain engine changes" as a non-goal, so Sprint 41 cannot own this composition.
 
@@ -233,12 +235,12 @@ The old acceptance sentence is satisfied by the explicit no-cache / query-time p
 
 ## Class B review
 
-Class B count is 2. This audit does not implement either item.
+Class B count is 0. B1 and B2 are implemented. This audit does not close Sprint 38.
 
-| Id | Remaining Sprint 38 engineering | Why it can be finished without Sprint 41 |
-|----|---------------------------------|------------------------------------------|
-| B1 | Positive production shopper execution composition | The claim service and the adapter already exist. The shopper path stops at `prepare_confirmed_research`. Connecting them behind the closed gates does not require a live HTTP call |
-| B2 | Successful validated outcome → durable evidence reference → canonical updated Results | The adapter stores digests and leaves `evidence_ids` empty. Writing a resolvable evidence reference and a canonical updated snapshot, and preserving the prior decision on failure, partial, and `outcome_unknown`, is application work. Real evidence is not fabricated here |
+| Id | Sprint 38 engineering | Result |
+|----|-----------------------|--------|
+| B1 | Positive production shopper execution composition | Implemented. Closed production gates stop before the claim. An injected open policy traverses preparation, claim, authorization consumption, and the adapter |
+| B2 | Successful validated outcome → durable evidence reference → canonical updated Results | Implemented. Evidence ids resolve. The next canonical context version preserves PiqScore and Recommendation. Failure, timeout, normalization refusal, and `outcome_unknown` preserve the prior decision |
 
 These candidates stay outside Class B:
 
@@ -259,11 +261,9 @@ A later B1 or B2 implementation may use deterministic repository fixtures. Those
 
 ## Sequencing after this audit
 
-Do not treat Sprint 38 engineering as complete. Do not move on by claiming that it is already done.
+Sprint 38 engineering is complete. Sprint 38 closure is not. Real Shopify validation is still blocked on Sprint 41.
 
-Next primary Sprint 38 task: one final bounded engineering slice.
-
-Scope:
+The bounded engineering slice for B1 and B2 is implemented:
 
 1. Positive Ask PiqSavi → claim → adapter composition behind closed gates.
 2. Successful validated outcome → durable evidence reference → canonical updated Results integration.
@@ -271,12 +271,10 @@ Scope:
 4. No real Shopify call.
 5. Production flags remain closed.
 
-After that slice, repeat the Sprint 38 closure-readiness audit.
-
 | Sprint | Dependency that matters here | Recommendation |
 |--------|------------------------------|----------------|
-| 38 | B1 and B2 remain. Real Shopify validation still needs Sprint 41 | Do the bounded slice above, then repeat this audit. Leave the sprint IN PROGRESS until that later audit says otherwise |
-| 39 | Predecessors are Sprint 28 and Sprint 29. Parallel with Sprint 40 | Sprint 39 may still run in parallel. Do not justify it by calling Sprint 38 engineering complete. It must not become a disguised Sprint 38 implementation |
+| 38 | B1 and B2 are implemented. Real Shopify validation still needs Sprint 41 | Leave the sprint IN PROGRESS. Do not call it COMPLETE / CLOSED |
+| 39 | Predecessors are Sprint 28 and Sprint 29. Parallel with Sprint 40 | Sprint 39 may still run in parallel. It must not become a disguised Sprint 38 implementation |
 | 40 | Predecessors are Sprint 27, Sprint 28, and Sprint 29. Parallel with Sprint 39 | May run in parallel, as already documented |
 | 41 | Predecessor recommendation is Sprint 40. Non-goal: domain engine changes | Supplies the production environment, the production UCP profile, deployment, and the conditions for production validation. Does not own B1 or B2. Do not start Sprint 41 implementation in this audit |
 | 42 | Predecessor is Sprint 41 | Stays later. Owns probes, alerts, paging, and incident operations |
@@ -289,8 +287,8 @@ Do not enable routing, provider status, or the public PH market in order to manu
 ## Explicit non-claims
 
 - This audit does not mark Sprint 38 COMPLETE / CLOSED.
-- This audit does not call Sprint 38 engineering complete.
-- This audit does not implement B1 or B2.
+- This audit records Sprint 38 engineering complete and leaves closure validation blocked on Sprint 41.
+- This audit records B1 and B2 as implemented. Fake Shopify transport output must not become a shopper-visible canonical live decision.
 - This audit does not make live research operational.
 - This audit does not deploy production or the production UCP profile.
 - This audit does not start Sprint 41 or Sprint 42.
