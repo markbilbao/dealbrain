@@ -2,7 +2,8 @@
 
 A validated ResearchAuthorization may be planned against certified providers.
 Planning does not execute research, mutate a canonical decision, or claim that
-a source was checked. Live execution remains unimplemented (Sprint 38).
+a source was checked. An authoritative trace stays empty until a connector
+attempt records one. Live execution remains not operational.
 """
 
 from __future__ import annotations
@@ -677,40 +678,122 @@ class ResearchPlanningResult:
         }
 
 
+TraceAttemptStatus = Literal[
+    "not_attempted",
+    "succeeded",
+    "failed",
+    "timed_out",
+    "outcome_unknown",
+]
+
+
+def require_durable_evidence_reference(evidence_id: str) -> None:
+    """Reject blanks and normalized-offer digests.
+
+    A trace evidence id is a reference to a stored evidence record. A sha256
+    of normalized offer facts is not that record, and planning cannot invent one.
+    """
+
+    if not evidence_id or evidence_id != evidence_id.strip():
+        raise ValueError("evidence ids must be durable evidence references")
+    if len(evidence_id) == 64 and all(character in "0123456789abcdef" for character in evidence_id):
+        raise ValueError("normalized offer digests are not evidence ids")
+
+
 @dataclass(frozen=True, slots=True)
 class ResearchExecutionTraceStep:
-    """Sprint 38 skeleton. Sprint 31 must not fabricate attempts."""
+    """One authoritative attempt. Planning uses no steps at all.
+
+    ``freshness_checked_at`` is set only when a truthful freshness check
+    happened. A fake or synthetic transport must leave it empty. ``outcome_unknown``
+    means an external call may have happened and the durable result was lost.
+    It is not success and it is not a classified connector failure.
+
+    ``evidence_ids`` are references to stored evidence records. A successful
+    fake-transport step may record ``evaluated_offer_count`` with an empty
+    ``evidence_ids`` tuple. A normalized-offer digest is not an evidence id.
+    """
 
     plan_id: str
     provider_id: str
     requested_capability: ResearchCapability
     market: str | None = None
+    source: str | None = None
     attempted: bool = False
-    attempt_status: Literal["not_attempted"] = "not_attempted"
+    attempt_status: TraceAttemptStatus = "not_attempted"
     evidence_ids: tuple[str, ...] = ()
     started_at: datetime | None = None
     finished_at: datetime | None = None
     error_category: str | None = None
+    evaluated_offer_count: int = 0
     freshness_checked_at: datetime | None = None
 
     def __post_init__(self) -> None:
-        if self.attempted or self.attempt_status != "not_attempted":
-            raise ValueError("Sprint 31 must not fabricate provider attempts")
-        if self.evidence_ids:
-            raise ValueError("planned providers do not produce evidence")
-        if self.started_at is not None or self.finished_at is not None:
-            raise ValueError("unattempted steps cannot have execution timestamps")
+        if self.evaluated_offer_count < 0:
+            raise ValueError("evaluated offer count cannot be negative")
+        if not self.attempted:
+            if self.attempt_status != "not_attempted":
+                raise ValueError("an unattempted step cannot claim an attempt status")
+            if self.evidence_ids or self.started_at is not None or self.finished_at is not None:
+                raise ValueError("unattempted steps cannot have execution facts")
+            if self.evaluated_offer_count or self.freshness_checked_at is not None:
+                raise ValueError("unattempted steps cannot claim offers or freshness")
+            if self.error_category is not None or self.source is not None:
+                raise ValueError("unattempted steps cannot carry a source or error")
+            return
+        if self.attempt_status not in {"succeeded", "failed", "timed_out", "outcome_unknown"}:
+            raise ValueError("an attempted step needs a real attempt status")
+        if not self.source or self.market is None:
+            raise ValueError("an attempted step requires source and market")
+        if self.started_at is None or self.finished_at is None:
+            raise ValueError("an attempted step requires start and finish timestamps")
+        if self.started_at.tzinfo is None or self.finished_at.tzinfo is None:
+            raise ValueError("attempt timestamps must be timezone-aware")
+        if self.finished_at < self.started_at:
+            raise ValueError("attempt finish must not precede the start")
+        if self.attempt_status == "succeeded":
+            if self.evaluated_offer_count < 1 or self.error_category is not None:
+                raise ValueError("a succeeded step requires offers and no error category")
+            for evidence_id in self.evidence_ids:
+                require_durable_evidence_reference(evidence_id)
+        elif self.evaluated_offer_count or self.evidence_ids:
+            raise ValueError("a non-success step cannot invent evaluated offers")
+        elif not self.error_category:
+            raise ValueError("a non-success attempt requires an error category")
         if self.freshness_checked_at is not None:
-            raise ValueError("unattempted steps cannot claim freshness checks")
+            if self.freshness_checked_at.tzinfo is None:
+                raise ValueError("freshness_checked_at must be timezone-aware")
+            if self.attempt_status != "succeeded":
+                raise ValueError("freshness is recorded only for a succeeded attempt")
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "plan_id": self.plan_id,
+            "provider_id": self.provider_id,
+            "requested_capability": self.requested_capability.value,
+            "market": self.market,
+            "source": self.source,
+            "attempted": self.attempted,
+            "attempt_status": self.attempt_status,
+            "evidence_ids": list(self.evidence_ids),
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "finished_at": self.finished_at.isoformat() if self.finished_at else None,
+            "error_category": self.error_category,
+            "evaluated_offer_count": self.evaluated_offer_count,
+            "freshness_checked_at": (
+                self.freshness_checked_at.isoformat() if self.freshness_checked_at else None
+            ),
+        }
 
 
 @dataclass(frozen=True, slots=True)
 class ResearchExecutionTrace:
-    """Authoritative production trace. Empty until a live attempt exists.
+    """Authoritative production trace.
 
-    Sprint 38 preparation returns this empty trace. A scripted execution trace
-    cannot be copied here while it claims an attempt. Populating steps remains
-    forbidden until live execution is operational.
+    Preparation and planning use :func:`empty_execution_trace`. A scripted
+    chaos-test trace is not copied here. A populated trace exists only after
+    a connector attempt. Populating one does not make live execution
+    operational and does not label a fake transport as live.
     """
 
     plan_id: str
@@ -718,19 +801,55 @@ class ResearchExecutionTrace:
     attempted_sources: tuple[str, ...] = ()
     succeeded_sources: tuple[str, ...] = ()
     failed_sources: tuple[str, ...] = ()
+    timed_out_sources: tuple[str, ...] = ()
+    evaluated_offer_count: int = 0
 
     def __post_init__(self) -> None:
-        if self.steps or self.attempted_sources or self.succeeded_sources or self.failed_sources:
-            raise ValueError("Sprint 31 planning must not populate an execution trace")
+        if not self.steps:
+            if (
+                self.attempted_sources
+                or self.succeeded_sources
+                or self.failed_sources
+                or self.timed_out_sources
+                or self.evaluated_offer_count
+            ):
+                raise ValueError("an empty execution trace cannot claim attempts")
+            return
+        if any(not step.attempted for step in self.steps):
+            raise ValueError("planning must not put an unattempted step on an execution trace")
+        if any(step.plan_id != self.plan_id for step in self.steps):
+            raise ValueError("every trace step must use the trace plan_id")
+        attempted = tuple(step.source for step in self.steps if step.source)
+        succeeded = tuple(
+            step.source for step in self.steps if step.attempt_status == "succeeded" and step.source
+        )
+        failed = tuple(
+            step.source for step in self.steps if step.attempt_status == "failed" and step.source
+        )
+        timed_out = tuple(
+            step.source for step in self.steps if step.attempt_status == "timed_out" and step.source
+        )
+        if attempted != self.attempted_sources:
+            raise ValueError("attempted_sources must match the attempted steps")
+        if succeeded != self.succeeded_sources:
+            raise ValueError("succeeded_sources must match succeeded steps")
+        if failed != self.failed_sources:
+            raise ValueError("failed_sources must match failed steps")
+        if timed_out != self.timed_out_sources:
+            raise ValueError("timed_out_sources must match timed-out steps")
+        if sum(step.evaluated_offer_count for step in self.steps) != self.evaluated_offer_count:
+            raise ValueError("evaluated_offer_count must match the steps")
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "plan_id": self.plan_id,
-            "steps": [],
-            "attempted_sources": [],
-            "succeeded_sources": [],
-            "failed_sources": [],
-            "attempted": False,
+            "steps": [step.to_dict() for step in self.steps],
+            "attempted_sources": list(self.attempted_sources),
+            "succeeded_sources": list(self.succeeded_sources),
+            "failed_sources": list(self.failed_sources),
+            "timed_out_sources": list(self.timed_out_sources),
+            "evaluated_offer_count": self.evaluated_offer_count,
+            "attempted": bool(self.attempted_sources),
         }
 
 

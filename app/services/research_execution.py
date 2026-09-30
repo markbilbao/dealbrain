@@ -127,8 +127,15 @@ class ResearchExecutionPreparation:
             raise ValueError("preparation must preserve the prior decision")
         if self.prior_decision_id and self.prior_decision_id != self.decision_id:
             raise ValueError("preparation must not replace the prior decision")
-        if self.trace.steps or self.trace.attempted_sources or self.trace.succeeded_sources:
-            raise ValueError("the authoritative trace stays empty until live execution")
+        if (
+            self.trace.steps
+            or self.trace.attempted_sources
+            or self.trace.succeeded_sources
+            or self.trace.failed_sources
+            or self.trace.timed_out_sources
+            or self.trace.evaluated_offer_count
+        ):
+            raise ValueError("preparation must not populate an authoritative trace")
 
     def to_public_dict(self) -> dict[str, object]:
         """Shopper-safe state. No principal id, session secret, or scope digest."""
