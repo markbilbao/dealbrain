@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any
 
 from app.domain.entities.shopping_assistant import (
@@ -94,6 +95,31 @@ class ConversationRepository(ABC):
         decision_id: str,
     ) -> ConversationContext | None:
         """Return the latest active conversation bound to this owner and decision."""
+
+    @abstractmethod
+    def consume_research_authorization(
+        self,
+        conversation_id: str,
+        *,
+        owner: ConversationOwner,
+        authorization_id: str,
+        authorization_version: int,
+        decision_id: str,
+        canonical_context_version: int,
+        proposal_id: str,
+        proposal_version: int,
+        scope_digest: str,
+        idempotency_key: str,
+        expected_version: int,
+        now: datetime,
+    ) -> ConversationContext:
+        """Consume one exact pending authorization and compare-and-swap the row.
+
+        Owner binding, conversation membership, stable decision context, and
+        ``persistence_version`` compare-and-swap stay in ``save``. This does
+        not consume a different authorization and does not increment
+        ``authorization_version``.
+        """
 
 
 class ShoppingExplanationProvider(ABC):

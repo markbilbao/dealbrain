@@ -25,6 +25,7 @@ from app.domain.exceptions import (
     ConversationVersionConflictError,
 )
 from app.domain.interfaces.shopping_assistant_repository import ConversationRepository
+from app.services.research_authorization import consume_exact_research_authorization
 
 DEFAULT_TTL_SECONDS = 30 * 60
 MAX_TURNS = 12
@@ -258,6 +259,56 @@ class InMemoryConversationRepository(ConversationRepository):
             for key in expired:
                 del self._store[key]
             return len(expired)
+
+    def consume_research_authorization(
+        self,
+        conversation_id: str,
+        *,
+        owner: ConversationOwner,
+        authorization_id: str,
+        authorization_version: int,
+        decision_id: str,
+        canonical_context_version: int,
+        proposal_id: str,
+        proposal_version: int,
+        scope_digest: str,
+        idempotency_key: str,
+        expected_version: int,
+        now: datetime,
+    ) -> ConversationContext:
+        with self._lock:
+            context = self.get(conversation_id)
+            if context is None:
+                from app.services.research_authorization import AuthorizationConsumptionConflict
+
+                raise AuthorizationConsumptionConflict(conversation_id, "conversation_missing")
+            updated = consume_exact_research_authorization(
+                context,
+                owner=owner,
+                authorization_id=authorization_id,
+                authorization_version=authorization_version,
+                decision_id=decision_id,
+                canonical_context_version=canonical_context_version,
+                proposal_id=proposal_id,
+                proposal_version=proposal_version,
+                scope_digest=scope_digest,
+                idempotency_key=idempotency_key,
+                now=now,
+            )
+            return self.save(updated, expected_version=expected_version)
+
+    def restore_row(
+        self,
+        conversation_id: str,
+        context: ConversationContext | None,
+    ) -> None:
+        """Put back the row from before this transaction's write. Test double only."""
+
+        with self._lock:
+            if context is None:
+                self._store.pop(conversation_id, None)
+            else:
+                self._store[conversation_id] = context
 
     def find_bound_for_owner(
         self,
