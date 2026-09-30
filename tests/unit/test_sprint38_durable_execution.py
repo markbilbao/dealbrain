@@ -450,11 +450,45 @@ def test_stored_record_omits_sensitive_authority_material(sqlite_factory) -> Non
         "claimed_at",
         "claim_expires_at",
         "claim_digest",
+        "attempt_started_at",
+        "finished_at",
+        "attempted_provider_id",
+        "attempted_capability",
+        "attempted_market",
+        "attempted_source",
+        "outcome",
+        "error_category",
+        "evaluated_offer_count",
+        "normalized_offer_count",
+        "returned_currencies",
+        "normalized_amount_minors",
+        "evidence_ids",
+        "observation_kind",
+        "request_digest",
+        "trace",
+        "raw_response_persisted",
     }
     assert fields["state"] == "prepared_unavailable"
     assert fields["claimed_at"] is None
     assert fields["claim_expires_at"] is None
     assert fields["claim_digest"] is None
+    assert fields["attempt_started_at"] is None
+    assert fields["finished_at"] is None
+    assert fields["attempted_provider_id"] is None
+    assert fields["attempted_capability"] is None
+    assert fields["attempted_market"] is None
+    assert fields["attempted_source"] is None
+    assert fields["outcome"] is None
+    assert fields["error_category"] is None
+    assert fields["evaluated_offer_count"] == 0
+    assert fields["normalized_offer_count"] == 0
+    assert fields["returned_currencies"] == {"__type__": "tuple", "items": []}
+    assert fields["normalized_amount_minors"] == {"__type__": "tuple", "items": []}
+    assert fields["evidence_ids"] == {"__type__": "tuple", "items": []}
+    assert fields["observation_kind"] is None
+    assert fields["request_digest"] is None
+    assert fields["trace"] is None
+    assert fields["raw_response_persisted"] is False
 
 
 def test_production_composition_uses_the_durable_repository() -> None:

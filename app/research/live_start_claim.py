@@ -609,6 +609,18 @@ class LiveStartClaimService:
                 execution_id=execution.execution_id,
                 state=execution.state,
             )
+        if execution.state == "running":
+            return _refused(
+                "ambiguous_outcome_requires_reconciliation",
+                execution_id=execution.execution_id,
+                state=execution.state,
+            )
+        if execution.state in {"completed", "failed", "outcome_unknown"}:
+            return _refused(
+                "execution_terminal",
+                execution_id=execution.execution_id,
+                state=execution.state,
+            )
         if _claim_is_active(execution, now=request.now):
             return _refused(
                 "execution_already_claimed",
@@ -645,6 +657,19 @@ class LiveStartClaimService:
         except ExecutionAlreadyClaimed:
             return _refused(
                 "execution_already_claimed",
+                execution_id=execution.execution_id,
+                state=execution.state,
+            )
+        except ValueError as exc:
+            reason = str(exc)
+            if reason not in {
+                "ambiguous_outcome_requires_reconciliation",
+                "execution_terminal",
+                "execution state cannot be claimed",
+            }:
+                raise
+            return _refused(
+                reason,
                 execution_id=execution.execution_id,
                 state=execution.state,
             )
@@ -825,6 +850,12 @@ def apply_execution_claim(
         raise ValueError("now must be timezone-aware")
     if lease <= timedelta(0):
         raise ValueError("execution claim lease must be bounded and positive")
+    if current.state == "running":
+        raise ValueError("ambiguous_outcome_requires_reconciliation")
+    if current.state in {"completed", "failed", "outcome_unknown"}:
+        raise ValueError("execution_terminal")
+    if current.state not in {"prepared_unavailable", "claimed_for_attempt"}:
+        raise ValueError("execution state cannot be claimed")
     if _claim_is_active(current, now=now):
         raise ExecutionAlreadyClaimed(current.execution_id)
     return replace(
@@ -1131,10 +1162,13 @@ def _refused(
 
 @dataclass(frozen=True, slots=True)
 class ShopifyAnonymousRequestContract:
-    """Validated Anonymous catalog path for the next slice. This is not an HTTP client.
+    """Validated Anonymous catalog path. This record is not an HTTP client.
 
-    Production must use the PiqSavi-owned production UCP profile. That profile
-    is undeployed and belongs to Sprint 41. This record does not call Shopify.
+    The Shopify execution adapter lives in
+    ``shopify_global_catalog_execution``. Production composition does not call
+    it. ``http_implemented`` stays false here so this contract object cannot
+    be mistaken for a live client. Production must use the PiqSavi-owned
+    production UCP profile. That profile is undeployed and belongs to Sprint 41.
     """
 
     endpoint: str
