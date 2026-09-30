@@ -134,3 +134,13 @@ that transaction, then a later outcome transaction. Connector HTTP is not
 inside one database transaction. The HALF_OPEN single-probe lease remains
 required before a connector attempt. Sprint 38 stays IN PROGRESS. Live
 execution stays NOT OPERATIONAL.
+
+Safe live-start claim (2026-09-30) reserves one future connector attempt as
+``claimed_for_attempt`` and, when the persisted breaker is HALF_OPEN, one
+provider/market probe lease. Both use the existing ``operational_entities``
+rows and compare-and-swap. No new table. The raw claim capability is not
+stored. A claim is not a source attempt, not provider health evidence, and
+not authorization consumption. Current Shopify production state cannot
+acquire either reservation. ``SHOPPING_RESEARCH_EXECUTION_MODE`` stays
+disabled. Production deployment remains Sprint 41. Alerts, paging, and
+synthetic probes remain Sprint 42.

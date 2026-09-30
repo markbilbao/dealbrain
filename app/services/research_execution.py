@@ -77,8 +77,10 @@ PreparationOutcome = Literal[
     "caller_target_rejected",
 ]
 
-# Preparation is not the consumption boundary. ``mark_research_authorization_consumed``
-# runs only when one logical live connector attempt starts.
+# Preparation is not the consumption boundary. A durable live-start claim is not
+# that boundary either. ``mark_research_authorization_consumed`` runs only when
+# one logical live connector attempt starts. See
+# ``app.research.live_start_claim.AUTHORIZATION_CONSUMPTION_BOUNDARY``.
 AUTHORIZATION_CONSUMPTION_ON_PREPARATION = False
 AUTHORITATIVE_TRACE_MODEL = "app.domain.entities.research_execution.ResearchExecutionTrace"
 

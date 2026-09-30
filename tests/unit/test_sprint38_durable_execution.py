@@ -21,6 +21,7 @@ from app.infrastructure.persistence.stores import RESEARCH_AUTHORIZED_EXECUTIONS
 from app.main import create_app
 from app.market.support import production_certified_shopping_markets
 from app.research.authorized_execution_repository import (
+    DURABLE_LIVE_START_CLAIM_IMPLEMENTED,
     EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION,
     FUTURE_LIVE_START_CLAIM,
     FUTURE_LIVE_START_PHASES,
@@ -446,7 +447,14 @@ def test_stored_record_omits_sensitive_authority_material(sqlite_factory) -> Non
         "updated_at",
         "revision",
         "state",
+        "claimed_at",
+        "claim_expires_at",
+        "claim_digest",
     }
+    assert fields["state"] == "prepared_unavailable"
+    assert fields["claimed_at"] is None
+    assert fields["claim_expires_at"] is None
+    assert fields["claim_digest"] is None
 
 
 def test_production_composition_uses_the_durable_repository() -> None:
@@ -568,7 +576,8 @@ def test_status_flags_and_shopify_stay_closed() -> None:
     assert LIVE_RESEARCH_EXECUTION_OPERATIONAL is False
     assert DESTINATION_REEVALUATION_IMPLEMENTED is False
     assert SPRINT_41_STATUS == "UNSTARTED"
-    assert HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED is False
+    assert HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED is True
+    assert DURABLE_LIVE_START_CLAIM_IMPLEMENTED is True
     assert EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION is False
     assert FUTURE_LIVE_START_PHASES == (
         "transactional_live_start_claim",

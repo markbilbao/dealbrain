@@ -7,31 +7,33 @@ already a one-way digest of the server authorization key. The raw key, raw
 principal id, session id, browser confirmation token, secrets, and Shopify
 payloads are not stored.
 
-The only durable state entered in this slice is ``prepared_unavailable``.
-Creating the row does not consume the authorization and does not start a
-connector. A new repository, a new service, and a new database session load
-the same execution.
+Preparation enters ``prepared_unavailable``. A later live-start claim may
+enter ``claimed_for_attempt``. Neither state consumes the authorization or
+starts a connector. A new repository, a new service, and a new database
+session load the same execution.
 
-Future live start is not implemented here. It is three phases, and connector
-HTTP is not inside a database transaction:
+Live start is three phases, and connector HTTP is not inside a database
+transaction:
 
-Phase 1, one transaction: validate the durable execution, claim it for one
-worker, enforce single-execution authorization semantics, enforce the
-persisted breaker, acquire the HALF_OPEN single-probe lease when applicable,
-persist the live-start claim, and commit.
+Phase 1, one transaction, implemented by ``app.research.live_start_claim``:
+validate the durable execution, claim it for one worker, keep the plan and
+authorization pins, enforce the persisted breaker, acquire the HALF_OPEN
+single-probe lease when applicable, persist that claim, and commit. The
+claim state is ``claimed_for_attempt``. It is not running, because no
+connector has started.
 
-Phase 2, outside that transaction: only the worker holding the claim may
-invoke the connector.
+Phase 2, outside that transaction, is not implemented: only the worker
+holding the claim may invoke the connector.
 
-Phase 3, a later transaction: persist the outcome and trace facts, update
-breaker state, release the execution and half-open leases, and reconcile
-authorization state. The exact consumption point stays open for the next
-live-start slice. This design is at-most-one active claim plus recoverable
-state. It is not an exactly-once external HTTP guarantee.
-
-Before real HTTP is enabled, HALF_OPEN must enforce one single-probe lease
-so multiple workers cannot use the one recovery opportunity at once.
-``HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED`` stays false.
+Phase 3, a later transaction, is not implemented: persist the outcome and
+trace facts, update breaker state, release the execution and half-open
+leases, and reconcile authorization state. ``mark_research_authorization_consumed``
+is still not called here. ResearchAuthorization lives inside
+``shopping_assistant.conversations`` and ``mark_research_authorization_consumed``
+only returns an in-memory replacement. That write is not in this claim
+transaction. See ``AUTHORIZATION_CONSUMPTION_BOUNDARY`` in
+``live_start_claim``. This design is at-most-one active claimant at a time,
+plus expiry and reclaim. It is not an exactly-once external HTTP guarantee.
 
 Database unavailability at this boundary becomes
 ``PersistenceUnavailableError`` via ``translate_db_error``. Preparation then
@@ -60,8 +62,11 @@ from app.services.research_execution import (
     authorized_execution_id,
 )
 
-# Recorded requirement only. The lease is not implemented in this slice.
-HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED = False
+AuthorizedExecutionState = Literal["prepared_unavailable", "claimed_for_attempt"]
+
+# Repository-backed lease and execution claim. Not live execution.
+HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED = True
+DURABLE_LIVE_START_CLAIM_IMPLEMENTED = True
 EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION = False
 FUTURE_LIVE_START_PHASES = (
     "transactional_live_start_claim",
@@ -101,7 +106,10 @@ class DurableAuthorizedExecution:
     created_at: datetime
     updated_at: datetime
     revision: int
-    state: Literal["prepared_unavailable"] = "prepared_unavailable"
+    state: AuthorizedExecutionState = "prepared_unavailable"
+    claimed_at: datetime | None = None
+    claim_expires_at: datetime | None = None
+    claim_digest: str | None = None
 
     def __post_init__(self) -> None:
         if not self.execution_id.startswith("research-exec:"):
@@ -114,10 +122,11 @@ class DurableAuthorizedExecution:
             raise ValueError("decision_id and plan_id are required")
         if self.revision < 1:
             raise ValueError("revision must be at least 1")
-        if self.state != "prepared_unavailable":
-            raise ValueError("this slice cannot mark an execution running or completed")
+        if self.state not in {"prepared_unavailable", "claimed_for_attempt"}:
+            raise ValueError("execution state must be prepared or claimed for a future attempt")
         if self.created_at.tzinfo is None or self.updated_at.tzinfo is None:
             raise ValueError("execution timestamps must be timezone-aware")
+        _validate_claim_fields(self)
 
 
 def _translate_store_error(exc: Exception) -> NoReturn:
@@ -150,6 +159,40 @@ def _require_same_plan(
     if existing.plan_id != plan_id:
         raise AuthorizationPlanConflict(existing)
     return existing
+
+
+def _require_same_pins(
+    current: DurableAuthorizedExecution,
+    record: DurableAuthorizedExecution,
+) -> None:
+    if record.plan_id != current.plan_id:
+        raise AuthorizationPlanConflict(current)
+    if (
+        record.decision_id != current.decision_id
+        or record.authorization_id != current.authorization_id
+        or record.authorization_version != current.authorization_version
+        or record.execution_id != current.execution_id
+    ):
+        raise ValueError("authorization identity does not match the stored execution")
+
+
+def _validate_claim_fields(record: DurableAuthorizedExecution) -> None:
+    claimed_at = record.claimed_at
+    expires_at = record.claim_expires_at
+    digest = record.claim_digest
+    present = claimed_at is not None or expires_at is not None or digest is not None
+    if record.state == "prepared_unavailable":
+        if present:
+            raise ValueError("a prepared execution cannot carry a claim")
+        return
+    if claimed_at is None or expires_at is None or not digest:
+        raise ValueError("a claim requires claimed_at, claim_expires_at, and claim_digest")
+    if claimed_at.tzinfo is None or expires_at.tzinfo is None:
+        raise ValueError("claim timestamps must be timezone-aware")
+    if expires_at <= claimed_at:
+        raise ValueError("claim expiry must be after claimed_at")
+    if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+        raise ValueError("claim_digest must be an opaque sha256 digest")
 
 
 class InMemoryAuthorizedExecutionRepository:
@@ -210,6 +253,35 @@ class InMemoryAuthorizedExecutionRepository:
         stored = replace(current, updated_at=record.updated_at, revision=expected_revision + 1)
         self._rows[record.execution_id] = stored
         return stored
+
+    def cas_replace(
+        self,
+        record: DurableAuthorizedExecution,
+        *,
+        expected_revision: int,
+    ) -> DurableAuthorizedExecution:
+        """Compare-and-swap the full row. Pins cannot change."""
+
+        current = self._rows.get(record.execution_id)
+        current_revision = 0 if current is None else current.revision
+        if current is None or current_revision != expected_revision:
+            raise AuthorizedExecutionRevisionConflict(record.execution_id, expected_revision)
+        _require_same_pins(current, record)
+        stored = replace(record, created_at=current.created_at, revision=expected_revision + 1)
+        self._rows[record.execution_id] = stored
+        return stored
+
+    def restore_row(
+        self,
+        execution_id: str,
+        record: DurableAuthorizedExecution | None,
+    ) -> None:
+        """Put back the row from before this transaction's write. Test double only."""
+
+        if record is None:
+            self._rows.pop(execution_id, None)
+        else:
+            self._rows[execution_id] = record
 
 
 class OperationalAuthorizedExecutionRepository(SessionBound):
@@ -302,6 +374,32 @@ class OperationalAuthorizedExecutionRepository(SessionBound):
                 raise AuthorizedExecutionRevisionConflict(record.execution_id, expected_revision)
             _require_same_plan(current, decision_id=record.decision_id, plan_id=record.plan_id)
             stored = replace(current, updated_at=record.updated_at, revision=expected_revision + 1)
+            updated = ops.compare_and_swap(
+                RESEARCH_AUTHORIZED_EXECUTIONS,
+                record.execution_id,
+                stored,
+                expected_version=expected_revision,
+                new_version=stored.revision,
+            )
+            if not updated:
+                raise AuthorizedExecutionRevisionConflict(record.execution_id, expected_revision)
+            return stored
+
+    def cas_replace(
+        self,
+        record: DurableAuthorizedExecution,
+        *,
+        expected_revision: int,
+    ) -> DurableAuthorizedExecution:
+        """Compare-and-swap the full row, including a live-start claim. Pins stay put."""
+
+        with _store_boundary(), self._ops() as ops:
+            current = _load(ops, record.execution_id)
+            current_revision = 0 if current is None else current.revision
+            if current is None or current_revision != expected_revision:
+                raise AuthorizedExecutionRevisionConflict(record.execution_id, expected_revision)
+            _require_same_pins(current, record)
+            stored = replace(record, created_at=current.created_at, revision=expected_revision + 1)
             updated = ops.compare_and_swap(
                 RESEARCH_AUTHORIZED_EXECUTIONS,
                 record.execution_id,

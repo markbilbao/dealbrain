@@ -39,6 +39,7 @@ from app.domain.entities.connector_reliability import (
     ConnectorOperationalStatus,
     KillSwitch,
 )
+from app.research.digest import stable_sha256
 
 BREAKER_AFFECTING_FAILURES = frozenset(
     {
@@ -103,7 +104,8 @@ class ProviderReliabilityState:
 
     ``revision`` 0 means the row has not been stored. The repository assigns
     the next revision on save. This object stores no secrets, principal ids,
-    or connector payloads.
+    or connector payloads. A HALF_OPEN probe lease stores only an opaque
+    digest, never the raw capability presented to the worker.
     """
 
     provider_id: str
@@ -117,6 +119,9 @@ class ProviderReliabilityState:
     last_success_at: datetime | None = None
     reopen_at: datetime | None = None
     revision: int = 0
+    half_open_probe_claim_digest: str | None = None
+    half_open_probe_claimed_at: datetime | None = None
+    half_open_probe_expires_at: datetime | None = None
 
     def __post_init__(self) -> None:
         _require_aware(self.updated_at, "updated_at")
@@ -125,10 +130,18 @@ class ProviderReliabilityState:
         object.__setattr__(self, "market", market)
         if self.consecutive_failure_count < 0 or self.revision < 0:
             raise ValueError("failure count and revision must be non-negative")
-        for name in ("opened_at", "last_attempt_at", "last_success_at", "reopen_at"):
+        for name in (
+            "opened_at",
+            "last_attempt_at",
+            "last_success_at",
+            "reopen_at",
+            "half_open_probe_claimed_at",
+            "half_open_probe_expires_at",
+        ):
             value = getattr(self, name)
             if value is not None:
                 _require_aware(value, name)
+        _validate_probe_lease(self)
         if self.state is CircuitBreakerState.OPEN:
             if self.opened_at is None or self.reopen_at is None:
                 raise ValueError("an open breaker requires opened_at and reopen_at")
@@ -198,6 +211,7 @@ def record_failure(
             consecutive_failure_count=count,
             opened_at=now,
             reopen_at=now + timedelta(milliseconds=policy.recovery_window_ms),
+            **_NO_PROBE_LEASE,
         )
     return replace(
         recorded,
@@ -205,6 +219,7 @@ def record_failure(
         consecutive_failure_count=count,
         opened_at=None,
         reopen_at=None,
+        **_NO_PROBE_LEASE,
     )
 
 
@@ -231,6 +246,7 @@ def record_success(
         last_success_at=now,
         last_attempt_at=now,
         updated_at=now,
+        **_NO_PROBE_LEASE,
     )
 
 
@@ -544,3 +560,98 @@ def _evidence_backed_healthy(
 def _require_aware(value: datetime, field_name: str) -> None:
     if value.tzinfo is None:
         raise ValueError(f"{field_name} must be timezone-aware")
+
+
+_NO_PROBE_LEASE = {
+    "half_open_probe_claim_digest": None,
+    "half_open_probe_claimed_at": None,
+    "half_open_probe_expires_at": None,
+}
+
+
+class HalfOpenProbeAlreadyClaimed(Exception):
+    """Another worker holds the unexpired HALF_OPEN recovery lease."""
+
+    def __init__(self, provider_id: str, market: str) -> None:
+        self.provider_id = provider_id
+        self.market = market
+        super().__init__(f"half_open_probe_already_claimed for {provider_id}|{market}")
+
+
+def half_open_probe_digest(claim_capability: str) -> str:
+    """Opaque digest of a probe capability. The raw capability is not stored."""
+
+    if len(claim_capability) < 16:
+        raise ValueError("probe capability must be an opaque token")
+    return stable_sha256(
+        {"kind": "sprint38_half_open_probe_lease_v1", "capability": claim_capability}
+    )
+
+
+def probe_lease_is_active(state: ProviderReliabilityState, *, now: datetime) -> bool:
+    """True while one HALF_OPEN probe lease is still inside its window."""
+
+    _require_aware(now, "now")
+    expires = state.half_open_probe_expires_at
+    return (
+        state.state is CircuitBreakerState.HALF_OPEN
+        and bool(state.half_open_probe_claim_digest)
+        and expires is not None
+        and now < expires
+    )
+
+
+def apply_half_open_probe_lease(
+    state: ProviderReliabilityState,
+    *,
+    now: datetime,
+    lease: timedelta,
+    claim_capability: str,
+) -> ProviderReliabilityState:
+    """Reserve the one HALF_OPEN recovery slot. This is not a connector attempt.
+
+    CLOSED does not take this lease. OPEN before ``reopen_at`` cannot take it.
+    An unexpired lease blocks every other worker. An expired lease may be
+    replaced. Success and failure evidence are left unchanged.
+    """
+
+    _require_aware(now, "now")
+    if lease <= timedelta(0):
+        raise ValueError("probe lease must be bounded and positive")
+    advanced = advance_recovery(state, now=now)
+    if advanced.state is CircuitBreakerState.CLOSED:
+        raise ValueError("a closed breaker does not take a half-open probe lease")
+    if advanced.state is CircuitBreakerState.OPEN:
+        raise ValueError("an open breaker cannot take a probe lease")
+    if probe_lease_is_active(advanced, now=now):
+        raise HalfOpenProbeAlreadyClaimed(advanced.provider_id, advanced.market)
+    return replace(
+        advanced,
+        half_open_probe_claim_digest=half_open_probe_digest(claim_capability),
+        half_open_probe_claimed_at=now,
+        half_open_probe_expires_at=now + lease,
+        updated_at=now,
+    )
+
+
+def _validate_probe_lease(state: ProviderReliabilityState) -> None:
+    digest = state.half_open_probe_claim_digest
+    claimed = state.half_open_probe_claimed_at
+    expires = state.half_open_probe_expires_at
+    present = digest is not None or claimed is not None or expires is not None
+    if state.state is not CircuitBreakerState.HALF_OPEN:
+        if present:
+            raise ValueError("a probe lease exists only while the breaker is half-open")
+        return
+    if not present:
+        return
+    if not digest or claimed is None or expires is None:
+        raise ValueError("a half-open probe lease requires digest, claimed_at, and expires_at")
+    _require_digest(digest, "half_open_probe_claim_digest")
+    if expires <= claimed:
+        raise ValueError("half-open probe lease expiry must be after claimed_at")
+
+
+def _require_digest(value: str, field_name: str) -> None:
+    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+        raise ValueError(f"{field_name} must be an opaque sha256 digest")
