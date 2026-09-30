@@ -139,8 +139,27 @@ Safe live-start claim (2026-09-30) reserves one future connector attempt as
 ``claimed_for_attempt`` and, when the persisted breaker is HALF_OPEN, one
 provider/market probe lease. Both use the existing ``operational_entities``
 rows and compare-and-swap. No new table. The raw claim capability is not
-stored. A claim is not a source attempt, not provider health evidence, and
-not authorization consumption. Current Shopify production state cannot
-acquire either reservation. ``SHOPPING_RESEARCH_EXECUTION_MODE`` stays
-disabled. Production deployment remains Sprint 41. Alerts, paging, and
-synthetic probes remain Sprint 42.
+stored. A claim is not a source attempt and not provider health evidence.
+The sentence in this paragraph that said a claim is not authorization
+consumption is historical for that slice. The later authorization-consumption
+slice consumes the exact authorization inside a successful claim transaction.
+Current Shopify production state cannot acquire either reservation.
+``SHOPPING_RESEARCH_EXECUTION_MODE`` stays disabled. Production deployment
+remains Sprint 41. Alerts, paging, and synthetic probes remain Sprint 42.
+
+Sprint 38 closure-readiness audit (2026-09-30, corrected before merge)
+is the current reading. Engineering stays IN PROGRESS. The shopper path
+stops at durable preparation and does not call the claim or the adapter.
+Positive composition and canonical-results plumbing remain Sprint 38.
+Sprint 38 stays IN PROGRESS and is not COMPLETE / CLOSED. Live execution
+stays NOT OPERATIONAL. The Shopify adapter records an authoritative trace
+and a durable outcome only for an injected fake transport. Production
+composition never calls that transport and still returns
+``production_execution_not_wired``. Real Shopify calls stay 0. The provider
+stays DISABLED, not healthy, not live, and not available. Routing stays
+absent. Public certified shopping markets stay 0. The production UCP profile
+stays undeployed. Repository kill-switch checks are not a deployed drill;
+that drill remains Sprint 41. Alerts, paging, and synthetic production
+probes remain Sprint 42. The HALF_OPEN lease is not a production probe.
+Query-time policy still refuses persistent Shopify cache admission. Audit:
+``docs/roadmap/evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md``.

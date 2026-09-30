@@ -192,6 +192,8 @@ Current PH-only closure (2026-09-26), which supersedes the open-work reading of 
 | AI-provider and affiliate-provider failure behavior | `planned_underspecified` | 38 |
 | App readiness ≠ full merchant availability | `implemented_verified` (principle) | 22 / 38 |
 
+Current Sprint 38 closure reading (2026-09-30, corrected before merge), which supersedes the open-work reading of the rows above for the PH one-connector beta: repository state and fake-transport adapter tests exist, and the shopper path still stops at durable preparation. Positive composition and canonical-results plumbing are remaining Sprint 38 engineering. The sprint is not live, not production-deployed, and not launch-ready. Multi-connector live chaos is future scope and does not block this beta. Production probes, alerts, paging, and incident operations are Sprint 42. Real Shopify validation, the production UCP profile, and the deployed kill-switch drill are blocked on Sprint 41. Sprint 41 does not own domain engine changes. Query-time Shopify policy refuses persistent cache admission. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False. Sprint 38 stays IN PROGRESS and is not COMPLETE / CLOSED. Audit: [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md).
+
 ---
 
 ## G. Recommendation and commercial integrity
@@ -1123,3 +1125,27 @@ This addendum does **not** rewrite earlier snapshots. The live-start note that a
 | Trace / connector | Authoritative trace stays empty. ``attempted``, ``source_checked``, ``connector_invoked``, ``http_invoked``, and ``live_execution_started`` stay false. The prior decision is unchanged. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. Production UCP profile stays undeployed. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+
+## 2026-09-30 Sprint 38 closure-readiness audit addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the closure-readiness audit after the Shopify execution adapter. A same-day correction, before merge, withdraws the first draft's engineering-complete verdict and its Class B count of zero. It does **not** complete or close Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage. It does **not** implement the remaining engineering.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 closure | IN PROGRESS. Not COMPLETE / CLOSED. |
+| Audit verdict | SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN |
+| `SPRINT_38_ENGINEERING_STATUS` | IN PROGRESS |
+| Live execution | NOT OPERATIONAL |
+| Production / launch | Not PRODUCTION DEPLOYED. Not LAUNCH READY |
+| Class B engineering blockers | 2. Positive shopper execution composition. Validated outcome to durable evidence to canonical Results. Not implemented in this audit |
+| Multi-connector live chaos | Future scope. Not a closure blocker for the one certified PH connector |
+| Probes / alerts / paging | Sprint 42 |
+| Real Shopify validation | Blocked on Sprint 41 production profile plus routing and operational eligibility. Real calls stay 0 |
+| Production UCP profile | Sprint 41. Undeployed |
+| Production composition | Fail-closed refusal exists. Positive domain wiring is Sprint 38. `execute_production_shopify_catalog` never calls transport. Sprint 41 domain engine changes are a non-goal |
+| Destination re-evaluation | False. Dependent on a future live validated executor. Shipping stays uncertified |
+| Canonical updated Results | Plumbing is missing Sprint 38 engineering. Prior decision stays unchanged. Fake transport must not become a shopper-visible canonical live decision |
+| Routing / provider / public markets | Routing 0. Provider DISABLED. Public certified shopping markets 0 |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Sprint 42 remains later operations work |
+| Next Sprint 38 task | One bounded engineering slice: positive composition, then validated outcome to evidence to canonical Results, with prior-decision preservation. No Shopify call. Flags stay closed. Then repeat the audit. Sprint 39 and Sprint 40 may run in parallel |
+| Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |
