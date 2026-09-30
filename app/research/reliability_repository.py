@@ -6,9 +6,9 @@ implementation is for tests and does not survive process restart.
 
 Authorized execution records live in ``authorized_execution_repository``,
 not in this breaker store. This module does not call Shopify or any other
-connector. Before HTTP, HALF_OPEN still needs one single-probe lease so
-multiple workers cannot share the one recovery opportunity. That lease is
-not implemented here.
+connector. The HALF_OPEN single-probe lease is stored on
+``ProviderReliabilityState`` and acquired by ``live_start_claim``. This
+repository still does not record a connector attempt.
 """
 
 from __future__ import annotations
@@ -89,6 +89,20 @@ class InMemoryResearchReliabilityRepository:
     def row_count(self, provider_id: str, market: str) -> int:
         key = reliability_record_key(provider_id, market)
         return 1 if key in self._rows else 0
+
+    def restore_row(
+        self,
+        provider_id: str,
+        market: str,
+        state: ProviderReliabilityState | None,
+    ) -> None:
+        """Put back the row from before this transaction's write. Test double only."""
+
+        key = reliability_record_key(provider_id, market)
+        if state is None:
+            self._rows.pop(key, None)
+        else:
+            self._rows[key] = state
 
 
 class OperationalResearchReliabilityRepository:
@@ -261,7 +275,9 @@ class FutureLiveConnectorPermission:
 
     A passed live-mode flag is not sufficient while the persisted breaker,
     kill switch, or provider status blocks the attempt. HTTP remains unwired.
-    HALF_OPEN still needs a single-probe lease before any real HTTP attempt.
+    This permission object does not acquire the HALF_OPEN probe lease. The
+    live-start claim transaction does that, and only when every earlier gate
+    has passed.
     """
 
     permitted: bool

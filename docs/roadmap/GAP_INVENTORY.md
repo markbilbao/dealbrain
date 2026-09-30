@@ -1092,3 +1092,18 @@ This addendum does **not** rewrite earlier snapshots. The reliability-state row 
 | Future boundary | Live start is three phases: a transactional claim, a connector attempt outside that transaction, then a transactional outcome record. Connector HTTP is not inside one database transaction. The consumption point stays open. HALF_OPEN still needs a single-probe lease before HTTP. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+
+## 2026-09-30 Sprint 38 live-start claim addendum
+
+This addendum does **not** rewrite earlier snapshots. The durable-preparation note that the HALF_OPEN lease was still required remains the record of that slice. It does **not** complete Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 | IN PROGRESS. Not COMPLETE / CLOSED. Live execution status is separately NOT OPERATIONAL. |
+| Durable execution claim | Implemented. State entered on a successful claim is ``claimed_for_attempt``, not running. ``DURABLE_LIVE_START_CLAIM_IMPLEMENTED`` is true. Lease is 30 seconds. Raw capability is not stored. Expired claims can be reclaimed. A stale capability or revision cannot overwrite the active claim. |
+| HALF_OPEN probe lease | Implemented on the existing breaker row. ``HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED`` is true. One active lease per provider and market. Lease is 30 seconds. CLOSED does not use it. OPEN before reopen cannot take it. |
+| Authorization | Stays ``authorized_pending_execution``. A claim does not consume it. Consumption is not in the same transaction as the claim, because authorization persistence is the conversation row and ``mark_research_authorization_consumed()`` is in-memory only. The next HTTP slice must close that boundary. |
+| Current production | Cannot claim. Provider stays DISABLED. Routing stays 0. Public certified shopping markets stay 0. Live mode stays disabled. No HTTP. No connector attempt. |
+| Trace / breaker evidence | Authoritative trace stays empty. Claiming does not record success or failure and does not mark the provider healthy or attempted. |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
+| Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
