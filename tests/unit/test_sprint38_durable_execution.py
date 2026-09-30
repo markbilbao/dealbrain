@@ -463,6 +463,7 @@ def test_stored_record_omits_sensitive_authority_material(sqlite_factory) -> Non
         "returned_currencies",
         "normalized_amount_minors",
         "evidence_ids",
+        "normalized_offer_digests",
         "observation_kind",
         "request_digest",
         "trace",
@@ -485,6 +486,7 @@ def test_stored_record_omits_sensitive_authority_material(sqlite_factory) -> Non
     assert fields["returned_currencies"] == {"__type__": "tuple", "items": []}
     assert fields["normalized_amount_minors"] == {"__type__": "tuple", "items": []}
     assert fields["evidence_ids"] == {"__type__": "tuple", "items": []}
+    assert fields["normalized_offer_digests"] == {"__type__": "tuple", "items": []}
     assert fields["observation_kind"] is None
     assert fields["request_digest"] is None
     assert fields["trace"] is None

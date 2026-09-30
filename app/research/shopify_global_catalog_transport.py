@@ -23,13 +23,20 @@ class CatalogTransportResult:
     payload: dict[str, Any] | None
     timed_out: bool = False
     malformed: bool = False
+    transport_unavailable: bool = False
     raw_body_persisted: bool = False
 
     def __post_init__(self) -> None:
         if self.raw_body_persisted:
             raise ValueError("raw Shopify bodies must not be persisted")
-        if self.timed_out and self.payload is not None:
+        if self.timed_out and self.transport_unavailable:
+            raise ValueError("a timeout is not a connection failure")
+        if self.timed_out and (self.payload is not None or self.malformed):
             raise ValueError("a timeout has no payload")
+        if self.transport_unavailable and (
+            self.payload is not None or self.malformed or self.status_code != 0
+        ):
+            raise ValueError("a connection failure has no HTTP response")
 
 
 class JsonPostTransport(Protocol):
@@ -79,7 +86,7 @@ class UrllibJsonTransport:
         except urllib.error.URLError as exc:
             if isinstance(exc.reason, TimeoutError):
                 return CatalogTransportResult(status_code=0, payload=None, timed_out=True)
-            return CatalogTransportResult(status_code=0, payload=None, malformed=True)
+            return CatalogTransportResult(status_code=0, payload=None, transport_unavailable=True)
         return _parse_body(status, body)
 
 

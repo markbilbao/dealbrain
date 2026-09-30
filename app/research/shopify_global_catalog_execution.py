@@ -14,16 +14,18 @@ Crash boundaries:
   ``claimed_for_attempt``. When that claim expires, the same execution can
   be reclaimed. No external HTTP has been recorded.
 - The attempt-start commit moves the row to ``running`` immediately before
-  transport. A crash after that commit and before the outcome commit cannot
-  prove whether HTTP happened. Recovery does not replay HTTP. It fails
-  closed to ``outcome_unknown`` after the claim lease expires, does not
-  record breaker success or failure, and does not clear a HALF_OPEN probe
-  lease early.
-- HTTP runs outside the database transaction. The outcome transaction
-  reloads the execution, checks the active claim capability, checks the
-  HALF_OPEN probe when needed, writes the trace, updates the breaker, and
-  releases the claim. A lost compare-and-swap does not overwrite a terminal
-  row and does not invent success.
+  transport. Start time comes from the service clock. A crash after that
+  commit and before the outcome commit cannot prove whether HTTP happened.
+  Recovery does not replay HTTP. It fails closed to ``outcome_unknown``
+  after the claim lease expires, using the reconciliation clock. It does
+  not record breaker success or failure, and it does not clear a HALF_OPEN
+  probe lease early.
+- HTTP runs outside the database transaction. After transport returns, the
+  service reads the clock again. The outcome transaction validates the claim
+  and HALF_OPEN probe at that finish time, writes the trace, updates breaker
+  timestamps, and releases the claim. A caller-supplied finish time is not
+  authority. A lost compare-and-swap does not overwrite a terminal row and
+  does not invent success.
 
 Real Shopify calls in this module's production entry point stay zero.
 """
@@ -32,7 +34,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal
 
 from sqlalchemy.exc import DBAPIError, OperationalError
@@ -159,12 +161,10 @@ class ShopifyCatalogAttempt:
     source: str
     operation: str
     claim_capability: str
-    now: datetime
     harness_operational_status: ConnectorOperationalStatus
     catalog_query: str | None = None
     product_id: str | None = None
     probe_capability: str | None = None
-    finished_at: datetime | None = None
     kill_switch: KillSwitch = KillSwitch()
 
 
@@ -240,8 +240,14 @@ class _Interpreted:
     offers: tuple[ShopifyNormalizedOffer, ...] = ()
 
 
+def _utc_now() -> datetime:
+    """Production clock. Tests inject a deterministic replacement."""
+
+    return datetime.now(UTC)
+
+
 class ShopifyCatalogExecutionService:
-    """Claim holder to durable Shopify outcome. Transport is injected."""
+    """Claim holder to durable Shopify outcome. Transport and clock are injected."""
 
     def __init__(
         self,
@@ -249,10 +255,12 @@ class ShopifyCatalogExecutionService:
         transport: JsonPostTransport,
         *,
         policy: BreakerPolicy | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._transactions = transaction_factory
         self._transport = transport
         self._policy = policy or BreakerPolicy()
+        self._clock = clock or _utc_now
 
     def execute(self, attempt: ShopifyCatalogAttempt) -> ShopifyExecutionResult:
         """Validate, then transport once, then commit the outcome."""
@@ -260,11 +268,12 @@ class ShopifyCatalogExecutionService:
         local = _local_refusal(attempt)
         if local is not None:
             return local
+        started_at = self._read_clock()
         transaction = self._transactions()
         try:
             try:
                 transaction.lock_for_claim()
-                prepared = self._begin_attempt(transaction, attempt)
+                prepared = self._begin_attempt(transaction, attempt, started_at)
             except (PersistenceError, OperationalError, DBAPIError):
                 transaction.rollback()
                 return _refused("attempt_persistence_unavailable")
@@ -293,14 +302,27 @@ class ShopifyCatalogExecutionService:
                 state="running",
                 transport_outcome_ambiguous=True,
             )
-        interpreted = _interpret(response, checked_at=attempt.finished_at or attempt.now)
-        return self._commit_outcome(attempt, prepared, interpreted, transport_invoked=True)
+        finished_at = self._read_clock()
+        if finished_at < started_at:
+            return _refused(
+                "attempt_clock_regressed",
+                attempted=True,
+                state="running",
+                transport_invoked=True,
+            )
+        interpreted = _interpret(response, checked_at=finished_at)
+        return self._commit_outcome(
+            attempt,
+            prepared,
+            interpreted,
+            finished_at=finished_at,
+            transport_invoked=True,
+        )
 
     def reconcile_ambiguous(self, attempt: ShopifyCatalogAttempt) -> ShopifyExecutionResult:
         """Fail closed after a lost post-HTTP outcome. Does not call transport."""
 
-        if attempt.now.tzinfo is None:
-            raise ValueError("now must be timezone-aware")
+        finished = self._read_clock()
         transaction = self._transactions()
         try:
             try:
@@ -319,14 +341,20 @@ class ShopifyCatalogExecutionService:
                 else:
                     reason = "execution_not_running"
                 return _refused(reason, state=execution.state)
-            if execution.claim_expires_at is not None and attempt.now < execution.claim_expires_at:
+            if execution.claim_expires_at is not None and finished < execution.claim_expires_at:
                 transaction.rollback()
                 return _refused(
                     "attempt_still_claimed",
                     attempted=True,
                     state="running",
                 )
-            finished = attempt.finished_at or attempt.now
+            if execution.attempt_started_at is not None and finished < execution.attempt_started_at:
+                transaction.rollback()
+                return _refused(
+                    "attempt_clock_regressed",
+                    attempted=True,
+                    state="running",
+                )
             stored = _terminal_record(
                 execution,
                 attempt=attempt,
@@ -355,13 +383,20 @@ class ShopifyCatalogExecutionService:
             transaction.close()
         return _from_stored(saved, transport_invoked=False)
 
+    def _read_clock(self) -> datetime:
+        moment = self._clock()
+        if moment.tzinfo is None or moment.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware datetime")
+        return moment
+
     def _begin_attempt(
         self,
         transaction: ClaimTransaction,
         attempt: ShopifyCatalogAttempt,
+        started_at: datetime,
     ) -> _PreparedCall | ShopifyExecutionResult:
         execution = transaction.load_execution(_execution_id(attempt))
-        refusal = _pre_transport_reason(transaction, attempt, execution)
+        refusal = _pre_transport_reason(transaction, attempt, execution, started_at)
         if refusal is not None:
             return _refused(
                 refusal,
@@ -381,8 +416,8 @@ class ShopifyCatalogExecutionService:
         running = replace(
             execution,
             state="running",
-            updated_at=attempt.now,
-            attempt_started_at=attempt.now,
+            updated_at=started_at,
+            attempt_started_at=started_at,
             attempted_provider_id=attempt.step.provider_id,
             attempted_capability=attempt.step.capability.value,
             attempted_market=attempt.step.market,
@@ -406,9 +441,9 @@ class ShopifyCatalogExecutionService:
         prepared: _PreparedCall,
         interpreted: _Interpreted,
         *,
+        finished_at: datetime,
         transport_invoked: bool,
     ) -> ShopifyExecutionResult:
-        finished = attempt.finished_at or attempt.now
         transaction = self._transactions()
         try:
             try:
@@ -430,7 +465,7 @@ class ShopifyCatalogExecutionService:
                     state=None if execution is None else execution.state,
                     transport_invoked=transport_invoked,
                 )
-            holder = _validate_running_claim(execution, attempt.claim_capability, finished)
+            holder = _validate_running_claim(execution, attempt.claim_capability, finished_at)
             if not holder.valid:
                 transaction.rollback()
                 return _refused(
@@ -442,9 +477,9 @@ class ShopifyCatalogExecutionService:
             breaker = transaction.load_breaker(
                 attempt.step.provider_id,
                 attempt.step.market or PH_COUNTRY,
-                now=finished,
+                now=finished_at,
             )
-            probe_reason = _probe_reason(breaker, attempt, finished)
+            probe_reason = _probe_reason(breaker, attempt, finished_at)
             if probe_reason is not None:
                 transaction.rollback()
                 return _refused(
@@ -464,13 +499,13 @@ class ShopifyCatalogExecutionService:
             next_breaker = _next_breaker(
                 breaker,
                 interpreted,
-                now=finished,
+                now=finished_at,
                 policy=self._policy,
             )
             record = _terminal_record(
                 execution,
                 attempt=attempt,
-                finished_at=finished,
+                finished_at=finished_at,
                 outcome=interpreted.attempt_status,
                 error_category=interpreted.error_category,
                 attempt_status=interpreted.attempt_status,
@@ -554,13 +589,14 @@ def in_memory_shopify_execution(
     transport: JsonPostTransport,
     *,
     policy: BreakerPolicy | None = None,
+    clock: Callable[[], datetime] | None = None,
 ) -> ShopifyCatalogExecutionService:
     """Test service. A new transaction sees the shared in-memory rows."""
 
     def factory() -> InMemoryClaimTransaction:
         return InMemoryClaimTransaction(executions, reliability, conversations)
 
-    return ShopifyCatalogExecutionService(factory, transport, policy=policy)
+    return ShopifyCatalogExecutionService(factory, transport, policy=policy, clock=clock)
 
 
 def operational_shopify_execution(
@@ -568,13 +604,14 @@ def operational_shopify_execution(
     transport: JsonPostTransport,
     *,
     policy: BreakerPolicy | None = None,
+    clock: Callable[[], datetime] | None = None,
 ) -> ShopifyCatalogExecutionService:
     """Repository-backed service. Not production composition."""
 
     def factory() -> OperationalClaimTransaction:
         return OperationalClaimTransaction(session_factory)
 
-    return ShopifyCatalogExecutionService(factory, transport, policy=policy)
+    return ShopifyCatalogExecutionService(factory, transport, policy=policy, clock=clock)
 
 
 def _execution_id(attempt: ShopifyCatalogAttempt) -> str:
@@ -584,11 +621,6 @@ def _execution_id(attempt: ShopifyCatalogAttempt) -> str:
 def _local_refusal(attempt: ShopifyCatalogAttempt) -> ShopifyExecutionResult | None:
     if attempt.permit.marker != "bounded_fake_transport":
         return _refused("bounded_fake_transport_required")
-    if attempt.now.tzinfo is None:
-        raise ValueError("now must be timezone-aware")
-    finished = attempt.finished_at
-    if finished is not None and (finished.tzinfo is None or finished < attempt.now):
-        return _refused("finished_at_invalid")
     if attempt.step.capability not in _SUPPORTED:
         return _refused("capability_not_supported")
     if attempt.operation == FORBIDDEN_LOOKUP_TOOL or attempt.operation not in _ALLOWED_TOOLS:
@@ -612,6 +644,7 @@ def _pre_transport_reason(
     transaction: ClaimTransaction,
     attempt: ShopifyCatalogAttempt,
     execution: DurableAuthorizedExecution | None,
+    started_at: datetime,
 ) -> str | None:
     if execution is None:
         return "execution_not_prepared"
@@ -633,11 +666,11 @@ def _pre_transport_reason(
     claim = validate_active_execution_claim(
         execution,
         claim_capability=attempt.claim_capability,
-        now=attempt.now,
+        now=started_at,
     )
     if not claim.valid:
         return claim.reason or "execution_not_claimed"
-    if not _budget_ok(execution.claim_expires_at, attempt.now):
+    if not _budget_ok(execution.claim_expires_at, started_at):
         return "claim_budget_insufficient"
     authorization_reason = _authorization_reason(transaction, attempt, execution)
     if authorization_reason is not None:
@@ -645,17 +678,17 @@ def _pre_transport_reason(
     breaker = transaction.load_breaker(
         attempt.step.provider_id,
         attempt.step.market or PH_COUNTRY,
-        now=attempt.now,
+        now=started_at,
     )
     permission = assess_execution_permission(
         breaker,
         operational_status=attempt.harness_operational_status,
         kill_switch=attempt.kill_switch,
-        now=attempt.now,
+        now=started_at,
     )
     if not permission.execution_permitted:
         return permission.block_reason
-    return _probe_reason(permission.breaker, attempt, attempt.now)
+    return _probe_reason(permission.breaker, attempt, started_at)
 
 
 def _probe_reason(
@@ -767,8 +800,8 @@ def _request_digest(attempt: ShopifyCatalogAttempt) -> str:
 def _interpret(response: CatalogTransportResult, *, checked_at: datetime) -> _Interpreted:
     if response.timed_out:
         return _Interpreted(False, "timed_out", ConnectorFailureKind.TIMEOUT, "timeout")
-    if response.malformed or response.payload is None:
-        return _Interpreted(False, "failed", ConnectorFailureKind.UNKNOWN, "malformed_jsonrpc")
+    if response.transport_unavailable:
+        return _Interpreted(False, "failed", ConnectorFailureKind.UNAVAILABLE, "unavailable")
     status = response.status_code
     if status == 429:
         return _Interpreted(False, "failed", ConnectorFailureKind.RATE_LIMIT, "rate_limit")
@@ -777,7 +810,9 @@ def _interpret(response: CatalogTransportResult, *, checked_at: datetime) -> _In
     if 500 <= status <= 599:
         return _Interpreted(False, "failed", ConnectorFailureKind.UNAVAILABLE, "unavailable")
     if status != 200:
-        return _Interpreted(False, "failed", ConnectorFailureKind.UNKNOWN, "unknown")
+        return _Interpreted(False, "failed", ConnectorFailureKind.UNKNOWN, "http_error")
+    if response.malformed or response.payload is None:
+        return _Interpreted(False, "failed", ConnectorFailureKind.UNKNOWN, "malformed_jsonrpc")
     envelope = classify_shopify_catalog_envelope(response.payload)
     if envelope.fail_closed:
         kind = envelope.failure_kind or ConnectorFailureKind.UNKNOWN
@@ -863,17 +898,20 @@ def _terminal_record(
     request_digest: str | None,
     observation_kind: str | None,
 ) -> DurableAuthorizedExecution:
-    evidence = tuple(_evidence_id(offer) for offer in offers)
+    digests = tuple(_normalized_offer_digest(offer) for offer in offers)
     currencies = tuple(offer.source.currency for offer in offers)
     amounts = tuple(offer.source.price_amount_minor for offer in offers)
     state = _state_for(outcome)
+    started_at = execution.attempt_started_at
+    if started_at is None:
+        raise ValueError("a terminal attempt requires attempt_started_at")
     trace = _trace(
         attempt,
-        started_at=execution.attempt_started_at or attempt.now,
+        started_at=started_at,
         finished_at=finished_at,
         attempt_status=attempt_status,
         error_category=error_category,
-        evidence_ids=evidence,
+        evaluated_offer_count=len(offers),
     )
     return replace(
         execution,
@@ -889,7 +927,8 @@ def _terminal_record(
         normalized_offer_count=len(offers),
         returned_currencies=currencies,
         normalized_amount_minors=amounts,
-        evidence_ids=evidence,
+        evidence_ids=(),
+        normalized_offer_digests=digests,
         observation_kind=observation_kind,
         request_digest=request_digest,
         trace=trace,
@@ -912,7 +951,7 @@ def _trace(
     finished_at: datetime,
     attempt_status: str,
     error_category: str | None,
-    evidence_ids: tuple[str, ...],
+    evaluated_offer_count: int,
 ) -> ResearchExecutionTrace:
     source = attempt.source
     step = ResearchExecutionTraceStep(
@@ -923,11 +962,11 @@ def _trace(
         source=source,
         attempted=True,
         attempt_status=attempt_status,  # type: ignore[arg-type]
-        evidence_ids=evidence_ids,
+        evidence_ids=(),
         started_at=started_at,
         finished_at=finished_at,
         error_category=error_category,
-        evaluated_offer_count=len(evidence_ids),
+        evaluated_offer_count=evaluated_offer_count,
         freshness_checked_at=None,
     )
     return ResearchExecutionTrace(
@@ -937,11 +976,13 @@ def _trace(
         succeeded_sources=(source,) if attempt_status == "succeeded" else (),
         failed_sources=(source,) if attempt_status == "failed" else (),
         timed_out_sources=(source,) if attempt_status == "timed_out" else (),
-        evaluated_offer_count=len(evidence_ids),
+        evaluated_offer_count=evaluated_offer_count,
     )
 
 
-def _evidence_id(offer: ShopifyNormalizedOffer) -> str:
+def _normalized_offer_digest(offer: ShopifyNormalizedOffer) -> str:
+    """Safe normalized-result digest. Not a stored evidence id and not raw Shopify JSON."""
+
     return stable_sha256(
         {
             "kind": "shopify_normalized_offer_v1",

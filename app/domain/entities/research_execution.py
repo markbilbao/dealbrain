@@ -687,6 +687,19 @@ TraceAttemptStatus = Literal[
 ]
 
 
+def require_durable_evidence_reference(evidence_id: str) -> None:
+    """Reject blanks and normalized-offer digests.
+
+    A trace evidence id is a reference to a stored evidence record. A sha256
+    of normalized offer facts is not that record, and planning cannot invent one.
+    """
+
+    if not evidence_id or evidence_id != evidence_id.strip():
+        raise ValueError("evidence ids must be durable evidence references")
+    if len(evidence_id) == 64 and all(character in "0123456789abcdef" for character in evidence_id):
+        raise ValueError("normalized offer digests are not evidence ids")
+
+
 @dataclass(frozen=True, slots=True)
 class ResearchExecutionTraceStep:
     """One authoritative attempt. Planning uses no steps at all.
@@ -695,6 +708,10 @@ class ResearchExecutionTraceStep:
     happened. A fake or synthetic transport must leave it empty. ``outcome_unknown``
     means an external call may have happened and the durable result was lost.
     It is not success and it is not a classified connector failure.
+
+    ``evidence_ids`` are references to stored evidence records. A successful
+    fake-transport step may record ``evaluated_offer_count`` with an empty
+    ``evidence_ids`` tuple. A normalized-offer digest is not an evidence id.
     """
 
     plan_id: str
@@ -734,11 +751,11 @@ class ResearchExecutionTraceStep:
             raise ValueError("attempt timestamps must be timezone-aware")
         if self.finished_at < self.started_at:
             raise ValueError("attempt finish must not precede the start")
-        if len(self.evidence_ids) != self.evaluated_offer_count:
-            raise ValueError("evidence ids must match the evaluated offer count")
         if self.attempt_status == "succeeded":
             if self.evaluated_offer_count < 1 or self.error_category is not None:
                 raise ValueError("a succeeded step requires offers and no error category")
+            for evidence_id in self.evidence_ids:
+                require_durable_evidence_reference(evidence_id)
         elif self.evaluated_offer_count or self.evidence_ids:
             raise ValueError("a non-success step cannot invent evaluated offers")
         elif not self.error_category:

@@ -58,7 +58,10 @@ from typing import Literal, NoReturn
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.domain.entities.research_execution import ResearchExecutionTrace
+from app.domain.entities.research_execution import (
+    ResearchExecutionTrace,
+    require_durable_evidence_reference,
+)
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.persistence.errors import PersistenceConflictError
 from app.infrastructure.persistence.operational_store import OperationalStore
@@ -145,6 +148,7 @@ class DurableAuthorizedExecution:
     returned_currencies: tuple[str, ...] = ()
     normalized_amount_minors: tuple[int, ...] = ()
     evidence_ids: tuple[str, ...] = ()
+    normalized_offer_digests: tuple[str, ...] = ()
     observation_kind: str | None = None
     request_digest: str | None = None
     trace: ResearchExecutionTrace | None = None
@@ -250,6 +254,14 @@ def _validate_claim_fields(record: DurableAuthorizedExecution) -> None:
         raise ValueError("claim_digest must be an opaque sha256 digest")
 
 
+def _require_offer_digests(digests: tuple[str, ...]) -> None:
+    """Normalized-result digests are sha256 text, not raw Shopify payloads."""
+
+    for digest in digests:
+        if len(digest) != 64 or any(character not in "0123456789abcdef" for character in digest):
+            raise ValueError("normalized offer digests must be sha256 digests")
+
+
 def _validate_attempt_fields(record: DurableAuthorizedExecution) -> None:
     started = record.attempt_started_at
     finished = record.finished_at
@@ -264,7 +276,12 @@ def _validate_attempt_fields(record: DurableAuthorizedExecution) -> None:
             raise ValueError("a claim is not an attempt")
         if any(identity) or record.trace is not None or record.request_digest is not None:
             raise ValueError("a claim cannot store attempt facts")
-        if record.evidence_ids or record.returned_currencies or record.normalized_amount_minors:
+        if (
+            record.evidence_ids
+            or record.normalized_offer_digests
+            or record.returned_currencies
+            or record.normalized_amount_minors
+        ):
             raise ValueError("a claim cannot store normalized results")
         if record.evaluated_offer_count or record.normalized_offer_count:
             raise ValueError("a claim cannot store offer counts")
@@ -278,7 +295,12 @@ def _validate_attempt_fields(record: DurableAuthorizedExecution) -> None:
     if record.state == "running":
         if finished is not None or record.outcome is not None or record.trace is not None:
             raise ValueError("running has no durable outcome yet")
-        if record.evidence_ids or record.evaluated_offer_count or record.normalized_offer_count:
+        if (
+            record.evidence_ids
+            or record.normalized_offer_digests
+            or record.evaluated_offer_count
+            or record.normalized_offer_count
+        ):
             raise ValueError("running cannot store an outcome count")
         return
     if finished is None or finished.tzinfo is None or finished < started:
@@ -287,8 +309,9 @@ def _validate_attempt_fields(record: DurableAuthorizedExecution) -> None:
         raise ValueError("a terminal attempt requires the authoritative trace")
     if record.outcome is None:
         raise ValueError("a terminal attempt requires an outcome")
-    if len(record.evidence_ids) != record.evaluated_offer_count:
-        raise ValueError("evidence ids must match the evaluated offer count")
+    for evidence_id in record.evidence_ids:
+        require_durable_evidence_reference(evidence_id)
+    _require_offer_digests(record.normalized_offer_digests)
     if len(record.returned_currencies) != record.normalized_offer_count:
         raise ValueError("returned currencies must match the normalized offer count")
     if len(record.normalized_amount_minors) != record.normalized_offer_count:
@@ -302,17 +325,24 @@ def _validate_attempt_fields(record: DurableAuthorizedExecution) -> None:
             raise ValueError("completed requires at least one normalized offer")
         if record.observation_kind != "synthetic":
             raise ValueError("this slice only persists synthetic observations")
+        if len(record.normalized_offer_digests) != record.normalized_offer_count:
+            raise ValueError("normalized offer digests must match the normalized offer count")
     elif record.state == "failed":
         if record.outcome not in {"failed", "timed_out"} or not record.error_category:
             raise ValueError("failed requires a failure outcome and error category")
-        if record.evaluated_offer_count:
+        if record.evaluated_offer_count or record.evidence_ids or record.normalized_offer_digests:
             raise ValueError("a failed attempt cannot invent offers")
         if record.observation_kind not in {None, "synthetic"}:
             raise ValueError("a failure observation cannot be labeled live")
     elif record.state == "outcome_unknown":
         if record.outcome != "outcome_unknown" or record.error_category != "outcome_unknown":
             raise ValueError("outcome_unknown cannot be labeled success or failure")
-        if record.evaluated_offer_count or record.observation_kind is not None:
+        if (
+            record.evaluated_offer_count
+            or record.evidence_ids
+            or record.normalized_offer_digests
+            or record.observation_kind is not None
+        ):
             raise ValueError("an unknown outcome has no offer and no observation class")
     else:
         raise ValueError("execution state is unknown")

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import io
 import json
 import socket
+import urllib.error
 import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import replace
@@ -21,6 +23,7 @@ from app.domain.entities.connector_reliability import (
 from app.domain.entities.marketplace_data import SourceMode
 from app.domain.entities.research_execution import (
     ResearchCapability,
+    ResearchExecutionTraceStep,
     ResearchProviderDescriptor,
     ResearchProviderStep,
     TrustedMarketContext,
@@ -35,6 +38,9 @@ from app.infrastructure.persistence.codec import encode_entity
 from app.infrastructure.persistence.errors import PersistenceUnavailableError
 from app.infrastructure.persistence.session import reset_sync_engine
 from app.market.support import production_certified_shopping_markets, shopping_markets_for_tests
+from app.marketplace.normalization.shopify_global_catalog import (
+    normalize_shopify_global_catalog_offer,
+)
 from app.research.authorized_execution_repository import (
     EXTERNAL_CONNECTOR_ATTEMPT_INSIDE_DATABASE_TRANSACTION,
     AuthorizedExecutionRevisionConflict,
@@ -292,14 +298,21 @@ def _service_with(
     transport,
     *,
     error: Exception | None = None,
+    clock: Callable[[], datetime] | None = None,
 ):
     if error is None:
-        return in_memory_shopify_execution(executions, reliability, conversations, transport)
+        return in_memory_shopify_execution(
+            executions,
+            reliability,
+            conversations,
+            transport,
+            clock=clock,
+        )
 
     def factory():
         return _OutcomeCasFailure(executions, reliability, conversations, error=error)
 
-    return ShopifyCatalogExecutionService(factory, transport)
+    return ShopifyCatalogExecutionService(factory, transport, clock=clock)
 
 
 def _product(
@@ -413,7 +426,6 @@ def _attempt(
     *,
     capability: ResearchCapability,
     operation: str,
-    now: datetime = _NOW,
     **kwargs,
 ):
     values = {
@@ -426,7 +438,6 @@ def _attempt(
         "operation": operation,
         "claim_capability": prepared["claim"].claim_capability,
         "probe_capability": prepared["claim"].probe_capability,
-        "now": now,
         "harness_operational_status": ConnectorOperationalStatus.AVAILABLE,
         "catalog_query": "wireless earbuds" if operation == "search_catalog" else None,
         "product_id": "gid://shopify/Product/earbuds-1" if operation == "get_product" else None,
@@ -435,13 +446,40 @@ def _attempt(
     return ShopifyCatalogAttempt(**values)
 
 
-def _run(prepared, transport: FakeCatalogTransport, attempt: ShopifyCatalogAttempt, *, error=None):
+def _frozen_clock(moment: datetime) -> Callable[[], datetime]:
+    def _clock() -> datetime:
+        return moment
+
+    return _clock
+
+
+def _clock_sequence(*moments: datetime) -> Callable[[], datetime]:
+    pending = list(moments)
+
+    def _clock() -> datetime:
+        if len(pending) > 1:
+            return pending.pop(0)
+        return pending[0]
+
+    return _clock
+
+
+def _run(
+    prepared,
+    transport: FakeCatalogTransport,
+    attempt: ShopifyCatalogAttempt,
+    *,
+    error=None,
+    at: datetime = _NOW,
+    clock: Callable[[], datetime] | None = None,
+):
     service = _service_with(
         prepared["executions"],
         prepared["reliability"],
         prepared["conversations"],
         transport,
         error=error,
+        clock=clock or _frozen_clock(at),
     )
     return service.execute(attempt)
 
@@ -516,6 +554,8 @@ def test_fake_search_catalog_success_records_trace_and_releases_claim() -> None:
     assert result.trace.evaluated_offer_count == 1
     assert result.trace.steps[0].freshness_checked_at is None
     assert result.trace.steps[0].attempt_status == "succeeded"
+    assert result.trace.steps[0].evidence_ids == ()
+    assert result.trace.steps[0].evaluated_offer_count == 1
     assert len(transport.calls) == 1
     _assert_contract(transport.calls[0], tool="search_catalog")
     assert stored is not None
@@ -524,6 +564,11 @@ def test_fake_search_catalog_success_records_trace_and_releases_claim() -> None:
     assert stored.raw_response_persisted is False
     assert stored.observation_kind == "synthetic"
     assert stored.normalized_amount_minors == (79900,)
+    assert stored.trace is not None
+    assert stored.evidence_ids == ()
+    assert len(stored.normalized_offer_digests) == 1
+    assert stored.normalized_offer_digests[0] not in stored.trace.steps[0].evidence_ids
+    assert "Apple" not in stored.normalized_offer_digests[0]
     encoded = _encoded(stored)
     assert "jsonrpc" not in encoded
     assert "structuredContent" not in encoded
@@ -649,12 +694,8 @@ def test_claim_identity_expiry_and_budget_block_before_transport() -> None:
     expired_result = _run(
         expired,
         late,
-        _attempt(
-            expired,
-            capability=_AVAILABILITY,
-            operation="search_catalog",
-            now=_NOW + EXECUTION_CLAIM_LEASE,
-        ),
+        _attempt(expired, capability=_AVAILABILITY, operation="search_catalog"),
+        at=_NOW + EXECUTION_CLAIM_LEASE,
     )
     assert expired_result.block_reason == "execution_claim_expired"
     assert late.calls == []
@@ -680,12 +721,8 @@ def test_claim_identity_expiry_and_budget_block_before_transport() -> None:
     budget_result = _run(
         budget,
         short,
-        _attempt(
-            budget,
-            capability=_AVAILABILITY,
-            operation="search_catalog",
-            now=_NOW + EXECUTION_CLAIM_LEASE - remaining,
-        ),
+        _attempt(budget, capability=_AVAILABILITY, operation="search_catalog"),
+        at=_NOW + EXECUTION_CLAIM_LEASE - remaining,
     )
     assert budget_result.block_reason == "claim_budget_insufficient"
     assert short.calls == []
@@ -701,12 +738,8 @@ def test_crash_before_http_can_reclaim_the_same_execution() -> None:
     refused = _run(
         prepared,
         transport,
-        _attempt(
-            prepared,
-            capability=_DISCOVERY,
-            operation="search_catalog",
-            now=too_late,
-        ),
+        _attempt(prepared, capability=_DISCOVERY, operation="search_catalog"),
+        at=too_late,
     )
     assert refused.block_reason == "claim_budget_insufficient"
     assert transport.calls == []
@@ -784,12 +817,8 @@ def test_half_open_probe_must_be_active_before_transport() -> None:
     expired_result = _run(
         prepared,
         expired,
-        _attempt(
-            prepared,
-            capability=_OFFER,
-            operation="search_catalog",
-            now=shortened.half_open_probe_expires_at or _NOW,
-        ),
+        _attempt(prepared, capability=_OFFER, operation="search_catalog"),
+        at=shortened.half_open_probe_expires_at or _NOW,
     )
     assert expired_result.block_reason == "half_open_probe_expired"
     assert expired.calls == []
@@ -896,9 +925,58 @@ def test_disabled_harness_status_blocks_before_transport() -> None:
             True,
         ),
         (
+            CatalogTransportResult(status_code=429, payload=None, malformed=True),
+            "rate_limit",
+            ConnectorFailureKind.RATE_LIMIT,
+            "failed",
+            False,
+        ),
+        (
+            CatalogTransportResult(status_code=503, payload=None, malformed=True),
+            "unavailable",
+            ConnectorFailureKind.UNAVAILABLE,
+            "failed",
+            True,
+        ),
+        (
+            CatalogTransportResult(status_code=401, payload=None, malformed=True),
+            "credential",
+            ConnectorFailureKind.CREDENTIAL,
+            "failed",
+            False,
+        ),
+        (
+            CatalogTransportResult(status_code=403, payload=None, malformed=True),
+            "credential",
+            ConnectorFailureKind.CREDENTIAL,
+            "failed",
+            False,
+        ),
+        (
+            CatalogTransportResult(status_code=200, payload=None, malformed=True),
+            "malformed_jsonrpc",
+            ConnectorFailureKind.UNKNOWN,
+            "failed",
+            True,
+        ),
+        (
             CatalogTransportResult(status_code=200, payload={"jsonrpc": "2.0"}),
             "malformed_jsonrpc",
             ConnectorFailureKind.UNKNOWN,
+            "failed",
+            True,
+        ),
+        (
+            CatalogTransportResult(status_code=404, payload=None, malformed=True),
+            "http_error",
+            ConnectorFailureKind.UNKNOWN,
+            "failed",
+            True,
+        ),
+        (
+            CatalogTransportResult(status_code=0, payload=None, transport_unavailable=True),
+            "unavailable",
+            ConnectorFailureKind.UNAVAILABLE,
             "failed",
             True,
         ),
@@ -1122,11 +1200,17 @@ def test_ambiguous_post_http_crash_does_not_replay_or_close_breaker() -> None:
     running = prepared["executions"].get(prepared["claim"].execution_id or "")
     assert running is not None
     assert running.state == "running"
+    moments = [_NOW, _NOW + timedelta(seconds=1)]
+
+    def _reconcile_clock() -> datetime:
+        return moments.pop(0)
+
     service = in_memory_shopify_execution(
         prepared["executions"],
         prepared["reliability"],
         prepared["conversations"],
         transport,
+        clock=_reconcile_clock,
     )
     still_claimed = service.reconcile_ambiguous(attempt)
     assert still_claimed.block_reason == "attempt_still_claimed"
@@ -1134,12 +1218,7 @@ def test_ambiguous_post_http_crash_does_not_replay_or_close_breaker() -> None:
     expired = replace(running, claim_expires_at=_NOW + timedelta(seconds=1))
     prepared["executions"].cas_replace(expired, expected_revision=running.revision)
     reconciled = service.reconcile_ambiguous(
-        _attempt(
-            prepared,
-            capability=_DISCOVERY,
-            operation="search_catalog",
-            now=_NOW + timedelta(seconds=1),
-        )
+        _attempt(prepared, capability=_DISCOVERY, operation="search_catalog")
     )
     assert reconciled.persisted is True
     assert reconciled.state == "outcome_unknown"
@@ -1156,6 +1235,11 @@ def test_ambiguous_post_http_crash_does_not_replay_or_close_breaker() -> None:
     assert stored.trace.failed_sources == ()
     assert stored.trace.timed_out_sources == ()
     assert stored.evaluated_offer_count == 0
+    assert stored.finished_at == _NOW + timedelta(seconds=1)
+    assert stored.evidence_ids == ()
+    assert stored.normalized_offer_digests == ()
+    assert stored.trace.steps[0].finished_at == _NOW + timedelta(seconds=1)
+    assert stored.trace.steps[0].evidence_ids == ()
     breaker = prepared["reliability"].load(
         SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
         _MARKET,
@@ -1225,7 +1309,11 @@ def test_sqlite_outcome_survives_a_new_session(tmp_path: Path) -> None:
     )
     assert claim.claimed is True
     transport = FakeCatalogTransport(_ok(_product(currency="USD")))
-    outcome = operational_shopify_execution(factory, transport).execute(
+    outcome = operational_shopify_execution(
+        factory,
+        transport,
+        clock=_frozen_clock(_NOW),
+    ).execute(
         ShopifyCatalogAttempt(
             permit=_PERMIT,
             authorization=auth,
@@ -1236,7 +1324,6 @@ def test_sqlite_outcome_survives_a_new_session(tmp_path: Path) -> None:
             operation="search_catalog",
             catalog_query="wireless earbuds",
             claim_capability=claim.claim_capability or "",
-            now=_NOW,
             harness_operational_status=ConnectorOperationalStatus.AVAILABLE,
         )
     )
@@ -1298,3 +1385,352 @@ def test_urllib_transport_uses_the_five_second_timeout_without_a_socket(
     blocked = execute_production_shopify_catalog(production)
     assert production.calls == []
     assert blocked.transport_invoked is False
+
+
+def test_service_clock_separates_start_finish_and_checked_at(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: dict[str, datetime] = {}
+    real = normalize_shopify_global_catalog_offer
+
+    def _spy(*args, **kwargs):
+        seen["checked_at"] = kwargs["checked_at"]
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(
+        "app.research.shopify_global_catalog_execution.normalize_shopify_global_catalog_offer",
+        _spy,
+    )
+    prepared = _prepare(capability=_DISCOVERY)
+    start = _NOW
+    finish = _NOW + timedelta(seconds=3)
+    observed: dict[str, datetime | None] = {}
+
+    class _Watch(FakeCatalogTransport):
+        def post_json(self, endpoint, headers, payload, timeout_seconds):
+            row = prepared["executions"].get(prepared["claim"].execution_id or "")
+            assert row is not None
+            observed["started"] = row.attempt_started_at
+            assert row.state == "running"
+            return super().post_json(endpoint, headers, payload, timeout_seconds)
+
+    transport = _Watch(_ok(_product(currency="USD")))
+    result = _run(
+        prepared,
+        transport,
+        _attempt(prepared, capability=_DISCOVERY, operation="search_catalog"),
+        clock=_clock_sequence(start, finish),
+    )
+    stored = prepared["executions"].get(prepared["claim"].execution_id or "")
+    breaker = prepared["reliability"].load(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        _MARKET,
+        now=finish,
+    )
+    assert result.durable_success is True
+    assert observed["started"] == start
+    assert seen["checked_at"] == finish
+    assert stored is not None
+    assert stored.attempt_started_at == start
+    assert stored.finished_at == finish
+    assert stored.trace is not None
+    assert stored.trace.steps[0].started_at == start
+    assert stored.trace.steps[0].finished_at == finish
+    assert stored.trace.steps[0].evidence_ids == ()
+    assert breaker.last_success_at == finish
+    assert breaker.last_attempt_at == finish
+
+    failed = _prepare(capability=_PRICING)
+    failed_finish = _NOW + timedelta(seconds=4)
+    failed_result = _run(
+        failed,
+        FakeCatalogTransport(CatalogTransportResult(status_code=0, payload=None, timed_out=True)),
+        _attempt(failed, capability=_PRICING, operation="get_product"),
+        clock=_clock_sequence(_NOW, failed_finish),
+    )
+    failed_breaker = failed["reliability"].load(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        _MARKET,
+        now=failed_finish,
+    )
+    assert failed_result.outcome == "timed_out"
+    assert failed_result.persisted is True
+    assert failed_breaker.last_success_at is None
+    assert failed_breaker.last_attempt_at == failed_finish
+    assert failed_breaker.last_failure_category is ConnectorFailureKind.TIMEOUT
+
+
+def test_claim_expiring_during_transport_does_not_commit_or_update_breaker() -> None:
+    prepared = _prepare(capability=_OFFER)
+    finish = _NOW + EXECUTION_CLAIM_LEASE
+    transport = FakeCatalogTransport(_ok(_product()))
+    result = _run(
+        prepared,
+        transport,
+        _attempt(prepared, capability=_OFFER, operation="search_catalog"),
+        clock=_clock_sequence(_NOW, finish),
+    )
+    stored = prepared["executions"].get(prepared["claim"].execution_id or "")
+    breaker = prepared["reliability"].load(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        _MARKET,
+        now=finish,
+    )
+    assert len(transport.calls) == 1
+    assert result.transport_invoked is True
+    assert result.persisted is False
+    assert result.durable_success is False
+    assert result.block_reason == "execution_claim_expired"
+    assert result.state == "running"
+    assert stored is not None
+    assert stored.state == "running"
+    assert stored.attempt_started_at == _NOW
+    assert stored.finished_at is None
+    assert stored.outcome is None
+    assert stored.trace is None
+    assert breaker.last_success_at is None
+    assert breaker.last_attempt_at is None
+    assert breaker.consecutive_failure_count == 0
+
+    timed_out = _prepare(capability=_PRICING)
+    timeout_transport = FakeCatalogTransport(
+        CatalogTransportResult(status_code=0, payload=None, timed_out=True)
+    )
+    timeout_result = _run(
+        timed_out,
+        timeout_transport,
+        _attempt(timed_out, capability=_PRICING, operation="get_product"),
+        clock=_clock_sequence(_NOW, finish),
+    )
+    timeout_breaker = timed_out["reliability"].load(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        _MARKET,
+        now=finish,
+    )
+    assert len(timeout_transport.calls) == 1
+    assert timeout_result.persisted is False
+    assert timeout_result.durable_success is False
+    assert timeout_result.block_reason == "execution_claim_expired"
+    assert timeout_breaker.last_failure_category is None
+    assert timeout_breaker.consecutive_failure_count == 0
+    assert timed_out["executions"].get(timed_out["claim"].execution_id or "").state == (  # type: ignore[union-attr]
+        "running"
+    )
+
+
+def test_half_open_probe_expiring_during_transport_does_not_commit() -> None:
+    prepared = _prepare(capability=_DISCOVERY, half_open=True)
+    breaker = prepared["reliability"].load(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        _MARKET,
+        now=_NOW,
+    )
+    probe_expiry = _NOW + timedelta(seconds=7)
+    prepared["reliability"].save(
+        replace(breaker, half_open_probe_expires_at=probe_expiry),
+        expected_revision=breaker.revision,
+    )
+    transport = FakeCatalogTransport(_ok(_product()))
+    result = _run(
+        prepared,
+        transport,
+        _attempt(prepared, capability=_DISCOVERY, operation="search_catalog"),
+        clock=_clock_sequence(_NOW, probe_expiry),
+    )
+    stored = prepared["executions"].get(prepared["claim"].execution_id or "")
+    current = prepared["reliability"].load(
+        SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        _MARKET,
+        now=probe_expiry,
+    )
+    assert len(transport.calls) == 1
+    assert result.transport_invoked is True
+    assert result.persisted is False
+    assert result.durable_success is False
+    assert result.block_reason == "half_open_probe_expired"
+    assert stored is not None
+    assert stored.state == "running"
+    assert stored.outcome is None
+    assert current.state is CircuitBreakerState.HALF_OPEN
+    assert current.last_success_at is None
+    assert current.half_open_probe_claim_digest is not None
+    assert current.half_open_probe_expires_at == probe_expiry
+
+
+def test_normalized_offer_digests_are_stable_and_are_not_evidence_ids() -> None:
+    first = _prepare(capability=_DISCOVERY)
+    second = _prepare(capability=_AVAILABILITY)
+    product = _product(currency="USD")
+    first_result = _run(
+        first,
+        FakeCatalogTransport(_ok(product)),
+        _attempt(first, capability=_DISCOVERY, operation="search_catalog"),
+    )
+    second_result = _run(
+        second,
+        FakeCatalogTransport(_ok(product)),
+        _attempt(second, capability=_AVAILABILITY, operation="search_catalog"),
+    )
+    left = first["executions"].get(first["claim"].execution_id or "")
+    right = second["executions"].get(second["claim"].execution_id or "")
+    assert first_result.durable_success is True
+    assert second_result.durable_success is True
+    assert left is not None and right is not None
+    assert left.normalized_offer_digests == right.normalized_offer_digests
+    assert left.evidence_ids == ()
+    assert right.evidence_ids == ()
+    assert left.trace is not None and right.trace is not None
+    assert left.trace.steps[0].evidence_ids == ()
+    assert left.normalized_offer_digests[0] not in _encoded(left.trace)
+    assert "checkout_url" not in left.normalized_offer_digests[0]
+
+
+def test_trace_evidence_ids_are_not_offer_counts_or_digests() -> None:
+    empty = ResearchExecutionTraceStep(
+        plan_id="plan-trace",
+        provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        requested_capability=_DISCOVERY,
+        market=_MARKET,
+        source=_SOURCE,
+        attempted=True,
+        attempt_status="succeeded",
+        started_at=_NOW,
+        finished_at=_NOW + timedelta(seconds=1),
+        evaluated_offer_count=1,
+    )
+    mismatched = ResearchExecutionTraceStep(
+        plan_id="plan-trace",
+        provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        requested_capability=_DISCOVERY,
+        market=_MARKET,
+        source=_SOURCE,
+        attempted=True,
+        attempt_status="succeeded",
+        evidence_ids=("research-evidence:offer-1",),
+        started_at=_NOW,
+        finished_at=_NOW + timedelta(seconds=1),
+        evaluated_offer_count=2,
+    )
+    assert empty.evidence_ids == ()
+    assert empty.evaluated_offer_count == 1
+    assert mismatched.evidence_ids == ("research-evidence:offer-1",)
+    with pytest.raises(ValueError, match="normalized offer digests are not evidence ids"):
+        ResearchExecutionTraceStep(
+            plan_id="plan-trace",
+            provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+            requested_capability=_DISCOVERY,
+            market=_MARKET,
+            source=_SOURCE,
+            attempted=True,
+            attempt_status="succeeded",
+            evidence_ids=("ab" * 32,),
+            started_at=_NOW,
+            finished_at=_NOW + timedelta(seconds=1),
+            evaluated_offer_count=1,
+        )
+    with pytest.raises(ValueError, match="unattempted steps cannot have execution facts"):
+        ResearchExecutionTraceStep(
+            plan_id="plan-trace",
+            provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+            requested_capability=_DISCOVERY,
+            evidence_ids=("research-evidence:offer-1",),
+        )
+    with pytest.raises(ValueError, match="cannot invent evaluated offers"):
+        ResearchExecutionTraceStep(
+            plan_id="plan-trace",
+            provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+            requested_capability=_DISCOVERY,
+            market=_MARKET,
+            source=_SOURCE,
+            attempted=True,
+            attempt_status="failed",
+            evidence_ids=("research-evidence:offer-1",),
+            started_at=_NOW,
+            finished_at=_NOW + timedelta(seconds=1),
+            error_category="timeout",
+        )
+
+
+@pytest.mark.parametrize(
+    ("reason", "timed_out"),
+    [
+        (ConnectionRefusedError("connection refused"), False),
+        (OSError("network unreachable"), False),
+        (TimeoutError("timed out"), True),
+    ],
+)
+def test_urllib_urlerror_is_unavailable_unless_it_is_a_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+    reason: Exception,
+    timed_out: bool,
+) -> None:
+    def _urlopen(*_args: object, **_kwargs: object) -> None:
+        raise urllib.error.URLError(reason)
+
+    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    result = UrllibJsonTransport().post_json(
+        GLOBAL_CATALOG_ENDPOINT,
+        anonymous_http_headers(),
+        {"jsonrpc": "2.0"},
+        SHOPIFY_HTTP_TIMEOUT_SECONDS,
+    )
+    assert result.timed_out is timed_out
+    assert result.transport_unavailable is not timed_out
+    assert result.malformed is False
+    assert result.payload is None
+    assert result.raw_body_persisted is False
+
+
+@pytest.mark.parametrize("status_code", [429, 503, 401, 403])
+def test_urllib_non_json_http_error_keeps_the_status(
+    monkeypatch: pytest.MonkeyPatch,
+    status_code: int,
+) -> None:
+    def _urlopen(request, timeout=None):  # noqa: ANN001
+        del timeout
+        raise urllib.error.HTTPError(
+            request.full_url,
+            status_code,
+            "error",
+            hdrs=None,  # type: ignore[arg-type]
+            fp=io.BytesIO(b"<html>not json</html>"),
+        )
+
+    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    result = UrllibJsonTransport().post_json(
+        GLOBAL_CATALOG_ENDPOINT,
+        anonymous_http_headers(),
+        {"jsonrpc": "2.0"},
+        SHOPIFY_HTTP_TIMEOUT_SECONDS,
+    )
+    assert result.status_code == status_code
+    assert result.malformed is True
+    assert result.transport_unavailable is False
+    assert result.timed_out is False
+    assert result.payload is None
+
+
+def test_urllib_http_200_non_json_is_malformed(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _Response:
+        status = 200
+
+        def read(self) -> bytes:
+            return b"not-json"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args: object) -> None:
+            return None
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *_args, **_kwargs: _Response())
+    result = UrllibJsonTransport().post_json(
+        GLOBAL_CATALOG_ENDPOINT,
+        anonymous_http_headers(),
+        {"jsonrpc": "2.0"},
+        SHOPIFY_HTTP_TIMEOUT_SECONDS,
+    )
+    assert result.status_code == 200
+    assert result.malformed is True
+    assert result.transport_unavailable is False
+    assert result.payload is None
