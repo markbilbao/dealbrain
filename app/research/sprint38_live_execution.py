@@ -72,7 +72,10 @@ from app.research.shopify_global_catalog_certification_evidence import (
 from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
 from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 
-SPRINT_38_ENGINEERING_STATUS = "IN PROGRESS"
+# Closure status stays ``SPRINT_38_STATUS = "IN PROGRESS"`` in the access-stage
+# module. This constant is the one-connector engineering contract only.
+# It is not sprint closure, not live operation, and not production deployment.
+SPRINT_38_ENGINEERING_STATUS = "ENGINEERING COMPLETE"
 SHOPPING_RESEARCH_EXECUTION_MODE = "disabled"
 SHOPIFY_LIVE_CALL_PERMITTED = False
 SHOPIFY_PERSISTENT_CACHE_ALLOWED = False

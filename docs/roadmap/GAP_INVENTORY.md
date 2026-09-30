@@ -192,6 +192,8 @@ Current PH-only closure (2026-09-26), which supersedes the open-work reading of 
 | AI-provider and affiliate-provider failure behavior | `planned_underspecified` | 38 |
 | App readiness ≠ full merchant availability | `implemented_verified` (principle) | 22 / 38 |
 
+Current Sprint 38 closure reading (2026-09-30), which supersedes the open-work reading of the rows above for the PH one-connector beta: the one-connector reliability contract is engineered and tested with repository state and fake transport. It is not live, not production-deployed, and not launch-ready. Multi-connector live chaos is future scope and does not block this beta. Production probes, alerts, paging, and incident operations are Sprint 42. Real Shopify validation, the production UCP profile, and the deployed kill-switch drill are blocked on Sprint 41. Query-time Shopify policy refuses persistent cache admission. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False. Sprint 38 stays IN PROGRESS and is not COMPLETE / CLOSED. Audit: [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md).
+
 ---
 
 ## G. Recommendation and commercial integrity
@@ -1123,3 +1125,25 @@ This addendum does **not** rewrite earlier snapshots. The live-start note that a
 | Trace / connector | Authoritative trace stays empty. ``attempted``, ``source_checked``, ``connector_invoked``, ``http_invoked``, and ``live_execution_started`` stay false. The prior decision is unchanged. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. Production UCP profile stays undeployed. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+
+## 2026-09-30 Sprint 38 closure-readiness audit addendum
+
+This addendum does **not** rewrite earlier snapshots. It records the closure-readiness audit after the Shopify execution adapter. It does **not** complete or close Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 closure | IN PROGRESS. Not COMPLETE / CLOSED. |
+| Audit verdict | ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES |
+| Live execution | NOT OPERATIONAL |
+| Production / launch | Not PRODUCTION DEPLOYED. Not LAUNCH READY |
+| Class B engineering blockers | None. No new runtime slice is opened by the audit |
+| Multi-connector live chaos | Future scope. Not a closure blocker for the one certified PH connector |
+| Probes / alerts / paging | Sprint 42 |
+| Real Shopify validation | Blocked on Sprint 41 production profile plus routing and operational eligibility. Real calls stay 0 |
+| Production UCP profile | Sprint 41. Undeployed |
+| Production composition | Fail-closed contract exists. `execute_production_shopify_catalog` never calls transport |
+| Destination re-evaluation | False. Dependent on a future live validated executor. Shipping stays uncertified |
+| Canonical updated Results | Prior decision stays unchanged. Synthetic transport must not create a shopper decision |
+| Routing / provider / public markets | Routing 0. Provider DISABLED. Public certified shopping markets 0 |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Sprint 42 remains later operations work |
+| Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |

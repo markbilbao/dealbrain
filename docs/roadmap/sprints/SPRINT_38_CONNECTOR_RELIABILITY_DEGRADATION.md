@@ -1,17 +1,26 @@
 # Sprint 38 — Connector Reliability & Honest Degradation
 
-**Status:** IN PROGRESS (2026-09-30). Engineering foundation, authorization/planning handoff, repository-backed breaker state, durable authorized-execution preparation, a durable live-start claim, HALF_OPEN single-probe lease, exact authorization consumption on that claim, and a Shopify execution adapter with authoritative trace and durable outcome persistence. Not COMPLETE / CLOSED. Live execution is NOT OPERATIONAL. The adapter is proven only with fake transports. Real Shopify calls stay 0. Routing stays 0. Public PH shopping coverage stays disabled. Production composition cannot reach the transport.
+**Status:** IN PROGRESS (2026-09-30). Audit verdict: ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES. Not COMPLETE / CLOSED. Not LIVE OPERATIONAL. Not PRODUCTION DEPLOYED. Not LAUNCH READY. Real Shopify calls stay 0. Routing stays 0. Public PH shopping coverage stays disabled. Production composition cannot reach the transport.
 **Primary owner / domain:** Marketplace reliability / ops
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
-**Beta blocker classification:** Yes with live HTTP / multi-connector launch
+**Closure-readiness audit:** [`../evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](../evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md)
+**Beta blocker classification:** Yes with live HTTP for live research. Multi-connector live chaos does not block this one-connector beta.
+
+## Current closure reading (2026-09-30)
+
+The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS. Engineering of the PH one-connector contract is complete. Closure validation is blocked on Sprint 41 and the downstream gates named in the audit. Those are different facts.
+
+ENGINEERING COMPLETE does not mean SPRINT COMPLETE / CLOSED, LIVE OPERATIONAL, PRODUCTION DEPLOYED, or LAUNCH READY. Fake-transport tests are not live evidence. Repository kill-switch tests are not a deployed drill. The HALF_OPEN lease is not a Sprint 42 production probe.
+
+The dated sections below this heading are slice history. The 2026-09-26 A–G list in the foundation section used different letter meanings and is superseded for closure reading. The original template from Objective through Change control is retained and labeled historical.
 
 ## Current engineering foundation (2026-09-26)
 
 Sprint 38 has started. It is not complete. Overall engineering status is IN PROGRESS. Live research operational status is NOT OPERATIONAL. Those are separate facts: `SPRINT_38_STATUS` is IN PROGRESS, and `SPRINT_38_LIVE_EXECUTION_STATUS` is NOT OPERATIONAL. The current public beta has one certified PH connector, `ph-shopify-global-catalog`, and that provider stays DISABLED. Routing stays 0. Public certified shopping markets stay 0. `SHOPPING_RESEARCH_EXECUTION_MODE` stays disabled. This foundation does not call Shopify and does not deploy.
 
-The scripted circuit breaker is deterministic chaos-test state on one in-memory connector. It is not evidence of a persistent production breaker across separate shopper requests. Persistent production breaker hardening remains Sprint 38 work before closure.
+The scripted circuit breaker is deterministic chaos-test state on one in-memory connector. It is not evidence of a persistent production breaker across separate shopper requests. This paragraph's statement that persistent breaker hardening was still future work is superseded by the 2026-09-27 reliability section for the repository-backed store only.
 
-Classification for the current PH-only scope:
+Historical slice classification (2026-09-26). These letters are not the 2026-09-30 audit classes. The audit supersedes this list for closure reading:
 
 - A. Reuse Sprint 31 timeout, retry, breaker, and kill-switch contracts, Sprint 31 planning-only execution, Sprint 32 reduced certification, and Sprint 37 fail-closed destination re-evaluation. Do not duplicate those systems.
 - B. Implement now: execution identity and states, owner-bound idempotent confirmation, truthful non-live traces, the request-scoped live-mode fail-closed gate, a Shopify execution refusal that does not perform HTTP, scripted timeout / 429 / 5xx / retry / kill-switch behavior, an in-memory chaos-test breaker that is not a persistent production breaker, one-connector no-merchants-available behavior, prior-decision preservation, connector health distinct from `/ready`, and Shopify cache refusal.
@@ -118,6 +127,10 @@ Crash recovery is explicit and not exactly-once HTTP. A crash before the attempt
 Later owner-controlled Shopify validation is not part of this slice and was not run. It may happen only when repository truth shows all of these gates together: an operational provider status other than the current ``DISABLED`` row, real non-fixture routing, approved PH market activation, the production UCP profile deployed under Sprint 41, the exact certified capability and source, an explicitly approved live execution switch, and this claim/trace/degradation path. Until then, real Shopify calls stay 0. Do not run the Sprint 32 harness, ``catalog.shopify.com``, or an owner live validation from this repository state.
 
 Production deployment and the production UCP profile stay Sprint 41, which stays UNSTARTED. Alerts, paging, synthetic production probes, and incident-runbook proof stay Sprint 42. This slice does not start Sprint 41 or Sprint 42 and does not mark Sprint 38 COMPLETE. Fake transport evidence is not production live certification and does not enable public PH shopping coverage.
+
+## Original sprint template (historical for closure)
+
+The sections from Objective through Change control are the original template. They are kept so the older wording is not lost. They are not the current closure checklist. Multi-connector live chaos, "Probes green," production alert routing, a deployed kill-switch drill, a real shopper live decision, and a canonical Results replacement are reclassified in the 2026-09-30 audit. Do not close Sprint 38 from this template, and do not treat the template as a reason to build another runtime slice before Sprint 41 validation can exist.
 
 ## Objective
 
