@@ -83,6 +83,16 @@ Authorization consumption is still not solved atomically. ``mark_research_author
 
 Production deployment remains Sprint 41 and stays UNSTARTED. Alerts, paging, synthetic probes, and incident operations remain Sprint 42. Connector HTTP and outcome recording remain later Sprint 38 work. This slice does not start Sprint 41 or Sprint 42 and does not mark Sprint 38 COMPLETE.
 
+## Atomic authorization consumption (2026-09-30)
+
+This slice closes the authorization boundary that the live-start claim left open. Sprint 38 stays IN PROGRESS. Live execution stays NOT OPERATIONAL. No migration was added. The conversation row already lives in ``operational_entities`` / ``shopping_assistant.conversations``.
+
+``AUTHORIZATION_CONSUMPTION_ON_LIVE_START_CLAIM`` is true. A claim that passes every live-start gate compare-and-swaps three facts in one SQLAlchemy transaction: the execution claim, the HALF_OPEN probe lease when the breaker is HALF_OPEN, and the exact ``ResearchAuthorization`` inside the conversation. ``mark_research_authorization_consumed()`` moves that authorization from ``authorized_pending_execution`` to ``consumed``. ``authorization_version`` is not incremented. The conversation ``persistence_version`` increments through the existing conversation compare-and-swap. A CLOSED claim consumes the authorization and writes no probe lease. A failed gate, a lost execution race, a lost probe lease, a conversation version conflict, or a database outage rolls every write back. The authorization stays pending when no claim commits.
+
+A consumed authorization does not authorize a new execution. ``validate_research_authorization_for_execution()`` still rejects ``consumed``. ``validate_consumed_authorization_for_execution_resume()`` accepts it only for the same execution, authorization, decision, plan, conversation, and owner, and only after the previous claim has expired. An unexpired claim stays ``execution_already_claimed``. Reclaim issues a new capability and does not consume the authorization again. The previous capability no longer validates. Cancellation and invalidation still do not reopen a consumed authorization.
+
+The future connector timeout is the existing 5_000 ms ``TimeoutPolicy`` / Shopify candidate timeout. The Sprint 32 anonymous harness used a 30 second socket timeout, which equals the claim lease and is not the future HTTP timeout. One second of strict slack keeps timeout plus margin shorter than both the 30 second execution claim lease and the 30 second HALF_OPEN probe lease. No HTTP call is added. The validated Anonymous catalog contract is recorded for the next slice and is not executed. Current production still cannot claim: mode disabled, provider DISABLED, routing 0, public certified markets 0, production UCP profile undeployed. The authoritative trace stays empty. ``attempted``, ``source_checked``, ``connector_invoked``, ``http_invoked``, and ``live_execution_started`` stay false. Consuming the authorization does not mutate the canonical decision, PiqScore, recommendation, evaluated offer set, or economics.
+
 ## Objective
 
 Harden and consolidate certified connector behavior into production-grade cross-connector reliability and honest degradation — **not** introduce basic timeout/retry/failure handling for the first time (those minimum contracts are owned by Sprint 31 and validated per market in 32–36).

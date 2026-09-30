@@ -7,8 +7,9 @@ already a one-way digest of the server authorization key. The raw key, raw
 principal id, session id, browser confirmation token, secrets, and Shopify
 payloads are not stored.
 
-Preparation enters ``prepared_unavailable``. A later live-start claim may
-enter ``claimed_for_attempt``. Neither state consumes the authorization or
+Preparation enters ``prepared_unavailable`` and does not consume the
+authorization. A later live-start claim may enter ``claimed_for_attempt``
+and, in the same transaction, consume the exact authorization. Neither state
 starts a connector. A new repository, a new service, and a new database
 session load the same execution.
 
@@ -18,22 +19,21 @@ transaction:
 Phase 1, one transaction, implemented by ``app.research.live_start_claim``:
 validate the durable execution, claim it for one worker, keep the plan and
 authorization pins, enforce the persisted breaker, acquire the HALF_OPEN
-single-probe lease when applicable, persist that claim, and commit. The
+single-probe lease when applicable, consume the exact research authorization,
+compare-and-swap the conversation row, persist that claim, and commit. The
 claim state is ``claimed_for_attempt``. It is not running, because no
-connector has started.
+connector has started. A consumed authorization resumes only that same
+execution after the claim expires. It does not start a second execution.
 
 Phase 2, outside that transaction, is not implemented: only the worker
 holding the claim may invoke the connector.
 
 Phase 3, a later transaction, is not implemented: persist the outcome and
-trace facts, update breaker state, release the execution and half-open
-leases, and reconcile authorization state. ``mark_research_authorization_consumed``
-is still not called here. ResearchAuthorization lives inside
-``shopping_assistant.conversations`` and ``mark_research_authorization_consumed``
-only returns an in-memory replacement. That write is not in this claim
-transaction. See ``AUTHORIZATION_CONSUMPTION_BOUNDARY`` in
-``live_start_claim``. This design is at-most-one active claimant at a time,
-plus expiry and reclaim. It is not an exactly-once external HTTP guarantee.
+trace facts, update breaker state, and release the execution and half-open
+leases. Authorization is already consumed in phase 1 and is not consumed
+again. See ``AUTHORIZATION_CONSUMPTION_BOUNDARY`` in ``live_start_claim``.
+This design is at-most-one active claimant at a time, plus expiry and
+reclaim. It is not an exactly-once external HTTP guarantee.
 
 Database unavailability at this boundary becomes
 ``PersistenceUnavailableError`` via ``translate_db_error``. Preparation then
@@ -77,6 +77,7 @@ FUTURE_LIVE_START_CLAIM = (
     "validate_durable_execution",
     "single_worker_execution_claim",
     "authorization_single_execution",
+    "consume_exact_research_authorization",
     "persisted_breaker_permission",
     "half_open_single_probe_lease",
     "persist_live_start_claim",

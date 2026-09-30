@@ -1107,3 +1107,19 @@ This addendum does **not** rewrite earlier snapshots. The durable-preparation no
 | Trace / breaker evidence | Authoritative trace stays empty. Claiming does not record success or failure and does not mark the provider healthy or attempted. |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. |
 | Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |
+
+## 2026-09-30 Sprint 38 authorization-consumption addendum
+
+This addendum does **not** rewrite earlier snapshots. The live-start note that authorization consumption was not yet in the claim transaction remains the record of that slice. It does **not** complete Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| Sprint 38 | IN PROGRESS. Not COMPLETE / CLOSED. Live execution status is separately NOT OPERATIONAL. |
+| Authorization consumption | Implemented on the successful live-start claim only. The exact authorization moves from ``authorized_pending_execution`` to ``consumed`` in the same transaction as the execution claim and, when HALF_OPEN, the probe lease. ``AUTHORIZATION_CONSUMPTION_ON_LIVE_START_CLAIM`` is true. Failed gates leave the authorization pending. |
+| Recovery | A consumed authorization resumes only the same expired execution. It does not start a second execution. An active claim still blocks. Reclaim does not consume again. |
+| Conversation persistence | Existing ``shopping_assistant.conversations`` row and ``SqlAlchemyConversationRepository`` compare-and-swap. No new table and no migration. |
+| HTTP timeout contract | Future connector timeout is 5 seconds, from the existing timeout policy. Timeout plus a 1 second strict margin stays under the 30 second claim and probe leases. No HTTP call is added. |
+| Current production | Cannot consume an authorization, because no live-start claim can succeed. Provider stays DISABLED. Routing stays 0. Public certified shopping markets stay 0. Live mode stays disabled. |
+| Trace / connector | Authoritative trace stays empty. ``attempted``, ``source_checked``, ``connector_invoked``, ``http_invoked``, and ``live_execution_started`` stay false. The prior decision is unchanged. |
+| Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Alerts, paging, probes, and incident operations remain Sprint 42. Production UCP profile stays undeployed. |
+| Authority | [`sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md`](sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md) |

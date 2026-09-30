@@ -381,12 +381,14 @@ def mark_research_authorization_consumed(
     *,
     now: datetime,
 ) -> ResearchAuthorization:
-    """Single-logical-execution helper for a live attempt that is about to start.
+    """Single-logical-execution helper for a live-start claim that is committing.
 
     Ask confirmation must not call this. Sprint 38 preparation must not call
     this when live mode is closed, the provider is disabled, routing is absent,
-    or a plan was only prepared. Repeated retries of the same logical run keep
-    using ``authorization.idempotency_key`` and do not consume it again.
+    or a plan was only prepared. The only writer is the durable live-start
+    claim transaction, and only after every live-start gate has passed. A
+    repeated resume of that same logical execution keeps the consumed status
+    and does not consume it again. ``authorization_version`` is unchanged.
     """
 
     if authorization.status != "authorized_pending_execution":
@@ -394,6 +396,185 @@ def mark_research_authorization_consumed(
             "Only an authorized_pending_execution authorization can be consumed."
         )
     return replace(authorization, status="consumed", updated_at=now, execution_available=False)
+
+
+class AuthorizationConsumptionConflict(Exception):
+    """The exact pending authorization could not be replaced."""
+
+    def __init__(self, conversation_id: str, reason: str) -> None:
+        self.conversation_id = conversation_id
+        self.reason = reason
+        super().__init__(f"authorization consumption conflict for {conversation_id}: {reason}")
+
+
+def validate_consumed_authorization_for_execution_resume(
+    authorization: ResearchAuthorization | None,
+    *,
+    owner: ConversationOwner,
+    conversation_id: str,
+    decision_id: str,
+    canonical_context_version: int,
+    proposal_id: str,
+    proposal_version: int,
+    scope_digest: str,
+    execution_id: str,
+    execution_plan_id: str,
+    execution_authorization_id: str,
+    execution_authorization_version: int,
+    execution_decision_id: str,
+    execution_state: str,
+    claim_active: bool,
+    requested_plan_id: str,
+) -> ResearchAuthorizationValidation:
+    """Allow one consumed authorization to resume only its same logical execution.
+
+    This does not authorize a new execution, a different plan, a different
+    decision, or a different owner or conversation. Pending work still uses
+    ``validate_research_authorization_for_execution``, which rejects
+    ``consumed``.
+    """
+
+    if authorization is None:
+        return ResearchAuthorizationValidation(valid=False, reason="not_found")
+    if authorization.owner_binding != owner_binding_digest(owner):
+        return ResearchAuthorizationValidation(
+            valid=False, reason="wrong_owner", authorization=authorization
+        )
+    if authorization.conversation_id != conversation_id:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="wrong_conversation", authorization=authorization
+        )
+    if (
+        authorization.decision_id != decision_id
+        or authorization.decision_id != execution_decision_id
+    ):
+        return ResearchAuthorizationValidation(
+            valid=False, reason="wrong_decision", authorization=authorization
+        )
+    if authorization.canonical_context_version != canonical_context_version:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="stale_context_version", authorization=authorization
+        )
+    if authorization.proposal_id != proposal_id:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="proposal_id_mismatch", authorization=authorization
+        )
+    if authorization.proposal_version != proposal_version:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="proposal_version_mismatch", authorization=authorization
+        )
+    if authorization.scope_digest != scope_digest:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="scope_digest_mismatch", authorization=authorization
+        )
+    if authorization.status == "cancelled":
+        return ResearchAuthorizationValidation(
+            valid=False, reason="cancelled", authorization=authorization
+        )
+    if authorization.status == "invalidated":
+        return ResearchAuthorizationValidation(
+            valid=False, reason="invalidated", authorization=authorization
+        )
+    if authorization.status != "consumed":
+        return ResearchAuthorizationValidation(
+            valid=False, reason="not_consumed", authorization=authorization
+        )
+    if claim_active:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="execution_already_claimed", authorization=authorization
+        )
+    if execution_state != "claimed_for_attempt":
+        return ResearchAuthorizationValidation(
+            valid=False,
+            reason="consumed_authorization_not_resumable",
+            authorization=authorization,
+        )
+    if (
+        authorization.authorization_id != execution_authorization_id
+        or authorization.authorization_version != execution_authorization_version
+    ):
+        return ResearchAuthorizationValidation(
+            valid=False,
+            reason="consumed_authorization_execution_mismatch",
+            authorization=authorization,
+        )
+    if requested_plan_id != execution_plan_id:
+        return ResearchAuthorizationValidation(
+            valid=False, reason="authorization_plan_conflict", authorization=authorization
+        )
+    from app.services.research_execution import authorized_execution_id
+
+    if execution_id != authorized_execution_id(authorization.idempotency_key):
+        return ResearchAuthorizationValidation(
+            valid=False,
+            reason="consumed_authorization_execution_mismatch",
+            authorization=authorization,
+        )
+    return ResearchAuthorizationValidation(
+        valid=True,
+        reason="consumed_execution_resumable",
+        authorization=authorization,
+        execution_available=False,
+    )
+
+
+def consume_exact_research_authorization(
+    context: Any,
+    *,
+    owner: ConversationOwner,
+    authorization_id: str,
+    authorization_version: int,
+    decision_id: str,
+    canonical_context_version: int,
+    proposal_id: str,
+    proposal_version: int,
+    scope_digest: str,
+    idempotency_key: str,
+    now: datetime,
+) -> Any:
+    """Replace one exact pending authorization on a conversation. Does not persist.
+
+    The caller saves the returned context through the conversation repository
+    so owner binding, membership, stable decision context, and row-version
+    compare-and-swap stay in that repository. No other authorization in the
+    tuple is changed. ``authorization_version`` is not incremented.
+    """
+
+    conversation_id = context.conversation_id
+    if context.owner is None or not context.owner.has_same_identity(owner):
+        raise AuthorizationConsumptionConflict(conversation_id, "wrong_owner")
+    matches = [
+        item
+        for item in context.research_authorizations
+        if item.authorization_id == authorization_id
+    ]
+    if len(matches) != 1:
+        raise AuthorizationConsumptionConflict(conversation_id, "authorization_not_found")
+    current = matches[0]
+    if current.owner_binding != owner_binding_digest(owner):
+        raise AuthorizationConsumptionConflict(conversation_id, "wrong_owner")
+    identity_matches = (
+        current.authorization_version == authorization_version
+        and current.conversation_id == conversation_id
+        and current.decision_id == decision_id
+        and current.canonical_context_version == canonical_context_version
+        and current.proposal_id == proposal_id
+        and current.proposal_version == proposal_version
+        and current.scope_digest == scope_digest
+        and current.idempotency_key == idempotency_key
+    )
+    if not identity_matches:
+        raise AuthorizationConsumptionConflict(conversation_id, "authorization_identity_mismatch")
+    if current.status == "consumed":
+        raise AuthorizationConsumptionConflict(conversation_id, "already_consumed")
+    if current.status != "authorized_pending_execution":
+        raise AuthorizationConsumptionConflict(conversation_id, "not_pending")
+    consumed = mark_research_authorization_consumed(current, now=now)
+    replaced = tuple(
+        consumed if item.authorization_id == authorization_id else item
+        for item in context.research_authorizations
+    )
+    return replace(context, research_authorizations=replaced)
 
 
 def upsert_authorization(

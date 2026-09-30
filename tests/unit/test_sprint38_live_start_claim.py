@@ -1,6 +1,7 @@
 """Sprint 38 safe live-start claim and HALF_OPEN single-probe lease.
 
-No connector calls, no HTTP, and no authorization consumption.
+No connector calls and no HTTP. A successful claim consumes the exact
+authorization in the same transaction. Failed gates leave it pending.
 """
 
 from __future__ import annotations
@@ -25,13 +26,18 @@ from app.domain.entities.research_execution import (
     ResearchProviderStep,
     TrustedMarketContext,
 )
+from app.domain.entities.shopping_assistant import ConversationContext, DecisionContextReference
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
+from app.infrastructure.database.repositories.shopping_conversation_repository import (
+    SqlAlchemyConversationRepository,
+)
 from app.infrastructure.persistence.errors import PersistenceUnavailableError
 from app.infrastructure.persistence.operational_store import OperationalStore
 from app.infrastructure.persistence.session import reset_sync_engine
 from app.infrastructure.persistence.stores import (
     RESEARCH_AUTHORIZED_EXECUTIONS,
     RESEARCH_PROVIDER_RELIABILITY,
+    SHOPPING_CONVERSATIONS,
 )
 from app.market.support import production_certified_shopping_markets, shopping_markets_for_tests
 from app.research.authorized_execution_repository import (
@@ -276,11 +282,57 @@ def _memory_service():
     return in_memory_live_start_claims(token_factory=_token_factory())
 
 
+def _seed_conversation(conversations, *authorizations, owner=None):
+    if not authorizations:
+        raise AssertionError("at least one authorization is required")
+    auth = authorizations[0]
+    if any(item.conversation_id != auth.conversation_id for item in authorizations):
+        raise AssertionError("one seed call stores one conversation")
+    context = ConversationContext(
+        conversation_id=auth.conversation_id,
+        turns=(),
+        expires_at=datetime(2030, 6, 1, tzinfo=UTC),
+        owner=owner or _owner(),
+        decision_context=DecisionContextReference(
+            decision_id=auth.decision_id,
+            context_version=auth.canonical_context_version,
+            evaluated_product_ids=auth.evaluated_product_ids,
+            canonical_piqscore_snapshot_sha256="ab" * 32,
+            recommendation_snapshot_sha256="cd" * 32,
+        ),
+        research_authorizations=tuple(authorizations),
+    )
+    return conversations.save(context)
+
+
+def _seed_sqlite_conversation(factory, *authorizations, owner=None):
+    repository = SqlAlchemyConversationRepository(
+        session_factory=factory,
+        clock=lambda: datetime(2026, 1, 1, tzinfo=UTC),
+    )
+    return _seed_conversation(repository, *authorizations, owner=owner)
+
+
+def _add_authorization(conversations, auth):
+    current = conversations.get(auth.conversation_id)
+    if current is None:
+        return _seed_conversation(conversations, auth)
+    return conversations.save(
+        replace(
+            current,
+            research_authorizations=(*current.research_authorizations, auth),
+        ),
+        expected_version=current.persistence_version,
+    )
+
+
 def _prepare_memory():
     provider, registry, catalog, routing, markets = _world()
     auth, plan = _plan_for(None, registry, catalog, routing)
     service, executions, reliability = _memory_service()
     _bind(executions, auth, plan)
+    assert service.conversations is not None
+    _seed_conversation(service.conversations, auth)
     request = _request(auth, plan, registry, catalog, routing, markets)
     return service, executions, reliability, auth, plan, request
 
@@ -290,7 +342,7 @@ def test_lease_durations_are_bounded() -> None:
     assert timedelta(seconds=30) == HALF_OPEN_PROBE_LEASE
     assert DURABLE_LIVE_START_CLAIM_IMPLEMENTED is True
     assert HALF_OPEN_SINGLE_PROBE_LEASE_IMPLEMENTED is True
-    assert AUTHORIZATION_CONSUMPTION_ON_LIVE_START_CLAIM is False
+    assert AUTHORIZATION_CONSUMPTION_ON_LIVE_START_CLAIM is True
 
 
 def test_prepared_execution_can_be_claimed_without_a_connector() -> None:
@@ -309,7 +361,7 @@ def test_prepared_execution_can_be_claimed_without_a_connector() -> None:
     assert result.live_execution_started is False
     assert result.attempted is False
     assert result.source_checked is False
-    assert result.authorization_consumed is False
+    assert result.authorization_consumed is True
     assert stored.state == "claimed_for_attempt"
     assert stored.plan_id == plan.plan_id
     assert stored.decision_id == decision_id
@@ -318,6 +370,14 @@ def test_prepared_execution_can_be_claimed_without_a_connector() -> None:
     assert stored.claim_digest == execution_claim_digest(result.claim_capability or "")
     assert result.claim_capability not in (stored.claim_digest or "")
     assert auth.status == "authorized_pending_execution"
+    assert service.conversations is not None
+    persisted = service.conversations.get(auth.conversation_id)
+    assert persisted is not None
+    assert persisted.research_authorizations[0].status == "consumed"
+    assert persisted.research_authorizations[0].authorization_version == auth.authorization_version
+    assert persisted.persistence_version == 2
+    assert persisted.decision_context is not None
+    assert persisted.decision_context.decision_id == decision_id
     assert auth.decision_id == decision_id
     assert reliability.row_count(_PROVIDER, _MARKET) == 0
     public = result.to_public_dict()
@@ -332,6 +392,7 @@ def test_claim_survives_repository_service_and_session_recreation(sqlite_factory
     provider, registry, catalog, routing, markets = _world()
     auth, plan = _plan_for(None, registry, catalog, routing)
     _bind(OperationalAuthorizedExecutionRepository(session_factory=sqlite_factory), auth, plan)
+    _seed_sqlite_conversation(sqlite_factory, auth)
     first = operational_live_start_claims(sqlite_factory, token_factory=_token_factory())
     result = first.claim(_request(auth, plan, registry, catalog, routing, markets))
     assert result.claimed is True
@@ -376,6 +437,7 @@ def test_sqlite_workers_cannot_both_claim(sqlite_factory) -> None:
     provider, registry, catalog, routing, markets = _world()
     auth, plan = _plan_for(None, registry, catalog, routing)
     _bind(OperationalAuthorizedExecutionRepository(session_factory=sqlite_factory), auth, plan)
+    _seed_sqlite_conversation(sqlite_factory, auth)
     request = _request(auth, plan, registry, catalog, routing, markets)
     service = operational_live_start_claims(sqlite_factory, token_factory=_token_factory())
     first, second = service.claim_racing((request, request))
@@ -394,6 +456,7 @@ def test_threaded_sqlite_claim_has_one_winner(sqlite_factory) -> None:
     _provider, registry, catalog, routing, markets = _world()
     auth, plan = _plan_for(None, registry, catalog, routing)
     _bind(OperationalAuthorizedExecutionRepository(session_factory=sqlite_factory), auth, plan)
+    _seed_sqlite_conversation(sqlite_factory, auth)
     request = _request(auth, plan, registry, catalog, routing, markets)
     barrier = threading.Barrier(2)
     found: list[tuple[bool, str | None]] = []
@@ -514,29 +577,36 @@ def test_different_plan_is_a_conflict_and_does_not_rewrite_the_pin() -> None:
     del other_provider
 
 
-def test_claim_does_not_consume_authorization_or_mutate_the_decision(
+def test_claim_consumption_preserves_the_prior_decision(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    consumed: list[object] = []
+    from app.services import research_authorization as authorization_module
 
-    def _consumed(*args: object, **_kwargs: object) -> None:
-        consumed.append(args)
+    consumed: list[str] = []
+    real = authorization_module.mark_research_authorization_consumed
 
-    monkeypatch.setattr(
-        "app.services.research_authorization.mark_research_authorization_consumed",
-        _consumed,
-    )
+    def _consumed(authorization, *, now):  # noqa: ANN001
+        consumed.append(authorization.authorization_id)
+        return real(authorization, now=now)
+
+    monkeypatch.setattr(authorization_module, "mark_research_authorization_consumed", _consumed)
     service, executions, _reliability, auth, _plan, request = _prepare_memory()
     decision_id = auth.decision_id
+    assert service.conversations is not None
+    before = service.conversations.get(auth.conversation_id)
+    assert before is not None and before.decision_context is not None
     result = service.claim(request)
     stored = executions.get(result.execution_id or "")
-    assert result.authorization_consumed is False
-    assert auth.status == "authorized_pending_execution"
+    after = service.conversations.get(auth.conversation_id)
+    assert result.authorization_consumed is True
+    assert after is not None and after.decision_context == before.decision_context
+    assert after.research_authorizations[0].status == "consumed"
+    assert after.research_authorizations[0].evaluated_product_ids == auth.evaluated_product_ids
     assert auth.decision_id == decision_id
     assert stored is not None
     assert stored.decision_id == decision_id
-    assert consumed == []
-    assert AUTHORIZATION_CONSUMPTION_ON_LIVE_START_CLAIM is False
+    assert consumed == [auth.authorization_id]
+    assert AUTHORIZATION_CONSUMPTION_ON_LIVE_START_CLAIM is True
 
 
 def test_claim_does_not_create_trace_steps_or_attempt_flags() -> None:
@@ -596,6 +666,7 @@ def test_half_open_allows_one_probe_lease_and_blocks_the_next(sqlite_factory) ->
     executions = OperationalAuthorizedExecutionRepository(session_factory=sqlite_factory)
     _bind(executions, auth, plan)
     _bind(executions, other, other_plan)
+    _seed_sqlite_conversation(sqlite_factory, auth, other)
     _save_half_open(sqlite_factory, now=_NOW)
     service = operational_live_start_claims(sqlite_factory, token_factory=_token_factory())
     first_request = _request(auth, plan, registry, catalog, routing, markets)
@@ -654,6 +725,8 @@ def test_concurrent_half_open_contenders_award_one_lease() -> None:
         request.routing,
     )
     _bind(executions, other_auth, other_plan)
+    assert service.conversations is not None
+    _add_authorization(service.conversations, other_auth)
     _open_then_half_open(reliability, now=_NOW)
     other = _request(
         other_auth,
@@ -698,6 +771,8 @@ def test_expired_half_open_lease_can_be_reclaimed() -> None:
         request.routing,
     )
     _bind(executions, other_auth, other_plan)
+    assert service.conversations is not None
+    _add_authorization(service.conversations, other_auth)
     _open_then_half_open(reliability, now=_NOW)
     first = service.claim(request)
     assert first.half_open_probe_lease_acquired is True
@@ -825,6 +900,7 @@ def test_persistence_failure_rolls_back_the_execution_and_the_probe(sqlite_facto
     _provider_obj, registry, catalog, routing, markets = _world()
     auth, plan = _plan_for(None, registry, catalog, routing)
     _bind(OperationalAuthorizedExecutionRepository(session_factory=sqlite_factory), auth, plan)
+    _seed_sqlite_conversation(sqlite_factory, auth)
     before = _save_half_open(sqlite_factory, now=_NOW)
     real = OperationalStore.compare_and_swap
 
@@ -961,6 +1037,7 @@ def test_sqlite_claim_stores_only_the_digest(sqlite_factory) -> None:
     _provider_obj, registry, catalog, routing, markets = _world()
     auth, plan = _plan_for(None, registry, catalog, routing)
     _bind(OperationalAuthorizedExecutionRepository(session_factory=sqlite_factory), auth, plan)
+    _seed_sqlite_conversation(sqlite_factory, auth)
     service = operational_live_start_claims(sqlite_factory, token_factory=_token_factory())
     result = service.claim(_request(auth, plan, registry, catalog, routing, markets))
     with sqlite_factory() as session:
@@ -975,6 +1052,17 @@ def test_sqlite_claim_stores_only_the_digest(sqlite_factory) -> None:
     assert result.claim_capability not in payload
     assert "token" not in payload.lower()
     assert row.payload["fields"]["claim_digest"] == execution_claim_digest(result.claim_capability)
+    with sqlite_factory() as session:
+        conversation = session.scalar(
+            select(OperationalEntityModel).where(
+                OperationalEntityModel.store == SHOPPING_CONVERSATIONS
+            )
+        )
+    assert conversation is not None
+    conversation_payload = json.dumps(conversation.payload)
+    assert result.claim_capability not in conversation_payload
+    assert "claim_capability" not in conversation_payload
+    assert "probe_capability" not in conversation_payload
 
 
 def _blocked_reason(

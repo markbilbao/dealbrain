@@ -34,6 +34,10 @@ from app.infrastructure.persistence.errors import (
 from app.infrastructure.persistence.operational_store import OperationalStore
 from app.infrastructure.persistence.session_bound import SessionBound
 from app.infrastructure.persistence.stores import SHOPPING_CONVERSATIONS
+from app.services.research_authorization import (
+    AuthorizationConsumptionConflict,
+    consume_exact_research_authorization,
+)
 
 DEFAULT_TTL_SECONDS = 30 * 60
 MAX_TURNS = 12
@@ -273,6 +277,40 @@ class SqlAlchemyConversationRepository(ConversationRepository, SessionBound):
                 existing.persistence_version if expected_version is None else expected_version
             ),
         )
+
+    def consume_research_authorization(
+        self,
+        conversation_id: str,
+        *,
+        owner: ConversationOwner,
+        authorization_id: str,
+        authorization_version: int,
+        decision_id: str,
+        canonical_context_version: int,
+        proposal_id: str,
+        proposal_version: int,
+        scope_digest: str,
+        idempotency_key: str,
+        expected_version: int,
+        now: datetime,
+    ) -> ConversationContext:
+        context = self.get(conversation_id)
+        if context is None:
+            raise AuthorizationConsumptionConflict(conversation_id, "conversation_missing")
+        updated = consume_exact_research_authorization(
+            context,
+            owner=owner,
+            authorization_id=authorization_id,
+            authorization_version=authorization_version,
+            decision_id=decision_id,
+            canonical_context_version=canonical_context_version,
+            proposal_id=proposal_id,
+            proposal_version=proposal_version,
+            scope_digest=scope_digest,
+            idempotency_key=idempotency_key,
+            now=now,
+        )
+        return self.save(updated, expected_version=expected_version)
 
     def find_bound_for_owner(
         self,

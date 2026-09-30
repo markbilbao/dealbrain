@@ -5,10 +5,10 @@ does not parse shopper confirmation text and does not accept a client token as
 execution identity. It prepares or refuses the Sprint 31 plan that was built
 from that authorization.
 
-Live connectors are not called. ``mark_research_authorization_consumed`` is
-not called. Consumption belongs only to the later boundary where one logical
-live attempt actually starts. A closed live mode, a disabled provider, absent
-routing, and a blocked plan leave the authorization
+Live connectors are not called. Preparation does not call
+``mark_research_authorization_consumed``. Consumption belongs only to a
+successful durable live-start claim. A closed live mode, a disabled provider,
+absent routing, and a blocked plan leave the authorization
 ``authorized_pending_execution``.
 
 One preparation binding pins one plan to the authorization. The same plan
@@ -77,9 +77,9 @@ PreparationOutcome = Literal[
     "caller_target_rejected",
 ]
 
-# Preparation is not the consumption boundary. A durable live-start claim is not
-# that boundary either. ``mark_research_authorization_consumed`` runs only when
-# one logical live connector attempt starts. See
+# Preparation is not the consumption boundary. The durable live-start claim is.
+# ``mark_research_authorization_consumed`` runs only inside that claim
+# transaction, after every live-start gate has passed. See
 # ``app.research.live_start_claim.AUTHORIZATION_CONSUMPTION_BOUNDARY``.
 AUTHORIZATION_CONSUMPTION_ON_PREPARATION = False
 AUTHORITATIVE_TRACE_MODEL = "app.domain.entities.research_execution.ResearchExecutionTrace"
