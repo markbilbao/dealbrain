@@ -1,6 +1,6 @@
 # Sprint 38 — Connector Reliability & Honest Degradation
 
-**Status:** IN PROGRESS (2026-09-30). Audit verdict: ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES. Not COMPLETE / CLOSED. Not LIVE OPERATIONAL. Not PRODUCTION DEPLOYED. Not LAUNCH READY. Real Shopify calls stay 0. Routing stays 0. Public PH shopping coverage stays disabled. Production composition cannot reach the transport.
+**Status:** IN PROGRESS (2026-09-30). Audit verdict: SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN. Not COMPLETE / CLOSED. Not LIVE OPERATIONAL. Not PRODUCTION DEPLOYED. Not LAUNCH READY. Real Shopify calls stay 0. Routing stays 0. Public PH shopping coverage stays disabled. Production composition cannot reach the transport.
 **Primary owner / domain:** Marketplace reliability / ops
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Closure-readiness audit:** [`../evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](../evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md)
@@ -8,9 +8,11 @@
 
 ## Current closure reading (2026-09-30)
 
-The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS. Engineering of the PH one-connector contract is complete. Closure validation is blocked on Sprint 41 and the downstream gates named in the audit. Those are different facts.
+The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS because true Sprint 38 engineering blockers remain. The shopper path stops at durable preparation. It does not call the live-start claim or the Shopify execution adapter. `execute_production_shopify_catalog` still returns `production_execution_not_wired`. Sprint 41 lists domain engine changes as a non-goal, so that wiring is not Sprint 41 work. Real Shopify validation stays blocked on Sprint 41. Those are different facts.
 
-ENGINEERING COMPLETE does not mean SPRINT COMPLETE / CLOSED, LIVE OPERATIONAL, PRODUCTION DEPLOYED, or LAUNCH READY. Fake-transport tests are not live evidence. Repository kill-switch tests are not a deployed drill. The HALF_OPEN lease is not a Sprint 42 production probe.
+IN PROGRESS does not mean LIVE OPERATIONAL, PRODUCTION DEPLOYED, or LAUNCH READY. Fake-transport tests are not live evidence. Repository kill-switch tests are not a deployed drill. The HALF_OPEN lease is not a Sprint 42 production probe. The corrected audit does not call the engineering contract complete.
+
+Next primary Sprint 38 task: one final bounded engineering slice. Scope: positive Ask PiqSavi to claim to adapter composition behind closed gates; a successful validated outcome to a durable evidence reference and a canonical updated Results integration; failure, partial, and `outcome_unknown` preserve the prior decision; no real Shopify call; production flags remain closed. After that slice, repeat this closure-readiness audit. Sprint 39 may still run in parallel because its predecessors are Sprint 28 and Sprint 29. Sprint 40 may run in parallel as already documented. Do not justify moving on by claiming Sprint 38 engineering is already complete.
 
 The dated sections below this heading are slice history. The 2026-09-26 A–G list in the foundation section used different letter meanings and is superseded for closure reading. The original template from Objective through Change control is retained and labeled historical.
 
@@ -130,7 +132,7 @@ Production deployment and the production UCP profile stay Sprint 41, which stays
 
 ## Original sprint template (historical for closure)
 
-The sections from Objective through Change control are the original template. They are kept so the older wording is not lost. They are not the current closure checklist. Multi-connector live chaos, "Probes green," production alert routing, a deployed kill-switch drill, a real shopper live decision, and a canonical Results replacement are reclassified in the 2026-09-30 audit. Do not close Sprint 38 from this template, and do not treat the template as a reason to build another runtime slice before Sprint 41 validation can exist.
+The sections from Objective through Change control are the original template. They are kept so the older wording is not lost. They are not a license to close the sprint from multi-connector chaos or from "Probes green." The 2026-09-30 audit reclassifies those as future scope and Sprint 42. The template's confirmed-research, provenance-backed execution, and canonical updated-Results sentences remain current Sprint 38 engineering. The positive shopper composition and the validated-outcome-to-canonical-Results plumbing are still missing. Do not close Sprint 38, and do not treat Sprint 41 as the owner of that domain wiring.
 
 ## Objective
 

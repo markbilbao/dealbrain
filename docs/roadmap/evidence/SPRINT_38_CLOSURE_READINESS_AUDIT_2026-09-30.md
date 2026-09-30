@@ -1,10 +1,14 @@
 # Sprint 38 closure-readiness audit — 2026-09-30
 
-**Audit verdict:** SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES
+**Audit verdict:** SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN
 
 **Sprint closure status:** IN PROGRESS. Not COMPLETE / CLOSED.
 
-**This audit does not close Sprint 38.** It reconciles two requirement eras in the sprint document. The 2026-09-26 PH-only scope, the Sprint 32 and Sprint 37 close records, and the Sprint 41 / 42 / 44 / 45 definitions supersede the original Sprint 38 acceptance template where they conflict. The original template is retained in the sprint document and labeled historical.
+**Engineering status:** IN PROGRESS. `SPRINT_38_ENGINEERING_STATUS` is `IN PROGRESS`.
+
+**Correction before merge:** The first draft of this audit, on `7b8b0421daeb2a5ea7869f28ef046459c9727c00`, called engineering complete and set Class B count to 0. That conclusion is withdrawn. The shopper call graph stops at `prepare_confirmed_research` / `prepared_unavailable`. It does not call `LiveStartClaimService` or `ShopifyCatalogExecutionService`. `execute_production_shopify_catalog` still discards the supplied transport and returns `production_execution_not_wired` even when the other block reasons would be empty. Sprint 41 lists "Domain engine changes" as an explicit non-goal, so that missing application and domain composition is Sprint 38 engineering.
+
+**This audit does not close Sprint 38.** It reconciles two requirement eras in the sprint document. The 2026-09-26 PH-only scope, the Sprint 32 and Sprint 37 close records, and the Sprint 41 / 42 / 44 / 45 definitions supersede the original Sprint 38 acceptance template where they conflict on multi-connector chaos, probes, and paging. They do not remove the current contract that confirmed research uses the certified path and that completed research returns a canonical updated Results snapshot. The original template is retained in the sprint document and labeled historical for the superseded sentences only.
 
 **Starting `main`:** `2f69f106b08a4fd343e609519efd6a24b2b0e050`
 
@@ -18,7 +22,7 @@ No Shopify call was made. No flag was enabled. No deploy was performed. Sprint 3
 
 | Meaning | Current value | What would make it true |
 |---------|---------------|-------------------------|
-| ENGINEERING COMPLETE | Yes, for the current PH one-connector contract | The fail-closed reliability, claim, trace, and degradation contract exists and is tested without live HTTP |
+| ENGINEERING COMPLETE | No | Positive shopper composition and validated-outcome-to-canonical-Results plumbing are still missing |
 | SPRINT COMPLETE / CLOSED | No | Every current Sprint 38-owned acceptance criterion is satisfied, including the real validation that this audit leaves blocked |
 | LIVE OPERATIONAL | No. `LIVE_RESEARCH_EXECUTION_OPERATIONAL` is False | A real certified connector attempt is permitted and has run under the production gates |
 | PRODUCTION DEPLOYED | No | Sprint 41 production environment, deploy/rollback evidence, and the production UCP profile |
@@ -38,7 +42,12 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | F | Not applicable to the current one-connector PH beta; preserved as future multi-connector scope |
 | G | Historical or superseded wording, retained as history and labeled historical |
 
-**Class B count: 0.** No independent Sprint 38 engineering slice is opened by this audit.
+**Class B count: 2.** Both items can be engineered behind the existing closed gates. This audit does not implement them.
+
+| Id | Requirement | Why it is Sprint 38 |
+|----|-------------|---------------------|
+| B1 | Positive production shopper execution composition | A confirmed request must be able to continue from durable preparation to the live-start claim, authorization consumption, and the Shopify adapter when every production gate is true. Today the chain stops earlier. |
+| B2 | Successful live outcome → durable evidence reference → canonical updated Results | The adapter stores `normalized_offer_digests` and leaves `evidence_ids` empty. No resolvable evidence record is written, and no canonical updated Results snapshot is produced. The shopper path does not consume a successful outcome. |
 
 ---
 
@@ -55,7 +64,7 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | `LIVE_RESEARCH_EXECUTION_OPERATIONAL` | False |
 | `DESTINATION_REEVALUATION_IMPLEMENTED` | False |
 | `SPRINT_38_STATUS` | IN PROGRESS |
-| `SPRINT_38_ENGINEERING_STATUS` | ENGINEERING COMPLETE |
+| `SPRINT_38_ENGINEERING_STATUS` | IN PROGRESS |
 | `SPRINT_38_LIVE_EXECUTION_STATUS` | NOT OPERATIONAL |
 | Sprint 41 | UNSTARTED |
 | Real Shopify calls in the adapter | 0 |
@@ -84,19 +93,19 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | Kill switch stronger than a closed breaker; disengaging it does not make DISABLED live | `assess_execution_permission` | Sprint 38 | A | Satisfied at code and repository level | Does not block engineering completion | Deployed drill is C |
 | Provider DISABLED blocks execution | Production descriptor and adapter pre-transport check | Sprint 38 behavior; Sprint 32 registered the disabled provider | A | Satisfied | Does not block engineering completion | Activation is not Sprint 38. See sequencing |
 | No merchant available for the one disabled or failed connector | One-connector aggregate and `NO_MERCHANTS_DISCLOSURE` | Sprint 38 | A | Satisfied | Does not block engineering completion | Not a multi-merchant partial result |
-| Prior canonical decision preserved | Adapter result forbids replacement; destination assessment preserves the decision | Sprint 38 | A | Satisfied as a refusal | Does not block engineering completion | Positive replacement is C |
+| Prior canonical decision preserved on failure, partial, and `outcome_unknown` | Adapter result forbids replacement today, including on fake success | Sprint 38 | A for the refusal. The positive success path is B2 | Refusal exists. Success integration does not | B2 blocks engineering completion | Real live evidence that fills the success path is C |
 | `/ready` independent of merchant availability | Reliability and live-execution readiness tests | Sprint 38, reusing Sprint 22 | A | Satisfied | Does not block engineering completion | None |
 | Health facts stay distinct: certified, operationally available, healthy, merchant availability, live | `ResearchProviderHealth` | Sprint 38 | A | Satisfied | Does not block engineering completion | Healthy still requires a recorded successful attempt. Live stays false |
 | Fixture and synthetic paths are not labeled live | Adapter rejects `observation_kind == live` and `SourceMode.LIVE` for fake success | Sprint 38 | A | Satisfied | Does not block engineering completion | Sprint 45 release check remains E |
 | Query-time Shopify policy: no persistent cache and no persistent product index | `SHOPIFY_PERSISTENT_CACHE_ALLOWED` is False; `admit_shopify_catalog_cache` refuses | Sprint 38, under the Sprint 32 certified policy | A | Satisfied by explicit refusal | Does not block engineering completion | Do not add a cache to satisfy the old stale-cache sentence |
-| Fail-closed production composition contract | `execute_production_shopify_catalog` never calls transport. Empty gate reasons still return `production_execution_not_wired` | Sprint 38 | A | Satisfied as a refusal contract | Does not block engineering completion | Executable composition is C |
-| Real Shopify owner validation | Not run. Real calls stay 0. Sprint 32 harness was not rerun | Sprint 38 validation, blocked | C | Pending | Blocks COMPLETE / CLOSED. Does not block engineering completion | Requires routing, operational eligibility, and the Sprint 41 production UCP profile together. Also requires the explicit live switch. None of those are true |
-| Executable production composition: shopper confirmation calls the claim, then the adapter, then `UrllibJsonTransport`, only when every gate is true | Not wired. The shopper path stops at durable preparation. The adapter execute path requires `BoundedFakeTransportPermit` | Split. Sprint 38 owns the refusal. Sprint 41 owns the infrastructure that could make a later composition executable | C | Identified, not implemented | Blocks LIVE OPERATIONAL and COMPLETE / CLOSED. Not a Class B slice: the positive branch cannot be evidenced without opening gates or calling Shopify | Sprint 41 production profile and environment; operational provider status; real routing; approved PH market activation; live switch |
+| Fail-closed production composition refusal | `execute_production_shopify_catalog` discards the transport. Empty gate reasons still return `production_execution_not_wired` | Sprint 38 | A for the refusal. The missing positive branch is B1 | Refusal exists. Positive branch does not | B1 blocks engineering completion | Real HTTP execution remains C |
+| Real Shopify owner validation | Not run. Real calls stay 0. Sprint 32 harness was not rerun | Sprint 38 validation, blocked | C | Pending | Blocks COMPLETE / CLOSED and LIVE OPERATIONAL. Does not remove the Class B engineering work | Requires routing, operational eligibility, and the Sprint 41 production UCP profile together. Also requires the explicit live switch. None of those are true |
+| B1. Positive production shopper execution composition | `ShoppingAssistantService` → `ProposeResearchService` → `prepare_confirmed_research` → `prepared_unavailable`. No call to `LiveStartClaimService` or `ShopifyCatalogExecutionService`. Adapter `execute` requires `BoundedFakeTransportPermit` | Sprint 38 engineering. Sprint 41 supplies environment, profile, and deployment only | B | Not implemented. Not implemented in this audit | Blocks engineering completion. Does not require a Shopify call to build or to test behind closed gates | Real execution of that branch, once the gates are true, is C |
 | Deployed operational kill-switch drill | Engineering test exists on the real descriptor in memory and in repository permission checks. No deployed drill | Sprint 41 for the deployed drill. Sprint 38 engineering behavior is A | C | Pending as deployed evidence | Blocks launch operations evidence. Does not block engineering completion | Sprint 41 production deploy. Code tests are not this drill |
 | Production UCP profile `https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json` | Undeployed. Sprint 32 recorded HTTP 404 on 2026-09-23 | Sprint 41 | C | Undeployed | Blocks real Shopify validation. Not missing Sprint 38 engineering | Sprint 41 deploy and owner HTTPS validation |
 | Production AWS, DNS, TLS, secrets, deploy, and rollback | Not in this audit | Sprint 41 | C | UNSTARTED | Blocks production deployment | Sprint 41. Predecessor recommendation is Sprint 40 |
-| Canonical updated Results from completed live research | No new canonical decision is written. Fake success leaves `evidence_ids` empty | Sprint 38 execution plus Sprint 29 snapshot presentation | C | Positive path intentionally absent | Blocks a live-research launch claim. Does not block engineering completion | Resolvable live evidence after Sprint 41 validation. Synthetic transport must not create a shopper decision |
-| Live evidence-backed destination re-evaluation | `DESTINATION_REEVALUATION_IMPLEMENTED` is False. Assessment returns `required_unavailable` and preserves the prior decision | Sprint 38 for a future live executor connection. Sprint 37 owns the fail-closed contract | C | Not an independent code gap | Does not block engineering completion. Must not be flipped true in this audit | Same live executor gates as C, and shipping certification that the reduced Shopify set does not have. Unknown shipping stays unknown |
+| B2. Successful validated outcome → durable evidence reference → canonical updated Results | No shopper-path consumer of a successful outcome. Trace `evidence_ids` stay empty. `normalized_offer_digests` are not evidence ids. No new canonical decision is written. Searched `app/` for an integration from a Shopify execution outcome into a canonical snapshot and did not find one | Sprint 38 engineering. Sprint 29 owns snapshot presentation and does not perform this integration | B | Not implemented. Not implemented in this audit | Blocks engineering completion | Real resolvable live evidence is C. A later fixture test of the plumbing must not be recorded as production live evidence. Fake transport output must not become a shopper-visible canonical live decision |
+| Live evidence-backed destination re-evaluation | `DESTINATION_REEVALUATION_IMPLEMENTED` is False. Assessment returns `required_unavailable` and preserves the prior decision | Sprint 37 owns the fail-closed contract. A live shipping executor is not available on the reduced certified set | Dependent / fail-closed. Not Class B | Stays False | Does not join the Class B count. Must not be flipped true in this audit | Shipping is uncertified. Unknown shipping stays unknown. A later live executor still cannot invent destination shipping from the reduced capability set |
 | Synthetic production probes, including the old “Probes green” sentence | Not implemented. The HALF_OPEN lease is not a production probe | Sprint 42 | D | Not started | Does not block Sprint 38 engineering or this beta's Sprint 38 closure checklist | Sprint 42 after Sprint 41 |
 | Production alerts, paging, and alert-routing evidence | Not implemented. Sprint 38 slices explicitly did not add destinations | Sprint 42 | D | Not started | Does not block Sprint 38 engineering completion | Sprint 42. The template sentence “Alerts routed in 42” is D, not a Sprint 38 hole |
 | Incident runbook consolidation, RB-connector, restore, and incident operational evidence | Not in this audit | Sprint 42 | D | Not started | Does not block Sprint 38 engineering completion | Sprint 42 |
@@ -111,8 +120,9 @@ The 2026-09-26 slice used the letters A–G for a different classification. This
 | Production evidence across multiple connectors and markets | One disabled PH provider | Future | F | Not applicable | Does not block this beta | Sprints 33–36 only if the owner expands markets |
 | Reliability consistency review signed across all certified connectors | One certified connector. Its reduced set is already certified and disabled | Future when more connectors exist | F | Not a current closure blocker | Does not block this beta | Additional certified connectors |
 | Affiliate-provider failure behavior | Affiliate monetization is out of this beta | Not a Sprint 38 closure item | F | Not applicable | Does not block this beta | Later affiliate activation, if any |
-| Original acceptance: multi-connector chaos, probes green, aggregated-health SLO drill, real shopper live evidence, canonical updated Results as a current close gate | Superseded for closure by this audit | Historical template | G | Labeled historical in the sprint document | Must not be used to close or to keep the sprint engineering-incomplete | The underlying live facts are reclassified C, D, E, or F above |
-| Original go/no-go: “Go if multi-connector chaos + aggregated health + kill switch evidenced” | Superseded for this beta | Historical template | G | Labeled historical | Must not be the current go line | Current go for engineering is the one-connector contract. Current no-go for closure is the missing Sprint 41 validation |
+| Original acceptance sentences for multi-connector chaos, probes green, and the aggregated-health live drill | Superseded for this one-connector beta | Historical template | G | Labeled historical in the sprint document | Must not be used as the current closure checklist | Reclassified F and D above |
+| Original and current contract: confirmed research uses the certified path, provenance-backed execution states, and a canonical updated Results snapshot, while failure or partial research preserves the prior decision | The pieces exist separately. The shopper path does not connect them | Sprint 38 | B, as B1 and B2 | Not satisfied | Blocks engineering completion | Real live evidence remains C. Launch wording remains E |
+| Original go/no-go: “Go if multi-connector chaos + aggregated health + kill switch evidenced” | Superseded for this beta | Historical template | G | Labeled historical | Must not be the current go line | Current no-go is the Class B wiring plus the Class C live validation |
 | 2026-09-26 slice letters A–G inside the sprint document | Different letter meanings | Historical slice note | G | Superseded for closure reading by this audit | Do not mix those letters with this matrix | None |
 
 ---
@@ -133,7 +143,9 @@ Deployment and owner HTTPS validation of the production profile belong to Sprint
 
 ### 4. Real Shopify call
 
-Sprint 38 may be engineering-complete while that validation stays pending. The sprint stays IN PROGRESS and is not COMPLETE / CLOSED until the validation can actually run. It cannot run now: routing is 0, the provider is DISABLED, the production profile is undeployed, and live mode is disabled. This audit does not call Shopify.
+A real Shopify owner validation is Class C. It stays pending, and this audit does not call Shopify. It cannot run now: routing is 0, the provider is DISABLED, the production profile is undeployed, and live mode is disabled.
+
+That pending validation does not make the missing shopper composition Class C. Sprint 38 engineering is not complete while B1 and B2 remain. The sprint stays IN PROGRESS and is not COMPLETE / CLOSED. Real execution validation remains blocked until Sprint 41. The engineering implementation of the positive branch does not wait for Sprint 41.
 
 ### 5. Routing and provider activation
 
@@ -151,7 +163,11 @@ This is not an independent Sprint 38 engineering gap. `assess_destination_reeval
 
 ### 7. Canonical updated Results
 
-The positive replacement path should be connected only after live validated evidence exists. A synthetic-only contract test is not worthwhile: the adapter already refuses to replace the prior decision, refuses to label fake transport as live, and leaves evidence ids empty. A test that built a canonical shopper decision from fake transport data would violate the truthfulness rule. The machinery that writes a new snapshot stays with Sprint 29 and waits on class C evidence.
+The current Sprint 38 contract still requires completed research to return a canonical updated Results snapshot. It still requires failed or partial research, and `outcome_unknown`, to leave the prior valid decision in place.
+
+The refusal half exists and is Class A. The success half does not, so it is B2. The adapter persists `normalized_offer_digests`. Trace `evidence_ids` stay empty. No resolvable live evidence repository record is written. No canonical updated Results snapshot is produced. The shopper path does not consume a successful live outcome. A search of `app/` found no integration from a Shopify execution outcome into a canonical snapshot. Sprint 29 owns snapshot presentation and does not perform this integration.
+
+Real evidence validation stays downstream and must not be fabricated. A later implementation may use deterministic repository fixtures to test the plumbing. Those tests must not be recorded as production live evidence. Fake Shopify transport output must not become a shopper-visible canonical live decision. Failure, partial, and `outcome_unknown` continue to preserve the prior decision.
 
 ### 8. Ask PiqSavi chain
 
@@ -174,20 +190,28 @@ Implemented, and not composed into that shopper request:
 
 Not connected:
 
-12. Evidence-repository records for a real observation.
+12. Evidence-repository records for a validated observation.
 13. A new canonical Results snapshot.
 14. Destination re-evaluation against a live executor.
 15. Production UCP profile, routing, provider operational eligibility, public market activation, and the live switch.
+
+When every production gate is genuinely true, a confirmed Ask PiqSavi research request must be able to continue:
+
+proposal → explicit confirmation → authorization → trusted Sprint 31 plan → durable preparation → live-start claim → authorization consumption → Shopify execution adapter → durable trace and outcome.
+
+Today that chain stops after durable preparation. The missing continuation from step 6 to steps 7–10 is B1. The missing continuation from a validated successful outcome to a durable evidence reference and a canonical updated Results snapshot is B2. Destination re-evaluation stays fail-closed. The production profile, routing, provider activation, public market, and live switch stay Class C or E.
 
 Adapter implemented is not production composition wired.
 
 ### 9. Production composition
 
-Split.
+The ownership is split. Executable production composition is not wholly Class C.
 
-Sprint 38 already provides the fail-closed contract: `production_shopify_execution_block_reasons()` reports mode, live-call permission, production profile, market, and routing, and `execute_production_shopify_catalog` still refuses when that list is empty (`production_execution_not_wired`).
+Sprint 38 engineering implements the positive application and domain composition behind the existing gates. It connects the shopper path to the live-start claim and the Shopify adapter only when those gates pass. That branch is fully testable without live HTTP. It does not enable the provider, routing, or live mode, and it does not deploy or call Shopify. `execute_production_shopify_catalog` currently discards the supplied transport and returns `production_execution_not_wired` even when the other block-reason list would be empty. Closing that positive branch is B1. This audit does not implement it.
 
-Sprint 41 supplies the production environment and the production profile. Only after those exist, and only after routing, operational eligibility, PH market approval, and the live switch are intentionally true, can a later composition select `UrllibJsonTransport` and call the adapter. This audit does not add that branch. Adding it now would wire HTTP that cannot be honestly exercised.
+Sprint 41 provides the real production environment, deploys the production UCP profile, and makes production validation possible. Sprint 41 lists "Domain engine changes" as a non-goal, so Sprint 41 cannot own this composition.
+
+Real execution validation remains Class C and stays blocked until Sprint 41. Engineering implementation does not need to wait for Sprint 41.
 
 ### 10. Kill switch
 
@@ -209,31 +233,52 @@ The old acceptance sentence is satisfied by the explicit no-cache / query-time p
 
 ## Class B review
 
-The following were considered and are not independent Sprint 38 work that can be finished now:
+Class B count is 2. This audit does not implement either item.
 
-| Candidate | Why it is not class B |
-|-----------|------------------------|
-| Wire `UrllibJsonTransport` into production composition | That is HTTP wiring. The fail-closed contract already exists. The executable branch needs Sprint 41 |
-| Call the live-start claim from every confirmation | Current production fails before a claim write. The claim service is already tested against production constants. Invoking it does not complete a new reliability behavior |
-| Canonical replacement plumbing with synthetic evidence | Fake transport must not become a shopper decision. The refusal is already tested |
-| Flip `DESTINATION_REEVALUATION_IMPLEMENTED` | It depends on a live validated executor, and shipping is uncertified |
-| Add a durable `cancelled` execution state | Pre-start cancellation already cancels the authorization and does not start research. In-flight cancel matters only after a live attempt can be running |
-| Multi-connector chaos, probes, paging, cache admission | Classes F, D, and A as recorded above |
+| Id | Remaining Sprint 38 engineering | Why it can be finished without Sprint 41 |
+|----|---------------------------------|------------------------------------------|
+| B1 | Positive production shopper execution composition | The claim service and the adapter already exist. The shopper path stops at `prepare_confirmed_research`. Connecting them behind the closed gates does not require a live HTTP call |
+| B2 | Successful validated outcome → durable evidence reference → canonical updated Results | The adapter stores digests and leaves `evidence_ids` empty. Writing a resolvable evidence reference and a canonical updated snapshot, and preserving the prior decision on failure, partial, and `outcome_unknown`, is application work. Real evidence is not fabricated here |
 
-No class B item is implemented in the audit change.
+These candidates stay outside Class B:
+
+| Candidate | Classification |
+|-----------|----------------|
+| Real Shopify owner validation | C. Blocked until the Sprint 41 production profile, routing, and operational eligibility exist together |
+| A real call through `UrllibJsonTransport` | C. The positive composition may accept an injected transport behind the gates. A real HTTP call stays Class C |
+| Production UCP profile and the deployed kill-switch drill | C. Sprint 41 |
+| Flip `DESTINATION_REEVALUATION_IMPLEMENTED` | Dependent and fail-closed. Shipping is uncertified. Unknown shipping stays unknown |
+| Production probes, alerts, paging, and incident operations | D. Sprint 42 |
+| Public PH market activation, launch claims, and launch rehearsal | E. Sprint 44 / 45 |
+| Multi-connector live chaos and cross-merchant live aggregation | F for this one-connector PH beta |
+| A new durable `cancelled` execution state | Pre-start cancellation already cancels the authorization and does not start research. Not a Class B item in this audit |
+
+A later B1 or B2 implementation may use deterministic repository fixtures. Those tests are not production live evidence. Fake transport output must not become a shopper-visible canonical live decision.
 
 ---
 
 ## Sequencing after this audit
 
-Sprint number order does not require Sprint 38 to be COMPLETE / CLOSED before later sprints whose remaining Sprint 38 gate sits downstream.
+Do not treat Sprint 38 engineering as complete. Do not move on by claiming that it is already done.
+
+Next primary Sprint 38 task: one final bounded engineering slice.
+
+Scope:
+
+1. Positive Ask PiqSavi → claim → adapter composition behind closed gates.
+2. Successful validated outcome → durable evidence reference → canonical updated Results integration.
+3. Failure, partial, and `outcome_unknown` preserve the prior decision.
+4. No real Shopify call.
+5. Production flags remain closed.
+
+After that slice, repeat the Sprint 38 closure-readiness audit.
 
 | Sprint | Dependency that matters here | Recommendation |
 |--------|------------------------------|----------------|
-| 38 | Engineering contract is complete. Closure validation needs Sprint 41 | Leave IN PROGRESS. Do not open another runtime slice solely to chase the historical acceptance template |
-| 39 | Predecessors are Sprint 28 and Sprint 29. Parallel with Sprint 40. Must not be used as a disguised Sprint 38 implementation | Next product sprint |
-| 40 | Predecessors are Sprint 27, Sprint 28, and Sprint 29. Parallel with Sprint 39 and with Sprint 41 prep | Next security sprint, overlapping Sprint 39 |
-| 41 | Predecessor recommendation is Sprint 40. Production-infra prep may overlap Sprint 40. Sprint 41 is what unblocks Sprint 38 closure validation | Do not start Sprint 41 implementation in this audit. Start it after Sprint 40, with prep allowed to overlap |
+| 38 | B1 and B2 remain. Real Shopify validation still needs Sprint 41 | Do the bounded slice above, then repeat this audit. Leave the sprint IN PROGRESS until that later audit says otherwise |
+| 39 | Predecessors are Sprint 28 and Sprint 29. Parallel with Sprint 40 | Sprint 39 may still run in parallel. Do not justify it by calling Sprint 38 engineering complete. It must not become a disguised Sprint 38 implementation |
+| 40 | Predecessors are Sprint 27, Sprint 28, and Sprint 29. Parallel with Sprint 39 | May run in parallel, as already documented |
+| 41 | Predecessor recommendation is Sprint 40. Non-goal: domain engine changes | Supplies the production environment, the production UCP profile, deployment, and the conditions for production validation. Does not own B1 or B2. Do not start Sprint 41 implementation in this audit |
 | 42 | Predecessor is Sprint 41 | Stays later. Owns probes, alerts, paging, and incident operations |
 | 44 / 45 | Launch claims and the public PH market | Public certified shopping markets stay 0 until those gates |
 
@@ -244,6 +289,8 @@ Do not enable routing, provider status, or the public PH market in order to manu
 ## Explicit non-claims
 
 - This audit does not mark Sprint 38 COMPLETE / CLOSED.
+- This audit does not call Sprint 38 engineering complete.
+- This audit does not implement B1 or B2.
 - This audit does not make live research operational.
 - This audit does not deploy production or the production UCP profile.
 - This audit does not start Sprint 41 or Sprint 42.

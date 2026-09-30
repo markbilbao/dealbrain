@@ -25,10 +25,7 @@ from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 ROOT = Path(__file__).resolve().parents[2]
 AUDIT = ROOT / "docs/roadmap/evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md"
 SPRINT38 = ROOT / "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md"
-VERDICT = (
-    "SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES"
-)
-STATUS_VERDICT = "ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES"
+VERDICT = "SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN"
 
 
 def _status_line(path: Path) -> str:
@@ -36,20 +33,26 @@ def _status_line(path: Path) -> str:
     return next(line for line in lines if line.startswith("**Status:**"))
 
 
-def test_audit_verdict_is_engineering_complete_and_not_sprint_closure() -> None:
+def test_audit_verdict_records_remaining_engineering_blockers() -> None:
     audit = AUDIT.read_text(encoding="utf-8")
     assert VERDICT in audit
-    assert "Class B count: 0." in audit
+    assert "Class B count: 2." in audit
+    assert "Positive production shopper execution composition" in audit
+    assert "canonical updated Results" in audit
+    assert "one final bounded engineering slice" in audit
+    assert "does not need to wait for Sprint 41" in audit
+    assert "Domain engine changes" in audit
     assert "This audit does not close Sprint 38." in audit
     assert "Not COMPLETE / CLOSED." in audit
     assert "does not mark Sprint 38 COMPLETE / CLOSED" in audit
+    assert "does not call Sprint 38 engineering complete" in audit
     status = _status_line(SPRINT38).split("**Status:**", 1)[1].strip()
     assert status.startswith("IN PROGRESS")
     assert not status.startswith("COMPLETE")
-    assert STATUS_VERDICT in status
+    assert VERDICT in status
     assert SPRINT_38_STATUS == "IN PROGRESS"
     assert SPRINT_38_LIVE_EXECUTION_STATUS == "NOT OPERATIONAL"
-    assert SPRINT_38_ENGINEERING_STATUS == "ENGINEERING COMPLETE"
+    assert SPRINT_38_ENGINEERING_STATUS == "IN PROGRESS"
     assert SPRINT_41_STATUS == "UNSTARTED"
 
 
@@ -65,11 +68,13 @@ def test_audit_keeps_production_truth_closed() -> None:
     assert production_certified_shopping_markets().to_tuple() == ()
 
 
-def test_audit_classifies_superseded_closure_blockers() -> None:
+def test_audit_classifies_downstream_and_class_b_work() -> None:
     audit = AUDIT.read_text(encoding="utf-8")
     assert "Multi-connector live chaos is not a Sprint 38 closure requirement" in audit
     assert "belong to Sprint 42" in audit
     assert "production profile belong to Sprint 41" in audit
     assert "execute_production_shopify_catalog" in audit
+    assert "production_execution_not_wired" in audit
     assert "DESTINATION_REEVALUATION_IMPLEMENTED" in audit
-    assert "A synthetic-only contract test is not worthwhile" in audit
+    assert "Fake Shopify transport output must not become a shopper-visible" in audit
+    assert "Sprint 39 may still run in parallel" in audit
