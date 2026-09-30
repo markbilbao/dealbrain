@@ -46,7 +46,7 @@ def test_audit_verdict_is_engineering_complete_and_not_sprint_closure() -> None:
     status = _status_line(SPRINT38).split("**Status:**", 1)[1].strip()
     assert status.startswith("IN PROGRESS")
     assert not status.startswith("COMPLETE")
-    assert VERDICT in status
+    assert "ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES" in status
     assert SPRINT_38_STATUS == "IN PROGRESS"
     assert SPRINT_38_LIVE_EXECUTION_STATUS == "NOT OPERATIONAL"
     assert SPRINT_38_ENGINEERING_STATUS == "ENGINEERING COMPLETE"
