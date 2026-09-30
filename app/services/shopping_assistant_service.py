@@ -145,6 +145,10 @@ class ShoppingAssistantService:
         max_query_length: int = DEFAULT_MAX_QUERY_LENGTH,
         allowed_modes: list[str] | None = None,
         execution_ledger: Any | None = None,
+        confirmed_execution: Any | None = None,
+        planning_registry: Any | None = None,
+        planning_catalog: Any | None = None,
+        planning_routing: Any | None = None,
     ) -> None:
         catalog = get_catalog()
         known_names = [str(item["product_name"]) for item in catalog]
@@ -180,6 +184,10 @@ class ShoppingAssistantService:
             clock=self._clock,
             id_factory=self._id_factory,
             execution_ledger=execution_ledger,
+            confirmed_execution=confirmed_execution,
+            planning_registry=planning_registry,
+            planning_catalog=planning_catalog,
+            planning_routing=planning_routing,
         )
         self._confidence = confidence_calculator or ConfidenceCalculator()
         self._community = community_service

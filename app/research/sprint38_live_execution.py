@@ -72,10 +72,10 @@ from app.research.shopify_global_catalog_certification_evidence import (
 from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
 from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 
-# Engineering remains in progress. Positive shopper composition and
-# validated-outcome-to-canonical-Results plumbing are not wired.
-# This is not live operation and not production deployment.
-SPRINT_38_ENGINEERING_STATUS = "IN PROGRESS"
+# B1 composition and B2 evidence-to-canonical-Results plumbing are implemented.
+# Live validation is still blocked on Sprint 41. This is not live operation
+# and not production deployment. Sprint closure stays IN PROGRESS.
+SPRINT_38_ENGINEERING_STATUS = "ENGINEERING COMPLETE"
 SHOPPING_RESEARCH_EXECUTION_MODE = "disabled"
 SHOPIFY_LIVE_CALL_PERMITTED = False
 SHOPIFY_PERSISTENT_CACHE_ALLOWED = False

@@ -3,10 +3,11 @@
 This module is the certified PH catalog path from a live-start claim to a
 durable outcome. It is not a generic ``StaticResearchProvider.execute``.
 
-Production composition cannot reach the transport. The only caller that may
-invoke a transport is an explicit :class:`BoundedFakeTransportPermit`. That
-permit does not flip production flags, does not label the result live, and
-does not make live execution operational.
+Closed production gates refuse before transport. An open-gate continuation
+may hand the same transport to the claim and adapter path. The only attempt
+that may invoke a transport is an explicit :class:`BoundedFakeTransportPermit`.
+That permit does not flip production flags, does not label the result live,
+and does not make live execution operational.
 
 Crash boundaries:
 
@@ -46,7 +47,7 @@ from app.domain.entities.connector_reliability import (
     ConnectorOperationalStatus,
     KillSwitch,
 )
-from app.domain.entities.marketplace_data import SourceMode
+from app.domain.entities.marketplace_data import ProductAvailability, SourceMode
 from app.domain.entities.research_authorization import ResearchAuthorization
 from app.domain.entities.research_execution import (
     ResearchExecutionPlan,
@@ -68,6 +69,7 @@ from app.research.authorized_execution_repository import (
     InMemoryAuthorizedExecutionRepository,
 )
 from app.research.digest import stable_sha256
+from app.research.execution_evidence import NormalizedOfferFact
 from app.research.live_start_claim import (
     LIVE_CONNECTOR_CLEANUP_MARGIN,
     SHOPIFY_LIVE_HTTP_TIMEOUT,
@@ -195,6 +197,7 @@ class ShopifyExecutionResult:
     blocking_reasons: tuple[str, ...] = ()
     unknown_cost_components: tuple[str, ...] = ()
     transport_outcome_ambiguous: bool = False
+    offer_facts: tuple[NormalizedOfferFact, ...] = ()
 
     def __post_init__(self) -> None:
         if self.real_shopify_call_count != 0 or REAL_SHOPIFY_CALLS != 0:
@@ -217,6 +220,11 @@ class ShopifyExecutionResult:
             raise ValueError("execution must preserve the prior decision")
         if self.evaluated_offer_count < 0 or self.normalized_offer_count < 0:
             raise ValueError("offer counts cannot be negative")
+        if any(
+            fact.observation_kind == "live" or fact.source_mode == SourceMode.LIVE.value
+            for fact in self.offer_facts
+        ):
+            raise ValueError("adapter offer facts cannot be labeled live")
 
     @property
     def durable_success(self) -> bool:
@@ -548,23 +556,32 @@ class ShopifyCatalogExecutionService:
             transport_invoked=transport_invoked,
             failure_kind=interpreted.failure_kind,
             unknown_costs=_unknown_costs(interpreted.offers) if interpreted.success else (),
+            offer_facts=_offer_facts(attempt, interpreted.offers) if interpreted.success else (),
         )
 
 
 def execute_production_shopify_catalog(
     transport: JsonPostTransport,
+    *,
+    continuation: Callable[[JsonPostTransport], ShopifyExecutionResult] | None = None,
 ) -> ShopifyExecutionResult:
-    """Production entry. It never calls ``transport``.
+    """Refuse before transport while any production gate is closed.
 
-    Gates stay closed in this repository. Even an empty reason list does not
-    call the transport: production composition is not wired to the adapter.
+    When every production gate is open, call the server-owned continuation.
+    That continuation is the trusted claim and adapter path. This function
+    does not call ``transport`` itself, and a closed gate does not call the
+    continuation either. Current repository gates are closed.
     """
 
-    del transport
     reasons = production_shopify_execution_block_reasons()
-    if not reasons:
-        reasons = ("production_execution_not_wired",)
-    return _refused(reasons[0], blocking_reasons=reasons)
+    if reasons:
+        return _refused(reasons[0], blocking_reasons=reasons)
+    if continuation is None:
+        return _refused(
+            "production_composition_context_required",
+            blocking_reasons=("production_composition_context_required",),
+        )
+    return continuation(transport)
 
 
 def production_shopify_execution_block_reasons() -> tuple[str, ...]:
@@ -1020,12 +1037,46 @@ def _same_step(left: ResearchProviderStep, right: ResearchProviderStep) -> bool:
     )
 
 
+def _offer_facts(
+    attempt: ShopifyCatalogAttempt,
+    offers: tuple[ShopifyNormalizedOffer, ...],
+) -> tuple[NormalizedOfferFact, ...]:
+    """Normalized facts only. Digests stay digests. No raw response is copied."""
+
+    facts: list[NormalizedOfferFact] = []
+    for offer in offers:
+        availability = offer.source.availability
+        availability_text = None
+        if availability is not ProductAvailability.UNKNOWN:
+            availability_text = availability.value
+        facts.append(
+            NormalizedOfferFact(
+                product_id=offer.source.product_id,
+                variant_id=offer.source.variant_id,
+                seller_identity=offer.source.seller_identity,
+                amount_minor=offer.source.price_amount_minor,
+                currency=offer.source.currency,
+                availability=availability_text,
+                observed_at=offer.source.checked_at,
+                normalized_offer_digest=_normalized_offer_digest(offer),
+                observation_kind=offer.source.observation_kind,
+                source_mode=offer.source.source_mode.value,
+                provider_id=attempt.step.provider_id,
+                capability=attempt.step.capability.value,
+                market=attempt.step.market or PH_COUNTRY,
+                source=attempt.source,
+            )
+        )
+    return tuple(facts)
+
+
 def _from_stored(
     stored: DurableAuthorizedExecution,
     *,
     transport_invoked: bool,
     failure_kind: ConnectorFailureKind | None = None,
     unknown_costs: tuple[str, ...] = (),
+    offer_facts: tuple[NormalizedOfferFact, ...] = (),
 ) -> ShopifyExecutionResult:
     return ShopifyExecutionResult(
         attempted=True,
@@ -1043,6 +1094,7 @@ def _from_stored(
         claim_released=stored.claim_digest is None,
         trace=stored.trace,
         unknown_cost_components=unknown_costs,
+        offer_facts=offer_facts,
     )
 
 
