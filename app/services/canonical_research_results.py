@@ -86,6 +86,14 @@ class _EvidenceReader(Protocol):
     def require_production_evidence(self, evidence_id: str) -> ResearchExecutionEvidence: ...
 
 
+class StaleIntegrationRevision(PersistenceError):
+    """A worker lost the integration compare-and-swap or tried to regress state."""
+
+    def __init__(self, execution_id: str) -> None:
+        self.execution_id = execution_id
+        super().__init__(f"stale results integration revision for {execution_id}")
+
+
 @dataclass(frozen=True, slots=True)
 class ResultsIntegrationRecord:
     """One execution may create at most one next canonical version."""
@@ -96,6 +104,42 @@ class ResultsIntegrationRecord:
     state: str
     evidence_ids: tuple[str, ...]
     outcome: str
+    revision: int = 1
+
+    def __post_init__(self) -> None:
+        if self.revision < 1:
+            raise ValueError("integration revision must be at least 1")
+
+
+_FORWARD_INTEGRATION_STATES = {
+    "pending": frozenset({"snapshot_written", "snapshot_failed", "integration_conflict"}),
+    "snapshot_written": frozenset({"bound"}),
+    "bound": frozenset(),
+    "snapshot_failed": frozenset(),
+    "integration_conflict": frozenset(),
+    "canonical_reevaluation_required": frozenset(),
+    "ambiguous_variant": frozenset(),
+    "fixture_evidence_rejected": frozenset(),
+}
+
+
+def _integration_regresses(
+    existing: ResultsIntegrationRecord,
+    proposed: ResultsIntegrationRecord,
+) -> bool:
+    """True when the proposed row would move backward or rewrite the same state."""
+
+    if (
+        existing.execution_id != proposed.execution_id
+        or existing.decision_id != proposed.decision_id
+    ):
+        return True
+    if existing.context_version != proposed.context_version:
+        return True
+    allowed = _FORWARD_INTEGRATION_STATES.get(existing.state)
+    if allowed is None:
+        return True
+    return proposed.state not in allowed
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,30 +162,52 @@ class CanonicalIntegrationResult:
 
 
 class InMemoryResultsIntegrationRepository:
-    """Idempotency lock for one process. The execution id is the key."""
+    """Idempotency lock for one process. The execution id is the key.
+
+    The process lock is a test aid. Correctness for two service instances is
+    the revision compare-and-swap below, not this object's lock.
+    """
+
+    persists_across_process_restart = False
 
     def __init__(self) -> None:
         self._rows: dict[str, ResultsIntegrationRecord] = {}
+        self._lock = RLock()
 
     def get(self, execution_id: str) -> ResultsIntegrationRecord | None:
-        return self._rows.get(execution_id)
+        with self._lock:
+            return self._rows.get(execution_id)
 
     def insert(self, record: ResultsIntegrationRecord) -> ResultsIntegrationRecord:
-        existing = self._rows.get(record.execution_id)
-        if existing is not None:
-            raise PersistenceConflictError(record.execution_id)
-        self._rows[record.execution_id] = record
-        return record
+        stored = replace(record, revision=1)
+        with self._lock:
+            existing = self._rows.get(record.execution_id)
+            if existing is not None:
+                raise PersistenceConflictError(record.execution_id)
+            self._rows[record.execution_id] = stored
+        return stored
 
-    def replace(self, record: ResultsIntegrationRecord) -> ResultsIntegrationRecord:
-        if record.execution_id not in self._rows:
-            raise PersistenceError(f"missing integration {record.execution_id}")
-        self._rows[record.execution_id] = record
-        return record
+    def transition(
+        self,
+        record: ResultsIntegrationRecord,
+        *,
+        expected_revision: int,
+    ) -> ResultsIntegrationRecord:
+        stored = replace(record, revision=expected_revision + 1)
+        with self._lock:
+            existing = self._rows.get(record.execution_id)
+            if existing is None:
+                raise PersistenceError(f"missing integration {record.execution_id}")
+            if existing.revision != expected_revision or _integration_regresses(existing, record):
+                raise StaleIntegrationRevision(record.execution_id)
+            self._rows[record.execution_id] = stored
+        return stored
 
 
 class OperationalResultsIntegrationRepository(SessionBound):
     """``research.execution_results_integration`` on the existing operational table."""
+
+    persists_across_process_restart = True
 
     def __init__(
         self,
@@ -152,33 +218,55 @@ class OperationalResultsIntegrationRepository(SessionBound):
 
     def get(self, execution_id: str) -> ResultsIntegrationRecord | None:
         with self._ops() as ops:
-            return ops.get(
+            loaded = ops.get_versioned(
                 RESEARCH_RESULTS_INTEGRATION,
                 execution_id,
                 ResultsIntegrationRecord,
             )
+        if loaded is None:
+            return None
+        record, seq, _owner = loaded
+        if record.revision != seq:
+            return replace(record, revision=seq)
+        return record
 
     def insert(self, record: ResultsIntegrationRecord) -> ResultsIntegrationRecord:
+        stored = replace(record, revision=1)
         try:
             with self._ops() as ops:
                 ops.insert_versioned(
                     RESEARCH_RESULTS_INTEGRATION,
-                    record.execution_id,
-                    record,
+                    stored.execution_id,
+                    stored,
                     version=1,
                 )
         except PersistenceConflictError as exc:
             raise PersistenceConflictError(record.execution_id) from exc
-        return record
+        return stored
 
-    def replace(self, record: ResultsIntegrationRecord) -> ResultsIntegrationRecord:
+    def transition(
+        self,
+        record: ResultsIntegrationRecord,
+        *,
+        expected_revision: int,
+    ) -> ResultsIntegrationRecord:
+        existing = self.get(record.execution_id)
+        if existing is None:
+            raise PersistenceError(f"missing integration {record.execution_id}")
+        if existing.revision != expected_revision or _integration_regresses(existing, record):
+            raise StaleIntegrationRevision(record.execution_id)
+        stored = replace(record, revision=expected_revision + 1)
         with self._ops() as ops:
-            ops.upsert(
+            updated = ops.compare_and_swap(
                 RESEARCH_RESULTS_INTEGRATION,
                 record.execution_id,
-                record,
+                stored,
+                expected_version=expected_revision,
+                new_version=stored.revision,
             )
-        return record
+        if not updated:
+            raise StaleIntegrationRevision(record.execution_id)
+        return stored
 
 
 class CanonicalResearchResultsService:
@@ -200,7 +288,7 @@ class CanonicalResearchResultsService:
         self._evidence = evidence
         self._snapshots = snapshots
         self._conversations = conversations
-        self._integrations = integrations or InMemoryResultsIntegrationRepository()
+        self._integrations = _require_integration_repository(executions, evidence, integrations)
         self._clock = clock or (lambda: datetime.now(UTC))
         self._lock = RLock()
 
@@ -265,6 +353,18 @@ class CanonicalResearchResultsService:
         bound = conversation.decision_context
         if bound is not None and bound.decision_id != decision_id:
             return _preserved(decision_id, "different_decision")
+        existing_integration = self._integrations.get(execution.execution_id)
+        if existing_integration is not None and existing_integration.state in {
+            "pending",
+            "snapshot_written",
+            "bound",
+        }:
+            return self._resume(
+                existing_integration,
+                owner=owner,
+                conversation_id=conversation_id,
+                decision_id=decision_id,
+            )
         if bound is None or bound.context_version != latest.context_version:
             return _preserved(decision_id, "prior_decision_preserved")
         mapping = _map_records(records, latest)
@@ -323,7 +423,7 @@ class CanonicalResearchResultsService:
             outcome="pending",
         )
         try:
-            self._integrations.insert(pending)
+            pending = self._integrations.insert(pending)
         except PersistenceConflictError:
             winner = self._integrations.get(execution.execution_id)
             if winner is None:
@@ -345,10 +445,8 @@ class CanonicalResearchResultsService:
                 snapshot.context_version,
                 owner,
             )
-            if stored is None or not _same_research_version(stored, snapshot):
-                self._integrations.replace(
-                    replace(pending, state="snapshot_failed", outcome="snapshot_persistence_failed")
-                )
+            if stored is None or not _matches_research_update(stored, snapshot):
+                self._move(pending, state="integration_conflict", outcome="integration_conflict")
                 return _preserved(
                     latest.decision_id,
                     "integration_conflict",
@@ -356,36 +454,19 @@ class CanonicalResearchResultsService:
                 )
             snapshot = stored
         except (PersistenceError, DecisionSnapshotOwnershipError):
-            self._integrations.replace(
-                replace(pending, state="snapshot_failed", outcome="snapshot_persistence_failed")
-            )
+            self._move(pending, state="snapshot_failed", outcome="snapshot_persistence_failed")
             return _preserved(
                 latest.decision_id,
                 "snapshot_persistence_failed",
                 _ids(records),
             )
-        written = replace(pending, state="snapshot_written", outcome="canonical_results_updated")
-        self._integrations.replace(written)
-        bound = self._bind(
-            conversation_id=conversation_id,
+        return self._promote_and_bind(
+            pending,
+            snapshot,
             owner=owner,
-            snapshot=snapshot,
-            expected_version=conversation_version,
-        )
-        if bound is None:
-            return _preserved(
-                latest.decision_id,
-                "conversation_binding_failed",
-                _ids(records),
-            )
-        self._integrations.replace(replace(written, state="bound"))
-        return CanonicalIntegrationResult(
-            outcome="canonical_results_updated",
-            decision_id=snapshot.decision_id,
-            context_version=snapshot.context_version,
-            evidence_ids=_ids(records),
-            prior_decision_preserved=False,
-            shopper_results_updated=True,
+            conversation_id=conversation_id,
+            conversation_version=conversation_version,
+            records=records,
         )
 
     def _resume(
@@ -403,7 +484,12 @@ class CanonicalResearchResultsService:
         }:
             return _preserved(decision_id, record.outcome, record.evidence_ids)  # type: ignore[arg-type]
         if record.state == "pending":
-            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+            return self._recover_pending(
+                record,
+                owner=owner,
+                conversation_id=conversation_id,
+                decision_id=decision_id,
+            )
         snapshot = self._snapshots.get_for_owner(decision_id, record.context_version, owner)
         if snapshot is None:
             return _preserved(decision_id, "snapshot_persistence_failed", record.evidence_ids)
@@ -446,7 +532,7 @@ class CanonicalResearchResultsService:
                     "conversation_binding_failed",
                     record.evidence_ids,
                 )
-            self._integrations.replace(replace(record, state="bound"))
+            self._move(record, state="bound", outcome=record.outcome)
             return CanonicalIntegrationResult(
                 outcome="already_integrated",
                 decision_id=decision_id,
@@ -456,6 +542,181 @@ class CanonicalResearchResultsService:
                 shopper_results_updated=True,
             )
         return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+
+    def _recover_pending(
+        self,
+        record: ResultsIntegrationRecord,
+        *,
+        owner: ConversationOwner,
+        conversation_id: str,
+        decision_id: str,
+    ) -> CanonicalIntegrationResult:
+        """Continue a pending row after a crash instead of stranding it."""
+
+        if record.decision_id != decision_id:
+            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+        try:
+            execution = self._executions.get(record.execution_id)
+        except PersistenceError:
+            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+        if execution is None or _terminal_refusal(execution) is not None:
+            self._move(record, state="integration_conflict", outcome="integration_conflict")
+            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+        try:
+            records = _resolve_production_evidence(self._evidence, execution)
+        except (FixtureEvidenceRejected, MissingExecutionEvidence, PersistenceError):
+            self._move(record, state="integration_conflict", outcome="integration_conflict")
+            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+        if record.evidence_ids != _ids(records):
+            self._move(record, state="integration_conflict", outcome="integration_conflict")
+            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+        latest = self._snapshots.get_latest_for_owner(decision_id, owner)
+        stored = self._snapshots.get_for_owner(decision_id, record.context_version, owner)
+        if stored is None:
+            if latest is None or not latest.owner.has_same_identity(owner):
+                return _preserved(decision_id, "wrong_owner", record.evidence_ids)
+            if latest.context_version + 1 != record.context_version:
+                self._move(record, state="integration_conflict", outcome="integration_conflict")
+                return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+            conversation = self._conversations.get_for_owner(conversation_id, owner)
+            if (
+                conversation is None
+                or not conversation.owner
+                or not conversation.owner.has_same_identity(owner)
+            ):
+                return _preserved(decision_id, "wrong_owner", record.evidence_ids)
+            return self._write_snapshot_from_pending(
+                record,
+                latest=latest,
+                records=records,
+                owner=owner,
+                conversation_id=conversation_id,
+                conversation_version=conversation.persistence_version,
+            )
+        previous = self._snapshots.get_for_owner(decision_id, record.context_version - 1, owner)
+        expected = (
+            None if previous is None else _next_snapshot(previous, records, now=stored.updated_at)
+        )
+        if previous is None or expected is None or not _matches_research_update(stored, expected):
+            self._move(record, state="integration_conflict", outcome="integration_conflict")
+            return _preserved(decision_id, "integration_conflict", record.evidence_ids)
+        conversation = self._conversations.get_for_owner(conversation_id, owner)
+        if conversation is None:
+            return _preserved(decision_id, "conversation_binding_failed", record.evidence_ids)
+        return self._promote_and_bind(
+            record,
+            stored,
+            owner=owner,
+            conversation_id=conversation_id,
+            conversation_version=conversation.persistence_version,
+            records=records,
+        )
+
+    def _write_snapshot_from_pending(
+        self,
+        pending: ResultsIntegrationRecord,
+        *,
+        latest: CanonicalDecisionSnapshot,
+        records: tuple[ResearchExecutionEvidence, ...],
+        owner: ConversationOwner,
+        conversation_id: str,
+        conversation_version: int,
+    ) -> CanonicalIntegrationResult:
+        snapshot = _next_snapshot(latest, records, now=self._clock())
+        if snapshot.context_version != pending.context_version:
+            raise RuntimeError("the server must assign the next context version")
+        try:
+            self._snapshots.add(snapshot)
+        except DecisionSnapshotConflictError:
+            stored = self._snapshots.get_for_owner(
+                snapshot.decision_id,
+                snapshot.context_version,
+                owner,
+            )
+            if stored is None or not _matches_research_update(stored, snapshot):
+                self._move(pending, state="integration_conflict", outcome="integration_conflict")
+                return _preserved(latest.decision_id, "integration_conflict", _ids(records))
+            snapshot = stored
+        except (PersistenceError, DecisionSnapshotOwnershipError):
+            self._move(pending, state="snapshot_failed", outcome="snapshot_persistence_failed")
+            return _preserved(latest.decision_id, "snapshot_persistence_failed", _ids(records))
+        return self._promote_and_bind(
+            pending,
+            snapshot,
+            owner=owner,
+            conversation_id=conversation_id,
+            conversation_version=conversation_version,
+            records=records,
+        )
+
+    def _promote_and_bind(
+        self,
+        pending: ResultsIntegrationRecord,
+        snapshot: CanonicalDecisionSnapshot,
+        *,
+        owner: ConversationOwner,
+        conversation_id: str,
+        conversation_version: int,
+        records: tuple[ResearchExecutionEvidence, ...],
+    ) -> CanonicalIntegrationResult:
+        written = self._move(
+            pending,
+            state="snapshot_written",
+            outcome="canonical_results_updated",
+        )
+        if written is None:
+            current = self._integrations.get(pending.execution_id)
+            if current is None:
+                return _preserved(snapshot.decision_id, "integration_conflict", _ids(records))
+            return self._resume(
+                current,
+                owner=owner,
+                conversation_id=conversation_id,
+                decision_id=snapshot.decision_id,
+            )
+        conversation = self._conversations.get_for_owner(conversation_id, owner)
+        expected_version = (
+            conversation.persistence_version if conversation is not None else conversation_version
+        )
+        bound = self._bind(
+            conversation_id=conversation_id,
+            owner=owner,
+            snapshot=snapshot,
+            expected_version=expected_version,
+        )
+        if bound is None:
+            conversation = self._conversations.get_for_owner(conversation_id, owner)
+            reference = snapshot.to_reference()
+            if conversation is None or conversation.decision_context != reference:
+                return _preserved(
+                    snapshot.decision_id,
+                    "conversation_binding_failed",
+                    _ids(records),
+                )
+        self._move(written, state="bound", outcome="canonical_results_updated")
+        return CanonicalIntegrationResult(
+            outcome="canonical_results_updated",
+            decision_id=snapshot.decision_id,
+            context_version=snapshot.context_version,
+            evidence_ids=_ids(records),
+            prior_decision_preserved=False,
+            shopper_results_updated=True,
+        )
+
+    def _move(
+        self,
+        current: ResultsIntegrationRecord,
+        *,
+        state: str,
+        outcome: str,
+    ) -> ResultsIntegrationRecord | None:
+        try:
+            return self._integrations.transition(
+                replace(current, state=state, outcome=outcome),
+                expected_revision=current.revision,
+            )
+        except StaleIntegrationRevision:
+            return None
 
     def _bind(
         self,
@@ -545,9 +806,7 @@ def _resolve_production_evidence(
     if trace is None:
         raise MissingExecutionEvidence(execution.execution_id)
     trace_ids = tuple(
-        dict.fromkeys(
-            evidence_id for step in trace.steps for evidence_id in step.evidence_ids
-        )
+        dict.fromkeys(evidence_id for step in trace.steps for evidence_id in step.evidence_ids)
     )
     if trace_ids != execution.evidence_ids:
         raise MissingExecutionEvidence(execution.execution_id)
@@ -608,7 +867,7 @@ def _next_snapshot(
 
 def _decision_evidence(record: ResearchExecutionEvidence) -> DecisionEvidenceSnapshot:
     parts = [
-        f"Observed listing price {record.amount_minor} {record.currency}.",
+        f"Observed listing price recorded in {record.currency} minor currency units.",
         f"Seller identity: {record.seller_identity}.",
     ]
     if record.availability:
@@ -655,24 +914,16 @@ def _economics(
     for record in records:
         if record.capability != _PRICE:
             continue
-        by_product[record.product_id] = _price_economics(
-            previous=by_product.get(record.product_id),
-            record=record,
-        )
-    ordered: list[CanonicalOfferEconomics] = []
-    seen: set[str] = set()
-    for item in previous.offer_economics:
-        ordered.append(by_product[item.product_id])
-        seen.add(item.product_id)
-    for product_id, item in by_product.items():
-        if product_id not in seen:
-            ordered.append(item)
-    return tuple(ordered)
+        existing = by_product.get(record.product_id)
+        if existing is None:
+            continue
+        by_product[record.product_id] = _price_economics(previous=existing, record=record)
+    return tuple(by_product[item.product_id] for item in previous.offer_economics)
 
 
 def _price_economics(
     *,
-    previous: CanonicalOfferEconomics | None,
+    previous: CanonicalOfferEconomics,
     record: ResearchExecutionEvidence,
 ) -> CanonicalOfferEconomics:
     currency = record.currency
@@ -685,31 +936,15 @@ def _price_economics(
         evidence_id=record.evidence_id,
         label="observed listing price",
     )
-    shipping = _preserved_or_unknown(
-        None if previous is None else previous.shipping,
-        "shipping",
-        currency,
-    )
-    taxes = _preserved_or_unknown(None if previous is None else previous.taxes, "tax", currency)
-    voucher = _preserved_or_unknown(
-        None if previous is None else previous.voucher,
-        "voucher",
-        currency,
-    )
-    imports = _preserved_or_unknown(
-        None if previous is None else previous.import_charges,
-        "import",
-        currency,
-    )
-    evidence_ids = () if previous is None else previous.evidence_ids
+    shipping = _preserved_or_unknown(previous.shipping, "shipping", currency)
+    taxes = _preserved_or_unknown(previous.taxes, "tax", currency)
+    voucher = _preserved_or_unknown(previous.voucher, "voucher", currency)
+    imports = _preserved_or_unknown(previous.import_charges, "import", currency)
+    evidence_ids = previous.evidence_ids
     if record.evidence_id not in evidence_ids:
         evidence_ids = (*evidence_ids, record.evidence_id)
     return CanonicalOfferEconomics(
-        offer_id=(
-            previous.offer_id
-            if previous is not None
-            else f"research-offer:{record.product_id}"[:128]
-        ),
+        offer_id=previous.offer_id,
         product_id=record.product_id,
         currency=currency,
         listing=listing,
@@ -717,14 +952,14 @@ def _price_economics(
         taxes=taxes,
         price_state="price_before_shipping",
         dominant_amount_minor=record.amount_minor,
-        merchant=record.seller_identity[:128],
-        marketplace=record.source[:128],
-        seller_id=record.seller_identity[:128],
+        merchant=previous.merchant,
+        marketplace=previous.marketplace,
+        seller_id=previous.seller_id,
         voucher=voucher,
         import_charges=imports,
-        delivery=None if previous is None else previous.delivery,
-        international=False if previous is None else previous.international,
-        unknowns=_UNKNOWN_COMPONENTS,
+        delivery=previous.delivery,
+        international=previous.international,
+        unknowns=tuple(dict.fromkeys((*previous.unknowns, *_UNKNOWN_COMPONENTS))),
         evidence_ids=evidence_ids,
         provenance_source=record.source,
         checked_at=record.observed_at,
@@ -769,6 +1004,47 @@ def _same_research_version(
         and stored.recommendation.snapshot_sha256 == expected.recommendation.snapshot_sha256
         and stored.recommendation.best_piq_product_id == expected.recommendation.best_piq_product_id
     )
+
+
+def _matches_research_update(
+    stored: CanonicalDecisionSnapshot,
+    expected: CanonicalDecisionSnapshot,
+) -> bool:
+    if not _same_research_version(stored, expected):
+        return False
+    if len(stored.offer_economics) != len(expected.offer_economics):
+        return False
+    for left, right in zip(stored.offer_economics, expected.offer_economics, strict=True):
+        if left.product_id != right.product_id:
+            return False
+        if left.listing.amount_minor != right.listing.amount_minor:
+            return False
+        if left.international != right.international or left.delivery != right.delivery:
+            return False
+    return True
+
+
+def _require_integration_repository(
+    executions: object,
+    evidence: object,
+    integrations: InMemoryResultsIntegrationRepository
+    | OperationalResultsIntegrationRepository
+    | None,
+) -> InMemoryResultsIntegrationRepository | OperationalResultsIntegrationRepository:
+    durable = bool(getattr(executions, "persists_across_process_restart", False)) or bool(
+        getattr(evidence, "persists_across_process_restart", False)
+    )
+    if integrations is None:
+        if durable:
+            raise ValueError(
+                "durable research repositories require OperationalResultsIntegrationRepository"
+            )
+        return InMemoryResultsIntegrationRepository()
+    if durable and not getattr(integrations, "persists_across_process_restart", False):
+        raise ValueError(
+            "durable research repositories require OperationalResultsIntegrationRepository"
+        )
+    return integrations
 
 
 def _ids(records: tuple[ResearchExecutionEvidence, ...]) -> tuple[str, ...]:

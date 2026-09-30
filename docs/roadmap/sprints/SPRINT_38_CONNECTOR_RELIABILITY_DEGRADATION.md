@@ -8,7 +8,7 @@
 
 ## Current closure reading (2026-09-30)
 
-The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS because real Shopify validation is blocked on Sprint 41. Engineering status is ENGINEERING COMPLETE. B1 confirmed-research composition and B2 durable evidence plus canonical Results versioning are implemented. Current production gates still stop a shopper confirmation before the live-start claim and before transport. The permanent `production_execution_not_wired` fallback was removed. Sprint 41 lists domain engine changes as a non-goal, so the application composition is Sprint 38 work and the production environment remains Sprint 41. Those are different facts.
+The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS because real Shopify validation is blocked on Sprint 41. Engineering status is ENGINEERING COMPLETE. B1 confirmed-research composition and B2 durable evidence plus canonical Results versioning are implemented. Current production gates still stop a shopper confirmation before the live-start claim, before the production transport permit, and before transport. Synthetic permits cannot create production evidence. The permanent `production_execution_not_wired` fallback was removed. Sprint 41 lists domain engine changes as a non-goal, so the application composition is Sprint 38 work and the production environment remains Sprint 41. Those are different facts.
 
 IN PROGRESS does not mean LIVE OPERATIONAL, PRODUCTION DEPLOYED, or LAUNCH READY. ENGINEERING COMPLETE does not mean COMPLETE / CLOSED. Fake-transport tests are not live evidence. Repository kill-switch tests are not a deployed drill. The HALF_OPEN lease is not a Sprint 42 production probe.
 

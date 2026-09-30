@@ -246,6 +246,71 @@ def build_research_execution_evidence(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class VerifiedLiveOfferExecution:
+    """Server proof that facts came from a production-authority Shopify success.
+
+    A browser request cannot supply this object. The Shopify adapter creates it
+    only after ``ProductionShopifyTransportPermit`` and a successful terminal
+    outcome. Synthetic adapter output cannot construct it.
+    """
+
+    execution_id: str
+    decision_id: str
+    plan_id: str
+    permit_marker: Literal["production_shopify_transport"]
+    facts: tuple[NormalizedOfferFact, ...]
+
+    def __post_init__(self) -> None:
+        if self.permit_marker != "production_shopify_transport":
+            raise ValueError("verified live evidence requires the production transport permit")
+        if not self.execution_id or not self.decision_id or not self.plan_id:
+            raise ValueError("verified live evidence requires execution, decision, and plan pins")
+        if not self.facts:
+            raise ValueError("verified live evidence requires normalized production facts")
+        for fact in self.facts:
+            if fact.observation_kind != "production" or fact.source_mode != SourceMode.LIVE.value:
+                raise ValueError("verified live facts must be production observations")
+
+
+def evidence_from_verified_live_offer_fact(
+    verification: VerifiedLiveOfferExecution,
+    fact: NormalizedOfferFact,
+    *,
+    created_at: datetime,
+) -> ResearchExecutionEvidence:
+    """Convert one fact that the production adapter already verified.
+
+    The synthetic converter cannot call this. Arbitrary caller facts that are
+    not on the verified execution are rejected.
+    """
+
+    if fact not in verification.facts:
+        raise ValueError("live evidence requires a fact from the verified production execution")
+    if fact.observation_kind != "production" or fact.source_mode != SourceMode.LIVE.value:
+        raise ValueError("verified live evidence cannot be a fixture observation")
+    return build_research_execution_evidence(
+        execution_id=verification.execution_id,
+        decision_id=verification.decision_id,
+        plan_id=verification.plan_id,
+        provider_id=fact.provider_id,
+        capability=fact.capability,
+        market=fact.market,
+        source=fact.source,
+        product_id=fact.product_id,
+        variant_id=fact.variant_id,
+        seller_identity=fact.seller_identity,
+        amount_minor=fact.amount_minor,
+        currency=fact.currency,
+        availability=fact.availability,
+        observed_at=fact.observed_at,
+        normalized_offer_digest=fact.normalized_offer_digest,
+        observation_kind="production",
+        test_fixture=False,
+        created_at=created_at,
+    )
+
+
 def evidence_from_adapter_fact(
     fact: NormalizedOfferFact,
     *,
@@ -256,7 +321,7 @@ def evidence_from_adapter_fact(
 ) -> ResearchExecutionEvidence:
     """Adapter facts are synthetic fixtures. They cannot become live evidence."""
 
-    if fact.observation_kind == "live" or fact.source_mode == SourceMode.LIVE.value:
+    if fact.observation_kind in {"live", "production"} or fact.source_mode == SourceMode.LIVE.value:
         raise ValueError("adapter output cannot be relabeled as live evidence")
     return build_research_execution_evidence(
         execution_id=execution_id,

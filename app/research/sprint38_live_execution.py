@@ -72,9 +72,12 @@ from app.research.shopify_global_catalog_certification_evidence import (
 from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
 from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 
-# B1 composition and B2 evidence-to-canonical-Results plumbing are implemented.
-# Live validation is still blocked on Sprint 41. This is not live operation
-# and not production deployment. Sprint closure stays IN PROGRESS.
+# B1 production composition wires the live-start claim, Shopify adapter,
+# durable execution evidence, and canonical Results integrator. The production
+# transport permit is separate from the synthetic permit and is not created
+# while a gate is closed. B2 uses durable integration revisions. Live
+# validation is still blocked on Sprint 41. This is not live operation and
+# not production deployment. Sprint closure stays IN PROGRESS.
 SPRINT_38_ENGINEERING_STATUS = "ENGINEERING COMPLETE"
 SHOPPING_RESEARCH_EXECUTION_MODE = "disabled"
 SHOPIFY_LIVE_CALL_PERMITTED = False

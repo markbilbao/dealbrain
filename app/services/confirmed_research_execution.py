@@ -40,6 +40,7 @@ from app.research.execution_evidence import (
     OperationalResearchExecutionEvidenceRepository,
     attach_execution_evidence_references,
     evidence_from_adapter_fact,
+    evidence_from_verified_live_offer_fact,
 )
 from app.research.live_start_claim import LiveStartClaimRequest, LiveStartClaimService
 from app.research.registry import ResearchProviderRegistry, production_research_provider_registry
@@ -49,8 +50,10 @@ from app.research.routing import (
 )
 from app.research.shopify_global_catalog_execution import (
     BoundedFakeTransportPermit,
+    ProductionShopifyTransportPermit,
     ShopifyCatalogAttempt,
     ShopifyCatalogExecutionService,
+    ShopifyExecutionResult,
     production_shopify_execution_block_reasons,
 )
 from app.research.shopify_global_catalog_ph_probe import PH_COUNTRY, SEARCH_TOOL
@@ -179,6 +182,8 @@ class ConfirmedResearchResult:
     authorization_consumed: bool
     source_checked: bool
     attempted: bool
+    research_executed: bool
+    live_research_completed: bool
     shopper_results_updated: bool
     synthetic: bool
     test_fixture: bool
@@ -192,8 +197,14 @@ class ConfirmedResearchResult:
     ignored_caller_overrides: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        if self.live_research_completed and (self.synthetic or self.test_fixture):
+            raise ValueError("synthetic execution cannot complete live research")
+        if self.shopper_results_updated and not self.live_research_completed:
+            raise ValueError("shopper Results update requires completed live research")
         if self.shopper_results_updated and (self.synthetic or self.test_fixture):
             raise ValueError("synthetic evidence cannot update shopper-visible Results")
+        if self.live_research_completed and not self.research_executed:
+            raise ValueError("completed live research is an execution")
         if self.synthetic and not self.test_fixture:
             raise ValueError("synthetic execution evidence must stay a test fixture")
         if not self.shopper_results_updated and self.context_version is not None:
@@ -209,12 +220,13 @@ class ConfirmedResearchResult:
             "authorization_consumed": self.authorization_consumed,
             "source_checked": self.source_checked,
             "attempted": self.attempted,
+            "research_executed": self.research_executed,
             "shopper_results_updated": self.shopper_results_updated,
             "synthetic": self.synthetic,
             "test_fixture": self.test_fixture,
             "prior_decision_preserved": self.prior_decision_preserved,
             "block_reason": self.block_reason,
-            "live_research_completed": False,
+            "live_research_completed": self.live_research_completed,
             "execution_id": self.execution_id,
             "evidence_ids": list(self.evidence_ids),
             "context_version": self.context_version,
@@ -237,6 +249,7 @@ class ConfirmedResearchExecutionService:
         executions: object | None = None,
         integrator: CanonicalResearchResultsService | None = None,
         clock: Callable[[], datetime] | None = None,
+        production_composition: bool = False,
     ) -> None:
         self._policy = policy
         self._claims = claims
@@ -245,6 +258,46 @@ class ConfirmedResearchExecutionService:
         self._executions = executions
         self._integrator = integrator
         self._clock = clock or (lambda: datetime.now(UTC))
+        self._production_composition = production_composition
+
+    @property
+    def claims(self) -> LiveStartClaimService | ClosedProductionClaims | None:
+        return self._claims
+
+    @property
+    def adapter(self) -> ShopifyCatalogExecutionService | None:
+        return self._adapter
+
+    @property
+    def evidence(
+        self,
+    ) -> (
+        InMemoryResearchExecutionEvidenceRepository
+        | OperationalResearchExecutionEvidenceRepository
+        | None
+    ):
+        return self._evidence
+
+    @property
+    def executions(self) -> object | None:
+        return self._executions
+
+    @property
+    def integrator(self) -> CanonicalResearchResultsService | None:
+        return self._integrator
+
+    @property
+    def production_composition(self) -> bool:
+        return self._production_composition
+
+    def _issue_permit(self) -> BoundedFakeTransportPermit | ProductionShopifyTransportPermit:
+        """Issue a permit only after the runtime policy reports every gate open."""
+
+        if self._policy.block_reasons():
+            raise RuntimeError("a transport permit cannot be issued while a gate is closed")
+        if self._production_composition:
+            return ProductionShopifyTransportPermit()
+        return BoundedFakeTransportPermit()
 
     def continue_confirmed(self, request: ConfirmedResearchRequest) -> ConfirmedResearchResult:
         """Stop before a claim while any production gate is closed."""
@@ -312,6 +365,8 @@ class ConfirmedResearchExecutionService:
                 authorization_consumed=claim.authorization_consumed,
                 source_checked=False,
                 attempted=False,
+                research_executed=False,
+                live_research_completed=False,
                 shopper_results_updated=False,
                 synthetic=False,
                 test_fixture=False,
@@ -320,8 +375,9 @@ class ConfirmedResearchExecutionService:
                 execution_id=preparation.execution_id,
                 ignored_caller_overrides=ignored,
             )
+        permit = self._issue_permit()
         attempt = ShopifyCatalogAttempt(
-            permit=BoundedFakeTransportPermit(),
+            permit=permit,
             authorization=request.authorization,
             owner=request.owner,
             plan=plan,
@@ -337,22 +393,19 @@ class ConfirmedResearchExecutionService:
         if request.caller_catalog_query and request.caller_catalog_query != _SERVER_CATALOG_QUERY:
             ignored = (*ignored, "caller_catalog_query")
         executed = self._adapter.execute(attempt)
+        production = isinstance(permit, ProductionShopifyTransportPermit)
         if not executed.durable_success:
-            return ConfirmedResearchResult(
-                claim_invoked=True,
-                adapter_invoked=True,
-                transport_invoked=executed.transport_invoked,
-                authorization_consumed=True,
-                source_checked=False,
-                attempted=False,
-                shopper_results_updated=False,
-                synthetic=executed.transport_invoked,
-                test_fixture=executed.transport_invoked,
-                prior_decision_preserved=True,
-                block_reason=executed.block_reason or executed.outcome,
+            return _after_unsuccessful_attempt(
+                executed,
+                production=production,
                 execution_id=preparation.execution_id,
-                ignored_caller_overrides=ignored,
-                integration_outcome=executed.outcome,
+                ignored=ignored,
+            )
+        if production:
+            return self._record_production_evidence(
+                request,
+                executed,
+                ignored=ignored,
             )
         return self._record_synthetic_evidence(
             request,
@@ -379,6 +432,8 @@ class ConfirmedResearchExecutionService:
                 authorization_consumed=True,
                 source_checked=False,
                 attempted=False,
+                research_executed=False,
+                live_research_completed=False,
                 shopper_results_updated=False,
                 synthetic=True,
                 test_fixture=True,
@@ -408,6 +463,8 @@ class ConfirmedResearchExecutionService:
                 authorization_consumed=True,
                 source_checked=False,
                 attempted=False,
+                research_executed=False,
+                live_research_completed=False,
                 shopper_results_updated=False,
                 synthetic=True,
                 test_fixture=True,
@@ -434,6 +491,8 @@ class ConfirmedResearchExecutionService:
             authorization_consumed=True,
             source_checked=False,
             attempted=False,
+            research_executed=False,
+            live_research_completed=False,
             shopper_results_updated=False,
             synthetic=True,
             test_fixture=True,
@@ -444,13 +503,213 @@ class ConfirmedResearchExecutionService:
             integration_outcome="synthetic_evidence_only",
         )
 
+    def _record_production_evidence(
+        self,
+        request: ConfirmedResearchRequest,
+        executed: ShopifyExecutionResult,
+        *,
+        ignored: tuple[str, ...],
+    ) -> ConfirmedResearchResult:
+        execution_id = request.preparation.execution_id or ""
+        verification = executed.verified_live_execution
+        if (
+            executed.execution_authority != "production"
+            or verification is None
+            or self._evidence is None
+            or self._integrator is None
+            or self._executions is None
+        ):
+            return ConfirmedResearchResult(
+                claim_invoked=True,
+                adapter_invoked=True,
+                transport_invoked=executed.transport_invoked,
+                authorization_consumed=True,
+                source_checked=True,
+                attempted=True,
+                research_executed=True,
+                live_research_completed=True,
+                shopper_results_updated=False,
+                synthetic=False,
+                test_fixture=False,
+                prior_decision_preserved=True,
+                block_reason="production_evidence_unverified",
+                execution_id=execution_id,
+                ignored_caller_overrides=ignored,
+            )
+        try:
+            saved = tuple(
+                self._evidence.save(
+                    evidence_from_verified_live_offer_fact(
+                        verification,
+                        fact,
+                        created_at=self._clock(),
+                    )
+                )
+                for fact in verification.facts
+            )
+        except PersistenceError:
+            return ConfirmedResearchResult(
+                claim_invoked=True,
+                adapter_invoked=True,
+                transport_invoked=executed.transport_invoked,
+                authorization_consumed=True,
+                source_checked=True,
+                attempted=True,
+                research_executed=True,
+                live_research_completed=True,
+                shopper_results_updated=False,
+                synthetic=False,
+                test_fixture=False,
+                prior_decision_preserved=True,
+                block_reason="evidence_persistence_failed",
+                execution_id=execution_id,
+                ignored_caller_overrides=ignored,
+            )
+        evidence_ids = tuple(record.evidence_id for record in saved)
+        if evidence_ids:
+            attach_execution_evidence_references(
+                self._executions,  # type: ignore[arg-type]
+                self._evidence,
+                execution_id,
+                evidence_ids,
+            )
+        integrated = self._integrator.integrate(
+            execution_id=execution_id,
+            owner=request.owner,
+            conversation_id=request.conversation_id,
+            decision_id=request.authorization.decision_id,
+        )
+        updated = integrated.shopper_results_updated
+        return ConfirmedResearchResult(
+            claim_invoked=True,
+            adapter_invoked=True,
+            transport_invoked=executed.transport_invoked,
+            authorization_consumed=True,
+            source_checked=True,
+            attempted=True,
+            research_executed=True,
+            live_research_completed=True,
+            shopper_results_updated=updated,
+            synthetic=False,
+            test_fixture=False,
+            prior_decision_preserved=not updated,
+            execution_id=execution_id,
+            evidence_ids=evidence_ids,
+            context_version=integrated.context_version if updated else None,
+            ignored_caller_overrides=ignored,
+            integration_outcome=integrated.outcome,
+        )
 
-def production_confirmed_research_execution() -> ConfirmedResearchExecutionService:
-    """Shopper default. Gates are closed, so this does not claim or call out."""
 
+def production_confirmed_research_execution(
+    *,
+    snapshots: object | None = None,
+    conversations: object | None = None,
+) -> ConfirmedResearchExecutionService:
+    """Shopper default. Durable continuation stays blocked by closed gates.
+
+    The graph contains the live-start claim service, the Shopify adapter, the
+    production transport object, durable execution and evidence repositories,
+    and the canonical integrator. Current gates return before a permit, a
+    claim, the adapter, and transport I/O. ``ClosedProductionClaims`` is not
+    this factory's authority.
+    """
+
+    import secrets
+
+    from sqlalchemy.orm import sessionmaker
+
+    from app.infrastructure.database.repositories.shopping_conversation_repository import (
+        SqlAlchemyConversationRepository,
+    )
+    from app.infrastructure.database.repositories.shopping_decision_snapshot_repository import (
+        SqlAlchemyDecisionSnapshotRepository,
+    )
+    from app.infrastructure.persistence.session import get_sync_session_factory
+    from app.research.authorized_execution_repository import (
+        OperationalAuthorizedExecutionRepository,
+    )
+    from app.research.live_start_claim import operational_live_start_claims
+    from app.research.shopify_global_catalog_execution import operational_shopify_execution
+    from app.research.shopify_global_catalog_transport import UrllibJsonTransport
+    from app.services.canonical_research_results import OperationalResultsIntegrationRepository
+
+    factory = get_sync_session_factory()
+    if not isinstance(factory, sessionmaker):
+        raise TypeError("production composition requires the sync session factory")
+    executions = OperationalAuthorizedExecutionRepository(session_factory=factory)
+    evidence = OperationalResearchExecutionEvidenceRepository(session_factory=factory)
+    integrations = OperationalResultsIntegrationRepository(session_factory=factory)
+    snapshot_repo = snapshots or SqlAlchemyDecisionSnapshotRepository(session_factory=factory)
+    conversation_repo = conversations or SqlAlchemyConversationRepository(session_factory=factory)
+    integrator = CanonicalResearchResultsService(
+        executions,
+        evidence,
+        snapshot_repo,  # type: ignore[arg-type]
+        conversation_repo,  # type: ignore[arg-type]
+        integrations,
+    )
+    claims = operational_live_start_claims(
+        factory,
+        token_factory=lambda: secrets.token_urlsafe(32),
+    )
+    adapter = operational_shopify_execution(factory, UrllibJsonTransport())
     return ConfirmedResearchExecutionService(
         ProductionResearchRuntimePolicy(),
-        claims=ClosedProductionClaims(),
+        claims=claims,
+        adapter=adapter,
+        evidence=evidence,
+        executions=executions,
+        integrator=integrator,
+        production_composition=True,
+    )
+
+
+def _after_unsuccessful_attempt(
+    executed: ShopifyExecutionResult,
+    *,
+    production: bool,
+    execution_id: str | None,
+    ignored: tuple[str, ...],
+) -> ConfirmedResearchResult:
+    timed_out = executed.outcome == "timed_out" or executed.error_category == "timeout"
+    if not production:
+        return ConfirmedResearchResult(
+            claim_invoked=True,
+            adapter_invoked=True,
+            transport_invoked=executed.transport_invoked,
+            authorization_consumed=True,
+            source_checked=False,
+            attempted=False,
+            research_executed=False,
+            live_research_completed=False,
+            shopper_results_updated=False,
+            synthetic=executed.transport_invoked,
+            test_fixture=executed.transport_invoked,
+            prior_decision_preserved=True,
+            block_reason=executed.block_reason or executed.outcome,
+            execution_id=execution_id,
+            ignored_caller_overrides=ignored,
+            integration_outcome=executed.outcome,
+        )
+    reached = executed.transport_invoked or executed.attempted
+    return ConfirmedResearchResult(
+        claim_invoked=True,
+        adapter_invoked=True,
+        transport_invoked=executed.transport_invoked,
+        authorization_consumed=True,
+        source_checked=reached and not timed_out and not executed.transport_outcome_ambiguous,
+        attempted=reached,
+        research_executed=reached or executed.persisted,
+        live_research_completed=False,
+        shopper_results_updated=False,
+        synthetic=False,
+        test_fixture=False,
+        prior_decision_preserved=True,
+        block_reason=executed.block_reason or executed.outcome,
+        execution_id=execution_id,
+        ignored_caller_overrides=ignored,
+        integration_outcome=executed.outcome,
     )
 
 
@@ -468,6 +727,8 @@ def _stopped(
         authorization_consumed=False,
         source_checked=False,
         attempted=False,
+        research_executed=False,
+        live_research_completed=False,
         shopper_results_updated=False,
         synthetic=False,
         test_fixture=False,

@@ -310,7 +310,10 @@ class ProposeResearchService:
         self._confirmed_execution = (
             confirmed_execution
             if confirmed_execution is not None
-            else production_confirmed_research_execution()
+            else production_confirmed_research_execution(
+                snapshots=snapshots,
+                conversations=conversations,
+            )
         )
         self._planning_registry = planning_registry
         self._planning_catalog = planning_catalog
@@ -880,9 +883,7 @@ class ProposeResearchService:
             processing["authorization_status"] = authorization_status
             processing["authorization_version"] = result.authorization.authorization_version
         answer = result.answer
-        updated = (
-            result.continuation is not None and result.continuation.shopper_results_updated
-        )
+        updated = result.continuation is not None and result.continuation.shopper_results_updated
         if updated and result.continuation is not None:
             answer = "Research completed. Updated Results are available for this decision."
             warnings = (
@@ -897,12 +898,31 @@ class ProposeResearchService:
             public_preparation = result.preparation.to_public_dict()
             processing["research_preparation"] = public_preparation
             processing["research_preparation_outcome"] = result.preparation.outcome
-            processing["execution_started"] = updated
-            processing["research_executed"] = updated
-            processing["source_checked"] = updated
-            processing["attempted"] = updated
         if result.continuation is not None:
-            processing["confirmed_research"] = result.continuation.to_public_dict()
+            continuation = result.continuation
+            processing["confirmed_research"] = continuation.to_public_dict()
+            processing["execution_started"] = (
+                continuation.attempted or continuation.research_executed
+            )
+            processing["research_executed"] = continuation.research_executed
+            processing["source_checked"] = continuation.source_checked
+            processing["attempted"] = continuation.attempted
+            processing["live_research_completed"] = continuation.live_research_completed
+            if (
+                continuation.live_research_completed
+                and not continuation.shopper_results_updated
+                and continuation.integration_outcome == "canonical_reevaluation_required"
+            ):
+                answer = (
+                    "Research completed. The previous decision is unchanged because "
+                    "canonical re-evaluation is required."
+                )
+                warnings = (
+                    AssistantWarning(
+                        message=answer,
+                        code="canonical_reevaluation_required",
+                    ),
+                )
         return ShoppingAssistantResponse(
             query=question,
             intent="general",

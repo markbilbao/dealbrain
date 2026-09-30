@@ -1,8 +1,9 @@
 """Shopify catalog transport.
 
-``post_json`` is the only operation. Production composition does not construct
-or call :class:`UrllibJsonTransport`. Importing this module does not open a
-socket. Tests inject a fake that implements :class:`JsonPostTransport`.
+``post_json`` is the only operation. Production composition may hold an
+:class:`UrllibJsonTransport` instance. Constructing it does not connect, and
+current closed gates never call ``post_json``. Importing this module does not
+open a socket. Tests inject a fake that implements :class:`JsonPostTransport`.
 """
 
 from __future__ import annotations
@@ -57,7 +58,7 @@ class UrllibJsonTransport:
 
     Constructing this object does not connect. ``post_json`` performs one
     request with the caller-supplied timeout and does not retry. Production
-    composition does not call this class.
+    composition may construct this object. Current gates do not call it.
     """
 
     def post_json(

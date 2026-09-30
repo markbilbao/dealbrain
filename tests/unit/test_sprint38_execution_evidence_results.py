@@ -216,9 +216,10 @@ def _world(
     error_category: str | None = None,
     observation_kind: str | None = "production",
     execution_decision: str = DECISION_ID,
+    snapshot: object | None = None,
 ):
     snapshots = InMemoryDecisionSnapshotRepository(clock=lambda: START)
-    snapshot = _base_snapshot()
+    snapshot = _base_snapshot() if snapshot is None else snapshot
     snapshots.add(snapshot)
     conversations = InMemoryConversationRepository(clock=lambda: START)
     context = conversations.create(
@@ -429,30 +430,16 @@ def test_production_evidence_resolves_and_updates_one_canonical_version() -> Non
     added = next(item for item in updated.evidence if item.evidence_id == record.evidence_id)
     assert added.captured_at == START
     assert added.freshness == "fresh"
-    assert "Observed listing price 18990 USD." in added.fact
+    assert "18990" not in added.fact
+    assert "minor currency units" in added.fact
+    assert "USD" in added.fact
     assert "Seller identity: North Audio." in added.fact
     assert "Observed availability: in_stock." in added.fact
     for banned in ("cheapest", "best deal", "final price", "delivered price", "free shipping"):
         assert banned not in added.fact.lower()
-    economics = next(item for item in updated.offer_economics if item.product_id == SONY_ID)
-    assert economics.listing.amount_minor == 18990
-    assert economics.listing.currency == "USD"
-    assert economics.listing.status == "verified"
-    assert economics.listing.label == "observed listing price"
-    assert economics.price_state == "price_before_shipping"
-    assert economics.dominant_amount_minor == 18990
-    assert economics.freshness == "fresh"
-    for line in (economics.shipping, economics.taxes, economics.voucher, economics.import_charges):
-        assert line is not None
-        assert line.status == "unknown"
-        assert line.amount_minor is None
-        assert line.applied is False
-    assert "shipping" in economics.unknowns
-    assert "tax" in economics.unknowns
-    assert "import" in economics.unknowns
-    assert "voucher" in economics.unknowns
-    assert "promotions" in economics.unknowns
-    assert "checkout cost" in economics.unknowns
+    assert updated.offer_economics == previous.offer_economics
+    assert updated.canonical_piqscore_set_sha256 == previous.canonical_piqscore_set_sha256
+    assert updated.recommendation.snapshot_sha256 == previous.recommendation.snapshot_sha256
     context = world["conversations"].get(world["context"].conversation_id)
     assert context is not None
     assert context.decision_context == updated.to_reference()
@@ -659,3 +646,307 @@ def test_trace_evidence_references_resolve_and_digests_stay_digests() -> None:
     )
     assert race.reason == "already_attached"
     assert executions.get(stored.execution_id).outcome == "succeeded"  # type: ignore[union-attr]
+
+
+def test_amount_minor_is_not_rendered_as_a_major_unit() -> None:
+    execution_id = authorized_execution_id(_AUTH_KEY)
+    record = _evidence(execution_id=execution_id, amount_minor=79900)
+    world = _world((record,))
+    result = _integrate(world)
+    assert result.outcome == "canonical_results_updated"
+    updated = world["snapshots"].get_for_owner(DECISION_ID, 2, _owner())
+    assert updated is not None
+    added = next(item for item in updated.evidence if item.evidence_id == record.evidence_id)
+    assert "79900" not in added.fact
+    assert "79,900" not in added.fact
+    assert "799.00" not in added.fact
+    assert "minor currency units" in added.fact
+    assert record.amount_minor == 79900
+
+
+def test_missing_prior_economics_does_not_invent_international_fulfillment() -> None:
+    from dataclasses import replace as replace_snapshot
+
+    from app.domain.entities.offer_economics import CanonicalDeliveryContext
+
+    from tests.unit.test_phase_29_4b_refine_session_recommendation import _economics_snapshot
+
+    execution_id = authorized_execution_id(_AUTH_KEY)
+    record = _evidence(execution_id=execution_id)
+    bare = _world((record,))
+    bare_result = _integrate(bare)
+    assert bare_result.shopper_results_updated is True
+    bare_updated = bare["snapshots"].get_for_owner(DECISION_ID, 2, _owner())
+    assert bare_updated is not None
+    assert bare_updated.offer_economics == ()
+
+    delivery = CanonicalDeliveryContext(city="Manila", country="PH")
+    prior = _economics_snapshot()
+    economics = tuple(
+        replace_snapshot(item, international=True, delivery=delivery)
+        if item.product_id == SONY_ID
+        else item
+        for item in prior.offer_economics
+    )
+    seeded = replace_snapshot(prior, offer_economics=economics)
+    world = _world((record,), snapshot=seeded)
+    result = _integrate(world)
+    assert result.outcome == "canonical_results_updated"
+    updated = world["snapshots"].get_for_owner(DECISION_ID, 2, _owner())
+    assert updated is not None
+    sony = next(item for item in updated.offer_economics if item.product_id == SONY_ID)
+    assert sony.international is True
+    assert sony.delivery == delivery
+    assert sony.listing.amount_minor == 18990
+    assert sony.listing.status == "verified"
+    assert updated.canonical_piqscore_set_sha256 == seeded.canonical_piqscore_set_sha256
+    assert updated.recommendation.snapshot_sha256 == seeded.recommendation.snapshot_sha256
+    assert updated.recommendation.best_piq_product_id == SONY_ID
+    assert updated.recommendation.decision == seeded.recommendation.decision
+    assert updated.evaluated_product_ids == seeded.evaluated_product_ids
+
+
+def _sqlite_factory(tmp_path):  # noqa: ANN001
+    from pathlib import Path
+
+    from app.infrastructure.database.models.operational_entity import OperationalEntityModel
+    from app.infrastructure.persistence.session import reset_sync_engine
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    reset_sync_engine()
+    root = tmp_path if isinstance(tmp_path, Path) else Path(tmp_path)
+    engine = create_engine(
+        f"sqlite:///{root / 'results-integration.db'}",
+        future=True,
+        connect_args={"check_same_thread": False, "timeout": 30},
+    )
+    OperationalEntityModel.__table__.create(engine)
+    return sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
+
+
+def _service(world, factory):  # noqa: ANN001
+    from app.services.canonical_research_results import OperationalResultsIntegrationRepository
+
+    return CanonicalResearchResultsService(
+        world["executions"],
+        world["evidence"],
+        world["snapshots"],
+        world["conversations"],
+        OperationalResultsIntegrationRepository(session_factory=factory),
+        clock=lambda: START,
+    )
+
+
+def test_pending_crash_recovers_on_a_new_service(tmp_path) -> None:  # noqa: ANN001
+    from app.services.canonical_research_results import (
+        OperationalResultsIntegrationRepository,
+        ResultsIntegrationRecord,
+    )
+
+    execution_id = authorized_execution_id(_AUTH_KEY)
+    record = _evidence(execution_id=execution_id)
+    world = _world((record,))
+    factory = _sqlite_factory(tmp_path)
+    OperationalResultsIntegrationRepository(session_factory=factory).insert(
+        ResultsIntegrationRecord(
+            execution_id=execution_id,
+            decision_id=DECISION_ID,
+            context_version=2,
+            state="pending",
+            evidence_ids=(record.evidence_id,),
+            outcome="pending",
+        )
+    )
+    result = _service(world, factory).integrate(
+        execution_id=execution_id,
+        owner=_owner(),
+        conversation_id=world["context"].conversation_id,
+        decision_id=DECISION_ID,
+    )
+    assert result.outcome == "canonical_results_updated"
+    assert result.context_version == 2
+    assert world["snapshots"].get(DECISION_ID, 3) is None
+    stored = OperationalResultsIntegrationRepository(session_factory=factory).get(execution_id)
+    assert stored is not None
+    assert stored.state == "bound"
+    context = world["conversations"].get(world["context"].conversation_id)
+    assert context is not None
+    assert context.decision_context is not None
+    assert context.decision_context.context_version == 2
+
+
+def test_snapshot_written_before_integration_update_recovers(tmp_path) -> None:  # noqa: ANN001
+    from app.services.canonical_research_results import (
+        OperationalResultsIntegrationRepository,
+        ResultsIntegrationRecord,
+        _next_snapshot,
+    )
+
+    execution_id = authorized_execution_id(_AUTH_KEY)
+    record = _evidence(execution_id=execution_id)
+    world = _world((record,))
+    factory = _sqlite_factory(tmp_path)
+    OperationalResultsIntegrationRepository(session_factory=factory).insert(
+        ResultsIntegrationRecord(
+            execution_id=execution_id,
+            decision_id=DECISION_ID,
+            context_version=2,
+            state="pending",
+            evidence_ids=(record.evidence_id,),
+            outcome="pending",
+        )
+    )
+    written = _next_snapshot(world["snapshot"], (record,), now=START)
+    world["snapshots"].add(written)
+    result = _service(world, factory).integrate(
+        execution_id=execution_id,
+        owner=_owner(),
+        conversation_id=world["context"].conversation_id,
+        decision_id=DECISION_ID,
+    )
+    assert result.context_version == 2
+    assert result.shopper_results_updated is True
+    assert world["snapshots"].get(DECISION_ID, 3) is None
+    context = world["conversations"].get(world["context"].conversation_id)
+    assert context is not None
+    assert context.decision_context == written.to_reference()
+
+
+def test_two_services_converge_on_one_context_version(tmp_path) -> None:  # noqa: ANN001
+    from app.services.canonical_research_results import OperationalResultsIntegrationRepository
+
+    execution_id = authorized_execution_id(_AUTH_KEY)
+    record = _evidence(execution_id=execution_id)
+    world = _world((record,))
+    factory = _sqlite_factory(tmp_path)
+    first = _service(world, factory)
+    second = _service(world, factory)
+    results: list[object] = []
+
+    def _run(service) -> None:  # noqa: ANN001
+        results.append(
+            service.integrate(
+                execution_id=execution_id,
+                owner=_owner(),
+                conversation_id=world["context"].conversation_id,
+                decision_id=DECISION_ID,
+            )
+        )
+
+    threads = (Thread(target=_run, args=(first,)), Thread(target=_run, args=(second,)))
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(results) == 2
+    assert {item.context_version for item in results} == {2}  # type: ignore[attr-defined]
+    assert world["snapshots"].get(DECISION_ID, 3) is None
+    stored = OperationalResultsIntegrationRepository(session_factory=factory).get(execution_id)
+    assert stored is not None
+    assert stored.state == "bound"
+    assert stored.context_version == 2
+
+
+def test_stale_integration_revision_cannot_regress(tmp_path) -> None:  # noqa: ANN001
+    from dataclasses import replace as replace_record
+
+    from app.services.canonical_research_results import (
+        InMemoryResultsIntegrationRepository,
+        OperationalResultsIntegrationRepository,
+        ResultsIntegrationRecord,
+        StaleIntegrationRevision,
+    )
+
+    bound = ResultsIntegrationRecord(
+        execution_id="research-exec:" + ("ab" * 32),
+        decision_id=DECISION_ID,
+        context_version=2,
+        state="bound",
+        evidence_ids=(),
+        outcome="canonical_results_updated",
+    )
+    memory = InMemoryResultsIntegrationRepository()
+    memory.insert(bound)
+    with pytest.raises(StaleIntegrationRevision):
+        memory.transition(replace_record(bound, state="snapshot_written"), expected_revision=1)
+    written = replace_record(bound, state="snapshot_written", outcome="canonical_results_updated")
+    memory_written = InMemoryResultsIntegrationRepository()
+    memory_written.insert(written)
+    with pytest.raises(StaleIntegrationRevision):
+        memory_written.transition(
+            replace_record(written, state="pending", outcome="pending"),
+            expected_revision=1,
+        )
+    factory = _sqlite_factory(tmp_path)
+    durable = OperationalResultsIntegrationRepository(session_factory=factory)
+    durable.insert(bound)
+    with pytest.raises(StaleIntegrationRevision):
+        OperationalResultsIntegrationRepository(session_factory=factory).transition(
+            replace_record(bound, state="snapshot_written"),
+            expected_revision=1,
+        )
+
+
+def test_durable_repositories_reject_memory_integration_fallback(tmp_path) -> None:  # noqa: ANN001
+    from app.research.authorized_execution_repository import (
+        OperationalAuthorizedExecutionRepository,
+    )
+    from app.research.execution_evidence import OperationalResearchExecutionEvidenceRepository
+
+    factory = _sqlite_factory(tmp_path)
+    world = _world(())
+    with pytest.raises(ValueError, match="OperationalResultsIntegrationRepository"):
+        CanonicalResearchResultsService(
+            OperationalAuthorizedExecutionRepository(session_factory=factory),
+            OperationalResearchExecutionEvidenceRepository(session_factory=factory),
+            world["snapshots"],
+            world["conversations"],
+        )
+
+
+def test_synthetic_converter_cannot_emit_production_evidence() -> None:
+    from app.research.execution_evidence import (
+        VerifiedLiveOfferExecution,
+        evidence_from_verified_live_offer_fact,
+    )
+
+    execution_id = authorized_execution_id(_AUTH_KEY)
+    live = NormalizedOfferFact(
+        product_id=SONY_ID,
+        variant_id="black",
+        seller_identity="North Audio",
+        amount_minor=18990,
+        currency="USD",
+        availability="in_stock",
+        observed_at=START,
+        normalized_offer_digest=_DIGEST,
+        observation_kind="production",
+        source_mode=SourceMode.LIVE.value,
+        provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        capability=_PRICE.value,
+        market="PH",
+        source=_SOURCE,
+    )
+    with pytest.raises(ValueError, match="cannot be relabeled"):
+        evidence_from_adapter_fact(
+            live,
+            execution_id=execution_id,
+            decision_id=DECISION_ID,
+            plan_id=_PLAN,
+            created_at=START,
+        )
+    verification = VerifiedLiveOfferExecution(
+        execution_id=execution_id,
+        decision_id=DECISION_ID,
+        plan_id=_PLAN,
+        permit_marker="production_shopify_transport",
+        facts=(live,),
+    )
+    produced = evidence_from_verified_live_offer_fact(verification, live, created_at=START)
+    assert produced.test_fixture is False
+    assert produced.observation_kind == "production"
+    assert produced.source_mode is SourceMode.LIVE
+    outsider = replace(live, seller_identity="Other")
+    with pytest.raises(ValueError, match="verified production execution"):
+        evidence_from_verified_live_offer_fact(verification, outsider, created_at=START)
