@@ -26,9 +26,9 @@ ROOT = Path(__file__).resolve().parents[2]
 AUDIT = ROOT / "docs/roadmap/evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md"
 SPRINT38 = ROOT / "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md"
 VERDICT = (
-    "SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / "
-    "DOWNSTREAM GATES"
+    "SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES"
 )
+STATUS_VERDICT = "ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES"
 
 
 def _status_line(path: Path) -> str:
@@ -46,7 +46,7 @@ def test_audit_verdict_is_engineering_complete_and_not_sprint_closure() -> None:
     status = _status_line(SPRINT38).split("**Status:**", 1)[1].strip()
     assert status.startswith("IN PROGRESS")
     assert not status.startswith("COMPLETE")
-    assert "ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41 / DOWNSTREAM GATES" in status
+    assert STATUS_VERDICT in status
     assert SPRINT_38_STATUS == "IN PROGRESS"
     assert SPRINT_38_LIVE_EXECUTION_STATUS == "NOT OPERATIONAL"
     assert SPRINT_38_ENGINEERING_STATUS == "ENGINEERING COMPLETE"
