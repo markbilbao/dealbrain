@@ -25,8 +25,15 @@ class ProductAnalyticsEventRequest(BaseModel):
     decision_id: str | None = None
 
     def client_payload(self) -> dict[str, object]:
-        payload = self.model_dump()
+        """Build the command payload for schema validation.
+
+        Declared optional fields left unset are omitted. ``model_dump(exclude_none=True)``
+        also drops unknown extras whose value is null, so those extras are restored
+        afterwards and still fail validation.
+        """
+
         extra = self.__pydantic_extra__ or {}
+        payload = self.model_dump(exclude_none=True)
         payload.update(extra)
         return payload
 

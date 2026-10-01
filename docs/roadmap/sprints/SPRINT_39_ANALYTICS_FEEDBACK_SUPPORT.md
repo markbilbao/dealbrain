@@ -80,7 +80,7 @@ Sprint 39 stays **IN PROGRESS**. This slice does not close it, does not deploy s
 
 ### Still remaining after 39.2
 
-- Actual staging deployment and filled staging evidence
+- Staging validation of the core funnel. Deploy Staging #41 succeeded and is recorded in the staging evidence note, then paused on `ask_opened` `contradictory_event`. Filled controlled-flow evidence is still remaining after the serializer correction is redeployed
 - A production path that creates the initial canonical decision, so `decision_started` / `decision_completed` can be emitted truthfully
 - `research_partial`, if a real partial transition is added later
 - Final monitored workflow evidence beyond the existing support inbox and the internal review queue
@@ -90,6 +90,18 @@ Sprint 39 stays **IN PROGRESS**. This slice does not close it, does not deploy s
 - Account export and account deletion still exclude `product.analytics_events` and `product.feedback_reports`. No identity join was added
 - EXT-15 external provider decision, if still desired
 - EXT-22 external CMP decision, if still desired
+
+## Sprint 39.3 — staging-discovered ask analytics payload correction
+
+Sprint 39 stays **IN PROGRESS**. This slice does not close it, does not deploy, and does not mark staging validation complete. Sprint 38 is unchanged.
+
+Deploy Staging #41 (run `36822959068`) of `287cdf11ff61bfdb09d412d1cb88927c86e3c799` returned host evidence `staging_ok`. Before the controlled flow, `product.analytics_events` and `product.feedback_reports` each had 0 rows, and neither scan was truncated. Explicit analytics opt-in succeeded (`analytics_allowed`, `explicit = true`). The first valid `POST /api/v1/analytics/events` for `ask_opened` returned HTTP 400 `contradictory_event`.
+
+`ProductAnalyticsEventRequest.client_payload()` used `model_dump()`, which included declared optional fields set to `None`. Those keys sit outside `EXACT_CLIENT_FIELDS` for `ask_opened` and `ask_closed`, so a valid browser open or close failed at the API boundary. The correction omits declared `None` fields and then restores `__pydantic_extra__`, including unknown extras whose value is null, so unknown, forbidden, and server-owned rejections stay in force.
+
+`FORBIDDEN_ANALYTICS_FIELDS`, `SERVER_OWNED_FIELDS`, `EXACT_CLIENT_FIELDS`, and `CLIENT_EVENT_SEMANTICS` are unchanged. Consent semantics, dashboard formulas, and feedback behavior are unchanged. This slice adds no analytics event, calls no Shopify API, and adds no third-party analytics.
+
+The failed staging attempt remains in [`../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md). Do not delete it after a later deploy succeeds.
 
 ## Objective
 

@@ -1,10 +1,63 @@
 # Sprint 39.2 staging analytics evidence template
 
-This file is a template for a later owner/operator pass after a real staging deploy. It is empty on purpose. Do not fill it from unit tests, local fixtures, or invented counts.
+This file records the partial staging session from Deploy Staging #41 and keeps the checklist for the rest of the controlled flow. Do not fill the remaining checklist from unit tests, local fixtures, or invented counts.
 
-Sprint 39 stays IN PROGRESS. This pull request does not deploy staging and does not claim production evidence.
+Sprint 39 stays IN PROGRESS. Staging validation is **PAUSED**. This note does not mark Sprint 39 staging validation complete, does not deploy, and does not claim production evidence.
+
+The failed `ask_opened` attempt below stays in the evidence trail after the serializer correction. Do not delete it when a later deploy succeeds.
+
+## Current partial evidence — Deploy Staging #41
+
+Deploy Staging #41 succeeded. Controlled validation then stopped on the first browser `ask_opened` request. Root cause is request serialization in `ProductAnalyticsEventRequest.client_payload()`.
+
+| Field | Value |
+| --- | --- |
+| Deployed SHA | `287cdf11ff61bfdb09d412d1cb88927c86e3c799` |
+| Staging deployment | Deploy Staging #41 |
+| Staging deployment / run id | `36822959068` |
+| Host evidence | `staging_ok` |
+| Environment | staging |
+| Validation state | PAUSED pending the ask analytics payload correction and a later redeploy |
+
+### Consent and baseline row counts
+
+| Step | Value |
+| --- | --- |
+| First-party analytics opt-in performed explicitly | yes — choice `analytics_allowed`, `explicit = true` |
+| `product.analytics_events` row count before the controlled flow | 0 |
+| `product.feedback_reports` row count before the controlled flow | 0 |
+| Truncation before the controlled flow | `analytics_truncated = false`, `feedback_truncated = false` |
+| `product.analytics_events` row count after the controlled flow | not recorded — validation paused before a successful write |
+| `product.feedback_reports` row count after the controlled flow | not recorded — validation paused before feedback steps |
+
+### Failed ask_opened attempt
+
+`POST /api/v1/analytics/events`
+
+```json
+{
+  "event_name": "ask_opened",
+  "surface": "ask",
+  "action_type": "open",
+  "outcome": "opened"
+}
+```
+
+HTTP 400
+
+```json
+{
+  "error": "validation_error",
+  "message": "contradictory_event",
+  "detail": "contradictory_event"
+}
+```
+
+`ProductAnalyticsEventRequest.client_payload()` called `model_dump()`, so declared optional fields were present with `null` values. `ask_opened` and `ask_closed` permit only `event_name`, `event_id`, `decision_id`, `surface`, `action_type`, and `outcome`. The unrelated null fields were rejected as `contradictory_event`. Sprint 39.3 corrects that serialization in application code. This note does not claim that correction has been redeployed.
 
 ## Deploy identity
+
+Leave this table for the next staging pass after the correction is deployed. Do not copy the paused Deploy Staging #41 row into it as a completed validation.
 
 | Field | Value |
 | --- | --- |
