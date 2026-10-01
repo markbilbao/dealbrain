@@ -89,6 +89,11 @@ RESEARCH_PROVIDER_RELIABILITY = "research.provider_reliability"
 # Sprint 38 — durable authorized-execution preparation (zero-DDL operational store).
 # Lookup identity is the existing execution id, not the raw authorization key.
 RESEARCH_AUTHORIZED_EXECUTIONS = "research.authorized_executions"
+# Sprint 38 — normalized research-outcome evidence. Digests are not evidence ids.
+# No new table. ``operational_entities`` is the store.
+RESEARCH_EXECUTION_EVIDENCE = "research.execution_evidence"
+# Sprint 38 — one canonical-results integration per execution. Prevents version +2 retries.
+RESEARCH_RESULTS_INTEGRATION = "research.execution_results_integration"
 
 USER_PLATFORM_STORES = (
     USERS,

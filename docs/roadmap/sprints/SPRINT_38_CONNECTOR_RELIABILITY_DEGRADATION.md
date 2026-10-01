@@ -1,6 +1,6 @@
 # Sprint 38 — Connector Reliability & Honest Degradation
 
-**Status:** IN PROGRESS (2026-09-30). Audit verdict: SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN. Not COMPLETE / CLOSED. Not LIVE OPERATIONAL. Not PRODUCTION DEPLOYED. Not LAUNCH READY. Real Shopify calls stay 0. Routing stays 0. Public PH shopping coverage stays disabled. Production composition cannot reach the transport.
+**Status:** IN PROGRESS (2026-09-30). Audit verdict: SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41. Not COMPLETE / CLOSED. Not LIVE OPERATIONAL. Not PRODUCTION DEPLOYED. Not LAUNCH READY. Real Shopify calls stay 0. Routing stays 0. Public PH shopping coverage stays disabled. Production composition is structurally wired and current gates still refuse before transport.
 **Primary owner / domain:** Marketplace reliability / ops
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Closure-readiness audit:** [`../evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](../evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md)
@@ -8,11 +8,11 @@
 
 ## Current closure reading (2026-09-30)
 
-The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS because true Sprint 38 engineering blockers remain. The shopper path stops at durable preparation. It does not call the live-start claim or the Shopify execution adapter. `execute_production_shopify_catalog` still returns `production_execution_not_wired`. Sprint 41 lists domain engine changes as a non-goal, so that wiring is not Sprint 41 work. Real Shopify validation stays blocked on Sprint 41. Those are different facts.
+The audit above is the closure-reading authority. Sprint 38 stays IN PROGRESS because real Shopify validation is blocked on Sprint 41. Engineering status is ENGINEERING COMPLETE. B1 confirmed-research composition and B2 durable evidence plus canonical Results versioning are implemented. Current production gates still stop a shopper confirmation before the live-start claim, before the production transport permit, and before transport. Synthetic permits cannot create production evidence. The permanent `production_execution_not_wired` fallback was removed. Sprint 41 lists domain engine changes as a non-goal, so the application composition is Sprint 38 work and the production environment remains Sprint 41. Those are different facts.
 
-IN PROGRESS does not mean LIVE OPERATIONAL, PRODUCTION DEPLOYED, or LAUNCH READY. Fake-transport tests are not live evidence. Repository kill-switch tests are not a deployed drill. The HALF_OPEN lease is not a Sprint 42 production probe. The corrected audit does not call the engineering contract complete.
+IN PROGRESS does not mean LIVE OPERATIONAL, PRODUCTION DEPLOYED, or LAUNCH READY. ENGINEERING COMPLETE does not mean COMPLETE / CLOSED. Fake-transport tests are not live evidence. Repository kill-switch tests are not a deployed drill. The HALF_OPEN lease is not a Sprint 42 production probe.
 
-Next primary Sprint 38 task: one final bounded engineering slice. Scope: positive Ask PiqSavi to claim to adapter composition behind closed gates; a successful validated outcome to a durable evidence reference and a canonical updated Results integration; failure, partial, and `outcome_unknown` preserve the prior decision; no real Shopify call; production flags remain closed. After that slice, repeat this closure-readiness audit. Sprint 39 may still run in parallel because its predecessors are Sprint 28 and Sprint 29. Sprint 40 may run in parallel as already documented. Do not justify moving on by claiming Sprint 38 engineering is already complete.
+The bounded B1/B2 slice is implemented: positive Ask PiqSavi composition behind closed gates; a validated non-fixture outcome can write resolvable evidence and the next canonical Results version; failure, partial, and `outcome_unknown` preserve the prior decision; no real Shopify call; production flags remain closed. Sprint 39 may still run in parallel because its predecessors are Sprint 28 and Sprint 29. Sprint 40 may run in parallel as already documented. Do not close Sprint 38 before the Sprint 41 validation gates exist.
 
 The dated sections below this heading are slice history. The 2026-09-26 A–G list in the foundation section used different letter meanings and is superseded for closure reading. The original template from Objective through Change control is retained and labeled historical.
 

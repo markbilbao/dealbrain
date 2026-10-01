@@ -11,6 +11,7 @@ from uuid import uuid4
 from app.domain.conversation_continuity import (
     require_context_membership,
     require_stable_decision_context,
+    require_verified_research_context_advance,
 )
 from app.domain.entities.shopping_assistant import (
     ConversationContext,
@@ -164,6 +165,45 @@ class InMemoryConversationRepository(ConversationRepository):
                     existing.persistence_version if expected_version is None else expected_version
                 ),
             )
+
+    def advance_verified_research_context(
+        self,
+        conversation_id: str,
+        *,
+        owner: ConversationOwner,
+        decision_context: DecisionContextReference,
+        expected_version: int | None = None,
+    ) -> ConversationContext:
+        with self._lock:
+            self._require_active_owner(conversation_id, owner)
+            existing = self.get(conversation_id)
+            if existing is None:
+                raise KeyError(f"conversation not found: {conversation_id}")
+            if existing.owner is None or not existing.owner.has_same_identity(owner):
+                raise ConversationOwnershipError(conversation_id, "owner identity mismatch")
+            if existing.decision_context == decision_context:
+                return existing
+            updated = replace(
+                existing,
+                owner=owner,
+                decision_context=decision_context,
+                last_product_ids=decision_context.evaluated_product_ids,
+                expires_at=self._clock() + timedelta(seconds=self._ttl_seconds),
+            )
+            require_verified_research_context_advance(existing, updated)
+            expected = (
+                existing.persistence_version if expected_version is None else expected_version
+            )
+            if expected != existing.persistence_version:
+                raise ConversationVersionConflictError(conversation_id, expected)
+            stored = replace(
+                updated,
+                turns=updated.turns[-self._max_turns :],
+                persistence_version=existing.persistence_version + 1,
+            )
+            require_context_membership(stored)
+            self._store[conversation_id] = stored
+            return stored
 
     def rebind_owner(
         self,

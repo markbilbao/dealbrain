@@ -52,6 +52,12 @@ from app.services.answer_from_evidence import (
     _mentions_outside_product,
     compose_evidence_answer,
 )
+from app.services.confirmed_research_execution import (
+    ConfirmedResearchExecutionService,
+    ConfirmedResearchRequest,
+    ConfirmedResearchResult,
+    production_confirmed_research_execution,
+)
 from app.services.decision_evidence_packet import (
     DecisionEvidencePacket,
     packet_from_page_view,
@@ -272,10 +278,16 @@ class ProposalResult:
     authorization: ResearchAuthorization | None = None
     authorization_created: bool = False
     preparation: ResearchExecutionPreparation | None = None
+    continuation: ConfirmedResearchResult | None = None
 
 
 class ProposeResearchService:
-    """Create or update a pending research proposal. Never executes research."""
+    """Create or update a pending research proposal.
+
+    Confirmation still creates the ResearchAuthorization and the trusted plan.
+    Positive execution is delegated to ``ConfirmedResearchExecutionService``.
+    This service does not perform HTTP.
+    """
 
     def __init__(
         self,
@@ -285,12 +297,27 @@ class ProposeResearchService:
         clock=None,  # noqa: ANN001
         id_factory=None,  # noqa: ANN001
         execution_ledger=None,  # noqa: ANN001
+        confirmed_execution: ConfirmedResearchExecutionService | None = None,
+        planning_registry=None,  # noqa: ANN001
+        planning_catalog=None,  # noqa: ANN001
+        planning_routing=None,  # noqa: ANN001
     ) -> None:
         self._snapshots = snapshots
         self._conversations = conversations
         self._clock = clock or (lambda: datetime.now(UTC))
         self._id_factory = id_factory or (lambda: str(uuid4()))
         self._execution_ledger = execution_ledger
+        self._confirmed_execution = (
+            confirmed_execution
+            if confirmed_execution is not None
+            else production_confirmed_research_execution(
+                snapshots=snapshots,
+                conversations=conversations,
+            )
+        )
+        self._planning_registry = planning_registry
+        self._planning_catalog = planning_catalog
+        self._planning_routing = planning_routing
 
     def handle(
         self,
@@ -664,6 +691,23 @@ class ProposeResearchService:
                         caller_capability=caller_capability,
                         caller_source=caller_source,
                         caller_provider_id=caller_provider_id,
+                        registry=self._planning_registry,
+                        catalog=self._planning_catalog,
+                        routing_policy=self._planning_routing,
+                    )
+                continuation = None
+                if preparation is not None and authorization is not None and owner is not None:
+                    continuation = self._confirmed_execution.continue_confirmed(
+                        ConfirmedResearchRequest(
+                            owner=owner,
+                            conversation_id=context.conversation_id,
+                            authorization=authorization,
+                            preparation=preparation,
+                            caller_market=caller_market,
+                            caller_capability=caller_capability,
+                            caller_source=caller_source,
+                            caller_provider_id=caller_provider_id,
+                        )
                     )
                 stored_result = replace(
                     working,
@@ -671,6 +715,7 @@ class ProposeResearchService:
                     authorization=authorization,
                     authorization_created=created,
                     preparation=preparation,
+                    continuation=continuation,
                 )
                 return context.conversation_id, stored_result
             except ConversationVersionConflictError as exc:
@@ -828,22 +873,60 @@ class ProposeResearchService:
             processing["proposal_version"] = proposal.proposal_version
             processing["proposal_status"] = proposal.status
         if result.authorization is not None:
-            processing["research_authorization"] = result.authorization.to_public_dict()
+            authorization_public = result.authorization.to_public_dict()
+            authorization_status = result.authorization.status
+            if result.continuation is not None and result.continuation.authorization_consumed:
+                authorization_status = "consumed"
+                authorization_public = {**authorization_public, "status": "consumed"}
+            processing["research_authorization"] = authorization_public
             processing["research_authorization_id"] = result.authorization.authorization_id
-            processing["authorization_status"] = result.authorization.status
+            processing["authorization_status"] = authorization_status
             processing["authorization_version"] = result.authorization.authorization_version
+        answer = result.answer
+        updated = result.continuation is not None and result.continuation.shopper_results_updated
+        if updated and result.continuation is not None:
+            answer = "Research completed. Updated Results are available for this decision."
+            warnings = (
+                AssistantWarning(
+                    message=answer,
+                    code="research_results_updated",
+                ),
+            )
+            if result.continuation.context_version is not None:
+                processing["context_version"] = result.continuation.context_version
         if result.preparation is not None:
             public_preparation = result.preparation.to_public_dict()
             processing["research_preparation"] = public_preparation
             processing["research_preparation_outcome"] = result.preparation.outcome
-            processing["execution_started"] = False
-            processing["research_executed"] = False
-            processing["source_checked"] = False
-            processing["attempted"] = False
+        if result.continuation is not None:
+            continuation = result.continuation
+            processing["confirmed_research"] = continuation.to_public_dict()
+            processing["execution_started"] = (
+                continuation.attempted or continuation.research_executed
+            )
+            processing["research_executed"] = continuation.research_executed
+            processing["source_checked"] = continuation.source_checked
+            processing["attempted"] = continuation.attempted
+            processing["live_research_completed"] = continuation.live_research_completed
+            if (
+                continuation.live_research_completed
+                and not continuation.shopper_results_updated
+                and continuation.integration_outcome == "canonical_reevaluation_required"
+            ):
+                answer = (
+                    "Research completed. The previous decision is unchanged because "
+                    "canonical re-evaluation is required."
+                )
+                warnings = (
+                    AssistantWarning(
+                        message=answer,
+                        code="canonical_reevaluation_required",
+                    ),
+                )
         return ShoppingAssistantResponse(
             query=question,
             intent="general",
-            answer=result.answer,
+            answer=answer,
             top_recommendation=None,
             alternatives=(),
             evidence=(),

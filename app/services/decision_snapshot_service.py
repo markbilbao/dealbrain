@@ -40,3 +40,27 @@ class DecisionSnapshotBinder:
             decision_context=snapshot.to_reference(),
             expected_version=expected_conversation_version,
         )
+
+    def advance_after_verified_research(
+        self,
+        conversation_id: str,
+        *,
+        decision_id: str,
+        context_version: int,
+        owner: ConversationOwner,
+        expected_conversation_version: int | None = None,
+    ) -> ConversationContext:
+        """Rebind only after the next immutable snapshot is already stored."""
+
+        snapshot = self._snapshots.get_for_owner(decision_id, context_version, owner)
+        if snapshot is None:
+            raise DecisionSnapshotOwnershipError(
+                decision_id,
+                "snapshot not found or owner identity mismatch",
+            )
+        return self._conversations.advance_verified_research_context(
+            conversation_id,
+            owner=owner,
+            decision_context=snapshot.to_reference(),
+            expected_version=expected_conversation_version,
+        )

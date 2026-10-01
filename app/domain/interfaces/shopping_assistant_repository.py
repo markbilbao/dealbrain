@@ -60,6 +60,21 @@ class ConversationRepository(ABC):
         """Bind an existing conversation to one owned canonical decision snapshot."""
 
     @abstractmethod
+    def advance_verified_research_context(
+        self,
+        conversation_id: str,
+        *,
+        owner: ConversationOwner,
+        decision_context: DecisionContextReference,
+        expected_version: int | None = None,
+    ) -> ConversationContext:
+        """Move one bound decision to the next repository-verified context version.
+
+        The owner, decision id, evaluated set, PiqScore digest, and
+        Recommendation digest stay put. Prior turns stay on the conversation.
+        """
+
+    @abstractmethod
     def rebind_owner(
         self,
         conversation_id: str,

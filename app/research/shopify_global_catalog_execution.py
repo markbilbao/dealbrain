@@ -3,10 +3,15 @@
 This module is the certified PH catalog path from a live-start claim to a
 durable outcome. It is not a generic ``StaticResearchProvider.execute``.
 
-Production composition cannot reach the transport. The only caller that may
-invoke a transport is an explicit :class:`BoundedFakeTransportPermit`. That
-permit does not flip production flags, does not label the result live, and
-does not make live execution operational.
+Closed production gates refuse before transport. An open-gate continuation
+may hand the same transport to the claim and adapter path. Two permits stay
+separate. :class:`BoundedFakeTransportPermit` is synthetic test execution
+only. :class:`ProductionShopifyTransportPermit` is the server-only production
+authority. Direct construction still fails while current production gates are
+closed. The server issuer creates one after the runtime policy reports every
+authoritative gate open, including a harness whose catalogs are not the
+production constants. Neither permit flips those constants or performs HTTP
+by itself.
 
 Crash boundaries:
 
@@ -46,7 +51,7 @@ from app.domain.entities.connector_reliability import (
     ConnectorOperationalStatus,
     KillSwitch,
 )
-from app.domain.entities.marketplace_data import SourceMode
+from app.domain.entities.marketplace_data import ProductAvailability, SourceMode
 from app.domain.entities.research_authorization import ResearchAuthorization
 from app.domain.entities.research_execution import (
     ResearchExecutionPlan,
@@ -68,6 +73,7 @@ from app.research.authorized_execution_repository import (
     InMemoryAuthorizedExecutionRepository,
 )
 from app.research.digest import stable_sha256
+from app.research.execution_evidence import NormalizedOfferFact, VerifiedLiveOfferExecution
 from app.research.live_start_claim import (
     LIVE_CONNECTOR_CLEANUP_MARGIN,
     SHOPIFY_LIVE_HTTP_TIMEOUT,
@@ -112,6 +118,8 @@ from app.research.shopify_global_catalog_reliability import classify_shopify_cat
 from app.research.shopify_global_catalog_transport import (
     CatalogTransportResult,
     JsonPostTransport,
+    ProductionTransportAuthority,
+    UrllibJsonTransport,
 )
 from app.research.sprint38_live_execution import (
     LIVE_RESEARCH_EXECUTION_OPERATIONAL,
@@ -126,8 +134,15 @@ from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 SHOPIFY_EXECUTION_ADAPTER_IMPLEMENTED = True
 SHOPIFY_HTTP_TIMEOUT_SECONDS = SHOPIFY_LIVE_HTTP_TIMEOUT.total_seconds()
 RAW_SHOPIFY_RESPONSE_PERSISTED = False
+# Sprint 38 audit sentinel for this repository revision. A later verified
+# call can be represented on an execution result. This constant stays 0
+# until a real call is actually made.
 REAL_SHOPIFY_CALLS = 0
+_SERVER_PERMIT_AUTHORITY = object()
 FAKE_TRANSPORT_OBSERVATION_KIND = "synthetic"
+FAKE_TRANSPORT_PERMIT_CREATIONS = 0
+HARNESS_TRANSPORT_PERMIT_CREATIONS = 0
+PRODUCTION_TRANSPORT_PERMIT_CREATIONS = 0
 _SUPPORTED = frozenset(SHOPIFY_GLOBAL_CATALOG_SUPPORTED_CAPABILITIES)
 _ALLOWED_TOOLS = frozenset({SEARCH_TOOL, GET_PRODUCT_TOOL})
 _UNKNOWN_COSTS = ("shipping", "tax", "import", "voucher")
@@ -141,8 +156,94 @@ class BoundedFakeTransportPermit:
     marker: Literal["bounded_fake_transport"] = "bounded_fake_transport"
 
     def __post_init__(self) -> None:
+        global FAKE_TRANSPORT_PERMIT_CREATIONS
         if self.marker != "bounded_fake_transport":
             raise ValueError("bounded fake transport permit is not a production live switch")
+        FAKE_TRANSPORT_PERMIT_CREATIONS += 1
+
+
+@dataclass(frozen=True, slots=True)
+class ProductionShapeHarnessPermit:
+    """Structural test permit. Not production live evidence authority.
+
+    It may run on an injected fake transport so claim and adapter sequencing
+    can be tested. Its facts stay synthetic fixtures. It cannot verify a live
+    offer or update shopper-visible canonical Results.
+    """
+
+    marker: Literal["production_shape_harness"] = "production_shape_harness"
+
+    def __post_init__(self) -> None:
+        global HARNESS_TRANSPORT_PERMIT_CREATIONS
+        if self.marker != "production_shape_harness":
+            raise ValueError("production shape harness permit is not live authority")
+        HARNESS_TRANSPORT_PERMIT_CREATIONS += 1
+
+
+@dataclass(frozen=True, slots=True)
+class ProductionShopifyTransportPermit:
+    """Server-only production execution authority. Not a browser live switch.
+
+    Direct construction checks the current production constants and fails
+    while any of those gates is closed. The server issuer is the path that
+    trusts a runtime policy whose catalogs are already open. The permit does
+    not by itself classify a fake or bare transport as live evidence.
+    """
+
+    marker: Literal["production_shopify_transport"] = "production_shopify_transport"
+    server_authority: object | None = None
+
+    def __post_init__(self) -> None:
+        global PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+        if self.marker != "production_shopify_transport":
+            raise ValueError("production shopify transport permit marker is fixed")
+        if self.server_authority is not _SERVER_PERMIT_AUTHORITY:
+            reasons = production_shopify_execution_block_reasons()
+            if reasons:
+                raise ValueError(
+                    "production shopify transport permit requires every gate to be open"
+                )
+        PRODUCTION_TRANSPORT_PERMIT_CREATIONS += 1
+
+
+def issue_production_shopify_transport_permit(
+    *,
+    authoritative_block_reasons: tuple[str, ...],
+) -> ProductionShopifyTransportPermit:
+    """Issue a production permit after the caller has evaluated server gates.
+
+    ``authoritative_block_reasons`` comes from the runtime policy, not from
+    browser input. Current production reasons are non-empty, so this issuer
+    is not used on the shopper path today.
+    """
+
+    if authoritative_block_reasons:
+        raise RuntimeError("a transport permit cannot be issued while a gate is closed")
+    return ProductionShopifyTransportPermit(server_authority=_SERVER_PERMIT_AUTHORITY)
+
+
+CatalogTransportPermit = (
+    BoundedFakeTransportPermit | ProductionShapeHarnessPermit | ProductionShopifyTransportPermit
+)
+
+
+def production_live_evidence_authorized(
+    permit: CatalogTransportPermit,
+    transport: object,
+) -> bool:
+    """Production evidence needs the server permit and the transport marker.
+
+    Either one alone is not enough. A fake or bare HTTP transport fails closed.
+    """
+
+    if not isinstance(permit, ProductionShopifyTransportPermit):
+        return False
+    if type(transport) is not UrllibJsonTransport:
+        return False
+    authority = transport.production_transport_authority
+    return (
+        type(authority) is ProductionTransportAuthority and authority.proves_production_transport()
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,7 +254,7 @@ class ShopifyCatalogAttempt:
     bounded permit. It does not change the production provider descriptor.
     """
 
-    permit: BoundedFakeTransportPermit
+    permit: CatalogTransportPermit
     authorization: ResearchAuthorization
     owner: ConversationOwner
     plan: ResearchExecutionPlan
@@ -195,20 +296,19 @@ class ShopifyExecutionResult:
     blocking_reasons: tuple[str, ...] = ()
     unknown_cost_components: tuple[str, ...] = ()
     transport_outcome_ambiguous: bool = False
+    offer_facts: tuple[NormalizedOfferFact, ...] = ()
+    execution_authority: Literal["none", "synthetic", "production"] = "none"
+    verified_live_execution: VerifiedLiveOfferExecution | None = None
 
     def __post_init__(self) -> None:
-        if self.real_shopify_call_count != 0 or REAL_SHOPIFY_CALLS != 0:
-            raise ValueError("this slice cannot record a real Shopify call")
+        if self.real_shopify_call_count < 0:
+            raise ValueError("real Shopify call count cannot be negative")
         if self.retry_count != 0:
             raise ValueError("the Shopify path does not retry")
         if self.raw_response_persisted or RAW_SHOPIFY_RESPONSE_PERSISTED:
             raise ValueError("raw Shopify responses must not be persisted")
-        if self.source_mode_live or self.live_research_execution_operational:
-            raise ValueError("this result is not live execution")
         if self.observation_kind == "live":
-            raise ValueError("a fake transport result cannot be labeled live")
-        if LIVE_RESEARCH_EXECUTION_OPERATIONAL:
-            raise ValueError("live research execution is not operational")
+            raise ValueError("an execution result cannot be labeled live")
         if self.transport_invoked and not self.attempted:
             raise ValueError("transport implies an attempt")
         if self.persisted and self.state not in _TERMINAL:
@@ -217,6 +317,30 @@ class ShopifyExecutionResult:
             raise ValueError("execution must preserve the prior decision")
         if self.evaluated_offer_count < 0 or self.normalized_offer_count < 0:
             raise ValueError("offer counts cannot be negative")
+        if self.execution_authority == "production":
+            if self.source_mode_live and not self.durable_success:
+                raise ValueError("only a verified production success can record live source mode")
+            if self.durable_success:
+                if self.observation_kind != "production" or self.verified_live_execution is None:
+                    raise ValueError("production success requires verified production evidence")
+            elif self.verified_live_execution is not None:
+                raise ValueError("a failed production attempt cannot verify live evidence")
+            if any(
+                fact.observation_kind != "production" or fact.source_mode != SourceMode.LIVE.value
+                for fact in self.offer_facts
+            ):
+                raise ValueError("production offer facts must stay production live observations")
+        else:
+            if self.source_mode_live or self.live_research_execution_operational:
+                raise ValueError("synthetic execution cannot record live operation")
+            if self.verified_live_execution is not None or self.observation_kind == "production":
+                raise ValueError("synthetic execution cannot verify production evidence")
+            if any(
+                fact.observation_kind in {"live", "production"}
+                or fact.source_mode == SourceMode.LIVE.value
+                for fact in self.offer_facts
+            ):
+                raise ValueError("adapter offer facts cannot be labeled live")
 
     @property
     def durable_success(self) -> bool:
@@ -265,7 +389,7 @@ class ShopifyCatalogExecutionService:
     def execute(self, attempt: ShopifyCatalogAttempt) -> ShopifyExecutionResult:
         """Validate, then transport once, then commit the outcome."""
 
-        local = _local_refusal(attempt)
+        local = _local_refusal(attempt, self._transport)
         if local is not None:
             return local
         started_at = self._read_clock()
@@ -310,7 +434,11 @@ class ShopifyCatalogExecutionService:
                 state="running",
                 transport_invoked=True,
             )
-        interpreted = _interpret(response, checked_at=finished_at)
+        interpreted = _interpret(
+            response,
+            checked_at=finished_at,
+            production=production_live_evidence_authorized(attempt.permit, self._transport),
+        )
         return self._commit_outcome(
             attempt,
             prepared,
@@ -502,6 +630,7 @@ class ShopifyCatalogExecutionService:
                 now=finished_at,
                 policy=self._policy,
             )
+            live_authority = production_live_evidence_authorized(attempt.permit, self._transport)
             record = _terminal_record(
                 execution,
                 attempt=attempt,
@@ -511,7 +640,11 @@ class ShopifyCatalogExecutionService:
                 attempt_status=interpreted.attempt_status,
                 offers=interpreted.offers,
                 request_digest=prepared.request_digest,
-                observation_kind=FAKE_TRANSPORT_OBSERVATION_KIND,
+                observation_kind=_stored_observation_kind(
+                    attempt,
+                    interpreted.success,
+                    live_authority=live_authority,
+                ),
             )
             try:
                 saved = transaction.cas_execution(record, expected_revision=execution.revision)
@@ -543,28 +676,45 @@ class ShopifyCatalogExecutionService:
                 )
         finally:
             transaction.close()
+        live_authority = production_live_evidence_authorized(attempt.permit, self._transport)
+        facts = (
+            _offer_facts(attempt, interpreted.offers, live_authority=live_authority)
+            if interpreted.success
+            else ()
+        )
         return _from_stored(
             saved,
             transport_invoked=transport_invoked,
             failure_kind=interpreted.failure_kind,
             unknown_costs=_unknown_costs(interpreted.offers) if interpreted.success else (),
+            offer_facts=facts,
+            execution_authority=_result_authority(attempt.permit) or "none",
+            verified=_verified_live_execution(attempt, saved, facts, self._transport),
         )
 
 
 def execute_production_shopify_catalog(
     transport: JsonPostTransport,
+    *,
+    continuation: Callable[[JsonPostTransport], ShopifyExecutionResult] | None = None,
 ) -> ShopifyExecutionResult:
-    """Production entry. It never calls ``transport``.
+    """Refuse before transport while any production gate is closed.
 
-    Gates stay closed in this repository. Even an empty reason list does not
-    call the transport: production composition is not wired to the adapter.
+    When every production gate is open, call the server-owned continuation.
+    That continuation is the trusted claim and adapter path. This function
+    does not call ``transport`` itself, and a closed gate does not call the
+    continuation either. Current repository gates are closed.
     """
 
-    del transport
     reasons = production_shopify_execution_block_reasons()
-    if not reasons:
-        reasons = ("production_execution_not_wired",)
-    return _refused(reasons[0], blocking_reasons=reasons)
+    if reasons:
+        return _refused(reasons[0], blocking_reasons=reasons)
+    if continuation is None:
+        return _refused(
+            "production_composition_context_required",
+            blocking_reasons=("production_composition_context_required",),
+        )
+    return continuation(transport)
 
 
 def production_shopify_execution_block_reasons() -> tuple[str, ...]:
@@ -577,8 +727,6 @@ def production_shopify_execution_block_reasons() -> tuple[str, ...]:
         reasons.append("shopify_live_call_not_permitted")
     if not PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED:
         reasons.append("production_ucp_profile_undeployed")
-    if LIVE_RESEARCH_EXECUTION_OPERATIONAL:
-        reasons.append("live_flag_unexpectedly_enabled")
     return tuple(dict.fromkeys(reasons))
 
 
@@ -618,9 +766,75 @@ def _execution_id(attempt: ShopifyCatalogAttempt) -> str:
     return authorized_execution_id(attempt.authorization.idempotency_key)
 
 
-def _local_refusal(attempt: ShopifyCatalogAttempt) -> ShopifyExecutionResult | None:
-    if attempt.permit.marker != "bounded_fake_transport":
-        return _refused("bounded_fake_transport_required")
+def _permit_mode(
+    permit: CatalogTransportPermit,
+) -> Literal["synthetic", "harness", "production"] | None:
+    if isinstance(permit, BoundedFakeTransportPermit):
+        return "synthetic"
+    if isinstance(permit, ProductionShapeHarnessPermit):
+        return "harness"
+    if isinstance(permit, ProductionShopifyTransportPermit):
+        return "production"
+    return None
+
+
+def _result_authority(
+    permit: CatalogTransportPermit,
+) -> Literal["synthetic", "production"] | None:
+    mode = _permit_mode(permit)
+    if mode == "production":
+        return "production"
+    if mode in {"synthetic", "harness"}:
+        return "synthetic"
+    return None
+
+
+def _stored_observation_kind(
+    attempt: ShopifyCatalogAttempt,
+    success: bool,
+    *,
+    live_authority: bool,
+) -> str | None:
+    if live_authority:
+        return "production" if success else None
+    return FAKE_TRANSPORT_OBSERVATION_KIND
+
+
+def _verified_live_execution(
+    attempt: ShopifyCatalogAttempt,
+    stored: DurableAuthorizedExecution,
+    facts: tuple[NormalizedOfferFact, ...],
+    transport: object,
+) -> VerifiedLiveOfferExecution | None:
+    if not production_live_evidence_authorized(attempt.permit, transport) or not facts:
+        return None
+    if stored.state != "completed" or stored.outcome != "succeeded":
+        return None
+    authority = getattr(transport, "production_transport_authority", None)
+    if type(authority) is not ProductionTransportAuthority:
+        return None
+    return VerifiedLiveOfferExecution(
+        execution_id=stored.execution_id,
+        decision_id=stored.decision_id,
+        plan_id=stored.plan_id,
+        permit_marker="production_shopify_transport",
+        transport_authority=authority,
+        facts=facts,
+    )
+
+
+def _local_refusal(
+    attempt: ShopifyCatalogAttempt,
+    transport: JsonPostTransport,
+) -> ShopifyExecutionResult | None:
+    mode = _permit_mode(attempt.permit)
+    if mode is None:
+        return _refused("transport_permit_required")
+    if mode == "production":
+        if not production_live_evidence_authorized(attempt.permit, transport):
+            return _refused("production_transport_authority_required")
+    elif type(transport) is UrllibJsonTransport:
+        return _refused("synthetic_permit_cannot_use_production_transport")
     if attempt.step.capability not in _SUPPORTED:
         return _refused("capability_not_supported")
     if attempt.operation == FORBIDDEN_LOOKUP_TOOL or attempt.operation not in _ALLOWED_TOOLS:
@@ -797,7 +1011,12 @@ def _request_digest(attempt: ShopifyCatalogAttempt) -> str:
     )
 
 
-def _interpret(response: CatalogTransportResult, *, checked_at: datetime) -> _Interpreted:
+def _interpret(
+    response: CatalogTransportResult,
+    *,
+    checked_at: datetime,
+    production: bool = False,
+) -> _Interpreted:
     if response.timed_out:
         return _Interpreted(False, "timed_out", ConnectorFailureKind.TIMEOUT, "timeout")
     if response.transport_unavailable:
@@ -821,7 +1040,11 @@ def _interpret(response: CatalogTransportResult, *, checked_at: datetime) -> _In
         if kind is ConnectorFailureKind.UNKNOWN and envelope.reason == "malformed_jsonrpc":
             category = "malformed_jsonrpc"
         return _Interpreted(False, status_name, kind, category)
-    offers, refusal = _normalize_all(response.payload, checked_at=checked_at)
+    offers, refusal = _normalize_all(
+        response.payload,
+        checked_at=checked_at,
+        production=production,
+    )
     if refusal is not None or not offers:
         return _Interpreted(
             False,
@@ -836,10 +1059,12 @@ def _normalize_all(
     payload: Mapping[str, Any],
     *,
     checked_at: datetime,
+    production: bool = False,
 ) -> tuple[tuple[ShopifyNormalizedOffer, ...], str | None]:
     products = products_from_catalog_payload(dict(payload))
     if not products:
         return (), "normalization_refusal"
+    observation_kind = "live" if production else FAKE_TRANSPORT_OBSERVATION_KIND
     offers: list[ShopifyNormalizedOffer] = []
     for product in products:
         variants = variants_from_product(product)
@@ -851,15 +1076,18 @@ def _normalize_all(
                     product,
                     variant,
                     checked_at=checked_at,
-                    observation_kind=FAKE_TRANSPORT_OBSERVATION_KIND,
+                    observation_kind=observation_kind,
                     ph_query_context=True,
                 )
             except ShopifyNormalizationRefusal as exc:
                 return (), exc.reason
-            if (
+            live = (
                 offer.source.observation_kind == "live"
                 or offer.source.source_mode is SourceMode.LIVE
-            ):
+            )
+            if production and not live:
+                return (), "production_observation_required"
+            if not production and live:
                 return (), "live_observation_forbidden"
             offers.append(offer)
     return tuple(offers), None
@@ -1020,13 +1248,59 @@ def _same_step(left: ResearchProviderStep, right: ResearchProviderStep) -> bool:
     )
 
 
+def _offer_facts(
+    attempt: ShopifyCatalogAttempt,
+    offers: tuple[ShopifyNormalizedOffer, ...],
+    *,
+    live_authority: bool,
+) -> tuple[NormalizedOfferFact, ...]:
+    """Normalized facts only. Digests stay digests. No raw response is copied."""
+
+    facts: list[NormalizedOfferFact] = []
+    for offer in offers:
+        availability = offer.source.availability
+        availability_text = None
+        if availability is not ProductAvailability.UNKNOWN:
+            availability_text = availability.value
+        facts.append(
+            NormalizedOfferFact(
+                product_id=offer.source.product_id,
+                variant_id=offer.source.variant_id,
+                seller_identity=offer.source.seller_identity,
+                amount_minor=offer.source.price_amount_minor,
+                currency=offer.source.currency,
+                availability=availability_text,
+                observed_at=offer.source.checked_at,
+                normalized_offer_digest=_normalized_offer_digest(offer),
+                observation_kind=(
+                    "production" if live_authority else FAKE_TRANSPORT_OBSERVATION_KIND
+                ),
+                source_mode=(SourceMode.LIVE.value if live_authority else SourceMode.FIXTURE.value),
+                provider_id=attempt.step.provider_id,
+                capability=attempt.step.capability.value,
+                market=attempt.step.market or PH_COUNTRY,
+                source=attempt.source,
+            )
+        )
+    return tuple(facts)
+
+
 def _from_stored(
     stored: DurableAuthorizedExecution,
     *,
     transport_invoked: bool,
     failure_kind: ConnectorFailureKind | None = None,
     unknown_costs: tuple[str, ...] = (),
+    offer_facts: tuple[NormalizedOfferFact, ...] = (),
+    execution_authority: Literal["none", "synthetic", "production"] = "none",
+    verified: VerifiedLiveOfferExecution | None = None,
 ) -> ShopifyExecutionResult:
+    authority = execution_authority
+    if authority == "none" and stored.observation_kind == "synthetic":
+        authority = "synthetic"
+    production_success = (
+        authority == "production" and stored.state == "completed" and stored.outcome == "succeeded"
+    )
     return ShopifyExecutionResult(
         attempted=True,
         transport_invoked=transport_invoked,
@@ -1040,9 +1314,16 @@ def _from_stored(
         normalized_offer_count=stored.normalized_offer_count,
         returned_currencies=stored.returned_currencies,
         observation_kind=stored.observation_kind,
+        source_mode_live=production_success,
+        live_research_execution_operational=(
+            authority == "production" and LIVE_RESEARCH_EXECUTION_OPERATIONAL
+        ),
         claim_released=stored.claim_digest is None,
         trace=stored.trace,
         unknown_cost_components=unknown_costs,
+        offer_facts=offer_facts,
+        execution_authority=authority,
+        verified_live_execution=verified,
     )
 
 

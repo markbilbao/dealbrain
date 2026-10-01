@@ -1,8 +1,9 @@
 """Shopify catalog transport.
 
-``post_json`` is the only operation. Production composition does not construct
-or call :class:`UrllibJsonTransport`. Importing this module does not open a
-socket. Tests inject a fake that implements :class:`JsonPostTransport`.
+``post_json`` is the only operation. Production composition may hold an
+:class:`UrllibJsonTransport` instance. Constructing it does not connect, and
+current closed gates never call ``post_json``. Importing this module does not
+open a socket. Tests inject a fake that implements :class:`JsonPostTransport`.
 """
 
 from __future__ import annotations
@@ -52,13 +53,46 @@ class JsonPostTransport(Protocol):
         """Post one JSON body. Implementations must not retry."""
 
 
+_PRODUCTION_TRANSPORT_TOKEN = object()
+
+
+class ProductionTransportAuthority:
+    """Opaque server marker that a transport may carry production evidence.
+
+    The production composition factory is the issuer. The marker is not a
+    secret, is not browser input, and is not written to evidence rows.
+    """
+
+    def __init__(self, token: object) -> None:
+        if token is not _PRODUCTION_TRANSPORT_TOKEN:
+            raise ValueError("production transport authority is server-issued")
+        self._token = token
+
+    def proves_production_transport(self) -> bool:
+        return self._token is _PRODUCTION_TRANSPORT_TOKEN
+
+
+def issue_production_transport_authority() -> ProductionTransportAuthority:
+    """Mint the in-memory marker. Callers do not persist it."""
+
+    return ProductionTransportAuthority(_PRODUCTION_TRANSPORT_TOKEN)
+
+
 class UrllibJsonTransport:
     """HTTP-capable catalog transport.
 
     Constructing this object does not connect. ``post_json`` performs one
     request with the caller-supplied timeout and does not retry. Production
-    composition does not call this class.
+    composition may construct this object with a server-issued authority.
+    A bare instance is not that authority. Current gates do not call it.
     """
+
+    def __init__(self, *, authority: ProductionTransportAuthority | None = None) -> None:
+        if authority is not None and type(authority) is not ProductionTransportAuthority:
+            raise ValueError("production transport authority is server-issued")
+        if authority is not None and not authority.proves_production_transport():
+            raise ValueError("production transport authority is server-issued")
+        self.production_transport_authority = authority
 
     def post_json(
         self,

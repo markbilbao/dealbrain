@@ -323,8 +323,8 @@ def _validate_attempt_fields(record: DurableAuthorizedExecution) -> None:
             raise ValueError("completed requires a succeeded outcome")
         if record.evaluated_offer_count < 1:
             raise ValueError("completed requires at least one normalized offer")
-        if record.observation_kind != "synthetic":
-            raise ValueError("this slice only persists synthetic observations")
+        if record.observation_kind not in {"synthetic", "production"}:
+            raise ValueError("completed observations must be synthetic or production")
         if len(record.normalized_offer_digests) != record.normalized_offer_count:
             raise ValueError("normalized offer digests must match the normalized offer count")
     elif record.state == "failed":

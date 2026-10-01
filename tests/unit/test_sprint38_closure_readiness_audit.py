@@ -25,7 +25,7 @@ from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 ROOT = Path(__file__).resolve().parents[2]
 AUDIT = ROOT / "docs/roadmap/evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md"
 SPRINT38 = ROOT / "docs/roadmap/sprints/SPRINT_38_CONNECTOR_RELIABILITY_DEGRADATION.md"
-VERDICT = "SPRINT 38 IN PROGRESS — TRUE SPRINT 38 ENGINEERING BLOCKERS REMAIN"
+VERDICT = "SPRINT 38 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON SPRINT 41"
 
 
 def _status_line(path: Path) -> str:
@@ -36,23 +36,23 @@ def _status_line(path: Path) -> str:
 def test_audit_verdict_records_remaining_engineering_blockers() -> None:
     audit = AUDIT.read_text(encoding="utf-8")
     assert VERDICT in audit
-    assert "Class B count: 2." in audit
+    assert "Class B count: 0." in audit
     assert "Positive production shopper execution composition" in audit
     assert "canonical updated Results" in audit
-    assert "one final bounded engineering slice" in audit
-    assert "does not need to wait for Sprint 41" in audit
+    assert "bounded engineering slice" in audit
+    assert "did not need to wait for Sprint 41" in audit
     assert "Domain engine changes" in audit
     assert "This audit does not close Sprint 38." in audit
     assert "Not COMPLETE / CLOSED." in audit
     assert "does not mark Sprint 38 COMPLETE / CLOSED" in audit
-    assert "does not call Sprint 38 engineering complete" in audit
+    assert "records Sprint 38 engineering complete" in audit
     status = _status_line(SPRINT38).split("**Status:**", 1)[1].strip()
     assert status.startswith("IN PROGRESS")
     assert not status.startswith("COMPLETE")
     assert VERDICT in status
     assert SPRINT_38_STATUS == "IN PROGRESS"
     assert SPRINT_38_LIVE_EXECUTION_STATUS == "NOT OPERATIONAL"
-    assert SPRINT_38_ENGINEERING_STATUS == "IN PROGRESS"
+    assert SPRINT_38_ENGINEERING_STATUS == "ENGINEERING COMPLETE"
     assert SPRINT_41_STATUS == "UNSTARTED"
 
 

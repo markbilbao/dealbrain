@@ -55,7 +55,6 @@ from app.research.routing import (
 )
 from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
 from app.research.sprint38_live_execution import (
-    LIVE_RESEARCH_EXECUTION_OPERATIONAL,
     SHOPPING_RESEARCH_EXECUTION_MODE,
     ExecutionTrace,
     LiveResearchTarget,
@@ -111,6 +110,7 @@ class ResearchExecutionPreparation:
     prior_decision_id: str = ""
     execution_available: bool = False
     execution_implemented: bool = False
+    trusted_plan: ResearchExecutionPlan | None = None
 
     def __post_init__(self) -> None:
         if self.authorization_consumed or AUTHORIZATION_CONSUMPTION_ON_PREPARATION:
@@ -302,6 +302,9 @@ def prepare_confirmed_research(
     caller_source: str | None = None,
     caller_provider_id: str | None = None,
     now: datetime | None = None,
+    registry: ResearchProviderRegistry | None = None,
+    catalog: ResearchProviderCertificationCatalog | None = None,
+    routing_policy: ResearchProviderRoutingPolicyCatalog | None = None,
 ) -> ResearchExecutionPreparation:
     """Plan from the trusted authorization, then prepare or refuse execution.
 
@@ -317,9 +320,9 @@ def prepare_confirmed_research(
         conversation_id=conversation_id,
         decision_id=decision_id,
         canonical_context_version=canonical_context_version,
-        registry=production_research_provider_registry(),
-        catalog=production_research_provider_certification_catalog(),
-        routing_policy=production_research_provider_routing_policy_catalog(),
+        registry=registry or production_research_provider_registry(),
+        catalog=catalog or production_research_provider_certification_catalog(),
+        routing_policy=routing_policy or production_research_provider_routing_policy_catalog(),
         trusted_market=trusted,
         proposal=proposal,
     )
@@ -344,6 +347,9 @@ def prepare_confirmed_research(
         caller_source=caller_source,
         caller_provider_id=caller_provider_id,
         now=now,
+        registry=registry,
+        catalog=catalog,
+        routing_policy=routing_policy,
     )
 
 
@@ -373,8 +379,6 @@ def execute_research_plan(
 
     if plan is None:
         raise ValueError("A research execution plan is required")
-    if LIVE_RESEARCH_EXECUTION_OPERATIONAL:
-        raise RuntimeError("live research execution is not operational in this slice")
 
     decision = decision_id or plan.decision_id
     if authorization is None or owner is None:
@@ -479,6 +483,7 @@ def execute_research_plan(
         blocking_reasons=reasons,
         assessed_targets=targets,
         prior_decision_id=authorization.decision_id,
+        trusted_plan=plan,
     )
 
 
