@@ -17,6 +17,9 @@ This file maps **repository-evidenced technical TTLs** so operators can tell the
 | Email-change token | 1 day | `EMAIL_CHANGE_TTL` | Counsel-owned; not encoded |
 | Shopping-assistant conversation | Default 1800s (config range 60–86400) | `AI_SHOPPING_CONVERSATION_TTL_SECONDS`; `cleanup_expired` | Counsel-owned; not encoded |
 | First-party HTTP cookies (`piqsavi_decision_owner`, `piqsavi_delivery`, `piqsavi_shopping_market`) | Session cookies (no `max_age`) | Cookie setters | Counsel-owned; not encoded |
+| `piqsavi_tracking_preference` | 400 days (`PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS`) | Sprint 39.1 preference cookie. Stores choice, schema version, and selected time only | **ENGINEERING / PRODUCT TTL. NOT LEGAL RETENTION.** No legal purge |
+| `piqsavi_analytics_subject` | 400 days, and deleted on analytics opt-out | Created only after explicit analytics opt-in | **ENGINEERING / PRODUCT TTL. NOT LEGAL RETENTION.** |
+| `product.analytics_events` and `product.feedback_reports` in `operational_entities` | No automatic purge in Sprint 39.1. The 400-day constant is an engineering horizon for a later expiry job and is long enough for DAU/MAU | `app/analytics/retention.py` | **ENGINEERING / PRODUCT TTL. NOT LEGAL RETENTION.** Not a counsel retention schedule and not a purge claim |
 | `sessionStorage` `piqsavi_ask_conversation` | Tab/session | Consumer JS | Counsel-owned; not encoded |
 | `sessionStorage` / `localStorage` `piqsavi_access_token` | Tab or remember-me device storage | `account.js` | Counsel-owned; not encoded |
 | `localStorage` `piqsavi_remember_me` | Until cleared | `account.js` | Counsel-owned; not encoded |
@@ -28,7 +31,7 @@ This file maps **repository-evidenced technical TTLs** so operators can tell the
 
 ## What account deletion does **not** encode
 
-See [`ACCOUNT_DELETION_PROPAGATION.md`](ACCOUNT_DELETION_PROPAGATION.md). Shopping-assistant conversations are TTL-bound and are **not** listed by `user_id` on the delete path. Alert-rule rows in the alerts bounded context are **not** cascaded. Those remain documented engineering limitations, not silent erasure claims.
+See [`ACCOUNT_DELETION_PROPAGATION.md`](ACCOUNT_DELETION_PROPAGATION.md). Shopping-assistant conversations are TTL-bound and are **not** listed by `user_id` on the delete path. Alert-rule rows in the alerts bounded context are **not** cascaded. `product.analytics_events` and `product.feedback_reports` are also **not** cascaded in Sprint 39.1: analytics has no trusted account lookup key, and feedback’s owner digest is not a complete account-wide reverse mapping. Those remain documented engineering limitations, not silent erasure claims and not legal retention exceptions.
 
 ## Purge jobs
 

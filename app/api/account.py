@@ -89,13 +89,50 @@ async def confirm_email_change_page(token: str | None = Query(default=None)) -> 
 
 
 @router.get("/account", response_class=HTMLResponse)
-async def account_settings_page(next: str | None = Query(default="/account")) -> HTMLResponse:
-    return _page(render_account_settings_page(next_path=_safe_next(next)))
+async def account_settings_page(
+    request: Request,
+    next: str | None = Query(default="/account"),
+) -> HTMLResponse:
+    from app.analytics.preference import PREFERENCE_COOKIE, read_tracking_preference
+
+    explicit = read_tracking_preference(request.cookies.get(PREFERENCE_COOKIE)).explicit
+    return _page(
+        render_account_settings_page(
+            next_path=_safe_next(next),
+            show_tracking_choice=not explicit,
+        )
+    )
 
 
 @router.get("/support", response_class=HTMLResponse)
-async def support_page() -> HTMLResponse:
-    return _page(render_support_page())
+async def support_page(
+    request: Request,
+    decision_id: str | None = Query(default=None),
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+) -> HTMLResponse:
+    from app.analytics.preference import PREFERENCE_COOKIE, read_tracking_preference
+    from app.consumer.owner_authorization import authorized_owner_from_request
+    from app.feedback.decisions import resolve_bound_decision
+
+    explicit = read_tracking_preference(request.cookies.get(PREFERENCE_COOKIE)).explicit
+    bound_id = ""
+    bound_version: int | None = None
+    if decision_id:
+        bound = resolve_bound_decision(
+            decision_id,
+            authorized_owner_from_request(request),
+            snapshots,
+        )
+        if bound is not None:
+            bound_id = bound.decision_id
+            bound_version = bound.context_version
+    return _page(
+        render_support_page(
+            bound_decision_id=bound_id,
+            bound_context_version=bound_version,
+            show_tracking_choice=not explicit,
+        )
+    )
 
 
 @router.post("/account/clear-device")

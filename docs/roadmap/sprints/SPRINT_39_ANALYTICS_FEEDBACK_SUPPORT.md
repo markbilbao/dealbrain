@@ -1,9 +1,53 @@
 # Sprint 39 — Analytics, Feedback & Support
 
-**Status:** Planned
+**Status:** IN PROGRESS
 **Primary owner / domain:** Product analytics + support
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Beta blocker classification:** Soft yes — learning; hard if privacy claims require it
+
+## Sprint 39.1 — consent-gated analytics foundation
+
+This is the first implementation slice. Sprint 39 stays **IN PROGRESS**. It is not COMPLETE and not CLOSED.
+
+### Provider decision for this slice
+
+Initial analytics backend: **FIRST-PARTY MINIMAL EVENT STORE**.
+
+EXT-15 remains `not_started`. The external register allows a privacy-safe first-party minimal-event fallback while no provider is provisioned. This slice is not Google Analytics, Meta Pixel, PostHog, Mixpanel, Amplitude, or advertising tracking. `ANALYTICS_PROVIDER` stays `None`. `CMP_VENDOR` stays `None`. EXT-22 remains `not_started`. EXT-29 remains `not_started`; this slice does not call Google, add a verification token, or claim Search Console property verification. Private UUID routes stay noindex.
+
+### Implemented
+
+- Explicit first-party analytics preference (`essential_only` or `analytics_allowed`), default essential-only, reversible, versioned, and server-validated
+- Preference cookie `piqsavi_tracking_preference` (choice, schema, selected time only)
+- Opaque analytics subject cookie created only after opt-in and deleted on opt-out
+- Advertising remains unavailable
+- Event schema `piqsavi.product_analytics.v1` with the full roadmap vocabulary. The browser may submit only `results_viewed`, `compare_opened`, `why_opened`, and `outbound_merchant_click`, each with fixed surface / action / outcome semantics. Server-owned names are rejected on `/analytics/events`. Trusted server code uses a separate validator. A client-supplied decision id that does not resolve for the current owner returns `decision_not_found` and writes no row
+- `product.analytics_events` and `product.feedback_reports` are documented in the engineering PII inventory. Account export excludes them. Account delete does not cascade them in this slice. That is remaining privacy-integration work, not a legal retention exception
+- `ProductAnalyticsSink`, `NullProductAnalyticsSink`, and `FirstPartyProductAnalyticsRepository`
+- Consent-off suppression with zero analytics rows; consent-on durable rows in `operational_entities` namespace `product.analytics_events`
+- Deterministic dedup by event id; conflicting contents fail closed; no in-memory authority and no new SQL table
+- Feedback reports in `product.feedback_reports`, separate from analytics
+- `/support#report` form for incorrect price, product fact, outdated offer, misleading Recommendation evidence, and source issue
+- Helpful / not helpful controls that work with analytics consent off
+- Server-side Ask submission and insufficient-evidence emission, without question or answer text
+- View offer click instrumentation as `outbound_merchant_click` without storing the destination URL and without affiliate parameters
+
+### Still remaining
+
+- Broader funnel instrumentation, including decision started/completed coverage beyond this slice
+- Beta-learning dashboards and staging populated-event evidence
+- Monitored feedback/support workflow evidence beyond the existing `support@piqsavi.com` inbox
+- EXT-15 external provider decision if still desired
+- EXT-22 external CMP decision if still desired
+- EXT-29 Search Console setup and verification
+- Final retention/learning cadence evidence
+- Production project separation
+
+Search Console setup remains an owner action. Do not treat this slice as verification.
+
+### Engineering retention
+
+`PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS` is 400. That is an **ENGINEERING / PRODUCT TTL**, not legal retention. Sprint 39.1 does not run a purge job. See [`../../privacy/ENGINEERING_RETENTION.md`](../../privacy/ENGINEERING_RETENTION.md).
 
 ## Objective
 

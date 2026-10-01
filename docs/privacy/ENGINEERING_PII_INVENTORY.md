@@ -53,6 +53,19 @@ Early Access waitlist rows (`early_access.registrations`: full name, email, coun
 - Early Access waitlist rows (not a User account; no trusted `user_id` link)
 - internal credentials / secrets
 - proprietary scoring internals beyond the account’s stored recommendation-history summary
+- `product.analytics_events` (opaque device subject; no trusted account lookup key)
+- `product.feedback_reports` (owner digest is not a complete account-wide identity map)
+
+## Sprint 39.1 durable stores (not account-exportable and not account-cascaded)
+
+These rows live in the existing `operational_entities` table. They are pseudonymous or owner-bound product records. They are **not** anonymous when they carry an owner digest or a decision reference. Sprint 39.1 does **not** export them in `piqsavi.account_owned_export.v1` and does **not** delete them on `POST /api/v1/auth/account/delete`. That is an engineering limitation, not a legal retention exception and not a claim that the current behavior is legally sufficient. A complete account-owned export or deletion path needs a trusted account-wide mapping that this slice does not have. No partial cascade was added, because a current-session-only delete would miss other sessions.
+
+| Store | Fields (engineering) | What it is not |
+|-------|----------------------|----------------|
+| `product.analytics_events` | Opaque analytics subject hash (`sha256` of the first-party subject id), `identity_kind` (`guest` or `authenticated`), authorized `decision_hash` when the current owner resolved the decision, market / event / surface / outcome / context metadata, consent state, content digest | No raw account id, user id, session id, or decision id. No free text. No question or answer text. No destination URL |
+| `product.feedback_reports` | `report_id`, `category`, `created_at`, owner digest when an owner principal is present, raw `decision_id` only after that decision resolved for the current owner, validated `product_id`, `context_version`, user-entered `message`, `status`, `source_surface`, `client_submission_id` | Not an analytics row. The message is user-supplied text and may contain information the person typed. Owner digest and decision id are owner-bound references, not an anonymous record |
+
+Account deletion leaves both stores in place. Analytics has an opaque device subject and no trusted lookup from `user_id`. Feedback stores an owner digest and report context, but the existing account lifecycle has no complete reverse mapping from one account across every session. Remaining work is privacy integration, not a silent erasure claim.
 
 ## Audit / logs / backups (not claimed erased)
 
@@ -71,5 +84,5 @@ Controller / processor / subprocessor roles are **TBD — counsel-owned**. See [
 
 - Minimum age / parental consent — counsel-owned; **not coded**; fail-closed placeholder reports `age_policy_published=false` and registration does not collect DOB
 - Marketing consent as a legal basis — not added; `newsletter` / `marketing_enabled` remain preference flags
-- Analytics / cookie CMP consent — EXT-22 `not_started`; no banner; essential-only fail-closed hook in `app/privacy/tracking.py`; Sprint 39 owns activation
+- Analytics / cookie CMP consent — EXT-22 remains `not_started`. There is still no external CMP. `banner_implemented` stays false. Sprint 39.1 adds a first-party essential-only default plus an explicit optional analytics choice. That choice is not legal approval and does not enable advertising.
 - Engineering retention map — [`ENGINEERING_RETENTION.md`](ENGINEERING_RETENTION.md) (technical TTLs only; not a legal schedule)

@@ -23,6 +23,9 @@ from app.api.v1.endpoints import (
     notifications,
     personal,
     price_history,
+    privacy_preference,
+    product_analytics,
+    product_feedback,
     products,
     profile,
     recommendations,
@@ -75,6 +78,9 @@ api_v1_router.include_router(graph.router, tags=["knowledge-graph"])
 api_v1_router.include_router(personal.router, tags=["personal-agent"])
 api_v1_router.include_router(early_access.router)
 api_v1_router.include_router(legal.router, tags=["legal-publication"])
+api_v1_router.include_router(privacy_preference.router, tags=["privacy-preference"])
+api_v1_router.include_router(product_analytics.router, tags=["product-analytics"])
+api_v1_router.include_router(product_feedback.router, tags=["product-feedback"])
 api_v1_router.include_router(auth.router, tags=["user-platform-auth"])
 api_v1_router.include_router(profile.router, tags=["user-platform-profile"])
 api_v1_router.include_router(user.router, tags=["user-platform-saved-items"])

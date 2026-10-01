@@ -1,3 +1,6 @@
+import { initProductFeedback } from "./product_feedback.js";
+import { initTrackingPreference } from "./tracking_preference.js";
+
 const TOKEN_KEY = "piqsavi_access_token";
 const REMEMBER_KEY = "piqsavi_remember_me";
 const CONVERSATION_KEY = "piqsavi_ask_conversation";
@@ -514,3 +517,5 @@ bindIdentityToken();
 bindForms();
 bindActions();
 loadAccount();
+initTrackingPreference();
+initProductFeedback();

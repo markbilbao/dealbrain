@@ -42,6 +42,8 @@ NON_ACCOUNT_BROWSER_STORES: tuple[str, ...] = (
     "piqsavi_decision_owner",
     "piqsavi_delivery",
     "piqsavi_shopping_market",
+    "piqsavi_tracking_preference",
+    "piqsavi_analytics_subject",
     "piqsavi_ask_conversation",
     "piqsavi_access_token",
     "piqsavi_remember_me",
@@ -60,6 +62,14 @@ EXPORT_EXCLUSIONS: dict[str, str] = {
     "application / request logs": "operational, not account-owned export",
     "audit event payloads beyond the user's own consent/deletion metadata": (
         "security evidence; not a consumer export category"
+    ),
+    "product.analytics_events": (
+        "opaque device subject and no trusted account lookup key; "
+        "not included in piqsavi.account_owned_export.v1"
+    ),
+    "product.feedback_reports": (
+        "owner digest and report context are not a complete account-wide identity map "
+        "across sessions; not included in piqsavi.account_owned_export.v1"
     ),
 }
 

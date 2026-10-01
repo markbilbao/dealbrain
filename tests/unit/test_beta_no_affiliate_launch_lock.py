@@ -205,7 +205,8 @@ def test_external_register_defers_affiliate_without_deleting_history() -> None:
 
 def test_sprint39_priority_metrics_exclude_affiliate_conversion() -> None:
     sprint39 = _read("docs/roadmap/sprints/SPRINT_39_ANALYTICS_FEEDBACK_SUPPORT.md")
-    assert "**Status:** Planned" in sprint39
+    assert "**Status:** IN PROGRESS" in sprint39
+    assert "Not COMPLETE" in sprint39 or "not COMPLETE" in sprint39
     for metric in (
         "decision started",
         "decision completed",

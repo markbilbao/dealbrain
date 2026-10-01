@@ -1,3 +1,7 @@
+import { initProductAnalytics } from "./product_analytics.js";
+import { initProductFeedback } from "./product_feedback.js";
+import { initTrackingPreference } from "./tracking_preference.js";
+
 const ASK_ENDPOINT = "/api/v1/shopping-assistant/query";
 
 function qs(id) {
@@ -336,3 +340,6 @@ initAsk();
 initRecalc();
 initDialogEscape();
 initKeyboardSafeArea();
+initTrackingPreference();
+initProductAnalytics();
+initProductFeedback();

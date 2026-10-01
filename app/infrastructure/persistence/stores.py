@@ -95,6 +95,10 @@ RESEARCH_EXECUTION_EVIDENCE = "research.execution_evidence"
 # Sprint 38 — one canonical-results integration per execution. Prevents version +2 retries.
 RESEARCH_RESULTS_INTEGRATION = "research.execution_results_integration"
 
+# Sprint 39.1 — first-party product analytics and feedback. No new table.
+PRODUCT_ANALYTICS_EVENTS = "product.analytics_events"
+PRODUCT_FEEDBACK_REPORTS = "product.feedback_reports"
+
 USER_PLATFORM_STORES = (
     USERS,
     SESSIONS,

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from html import escape
 
+from app.analytics.presentation import account_analytics_controls, tracking_preference_notice
 from app.consumer.html import ICON_USER, h, logo_markup
 from app.consumer.seo import CANONICAL_ORIGIN, organization_json_ld, website_json_ld
 from app.core.public_brand import (
@@ -55,6 +56,7 @@ def render_account_document(
     description: str | None = None,
     noindex: bool = True,
     extra_script: str = "/static/consumer/js/account.js",
+    show_tracking_choice: bool = False,
 ) -> str:
     robots = (
         '<meta name="robots" content="noindex, nofollow">'
@@ -79,6 +81,7 @@ def render_account_document(
     <a class="skip-link" href="#main">Skip to content</a>
     {_account_header(next_path)}
     <main id="main" class="account-main">
+      {tracking_preference_notice() if show_tracking_choice else ""}
       {main}
     </main>
     {_account_footer()}
@@ -401,11 +404,16 @@ def render_confirm_email_change_page(*, has_token: bool = False) -> str:
     )
 
 
-def render_account_settings_page(*, next_path: str = "/account") -> str:
+def render_account_settings_page(
+    *,
+    next_path: str = "/account",
+    show_tracking_choice: bool = False,
+) -> str:
     return render_account_document(
         title="Account settings — PiqSavi",
         page="account",
         next_path=next_path,
+        show_tracking_choice=show_tracking_choice,
         main=f"""
         <section class="account-card">
           <h1>Account settings</h1>
@@ -455,6 +463,7 @@ def render_account_settings_page(*, next_path: str = "/account") -> str:
             <p class="form-status" data-consent-status role="status"></p>
             <ul data-consent-records></ul>
             <p class="form-hint" data-consent-unpublished hidden>There are no policy acknowledgements recorded for this account yet.</p>
+            {account_analytics_controls()}
 
             <h2>Sessions</h2>
             <p>Sign out ends this device session.</p>
@@ -485,12 +494,28 @@ def render_account_settings_page(*, next_path: str = "/account") -> str:
     )
 
 
-def render_support_page() -> str:
+def render_support_page(
+    *,
+    bound_decision_id: str = "",
+    bound_context_version: int | None = None,
+    show_tracking_choice: bool = False,
+) -> str:
     support = _esc(PUBLIC_SUPPORT_EMAIL)
     privacy = _esc(PUBLIC_PRIVACY_EMAIL)
+    decision_input = ""
+    if bound_decision_id:
+        decision_input = (
+            f'<input type="hidden" name="decision_id" value="{_esc(bound_decision_id)}">'
+        )
+    version_input = ""
+    if bound_context_version is not None:
+        version_input = (
+            f'<input type="hidden" name="context_version" value="{int(bound_context_version)}">'
+        )
     return render_account_document(
         title="Support — PiqSavi",
         page="support",
+        show_tracking_choice=show_tracking_choice,
         main=f"""
         <section class="account-card">
           <h1>Support</h1>
@@ -498,6 +523,28 @@ def render_support_page() -> str:
           <p>For privacy questions, contact <a href="mailto:{privacy}">{privacy}</a>.</p>
           <h2 id="report">Report incorrect information</h2>
           <p>Email {support} to report an incorrect price, product fact, outdated offer, misleading evidence, or source issue.</p>
+          <form class="account-form" data-feedback-form="report">
+            <label class="field">
+              <span>What looks wrong?</span>
+              <select name="category" required>
+                <option value="incorrect_price">Incorrect price</option>
+                <option value="incorrect_product_fact">Incorrect product fact</option>
+                <option value="outdated_offer">Outdated offer</option>
+                <option value="misleading_recommendation_evidence">Misleading Recommendation evidence</option>
+                <option value="source_issue">Source issue</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>What should we know?</span>
+              <textarea name="message" required maxlength="2000" rows="5"></textarea>
+            </label>
+            {decision_input}
+            {version_input}
+            <input type="hidden" name="surface" value="support">
+            <button type="submit" class="btn btn-primary">Submit report</button>
+          </form>
+          <p class="form-status" data-feedback-status role="status"></p>
+          <p class="form-hint">Submitting a report stores it with PiqSavi and shows a reference id. It does not promise an investigation time or a correction. You can still email {support} directly.</p>
         </section>
         """,
     )

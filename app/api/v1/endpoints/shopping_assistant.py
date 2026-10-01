@@ -6,8 +6,10 @@ are disabled by default and never receive client-supplied API keys.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 
+from app.analytics.ask_events import emit_ask_product_events
+from app.analytics.service import ProductAnalyticsService
 from app.api.v1.mappers.shopping_assistant import to_assistant_response
 from app.consumer.location import DELIVERY_COOKIE, parse_delivery_cookie
 from app.consumer.owner_authorization import authorized_owner_from_request
@@ -16,13 +18,18 @@ from app.consumer.shopping_market import (
     shopping_market_from_cookie,
 )
 from app.core.config import settings
-from app.core.dependencies import get_shopping_assistant_service
+from app.core.dependencies import (
+    get_product_analytics_service,
+    get_shopping_assistant_service,
+    get_shopping_decision_snapshot_repository,
+)
 from app.domain.exceptions import (
     DecisionSnapshotIntegrityError,
     DecisionSnapshotOwnershipError,
     ShoppingAssistantNotFoundError,
     ShoppingAssistantValidationError,
 )
+from app.domain.interfaces.decision_snapshot_repository import DecisionSnapshotRepository
 from app.intelligence.shopping_assistant.fixtures import DEMO_QUERIES
 from app.schemas.shopping_assistant import (
     ShoppingAssistantDemoMeta,
@@ -98,7 +105,10 @@ async def shopping_assistant_meta(
 async def query_shopping_assistant(
     body: ShoppingAssistantQueryRequest,
     request: Request,
+    response: Response,
     service: ShoppingAssistantService = Depends(get_shopping_assistant_service),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
+    snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
 ) -> ShoppingAssistantResponse:
     location = parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
     owner = authorized_owner_from_request(request)
@@ -119,4 +129,19 @@ async def query_shopping_assistant(
         raise _map_error(exc) from exc
     except Exception as exc:  # noqa: BLE001
         raise _map_error(exc) from exc
+    processing = result.processing if isinstance(result.processing, dict) else {}
+    answer_status = processing.get("answer_status")
+    decision_id = processing.get("decision_id")
+    evidence = getattr(result, "evidence", ())
+    emit_ask_product_events(
+        request,
+        response,
+        surface=body.surface,
+        answer_status=answer_status if isinstance(answer_status, str) else None,
+        evidence_count=len(evidence) if evidence is not None else None,
+        decision_id=decision_id if isinstance(decision_id, str) else None,
+        owner=owner,
+        analytics=analytics,
+        snapshots=snapshots,
+    )
     return to_assistant_response(result, allowed_modes=service.allowed_modes())

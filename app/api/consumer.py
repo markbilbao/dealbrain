@@ -138,9 +138,15 @@ def _page_view(
 
 
 def _html(view, request: Request | None = None) -> HTMLResponse:
+    from app.analytics.preference import PREFERENCE_COOKIE, read_tracking_preference
     from app.consumer.robots import apply_private_decision_noindex
 
-    response = apply_private_decision_noindex(HTMLResponse(render_page(view)))
+    explicit = False
+    if request is not None:
+        explicit = read_tracking_preference(request.cookies.get(PREFERENCE_COOKIE)).explicit
+    response = apply_private_decision_noindex(
+        HTMLResponse(render_page(view, show_tracking_choice=not explicit))
+    )
     if request is not None:
         ensure_guest_owner_cookie(request, response)
     return response

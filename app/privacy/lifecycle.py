@@ -45,6 +45,10 @@ RETAINED_LIMITATIONS: tuple[str, ...] = (
     "guest browser cookies/sessionStorage are client-side and not revoked by this API",
     "shopping-assistant conversations are TTL-bound and not listed by user_id on this path",
     "alert-rule rows in the alerts bounded context are not cascaded by this endpoint",
+    "product.analytics_events are not cascaded by account delete in Sprint 39.1; "
+    "the opaque device subject has no trusted account lookup key",
+    "product.feedback_reports are not cascaded by account delete in Sprint 39.1; "
+    "the owner digest is not a complete account-wide reverse mapping across sessions",
     "statutory retention exceptions and response deadlines remain counsel-owned",
 )
 
