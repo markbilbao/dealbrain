@@ -67,6 +67,7 @@ Sprint 39 stays **IN PROGRESS**. This slice does not close it, does not deploy s
 - Feedback review queue with report id, category, time, product id, context version, surface, status, and message. No owner digest, analytics subject, or decision id
 - Learning cadence and an empty staging evidence template
 - Search Console left explicitly deferred
+- Dashboard and feedback review scan the newest inserted operational rows (`id` descending), then filter by event `occurred_at` or report `created_at`. Immutable rows share `seq = 1`, so `seq` is not the scan order. A truncated scan stays partial and still withholds returning and repeat-decision metrics
 
 ### Decision events
 

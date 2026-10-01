@@ -85,7 +85,7 @@ These names stay in the vocabulary. The dashboard derives them and does not requ
 - Returning consented analytics subject: at least two distinct UTC dates in the selected window.
 - Repeat-decision consented subject: at least two distinct `decision_completed` decision hashes in the selected window.
 
-If the scan is truncated, both figures are unavailable.
+If the scan is truncated, both figures are unavailable. The bounded scan reads the newest inserted rows, then keeps events whose `occurred_at` falls in the window. Database row time is not the window clock.
 
 ## Analytics failure
 

@@ -34,12 +34,17 @@ from app.core.dependencies import (
 from app.feedback.repository import FirstPartyFeedbackRepository
 from app.feedback.schema import FeedbackReport, feedback_content_digest
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
+from app.infrastructure.persistence.operational_store import OperationalStore
 from app.infrastructure.persistence.session import reset_sync_engine
+from app.infrastructure.persistence.stores import (
+    PRODUCT_ANALYTICS_EVENTS,
+    PRODUCT_FEEDBACK_REPORTS,
+)
 from app.main import create_app
 from app.research.routing import _CONFIGURED_BUCKET
 from app.research.sprint38_live_execution import SHOPIFY_LIVE_CALL_PERMITTED
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from starlette.requests import Request
 from starlette.responses import Response
@@ -99,6 +104,7 @@ def stores(tmp_path: Path):
     analytics = ProductAnalyticsService(analytics_repo)
     learning = ProductLearningDashboardService(analytics_repo, feedback_repo)
     yield {
+        "factory": factory,
         "analytics_repo": analytics_repo,
         "feedback_repo": feedback_repo,
         "analytics": analytics,
@@ -643,6 +649,104 @@ def test_truncation_is_disclosed(stores: dict) -> None:
     assert retention["available"] is False
     assert retention["returning_consented_analytics_subjects"] is None
     assert MAX_DASHBOARD_SCAN_ROWS == 5_000
+
+
+def _operational_rows(factory, store: str) -> list[OperationalEntityModel]:
+    session = factory()
+    try:
+        return list(
+            session.scalars(
+                select(OperationalEntityModel)
+                .where(OperationalEntityModel.store == store)
+                .order_by(OperationalEntityModel.id.asc())
+            ).all()
+        )
+    finally:
+        session.close()
+
+
+def test_immutable_analytics_rows_share_seq_and_list_recent_is_insertion_order(
+    stores: dict,
+) -> None:
+    repo: FirstPartyProductAnalyticsRepository = stores["analytics_repo"]
+    oldest = _store_event(repo, name="results_viewed", subject=SUBJECT_A, when=NOW)
+    middle = _store_event(repo, name="compare_opened", subject=SUBJECT_A, when=NOW, action="open")
+    newest = _store_event(repo, name="why_opened", subject=SUBJECT_A, when=NOW, action="open")
+    rows = _operational_rows(stores["factory"], PRODUCT_ANALYTICS_EVENTS)
+    assert [row.seq for row in rows] == [1, 1, 1]
+    assert rows[0].id < rows[1].id < rows[2].id
+    assert [row.entity_id for row in rows] == [
+        oldest.event_id,
+        middle.event_id,
+        newest.event_id,
+    ]
+    session = stores["factory"]()
+    try:
+        by_seq = OperationalStore(session).list(
+            PRODUCT_ANALYTICS_EVENTS,
+            ProductAnalyticsEvent,
+            limit=2,
+            reverse=True,
+        )
+    finally:
+        session.close()
+    assert [event.event_id for event in by_seq] == [oldest.event_id, middle.event_id]
+    recent = repo.list_recent(2)
+    assert [event.event_id for event in recent] == [newest.event_id, middle.event_id]
+
+
+def test_truncated_dashboard_scans_newest_inserted_current_events(stores: dict) -> None:
+    repo = stores["analytics_repo"]
+    _store_event(
+        repo,
+        name="results_viewed",
+        subject=SUBJECT_A,
+        when=NOW - timedelta(days=40),
+    )
+    _store_event(repo, name="results_viewed", subject=SUBJECT_B, when=NOW)
+    _store_event(repo, name="results_viewed", subject=SUBJECT_C, when=NOW)
+    rows = _operational_rows(stores["factory"], PRODUCT_ANALYTICS_EVENTS)
+    assert [row.seq for row in rows] == [1, 1, 1]
+    learning = ProductLearningDashboardService(
+        repo,
+        stores["feedback_repo"],
+        max_scan_rows=2,
+    )
+    summary = learning.summary("1d", environment="test", now=NOW)
+    coverage = summary["coverage"]
+    assert coverage["total_rows"] == 3
+    assert coverage["scanned_rows"] == 2
+    assert coverage["truncated"] is True
+    funnel = summary["metrics"]["core_funnel"]
+    assert funnel["results_viewed"] == 2
+    assert funnel["partial"] is True
+    assert summary["metrics"]["coverage"]["recorded_analytics_events"] == 2
+    retention = summary["metrics"]["return_retention"]
+    assert retention["available"] is False
+    assert retention["returning_consented_analytics_subjects"] is None
+    assert retention["repeat_decision_consented_subjects"] is None
+    assert retention["reason"] == "truncated_scan"
+
+
+def test_feedback_review_scans_newest_inserted_reports(stores: dict) -> None:
+    repo: FirstPartyFeedbackRepository = stores["feedback_repo"]
+    _store_report(repo, category="bug", message="oldest report", when=NOW - timedelta(days=2))
+    _store_report(repo, category="bug", message="newer report", when=NOW - timedelta(days=1))
+    _store_report(repo, category="bug", message="newest report", when=NOW)
+    rows = _operational_rows(stores["factory"], PRODUCT_FEEDBACK_REPORTS)
+    assert [row.seq for row in rows] == [1, 1, 1]
+    learning = ProductLearningDashboardService(
+        stores["analytics_repo"],
+        repo,
+        max_scan_rows=2,
+    )
+    review = learning.feedback_review(limit=50, now=NOW)
+    messages = [item["message"] for item in review["reports"]]
+    assert review["truncated"] is True
+    assert review["total_rows"] == 3
+    assert review["scanned_rows"] == 2
+    assert messages == ["newest report", "newer report"]
+    assert "oldest report" not in messages
 
 
 def test_feedback_review_is_bounded_and_omits_identity(stores: dict) -> None:

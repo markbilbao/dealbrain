@@ -45,11 +45,10 @@ class FirstPartyProductAnalyticsRepository(SessionBound):
 
         bounded = max(0, limit)
         with self._ops() as ops:
-            return ops.list(
+            return ops.list_newest_inserted(
                 PRODUCT_ANALYTICS_EVENTS,
                 ProductAnalyticsEvent,
                 limit=bounded,
-                reverse=True,
             )
 
     def count(self) -> int:
