@@ -186,7 +186,7 @@ Composed behind closed production gates:
 
 7. Live-start claim, reached only when the injected runtime policy has no block reason.
 8. Authorization consumption, which happens only inside a successful claim.
-9. Shopify execution adapter. `BoundedFakeTransportPermit` stays synthetic. `ProductionShopifyTransportPermit` is the separate server-only production authority and is not created while a gate is closed. Direct construction still checks current production constants.
+9. Shopify execution adapter. `BoundedFakeTransportPermit` stays synthetic. `ProductionShapeHarnessPermit` may exercise claim and adapter sequencing on a fake transport and stays a fixture. `ProductionShopifyTransportPermit` is the separate server-only production authority, is not created while a gate is closed, and does not classify fake transport as live evidence. Direct construction still checks current production constants.
 10. Authoritative trace and durable outcome on that adapter path.
 11. `execute_production_shopify_catalog`, which refuses before transport while any production gate is closed.
 12. Durable evidence records in `research.execution_evidence`.

@@ -10,8 +10,9 @@ claim, and authorization consumption. The Shopify adapter owns transport.
 Current production policy is closed. A shopper confirmation therefore stops
 before a claim, before the adapter, and before transport. Provider status and
 the kill switch come from the server registry descriptor. An injected open
-policy can traverse the claim and a fake transport. Synthetic permit evidence
-stays a fixture and cannot update shopper-visible canonical Results.
+policy can traverse the claim and a fake transport. The production-shaped
+harness permit stays a fixture. Fake transport output cannot become
+shopper-visible canonical live evidence.
 """
 
 from __future__ import annotations
@@ -56,6 +57,8 @@ from app.research.shopify_global_catalog_certification_evidence import (
 )
 from app.research.shopify_global_catalog_execution import (
     BoundedFakeTransportPermit,
+    CatalogTransportPermit,
+    ProductionShapeHarnessPermit,
     ProductionShopifyTransportPermit,
     ShopifyCatalogAttempt,
     ShopifyCatalogExecutionService,
@@ -368,7 +371,10 @@ class ConfirmedResearchExecutionService:
         integrator: CanonicalResearchResultsService | None = None,
         clock: Callable[[], datetime] | None = None,
         production_composition: bool = False,
+        harness_composition: bool = False,
     ) -> None:
+        if production_composition and harness_composition:
+            raise ValueError("production composition cannot use the harness permit")
         self._policy = policy
         self._claims = claims
         self._adapter = adapter
@@ -377,6 +383,7 @@ class ConfirmedResearchExecutionService:
         self._integrator = integrator
         self._clock = clock or (lambda: datetime.now(UTC))
         self._production_composition = production_composition
+        self._harness_composition = harness_composition
 
     @property
     def claims(self) -> LiveStartClaimService | ClosedProductionClaims | None:
@@ -408,7 +415,7 @@ class ConfirmedResearchExecutionService:
     def production_composition(self) -> bool:
         return self._production_composition
 
-    def _issue_permit(self) -> BoundedFakeTransportPermit | ProductionShopifyTransportPermit:
+    def _issue_permit(self) -> CatalogTransportPermit:
         """Issue a permit only after the runtime policy reports every gate open."""
 
         reasons = self._policy.block_reasons()
@@ -418,6 +425,8 @@ class ConfirmedResearchExecutionService:
             return issue_production_shopify_transport_permit(
                 authoritative_block_reasons=reasons,
             )
+        if self._harness_composition:
+            return ProductionShapeHarnessPermit()
         return BoundedFakeTransportPermit()
 
     def continue_confirmed(self, request: ConfirmedResearchRequest) -> ConfirmedResearchResult:
@@ -752,7 +761,10 @@ def production_confirmed_research_execution(
     )
     from app.research.live_start_claim import operational_live_start_claims
     from app.research.shopify_global_catalog_execution import operational_shopify_execution
-    from app.research.shopify_global_catalog_transport import UrllibJsonTransport
+    from app.research.shopify_global_catalog_transport import (
+        UrllibJsonTransport,
+        issue_production_transport_authority,
+    )
     from app.services.canonical_research_results import OperationalResultsIntegrationRepository
 
     factory = get_sync_session_factory()
@@ -774,7 +786,10 @@ def production_confirmed_research_execution(
         factory,
         token_factory=lambda: secrets.token_urlsafe(32),
     )
-    adapter = operational_shopify_execution(factory, UrllibJsonTransport())
+    adapter = operational_shopify_execution(
+        factory,
+        UrllibJsonTransport(authority=issue_production_transport_authority()),
+    )
     return ConfirmedResearchExecutionService(
         ProductionResearchRuntimePolicy(),
         claims=claims,

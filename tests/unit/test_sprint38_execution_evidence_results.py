@@ -910,6 +910,7 @@ def test_synthetic_converter_cannot_emit_production_evidence() -> None:
         VerifiedLiveOfferExecution,
         evidence_from_verified_live_offer_fact,
     )
+    from app.research.shopify_global_catalog_transport import issue_production_transport_authority
 
     execution_id = authorized_execution_id(_AUTH_KEY)
     live = NormalizedOfferFact(
@@ -941,6 +942,7 @@ def test_synthetic_converter_cannot_emit_production_evidence() -> None:
         decision_id=DECISION_ID,
         plan_id=_PLAN,
         permit_marker="production_shopify_transport",
+        transport_authority=issue_production_transport_authority(),
         facts=(live,),
     )
     produced = evidence_from_verified_live_offer_fact(verification, live, created_at=START)

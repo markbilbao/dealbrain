@@ -35,6 +35,7 @@ from app.research.authorized_execution_repository import (
     OperationalAuthorizedExecutionRepository,
 )
 from app.research.digest import stable_sha256
+from app.research.shopify_global_catalog_transport import ProductionTransportAuthority
 
 EVIDENCE_ID_PREFIX = "research-exec-evidence:"
 ObservationKind = Literal["synthetic", "production"]
@@ -251,19 +252,26 @@ class VerifiedLiveOfferExecution:
     """Server proof that facts came from a production-authority Shopify success.
 
     A browser request cannot supply this object. The Shopify adapter creates it
-    only after ``ProductionShopifyTransportPermit`` and a successful terminal
-    outcome. Synthetic adapter output cannot construct it.
+    only after ``ProductionShopifyTransportPermit``, a server-issued production
+    transport authority, and a successful terminal outcome. The authority
+    marker stays in memory and is not a persisted evidence field. Synthetic
+    and harness adapter output cannot construct it.
     """
 
     execution_id: str
     decision_id: str
     plan_id: str
     permit_marker: Literal["production_shopify_transport"]
+    transport_authority: ProductionTransportAuthority
     facts: tuple[NormalizedOfferFact, ...]
 
     def __post_init__(self) -> None:
         if self.permit_marker != "production_shopify_transport":
             raise ValueError("verified live evidence requires the production transport permit")
+        if type(self.transport_authority) is not ProductionTransportAuthority:
+            raise ValueError("verified live evidence requires production transport authority")
+        if not self.transport_authority.proves_production_transport():
+            raise ValueError("verified live evidence requires production transport authority")
         if not self.execution_id or not self.decision_id or not self.plan_id:
             raise ValueError("verified live evidence requires execution, decision, and plan pins")
         if not self.facts:
@@ -285,6 +293,10 @@ def evidence_from_verified_live_offer_fact(
     not on the verified execution are rejected.
     """
 
+    if type(verification.transport_authority) is not ProductionTransportAuthority:
+        raise ValueError("live evidence requires production transport authority")
+    if not verification.transport_authority.proves_production_transport():
+        raise ValueError("live evidence requires production transport authority")
     if fact not in verification.facts:
         raise ValueError("live evidence requires a fact from the verified production execution")
     if fact.observation_kind != "production" or fact.source_mode != SourceMode.LIVE.value:

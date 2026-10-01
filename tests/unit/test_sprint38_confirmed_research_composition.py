@@ -49,6 +49,7 @@ from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 
 from tests.unit.test_phase_29_4b_refine_session_recommendation import (
     DECISION_ID,
+    SONY_ID,
     START,
     _owner,
     _presentation,
@@ -609,6 +610,11 @@ def test_production_composition_wires_continuation_and_stays_closed(monkeypatch)
     assert service.production_composition is True
     assert service.adapter is not None
     assert isinstance(service.adapter._transport, UrllibJsonTransport)  # noqa: SLF001
+    from app.research.shopify_global_catalog_transport import ProductionTransportAuthority
+
+    authority = service.adapter._transport.production_transport_authority  # noqa: SLF001
+    assert type(authority) is ProductionTransportAuthority
+    assert authority.proves_production_transport()
     assert isinstance(service.evidence, OperationalResearchExecutionEvidenceRepository)
     assert isinstance(service.executions, OperationalAuthorizedExecutionRepository)
     assert service.integrator is not None
@@ -764,11 +770,14 @@ def test_verified_production_result_keeps_execution_facts_independent() -> None:
         market="PH",
         source=_SOURCE,
     )
+    from app.research.shopify_global_catalog_transport import issue_production_transport_authority
+
     verification = VerifiedLiveOfferExecution(
         execution_id=execution_id,
         decision_id=DECISION_ID,
         plan_id="plan-sprint38-b2",
         permit_marker="production_shopify_transport",
+        transport_authority=issue_production_transport_authority(),
         facts=(fact,),
     )
     executed = ShopifyExecutionResult(
@@ -902,11 +911,20 @@ def _sqlite_factory(tmp_path):  # noqa: ANN001
     return engine, factory
 
 
+def _matching_product() -> dict:
+    product = _product()
+    variant = dict(product["variants"][0])
+    variant["id"] = "black"
+    return {**product, "id": SONY_ID, "variants": [variant]}
+
+
 def _future_open_stack(
     tmp_path,  # noqa: ANN001
     *,
     execution_kill_switch: KillSwitch | None = None,
+    product: dict | None = None,
 ):
+    import app.research.shopify_global_catalog_execution as shopify_execution
     from app.infrastructure.database.repositories.shopping_conversation_repository import (
         SqlAlchemyConversationRepository,
     )
@@ -915,10 +933,7 @@ def _future_open_stack(
     )
     from app.research.execution_evidence import OperationalResearchExecutionEvidenceRepository
     from app.research.live_start_claim import operational_live_start_claims
-    from app.research.shopify_global_catalog_execution import (
-        PRODUCTION_TRANSPORT_PERMIT_CREATIONS,
-        operational_shopify_execution,
-    )
+    from app.research.shopify_global_catalog_execution import operational_shopify_execution
     from app.services.canonical_research_results import OperationalResultsIntegrationRepository
     from app.services.confirmed_research_execution import ConfirmedResearchExecutionService
 
@@ -942,7 +957,7 @@ def _future_open_stack(
         integrations,
         clock=_clock,
     )
-    transport = FakeCatalogTransport(_ok(_product()))
+    transport = FakeCatalogTransport(_ok(product or _product()))
     service = ConfirmedResearchExecutionService(
         policy,
         claims=operational_live_start_claims(factory, token_factory=_token_factory()),
@@ -951,7 +966,7 @@ def _future_open_stack(
         executions=executions,
         integrator=integrator,
         clock=_clock,
-        production_composition=True,
+        harness_composition=True,
     )
     assistant = ShoppingAssistantService(
         snapshot_repository=snapshots,
@@ -972,7 +987,8 @@ def _future_open_stack(
         "evidence": evidence,
         "integrations": integrations,
         "executions": executions,
-        "permits_before": PRODUCTION_TRANSPORT_PERMIT_CREATIONS,
+        "permits_before": shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS,
+        "harness_before": shopify_execution.HARNESS_TRANSPORT_PERMIT_CREATIONS,
     }
 
 
@@ -1043,11 +1059,14 @@ def test_production_result_can_represent_future_verified_live_operation() -> Non
         market="PH",
         source=_SOURCE,
     )
+    from app.research.shopify_global_catalog_transport import issue_production_transport_authority
+
     verification = VerifiedLiveOfferExecution(
         execution_id="research-exec:future-open",
         decision_id=DECISION_ID,
         plan_id="plan-sprint38-future",
         permit_marker="production_shopify_transport",
+        transport_authority=issue_production_transport_authority(),
         facts=(fact,),
     )
     assert LIVE_RESEARCH_EXECUTION_OPERATIONAL is False
@@ -1094,55 +1113,48 @@ def test_production_result_can_represent_future_verified_live_operation() -> Non
         )
 
 
-def test_future_open_harness_reaches_canonical_integration(tmp_path) -> None:  # noqa: ANN001
-    """Server-owned harness only. Not production evidence and not launch evidence."""
-
+def _assert_fixture_evidence(stack, public) -> None:  # noqa: ANN001
     import app.research.shopify_global_catalog_execution as shopify_execution
+
+    assert public["claim_invoked"] is True
+    assert public["adapter_invoked"] is True
+    assert public["transport_invoked"] is True
+    assert public["authorization_consumed"] is True
+    assert public["synthetic"] is True
+    assert public["test_fixture"] is True
+    assert public["live_research_completed"] is False
+    assert public["shopper_results_updated"] is False
+    assert public["prior_decision_preserved"] is True
+    assert public["integration_outcome"] == "synthetic_evidence_only"
+    assert len(stack["transport"].calls) == 1
+    assert stack["permits_before"] == shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+    assert stack["harness_before"] + 1 == shopify_execution.HARNESS_TRANSPORT_PERMIT_CREATIONS
+    assert public["evidence_ids"]
+    for evidence_id in public["evidence_ids"]:
+        record = stack["evidence"].get(evidence_id)
+        assert record is not None
+        assert record.observation_kind == "synthetic"
+        assert record.source_mode is SourceMode.FIXTURE
+        assert record.test_fixture is True
+        assert record.launch_evidence is False
+        assert record.activates_public_market is False
+    assert stack["integrations"].get(public["execution_id"]) is None
+
+
+def test_future_open_harness_stays_fixture_evidence(tmp_path) -> None:  # noqa: ANN001
+    """Server-owned harness only. Not production evidence and not launch evidence."""
 
     stack = _future_open_stack(tmp_path)
     try:
         before = stack["snapshots"].get(DECISION_ID, 1)
         assert before is not None
-        piq = before.canonical_piqscore_set_sha256
-        recommendation = before.recommendation
         assert stack["policy"].block_reasons() == ()
         assert stack["policy"].operational_status is ConnectorOperationalStatus.AVAILABLE
         _first, confirmed = _confirm(stack["assistant"])
         public = confirmed.processing["confirmed_research"]
-        assert public["claim_invoked"] is True
-        assert public["adapter_invoked"] is True
-        assert public["transport_invoked"] is True
-        assert public["authorization_consumed"] is True
-        assert public["attempted"] is True
-        assert public["source_checked"] is True
-        assert public["research_executed"] is True
-        assert public["live_research_completed"] is True
-        assert public["synthetic"] is False
-        assert public["test_fixture"] is False
-        assert public["shopper_results_updated"] is False
-        assert public["prior_decision_preserved"] is True
-        assert public["integration_outcome"] == "canonical_reevaluation_required"
-        assert len(stack["transport"].calls) == 1
-        created = shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
-        assert stack["permits_before"] + 1 == created
-        assert public["evidence_ids"]
-        for evidence_id in public["evidence_ids"]:
-            record = stack["evidence"].get(evidence_id)
-            assert record is not None
-            assert record.observation_kind == "production"
-            assert record.source_mode is SourceMode.LIVE
-            assert record.test_fixture is False
-            assert record.launch_evidence is False
-            assert record.activates_public_market is False
-            assert record.amount_minor == 79900
-        integration = stack["integrations"].get(public["execution_id"])
-        assert integration is not None
-        assert integration.outcome == "canonical_reevaluation_required"
+        _assert_fixture_evidence(stack, public)
         assert stack["snapshots"].get(DECISION_ID, 2) is None
-        preserved = stack["snapshots"].get(DECISION_ID, 1)
-        assert preserved is not None
-        assert preserved.canonical_piqscore_set_sha256 == piq
-        assert preserved.recommendation == recommendation
+        assert stack["snapshots"].get(DECISION_ID, 1) == before
     finally:
         _close_stack(stack)
     assert shopify_global_catalog_ph_provider().descriptor.operational_status is (
@@ -1173,6 +1185,7 @@ def test_authoritative_kill_switch_blocks_before_transport(tmp_path) -> None:  #
         assert provider is not None
         assert stack["policy"].kill_switch == provider.descriptor.kill_switch
         permits = shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+        harness_permits = shopify_execution.HARNESS_TRANSPORT_PERMIT_CREATIONS
         _first, confirmed = _confirm(stack["assistant"])
         public = confirmed.processing["confirmed_research"]
         assert public["claim_invoked"] is True
@@ -1184,6 +1197,7 @@ def test_authoritative_kill_switch_blocks_before_transport(tmp_path) -> None:  #
         assert public["prior_decision_preserved"] is True
         assert stack["transport"].calls == []
         assert permits == shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+        assert harness_permits == shopify_execution.HARNESS_TRANSPORT_PERMIT_CREATIONS
         assert confirmed.processing["authorization_status"] == "authorized_pending_execution"
         assert stack["snapshots"].get(DECISION_ID, 2) is None
         assert stack["snapshots"].get(DECISION_ID, 1) == before
@@ -1193,3 +1207,71 @@ def test_authoritative_kill_switch_blocks_before_transport(tmp_path) -> None:  #
         assert execution.claimed_at is None
     finally:
         _close_stack(stack)
+
+
+def test_fake_transport_exact_match_cannot_update_canonical_results(tmp_path) -> None:  # noqa: ANN001
+    stack = _future_open_stack(tmp_path, product=_matching_product())
+    try:
+        before = stack["snapshots"].get(DECISION_ID, 1)
+        assert before is not None
+        _first, confirmed = _confirm(stack["assistant"])
+        public = confirmed.processing["confirmed_research"]
+        _assert_fixture_evidence(stack, public)
+        assert public["evidence_ids"]
+        matched = stack["evidence"].get(public["evidence_ids"][0])
+        assert matched is not None
+        assert matched.product_id == SONY_ID
+        assert matched.variant_id == "black"
+        assert stack["snapshots"].get(DECISION_ID, 2) is None
+        preserved = stack["snapshots"].get(DECISION_ID, 1)
+        assert preserved == before
+        assert preserved is not None
+        assert preserved.recommendation.best_piq_product_id == SONY_ID
+        assert preserved.recommendation.decision == before.recommendation.decision
+        assert preserved.canonical_piqscore_set_sha256 == before.canonical_piqscore_set_sha256
+    finally:
+        _close_stack(stack)
+
+
+def test_production_permit_cannot_authorize_fake_transport() -> None:
+    from app.domain.entities.research_execution import ResearchCapability
+    from app.research.shopify_global_catalog_execution import (
+        issue_production_shopify_transport_permit,
+        production_live_evidence_authorized,
+    )
+    from app.research.shopify_global_catalog_transport import (
+        ProductionTransportAuthority,
+        UrllibJsonTransport,
+        issue_production_transport_authority,
+    )
+
+    from tests.unit.test_sprint38_shopify_execution_adapter import _attempt, _prepare
+
+    prepared = _prepare(capability=ResearchCapability.CURRENT_PRICING)
+    permit = issue_production_shopify_transport_permit(authoritative_block_reasons=())
+    fake = FakeCatalogTransport(_ok(_matching_product()))
+    service = in_memory_shopify_execution(
+        prepared["executions"],
+        prepared["reliability"],
+        prepared["conversations"],
+        fake,
+    )
+    refused = service.execute(
+        _attempt(
+            prepared,
+            capability=ResearchCapability.CURRENT_PRICING,
+            operation="search_catalog",
+            permit=permit,
+        )
+    )
+    assert refused.block_reason == "production_transport_authority_required"
+    assert refused.transport_invoked is False
+    assert refused.verified_live_execution is None
+    assert fake.calls == []
+    assert production_live_evidence_authorized(permit, fake) is False
+    bare = UrllibJsonTransport()
+    assert production_live_evidence_authorized(permit, bare) is False
+    authorized = UrllibJsonTransport(authority=issue_production_transport_authority())
+    assert type(authorized.production_transport_authority) is ProductionTransportAuthority
+    assert production_live_evidence_authorized(permit, authorized) is True
+    assert REAL_SHOPIFY_CALLS == 0
