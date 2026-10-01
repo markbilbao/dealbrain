@@ -1275,9 +1275,7 @@ def _offer_facts(
                 observation_kind=(
                     "production" if live_authority else FAKE_TRANSPORT_OBSERVATION_KIND
                 ),
-                source_mode=(
-                    SourceMode.LIVE.value if live_authority else SourceMode.FIXTURE.value
-                ),
+                source_mode=(SourceMode.LIVE.value if live_authority else SourceMode.FIXTURE.value),
                 provider_id=attempt.step.provider_id,
                 capability=attempt.step.capability.value,
                 market=attempt.step.market or PH_COUNTRY,
