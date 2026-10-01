@@ -680,6 +680,8 @@ def test_client_server_authority_and_semantics(stores: dict) -> None:
                 "compare_opened",
                 "why_opened",
                 "outbound_merchant_click",
+                "ask_opened",
+                "ask_closed",
             }
         )
         == CLIENT_EVENT_NAMES

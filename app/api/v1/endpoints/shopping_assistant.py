@@ -143,5 +143,6 @@ async def query_shopping_assistant(
         owner=owner,
         analytics=analytics,
         snapshots=snapshots,
+        processing=processing,
     )
     return to_assistant_response(result, allowed_modes=service.allowed_modes())

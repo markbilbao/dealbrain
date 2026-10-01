@@ -1,4 +1,4 @@
-import { initProductAnalytics } from "./product_analytics.js";
+import { emitProductEvent, initProductAnalytics } from "./product_analytics.js";
 import { initProductFeedback } from "./product_feedback.js";
 import { initTrackingPreference } from "./tracking_preference.js";
 
@@ -112,11 +112,20 @@ function showAsk(text) {
   const body = qs("ask-panel-body");
   const panel = overlay?.querySelector(".ask-panel");
   if (!overlay || !body) return;
-  if (overlay.hidden) {
+  const opening = overlay.hidden;
+  if (opening) {
     askRestoreFocus = document.activeElement;
   }
   body.innerHTML = text;
   overlay.hidden = false;
+  if (opening) {
+    void emitProductEvent("ask_opened", {
+      surface: "ask",
+      action_type: "open",
+      outcome: "opened",
+      decision_id: document.body?.dataset?.decisionId || "",
+    });
+  }
   const focusable = panel ? focusableIn(panel) : [];
   (focusable[0] || panel)?.focus?.();
 }
@@ -125,6 +134,12 @@ function closeAsk() {
   const overlay = qs("ask-overlay");
   if (!overlay || overlay.hidden) return;
   overlay.hidden = true;
+  void emitProductEvent("ask_closed", {
+    surface: "ask",
+    action_type: "close",
+    outcome: "closed",
+    decision_id: document.body?.dataset?.decisionId || "",
+  });
   if (askRestoreFocus && typeof askRestoreFocus.focus === "function") {
     askRestoreFocus.focus();
   }

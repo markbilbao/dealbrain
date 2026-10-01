@@ -17,6 +17,8 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
+from app.analytics.funnel import emit_updated_results_viewed
+from app.analytics.service import ProductAnalyticsService
 from app.consumer import mode as consumer_mode
 from app.consumer.canonical_presentation import (
     destination_assessment_from_snapshot,
@@ -46,6 +48,7 @@ from app.consumer.shopping_market import (
 from app.consumer.uuid import is_canonical_uuid
 from app.consumer.view_models import DecisionPageView, PageName
 from app.core.dependencies import (
+    get_product_analytics_service,
     get_shopping_conversation_repository,
     get_shopping_decision_snapshot_repository,
 )
@@ -223,6 +226,7 @@ async def results_page(
     prompt: int = Query(default=0),
     recalculating: int = Query(default=0),
     snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
 ) -> HTMLResponse | RedirectResponse:
     blocked = _production_early_access_home()
     if blocked is not None:
@@ -236,7 +240,16 @@ async def results_page(
         recalculating=bool(recalculating),
         snapshots=snapshots,
     )
-    return _html(view, request)
+    response = _html(view, request)
+    if view.presentation_mode == "canonical":
+        emit_updated_results_viewed(
+            request,
+            response,
+            decision_id=view.decision_id,
+            analytics=analytics,
+            snapshots=snapshots,
+        )
+    return response
 
 
 @router.get("/compare/{decision_id}", response_class=HTMLResponse, response_model=None)

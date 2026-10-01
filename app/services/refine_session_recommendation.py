@@ -254,6 +254,7 @@ class RefineSessionRecommendationService:
             question,
             result,
             conversation_id=bound_conversation_id or conversation_id,
+            surface=page,
         )
 
     def _resolve_packet(
@@ -394,6 +395,7 @@ class RefineSessionRecommendationService:
         result: RefinementResult,
         *,
         conversation_id: str | None,
+        surface: str = "results",
     ) -> ShoppingAssistantResponse:
         packet = result.packet
         overlay = result.overlay
@@ -452,6 +454,7 @@ class RefineSessionRecommendationService:
             "prompts_included": False,
             "secrets_included": False,
             "recommendation_applied": result.applied,
+            "surface": surface if surface in {"results", "compare", "why", "ask"} else "results",
         }
         if overlay is not None:
             processing.update(

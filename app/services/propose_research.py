@@ -852,6 +852,7 @@ class ProposeResearchService:
             "research_executed": False,
             "execution_available": False,
             "authorization_created": result.authorization_created,
+            "research_lifecycle": result.lifecycle,
             "selected_shopping_market": coverage.selected.country_code,
             "shopping_market_origin": coverage.selected.origin,
             "shopping_coverage_available": coverage.coverage_available,
