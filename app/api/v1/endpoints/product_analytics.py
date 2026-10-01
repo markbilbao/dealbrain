@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from app.analytics.request_context import analytics_context_for_request, authorized_owner
+from app.analytics.schema import validate_client_event_payload
 from app.analytics.service import ProductAnalyticsService
 from app.core.dependencies import get_bound_decision_resolver, get_product_analytics_service
 from app.feedback.decisions import BoundDecision
@@ -26,8 +27,9 @@ _CLOSED_RESULTS = {"schema_rejected": status.HTTP_400_BAD_REQUEST}
     response_model=ProductAnalyticsEventResponse,
     summary="Record one allow-listed product analytics event",
     description=(
-        "Stores a first-party event only when analytics consent is on. "
-        "Consent off returns suppressed_no_consent and writes no analytics row. "
+        "Stores a first-party client-observable event only when analytics consent is on. "
+        "Server-owned event names are rejected. A supplied decision id that does not "
+        "resolve for the current owner returns decision_not_found and writes no row. "
         "The server derives identity, consent, and decision hash."
     ),
 )
@@ -39,10 +41,18 @@ async def collect_product_event(
     resolve_decision: Any = Depends(get_bound_decision_resolver),
 ) -> ProductAnalyticsEventResponse:
     payload = body.client_payload()
+    reason = validate_client_event_payload(payload)
+    if reason is not None:
+        raise HTTPException(status_code=_CLOSED_RESULTS["schema_rejected"], detail=reason)
     decision_id = payload.pop("decision_id", None)
     bound: BoundDecision | None = None
     if isinstance(decision_id, str) and decision_id:
         bound = resolve_decision(decision_id, authorized_owner(request))
+        if bound is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="decision_not_found",
+            )
     context = analytics_context_for_request(
         request,
         response,

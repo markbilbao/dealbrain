@@ -21,7 +21,8 @@ EXT-15 remains `not_started`. The external register allows a privacy-safe first-
 - Preference cookie `piqsavi_tracking_preference` (choice, schema, selected time only)
 - Opaque analytics subject cookie created only after opt-in and deleted on opt-out
 - Advertising remains unavailable
-- Event schema `piqsavi.product_analytics.v1` with the roadmap event vocabulary and a closed property set
+- Event schema `piqsavi.product_analytics.v1` with the full roadmap vocabulary. The browser may submit only `results_viewed`, `compare_opened`, `why_opened`, and `outbound_merchant_click`, each with fixed surface / action / outcome semantics. Server-owned names are rejected on `/analytics/events`. Trusted server code uses a separate validator. A client-supplied decision id that does not resolve for the current owner returns `decision_not_found` and writes no row
+- `product.analytics_events` and `product.feedback_reports` are documented in the engineering PII inventory. Account export excludes them. Account delete does not cascade them in this slice. That is remaining privacy-integration work, not a legal retention exception
 - `ProductAnalyticsSink`, `NullProductAnalyticsSink`, and `FirstPartyProductAnalyticsRepository`
 - Consent-off suppression with zero analytics rows; consent-on durable rows in `operational_entities` namespace `product.analytics_events`
 - Deterministic dedup by event id; conflicting contents fail closed; no in-memory authority and no new SQL table

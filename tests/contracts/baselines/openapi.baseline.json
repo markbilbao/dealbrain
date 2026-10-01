@@ -19979,7 +19979,7 @@
     },
     "/api/v1/analytics/events": {
       "post": {
-        "description": "Stores a first-party event only when analytics consent is on. Consent off returns suppressed_no_consent and writes no analytics row. The server derives identity, consent, and decision hash.",
+        "description": "Stores a first-party client-observable event only when analytics consent is on. Server-owned event names are rejected. A supplied decision id that does not resolve for the current owner returns decision_not_found and writes no row. The server derives identity, consent, and decision hash.",
         "operationId": "collect_product_event_api_v1_analytics_events_post",
         "requestBody": {
           "content": {

@@ -204,6 +204,8 @@ def test_valid_deletion_revokes_sessions_and_removes_pii() -> None:
     assert "backup" in retained
     assert "early access" in retained
     assert "audit" in retained
+    assert "product.analytics_events are not cascaded" in retained
+    assert "product.feedback_reports are not cascaded" in retained
     dumped = str(body).lower()
     assert "all piqsavi data deleted" not in dumped
     assert "all personal data" not in dumped

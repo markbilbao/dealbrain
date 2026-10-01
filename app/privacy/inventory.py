@@ -63,6 +63,14 @@ EXPORT_EXCLUSIONS: dict[str, str] = {
     "audit event payloads beyond the user's own consent/deletion metadata": (
         "security evidence; not a consumer export category"
     ),
+    "product.analytics_events": (
+        "opaque device subject and no trusted account lookup key; "
+        "not included in piqsavi.account_owned_export.v1"
+    ),
+    "product.feedback_reports": (
+        "owner digest and report context are not a complete account-wide identity map "
+        "across sessions; not included in piqsavi.account_owned_export.v1"
+    ),
 }
 
 

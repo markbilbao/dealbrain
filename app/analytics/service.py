@@ -22,6 +22,7 @@ from app.analytics.schema import (
     assert_stored_event_shape,
     semantic_digest,
     validate_client_event_payload,
+    validate_server_event_payload,
 )
 from app.analytics.sink import NullProductAnalyticsSink, ProductAnalyticsSink
 
@@ -90,9 +91,12 @@ class ProductAnalyticsService:
         outcome: str | None = None,
         event_id: str | None = None,
     ) -> AnalyticsWriteResult:
-        """Emit one server-known event. There is no free-text parameter."""
+        """Emit one server-known event through the server validator.
 
-        payload = {
+        This does not use the browser allow-list. There is no free-text parameter.
+        """
+
+        payload: dict[str, Any] = {
             "event_name": event_name,
             "surface": surface,
             "action_type": action_type,
@@ -106,7 +110,24 @@ class ProductAnalyticsService:
         if event_id is not None:
             payload["event_id"] = event_id
         compact = {key: value for key, value in payload.items() if value is not None}
-        return self.record_client_event(compact, context)
+        reason = validate_server_event_payload(compact)
+        if reason is not None:
+            return AnalyticsWriteResult(status="schema_rejected", reason=reason)
+        if not context.preference.analytics_allowed:
+            return self._null.suppress()
+        return self._record_fields(
+            context,
+            event_name=str(compact["event_name"]),
+            event_id=compact.get("event_id"),
+            surface=compact.get("surface"),
+            action_type=compact.get("action_type"),
+            turn_number=compact.get("turn_number"),
+            evidence_count=compact.get("evidence_count"),
+            latency_band=compact.get("latency_band"),
+            freshness_band=compact.get("freshness_band"),
+            error_code=compact.get("error_code"),
+            outcome=compact.get("outcome"),
+        )
 
     def _record_fields(
         self,

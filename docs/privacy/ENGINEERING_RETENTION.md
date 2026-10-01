@@ -31,7 +31,7 @@ This file maps **repository-evidenced technical TTLs** so operators can tell the
 
 ## What account deletion does **not** encode
 
-See [`ACCOUNT_DELETION_PROPAGATION.md`](ACCOUNT_DELETION_PROPAGATION.md). Shopping-assistant conversations are TTL-bound and are **not** listed by `user_id` on the delete path. Alert-rule rows in the alerts bounded context are **not** cascaded. Those remain documented engineering limitations, not silent erasure claims.
+See [`ACCOUNT_DELETION_PROPAGATION.md`](ACCOUNT_DELETION_PROPAGATION.md). Shopping-assistant conversations are TTL-bound and are **not** listed by `user_id` on the delete path. Alert-rule rows in the alerts bounded context are **not** cascaded. `product.analytics_events` and `product.feedback_reports` are also **not** cascaded in Sprint 39.1: analytics has no trusted account lookup key, and feedback’s owner digest is not a complete account-wide reverse mapping. Those remain documented engineering limitations, not silent erasure claims and not legal retention exceptions.
 
 ## Purge jobs
 

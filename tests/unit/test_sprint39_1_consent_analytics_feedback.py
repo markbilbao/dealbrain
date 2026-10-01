@@ -18,7 +18,13 @@ from app.analytics.preference import (
     read_tracking_preference,
 )
 from app.analytics.repository import FirstPartyProductAnalyticsRepository
-from app.analytics.schema import EVENT_NAMES, EVENT_SCHEMA, FORBIDDEN_ANALYTICS_FIELDS
+from app.analytics.schema import (
+    CLIENT_EVENT_NAMES,
+    EVENT_NAMES,
+    EVENT_SCHEMA,
+    FORBIDDEN_ANALYTICS_FIELDS,
+    SERVER_EVENT_NAMES,
+)
 from app.analytics.service import AnalyticsServerContext, ProductAnalyticsService
 from app.consumer.pages import _offer_link
 from app.core.dependencies import (
@@ -34,6 +40,8 @@ from app.feedback.service import FeedbackReportService
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.persistence.session import reset_sync_engine
 from app.main import create_app
+from app.privacy.inventory import EXPORT_EXCLUSIONS, PERSONAL_DATA_EXPORT_CATEGORIES
+from app.privacy.lifecycle import RETAINED_LIMITATIONS
 from app.privacy.tracking import (
     analytics_provider,
     category_allowed,
@@ -166,7 +174,12 @@ def test_opt_in_and_opt_out_change_only_the_explicit_choice() -> None:
 def test_schema_accepts_known_event_and_rejects_closed_fields(stores: dict) -> None:
     service: ProductAnalyticsService = stores["analytics"]
     recorded = service.record_client_event(
-        {"event_name": "results_viewed", "surface": "results", "outcome": "viewed"},
+        {
+            "event_name": "results_viewed",
+            "surface": "results",
+            "action_type": "view",
+            "outcome": "viewed",
+        },
         _context(allowed=True),
     )
     assert recorded.status == "recorded"
@@ -212,6 +225,7 @@ def test_consent_gate_dedup_and_recreation(stores: dict) -> None:
         "event_name": "compare_opened",
         "event_id": event_id,
         "surface": "compare",
+        "action_type": "open",
         "outcome": "opened",
     }
     suppressed = service.record_client_event(payload, _context(allowed=False))
@@ -234,7 +248,7 @@ def test_consent_gate_dedup_and_recreation(stores: dict) -> None:
     assert first.status == "recorded"
     assert second.status == "duplicate"
     conflict = service.record_client_event(
-        {**payload, "surface": "why", "outcome": "opened"},
+        {**payload, "evidence_count": 2},
         _context(allowed=True),
     )
     assert conflict.status == "identity_conflict"
@@ -495,7 +509,12 @@ async def test_event_and_feedback_http_boundaries(api) -> None:
     )
     suppressed = await client.post(
         "/api/v1/analytics/events",
-        json={"event_name": "results_viewed", "surface": "results", "outcome": "viewed"},
+        json={
+            "event_name": "results_viewed",
+            "surface": "results",
+            "action_type": "view",
+            "outcome": "viewed",
+        },
     )
     assert suppressed.status_code == 200
     assert suppressed.json()["result"] == "suppressed_no_consent"
@@ -512,13 +531,42 @@ async def test_event_and_feedback_http_boundaries(api) -> None:
     assert rejected.status_code == 400
     assert stores["analytics_repo"].count() == 0
 
+    before_foreign = stores["analytics_repo"].count()
+    foreign = await client.post(
+        "/api/v1/analytics/events",
+        json={
+            "event_name": "why_opened",
+            "surface": "why",
+            "action_type": "open",
+            "outcome": "opened",
+            "decision_id": FOREIGN_DECISION,
+        },
+    )
+    missing = await client.post(
+        "/api/v1/analytics/events",
+        json={
+            "event_name": "why_opened",
+            "surface": "why",
+            "action_type": "open",
+            "outcome": "opened",
+            "decision_id": "99999999-9999-4999-8999-999999999999",
+        },
+    )
+    assert foreign.status_code == 404
+    assert missing.status_code == 404
+    assert foreign.json()["detail"] == "decision_not_found"
+    assert missing.json()["detail"] == "decision_not_found"
+    assert stores["analytics_repo"].count() == before_foreign
+    assert FOREIGN_DECISION not in _dump_events(stores["analytics_repo"])
+
     event_id = "44444444-4444-4444-8444-444444444444"
     payload = {
         "event_name": "why_opened",
         "event_id": event_id,
         "surface": "why",
+        "action_type": "open",
         "outcome": "opened",
-        "decision_id": FOREIGN_DECISION,
+        "decision_id": OWNED_DECISION,
     }
     recorded = await client.post("/api/v1/analytics/events", json=payload)
     assert recorded.status_code == 200
@@ -527,11 +575,13 @@ async def test_event_and_feedback_http_boundaries(api) -> None:
     assert duplicate.json()["result"] == "duplicate"
     conflict = await client.post(
         "/api/v1/analytics/events",
-        json={**payload, "surface": "compare"},
+        json={**payload, "evidence_count": 3},
     )
     assert conflict.status_code == 409
-    assert stores["analytics_repo"].count() == 1
-    assert FOREIGN_DECISION not in _dump_events(stores["analytics_repo"])
+    assert stores["analytics_repo"].count() == before_foreign + 1
+    stored = _dump_events(stores["analytics_repo"])
+    assert OWNED_DECISION not in stored
+    assert decision_hash(OWNED_DECISION) in stored
 
     helpful = await client.post(
         "/api/v1/feedback/reports",
@@ -619,6 +669,175 @@ async def test_feedback_still_works_when_analytics_consent_is_off(api) -> None:
     assert stores["feedback_repo"].count() == 1
     assert stores["analytics_repo"].count() == 0
     assert "SECRET-OFF-CONSENT" not in _dump_events(stores["analytics_repo"])
+
+
+def test_client_server_authority_and_semantics(stores: dict) -> None:
+    service: ProductAnalyticsService = stores["analytics"]
+    assert (
+        frozenset(
+            {
+                "results_viewed",
+                "compare_opened",
+                "why_opened",
+                "outbound_merchant_click",
+            }
+        )
+        == CLIENT_EVENT_NAMES
+    )
+    assert CLIENT_EVENT_NAMES.isdisjoint(SERVER_EVENT_NAMES)
+    assert CLIENT_EVENT_NAMES | SERVER_EVENT_NAMES == EVENT_NAMES
+    for name in (
+        "research_started",
+        "research_completed",
+        "research_failed",
+        "insufficient_evidence",
+        "decision_completed",
+        "recommendation_helpful",
+        "incorrect_information_report",
+        "bug_report",
+        "return_visit",
+    ):
+        assert name in SERVER_EVENT_NAMES
+
+    context = _context(allowed=True)
+    for payload in (
+        {
+            "event_name": "results_viewed",
+            "surface": "results",
+            "action_type": "view",
+            "outcome": "viewed",
+        },
+        {
+            "event_name": "compare_opened",
+            "surface": "compare",
+            "action_type": "open",
+            "outcome": "opened",
+        },
+        {
+            "event_name": "why_opened",
+            "surface": "why",
+            "action_type": "open",
+            "outcome": "opened",
+        },
+        {
+            "event_name": "outbound_merchant_click",
+            "surface": "compare",
+            "action_type": "click",
+            "outcome": "clicked",
+        },
+    ):
+        assert service.record_client_event(payload, context).status == "recorded"
+
+    before = stores["analytics_repo"].count()
+    for name in (
+        "research_completed",
+        "research_failed",
+        "insufficient_evidence",
+        "recommendation_helpful",
+        "incorrect_information_report",
+    ):
+        rejected = service.record_client_event(
+            {"event_name": name, "surface": "results", "action_type": "view", "outcome": "viewed"},
+            context,
+        )
+        assert rejected.status == "schema_rejected"
+        assert rejected.reason == "server_owned_event"
+    assert stores["analytics_repo"].count() == before
+
+    for name, surface, action, outcome in (
+        ("research_completed", "results", "view", "viewed"),
+        ("research_failed", "ask", "submit", "reported"),
+        ("insufficient_evidence", "ask", "submit", "insufficient_evidence"),
+        ("recommendation_helpful", "results", "submit", "helpful"),
+        ("incorrect_information_report", "support", "report", "incorrect_price"),
+        ("bug_report", "support", "report", "bug"),
+    ):
+        emitted = service.record_server_event(
+            context,
+            event_name=name,
+            surface=surface,
+            action_type=action,
+            outcome=outcome,
+        )
+        assert emitted.status == "recorded", name
+
+    invalid = service.record_server_event(
+        context,
+        event_name="not_a_real_event",
+        surface="results",
+        action_type="view",
+        outcome="viewed",
+    )
+    assert invalid.status == "schema_rejected"
+    prose = service.record_server_event(
+        context,
+        event_name="research_completed",
+        outcome="The listed price is wrong for this shopper",
+    )
+    assert prose.status == "schema_rejected"
+    assert prose.reason == "invalid_outcome"
+
+    wrong_surface = service.record_client_event(
+        {
+            "event_name": "results_viewed",
+            "surface": "support",
+            "action_type": "view",
+            "outcome": "viewed",
+        },
+        context,
+    )
+    wrong_outcome = service.record_client_event(
+        {
+            "event_name": "results_viewed",
+            "surface": "results",
+            "action_type": "view",
+            "outcome": "incorrect_price",
+        },
+        context,
+    )
+    wrong_click = service.record_client_event(
+        {
+            "event_name": "outbound_merchant_click",
+            "surface": "results",
+            "action_type": "view",
+            "outcome": "clicked",
+        },
+        context,
+    )
+    assert wrong_surface.reason == "contradictory_event"
+    assert wrong_outcome.reason == "contradictory_event"
+    assert wrong_click.reason == "contradictory_event"
+
+
+def test_privacy_inventory_excludes_sprint39_stores() -> None:
+    assert "product.analytics_events" in EXPORT_EXCLUSIONS
+    assert "product.feedback_reports" in EXPORT_EXCLUSIONS
+    joined_exclusions = " ".join(EXPORT_EXCLUSIONS.values()).lower()
+    assert "not included in piqsavi.account_owned_export.v1" in joined_exclusions
+    retained = " ".join(RETAINED_LIMITATIONS).lower()
+    assert "product.analytics_events are not cascaded" in retained
+    assert "product.feedback_reports are not cascaded" in retained
+    assert "product.analytics_events" not in PERSONAL_DATA_EXPORT_CATEGORIES
+    assert "product.feedback_reports" not in PERSONAL_DATA_EXPORT_CATEGORIES
+    assert PERSONAL_DATA_EXPORT_CATEGORIES == (
+        "account",
+        "profile",
+        "settings",
+        "wishlist",
+        "saved_products",
+        "saved_comparisons",
+        "recommendation_history",
+        "saved_searches",
+        "recently_viewed",
+        "consent_records",
+        "sessions",
+        "notification_preferences",
+    )
+    inventory = Path("docs/privacy/ENGINEERING_PII_INVENTORY.md").read_text(encoding="utf-8")
+    assert "product.analytics_events" in inventory
+    assert "product.feedback_reports" in inventory
+    assert "user-entered" in inventory.lower() or "user-supplied" in inventory.lower()
+    assert "not a legal retention exception" in inventory.lower()
 
 
 async def test_support_and_results_surfaces(client: AsyncClient) -> None:

@@ -50,6 +50,41 @@ EVENT_NAMES: frozenset[str] = frozenset(
     }
 )
 
+# Events the browser can truthfully observe in the current UI.
+# ``ask_opened`` / ``ask_closed`` stay server-only until a real UI emitter exists.
+CLIENT_EVENT_NAMES: frozenset[str] = frozenset(
+    {
+        "results_viewed",
+        "compare_opened",
+        "why_opened",
+        "outbound_merchant_click",
+    }
+)
+SERVER_EVENT_NAMES: frozenset[str] = EVENT_NAMES - CLIENT_EVENT_NAMES
+MERCHANT_ACTION_SURFACES: frozenset[str] = frozenset({"results", "compare", "why"})
+CLIENT_EVENT_SEMANTICS: dict[str, dict[str, str | frozenset[str]]] = {
+    "results_viewed": {
+        "surface": "results",
+        "action_type": "view",
+        "outcome": "viewed",
+    },
+    "compare_opened": {
+        "surface": "compare",
+        "action_type": "open",
+        "outcome": "opened",
+    },
+    "why_opened": {
+        "surface": "why",
+        "action_type": "open",
+        "outcome": "opened",
+    },
+    "outbound_merchant_click": {
+        "surface": MERCHANT_ACTION_SURFACES,
+        "action_type": "click",
+        "outcome": "clicked",
+    },
+}
+
 # Stored properties. ``event_name`` is required even though callers also pass it
 # separately. ``content_digest`` is repository integrity material, not a client field.
 STORED_PROPERTY_NAMES: frozenset[str] = frozenset(
@@ -253,6 +288,8 @@ def validate_client_event_payload(payload: Any) -> str | None:
     event_name = payload.get("event_name")
     if not isinstance(event_name, str) or event_name not in EVENT_NAMES:
         return "unknown_event"
+    if event_name not in CLIENT_EVENT_NAMES:
+        return "server_owned_event"
     event_id = payload.get("event_id")
     if event_id is not None and (not isinstance(event_id, str) or not _UUID_RE.match(event_id)):
         return "invalid_event_id"
@@ -280,6 +317,72 @@ def validate_client_event_payload(payload: Any) -> str | None:
         return "invalid_turn_number"
     if _bounded_int(payload, "evidence_count", 0, 10_000):
         return "invalid_evidence_count"
+    return _client_event_semantics(payload)
+
+
+SERVER_EVENT_INPUT_FIELDS: frozenset[str] = CLIENT_EVENT_FIELDS - {"decision_id"}
+
+
+def validate_server_event_payload(payload: Any) -> str | None:
+    """Validate a trusted server emission.
+
+    Server-only names are allowed. The property allow-list, closed vocabularies,
+    and free-text rejection still apply. Raw ``decision_id`` is not an input;
+    the caller supplies an already-authorized hash through server context.
+    """
+
+    if not isinstance(payload, dict):
+        return "payload_not_object"
+    for key in payload:
+        if not isinstance(key, str):
+            return "unknown_property"
+        normalized = key.strip().lower()
+        if normalized in FORBIDDEN_ANALYTICS_FIELDS or key in FORBIDDEN_ANALYTICS_FIELDS:
+            return "forbidden_field"
+        if key == "decision_id" or key in SERVER_OWNED_FIELDS:
+            return "server_owned_field"
+        if key not in SERVER_EVENT_INPUT_FIELDS:
+            return "unknown_property"
+    event_name = payload.get("event_name")
+    if not isinstance(event_name, str) or event_name not in EVENT_NAMES:
+        return "unknown_event"
+    event_id = payload.get("event_id")
+    if event_id is not None and (not isinstance(event_id, str) or not _UUID_RE.match(event_id)):
+        return "invalid_event_id"
+    if _choice(payload, "surface", SURFACES):
+        return "invalid_surface"
+    if _choice(payload, "action_type", ACTION_TYPES):
+        return "invalid_action_type"
+    if _choice(payload, "latency_band", LATENCY_BANDS):
+        return "invalid_latency_band"
+    if _choice(payload, "freshness_band", FRESHNESS_BANDS):
+        return "invalid_freshness_band"
+    if _choice(payload, "outcome", OUTCOMES):
+        return "invalid_outcome"
+    error_code = payload.get("error_code")
+    if error_code is not None and (
+        not isinstance(error_code, str) or not _ERROR_CODE_RE.match(error_code)
+    ):
+        return "invalid_error_code"
+    if _bounded_int(payload, "turn_number", 0, 50):
+        return "invalid_turn_number"
+    if _bounded_int(payload, "evidence_count", 0, 10_000):
+        return "invalid_evidence_count"
+    return None
+
+
+def _client_event_semantics(payload: dict[str, Any]) -> str | None:
+    event_name = payload.get("event_name")
+    rule = CLIENT_EVENT_SEMANTICS.get(event_name) if isinstance(event_name, str) else None
+    if rule is None:
+        return "contradictory_event"
+    for key, expected in rule.items():
+        actual = payload.get(key)
+        if isinstance(expected, frozenset):
+            if actual not in expected:
+                return "contradictory_event"
+        elif actual != expected:
+            return "contradictory_event"
     return None
 
 

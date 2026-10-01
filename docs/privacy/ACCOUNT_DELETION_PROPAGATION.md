@@ -39,11 +39,13 @@ Early Access registrations are a **separate data relationship**, not consumer Us
 | Guest browser cookies / `sessionStorage` | Client-side; this API does not clear another device |
 | Shopping-assistant conversations | TTL-bound; no list-by-`user_id` purge on this path |
 | Alert-rule rows in the alerts bounded context | Not cascaded by this endpoint |
+| `product.analytics_events` | Not cascaded in Sprint 39.1. The opaque device subject has no trusted account lookup key. Not claimed erased |
+| `product.feedback_reports` | Not cascaded in Sprint 39.1. The owner digest is not a complete account-wide reverse mapping across sessions. Not claimed erased |
 | Legal hold / statutory retention exceptions | Counsel-owned; not encoded |
 
 ## Export
 
-`GET /api/v1/auth/account/export` returns JSON schema `piqsavi.account_owned_export.v1` (`export_kind`: `account_owned_engineering_export`) for the authenticated user only. Completeness is checked against the engineering category list in [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) / `app/privacy/inventory.py`. This is an engineering account-data export of the current account-owned schema. It is **not** a complete legal DSAR and does **not** claim all PiqSavi or personal data.
+`GET /api/v1/auth/account/export` returns JSON schema `piqsavi.account_owned_export.v1` (`export_kind`: `account_owned_engineering_export`) for the authenticated user only. Completeness is checked against the engineering category list in [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) / `app/privacy/inventory.py`. This is an engineering account-data export of the current account-owned schema. It is **not** a complete legal DSAR and does **not** claim all PiqSavi or personal data. `product.analytics_events` and `product.feedback_reports` are explicit export exclusions. They are not empty categories in the export schema.
 
 ## Persistence
 
