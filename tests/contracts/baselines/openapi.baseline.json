@@ -6644,6 +6644,116 @@
         "title": "FavoriteMarketplacePayload",
         "type": "object"
       },
+      "FeedbackReportCreate": {
+        "additionalProperties": true,
+        "description": "Known report fields. Unknown extras are rejected by the feedback service.",
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "client_submission_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Submission Id"
+          },
+          "context_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Version"
+          },
+          "decision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Id"
+          },
+          "message": {
+            "default": "",
+            "title": "Message",
+            "type": "string"
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          }
+        },
+        "required": [
+          "category"
+        ],
+        "title": "FeedbackReportCreate",
+        "type": "object"
+      },
+      "FeedbackReportResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "analytics_status": {
+            "title": "Analytics Status",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "duplicate": {
+            "default": false,
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "received",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "report_id",
+          "status",
+          "category",
+          "analytics_status"
+        ],
+        "title": "FeedbackReportResponse",
+        "type": "object"
+      },
       "GraphEvidenceResponse": {
         "properties": {
           "contradictions": {
@@ -12857,6 +12967,174 @@
         "title": "PriceStatisticsPayload",
         "type": "object"
       },
+      "ProductAnalyticsEventRequest": {
+        "additionalProperties": true,
+        "description": "Known client fields. Unknown and forbidden extras are rejected by the service.",
+        "properties": {
+          "action_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Type"
+          },
+          "decision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Id"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "event_name": {
+            "title": "Event Name",
+            "type": "string"
+          },
+          "evidence_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Count"
+          },
+          "freshness_band": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freshness Band"
+          },
+          "latency_band": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Band"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "surface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surface"
+          },
+          "turn_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn Number"
+          }
+        },
+        "required": [
+          "event_name"
+        ],
+        "title": "ProductAnalyticsEventRequest",
+        "type": "object"
+      },
+      "ProductAnalyticsEventResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "result": {
+            "enum": [
+              "recorded",
+              "duplicate",
+              "suppressed_no_consent",
+              "schema_rejected",
+              "identity_conflict"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "ProductAnalyticsEventResponse",
+        "type": "object"
+      },
       "ProductCreate": {
         "description": "Payload for creating a product.",
         "properties": {
@@ -15710,6 +15988,80 @@
           "created_at"
         ],
         "title": "SyncJobPayload",
+        "type": "object"
+      },
+      "TrackingPreferenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "advertising_allowed": {
+            "default": false,
+            "title": "Advertising Allowed",
+            "type": "boolean"
+          },
+          "analytics_allowed": {
+            "title": "Analytics Allowed",
+            "type": "boolean"
+          },
+          "choice": {
+            "enum": [
+              "essential_only",
+              "analytics_allowed"
+            ],
+            "title": "Choice",
+            "type": "string"
+          },
+          "consent_schema": {
+            "title": "Consent Schema",
+            "type": "string"
+          },
+          "consent_version": {
+            "title": "Consent Version",
+            "type": "string"
+          },
+          "explicit": {
+            "title": "Explicit",
+            "type": "boolean"
+          },
+          "selected_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected At"
+          }
+        },
+        "required": [
+          "choice",
+          "analytics_allowed",
+          "consent_schema",
+          "consent_version",
+          "explicit"
+        ],
+        "title": "TrackingPreferenceResponse",
+        "type": "object"
+      },
+      "TrackingPreferenceUpdate": {
+        "additionalProperties": false,
+        "description": "Only the two explicit choices. No vendor list and no advertising flag.",
+        "properties": {
+          "choice": {
+            "description": "essential_only keeps analytics off. analytics_allowed is optional.",
+            "enum": [
+              "essential_only",
+              "analytics_allowed"
+            ],
+            "title": "Choice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "choice"
+        ],
+        "title": "TrackingPreferenceUpdate",
         "type": "object"
       },
       "UnreadCountResponse": {
@@ -19625,6 +19977,48 @@
         ]
       }
     },
+    "/api/v1/analytics/events": {
+      "post": {
+        "description": "Stores a first-party event only when analytics consent is on. Consent off returns suppressed_no_consent and writes no analytics row. The server derives identity, consent, and decision hash.",
+        "operationId": "collect_product_event_api_v1_analytics_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductAnalyticsEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductAnalyticsEventResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record one allow-listed product analytics event",
+        "tags": [
+          "product-analytics"
+        ]
+      }
+    },
     "/api/v1/auth/account/consents": {
       "get": {
         "description": "Always returns the authenticated caller's policy acknowledgement records. Empty when no published policies apply.",
@@ -21709,6 +22103,48 @@
         "summary": "Record a first-party Early Access UI event",
         "tags": [
           "early-access"
+        ]
+      }
+    },
+    "/api/v1/feedback/reports": {
+      "post": {
+        "description": "Stores a received report. This does not send email and does not promise a correction. Report text is not copied into product analytics.",
+        "operationId": "submit_feedback_report_api_v1_feedback_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackReportCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackReportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit a product feedback or incorrect-information report",
+        "tags": [
+          "product-feedback"
         ]
       }
     },
@@ -27284,6 +27720,68 @@
         "summary": "Record one or more normalized listing price snapshots",
         "tags": [
           "price-history"
+        ]
+      }
+    },
+    "/api/v1/privacy/tracking-preference": {
+      "get": {
+        "description": "Returns essential_only when the shopper has not made an explicit choice. Advertising is always false. This is not an external consent-management platform.",
+        "operationId": "get_tracking_preference_api_v1_privacy_tracking_preference_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Read the first-party analytics preference",
+        "tags": [
+          "privacy-preference"
+        ]
+      },
+      "post": {
+        "description": "Accepts essential_only or analytics_allowed. Opt-out deletes the analytics subject cookie. Opt-in may create an opaque subject id. Advertising cannot be enabled.",
+        "operationId": "set_tracking_preference_api_v1_privacy_tracking_preference_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackingPreferenceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingPreferenceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set the first-party analytics preference",
+        "tags": [
+          "privacy-preference"
         ]
       }
     },

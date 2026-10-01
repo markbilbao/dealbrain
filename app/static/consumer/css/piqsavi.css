@@ -888,7 +888,9 @@ h1, h2, h3 { margin: 0.15rem 0; letter-spacing: -0.02em; }
   gap: 0.35rem;
 }
 
-.account-form .field input {
+.account-form .field input,
+.account-form .field select,
+.account-form .field textarea {
   width: 100%;
 }
 
@@ -916,6 +918,26 @@ h1, h2, h3 { margin: 0.15rem 0; letter-spacing: -0.02em; }
 .ask-panel:focus {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
+}
+
+.tracking-preference,
+.feedback-actions {
+  margin: 1rem 0;
+}
+
+.tracking-preference {
+  background: var(--sheet);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+
+.tracking-preference-actions,
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1717,3 +1717,37 @@ def get_launch_dashboard_service() -> LaunchDashboardService:
             campaign_counter=_campaigns,
         )
     return _LAUNCH_DASHBOARD_SERVICE
+
+
+def get_product_analytics_service():
+    """First-party analytics service. Consent off uses the null sink."""
+
+    from app.analytics.repository import FirstPartyProductAnalyticsRepository
+    from app.analytics.service import ProductAnalyticsService
+
+    return ProductAnalyticsService(FirstPartyProductAnalyticsRepository())
+
+
+def get_feedback_report_service():
+    """Durable feedback reports. Analytics emission stays inside the service."""
+
+    from app.feedback.repository import FirstPartyFeedbackRepository
+    from app.feedback.service import FeedbackReportService
+
+    return FeedbackReportService(
+        FirstPartyFeedbackRepository(),
+        analytics=get_product_analytics_service(),
+    )
+
+
+def get_bound_decision_resolver():
+    """Owner-bound decision lookup for feedback and analytics references."""
+
+    from app.feedback.decisions import resolve_bound_decision
+
+    snapshots = get_shopping_decision_snapshot_repository()
+
+    def resolve(decision_id: str, owner: object):
+        return resolve_bound_decision(decision_id, owner, snapshots)
+
+    return resolve

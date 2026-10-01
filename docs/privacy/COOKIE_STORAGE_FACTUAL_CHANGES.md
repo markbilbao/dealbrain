@@ -25,6 +25,15 @@ See [`ENGINEERING_PII_INVENTORY.md`](ENGINEERING_PII_INVENTORY.md) for fields, f
 
 Product-architecture labels (functional / owner-binding) are **not** legal category conclusions.
 
+## Sprint 39.1 factual addendum
+
+PiqSavi now has two more first-party cookies:
+
+- `piqsavi_tracking_preference` remembers `essential_only` or `analytics_allowed`, the consent schema version, and `selected_at`. It does not store a user id, email, session id, access token, decision contents, or questions. It is preference storage for the shopper's own choice.
+- `piqsavi_analytics_subject` is a random opaque id. It is created only after an explicit analytics opt-in and deleted on opt-out.
+
+Both use an engineering max-age of 400 days. That is an **ENGINEERING / PRODUCT TTL**, not a legal retention period. The global third-party tracking hook stays essential-only. EXT-22 remains `not_started`. This is not an external CMP and not advertising consent.
+
 ## What this file is not
 
 - Not a published cookie notice

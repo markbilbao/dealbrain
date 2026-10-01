@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+from app.analytics.presentation import tracking_preference_notice
 from app.consumer.html import (
     ICON_ASK,
     ICON_BOOKMARK,
@@ -24,6 +25,7 @@ from app.consumer.html import (
     product_visual,
 )
 from app.consumer.pricing import format_money
+from app.consumer.uuid import is_canonical_uuid
 from app.consumer.view_models import DecisionPageView, ProductCardView
 from app.privacy.tracking import HTML_TRACKING_MODE_ATTR
 
@@ -31,7 +33,10 @@ from app.privacy.tracking import HTML_TRACKING_MODE_ATTR
 def _offer_link(url: str, css: str) -> str:
     if not url:
         return ""
-    return f'<a class="{css}" href="{h(url)}" rel="nofollow noopener">View offer</a>'
+    return (
+        f'<a class="{css}" href="{h(url)}" rel="nofollow noopener" '
+        f'data-analytics-event="outbound_merchant_click">View offer</a>'
+    )
 
 
 def _price_text(card: ProductCardView) -> str:
@@ -42,16 +47,16 @@ def _card_title(card: ProductCardView) -> str:
     return card.model or card.display_name
 
 
-def render_page(view: DecisionPageView) -> str:
+def render_page(view: DecisionPageView, *, show_tracking_choice: bool = False) -> str:
     body = {
         "results": _results_main,
         "compare": _compare_main,
         "why": _why_main,
     }[view.page](view)
-    return _document(view, body)
+    return _document(view, body, show_tracking_choice=show_tracking_choice)
 
 
-def _document(view: DecisionPageView, main: str) -> str:
+def _document(view: DecisionPageView, main: str, *, show_tracking_choice: bool = False) -> str:
     title = (
         "PiqSavi — Offer details unavailable"
         if view.data_unavailable
@@ -125,7 +130,8 @@ def _document(view: DecisionPageView, main: str) -> str:
         <div class="ask-panel-body" id="ask-panel-body" aria-live="polite"></div>
       </div>
     </div>
-    {_decision_footer()}
+    {tracking_preference_notice() if show_tracking_choice else ""}
+    {_decision_footer(view)}
     <script type="module" src="/static/consumer/js/consumer.js"></script>
   </body>
 </html>
@@ -185,12 +191,16 @@ def _decision_path(view: DecisionPageView) -> str:
     }[view.page]
 
 
-def _decision_footer() -> str:
-    return """
+def _decision_footer(view: DecisionPageView) -> str:
+    if is_canonical_uuid(view.decision_id):
+        report_href = f"/support?decision_id={h(view.decision_id)}#report"
+    else:
+        report_href = "/support#report"
+    return f"""
     <footer class="decision-footer">
       <nav aria-label="Support and legal">
         <a href="/support">Support</a>
-        <a href="/support#report">Report incorrect information</a>
+        <a href="{report_href}">Report incorrect information</a>
         <a href="/account">Account</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
@@ -432,6 +442,7 @@ def _hero_card(view: DecisionPageView) -> str:
             {_offer_link(best.offer_url, "btn btn-gradient")}
             <button type="button" class="icon-btn" aria-label="Save this Piq">{ICON_BOOKMARK}</button>
           </div>
+          {_feedback_controls()}
         </div>
         <div class="hero-score" id="piqscore">
           {piqscore_gauge(best.piqscore.value)}
@@ -444,6 +455,16 @@ def _hero_card(view: DecisionPageView) -> str:
         </div>
       </div>
     </article>
+    """
+
+
+def _feedback_controls() -> str:
+    return """
+    <div class="feedback-actions" data-feedback-controls>
+      <button type="button" class="btn btn-secondary btn-compact" data-feedback-category="recommendation_helpful">Helpful</button>
+      <button type="button" class="btn btn-secondary btn-compact" data-feedback-category="recommendation_not_helpful">Not helpful</button>
+      <p class="form-status" data-feedback-status role="status"></p>
+    </div>
     """
 
 

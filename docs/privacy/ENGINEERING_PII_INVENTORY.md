@@ -71,5 +71,5 @@ Controller / processor / subprocessor roles are **TBD — counsel-owned**. See [
 
 - Minimum age / parental consent — counsel-owned; **not coded**; fail-closed placeholder reports `age_policy_published=false` and registration does not collect DOB
 - Marketing consent as a legal basis — not added; `newsletter` / `marketing_enabled` remain preference flags
-- Analytics / cookie CMP consent — EXT-22 `not_started`; no banner; essential-only fail-closed hook in `app/privacy/tracking.py`; Sprint 39 owns activation
+- Analytics / cookie CMP consent — EXT-22 remains `not_started`. There is still no external CMP. `banner_implemented` stays false. Sprint 39.1 adds a first-party essential-only default plus an explicit optional analytics choice. That choice is not legal approval and does not enable advertising.
 - Engineering retention map — [`ENGINEERING_RETENTION.md`](ENGINEERING_RETENTION.md) (technical TTLs only; not a legal schedule)

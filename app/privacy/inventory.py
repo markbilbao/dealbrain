@@ -42,6 +42,8 @@ NON_ACCOUNT_BROWSER_STORES: tuple[str, ...] = (
     "piqsavi_decision_owner",
     "piqsavi_delivery",
     "piqsavi_shopping_market",
+    "piqsavi_tracking_preference",
+    "piqsavi_analytics_subject",
     "piqsavi_ask_conversation",
     "piqsavi_access_token",
     "piqsavi_remember_me",

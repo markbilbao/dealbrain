@@ -188,6 +188,38 @@ class OperationalStore:
                 items = items[: max(0, limit)]
         return items
 
+    def insert_immutable(
+        self,
+        store: str,
+        entity_id: str,
+        entity: Any,
+        *,
+        secondary_key: str | None = None,
+        owner_id: str | None = None,
+        version: int = 1,
+    ) -> Any:
+        """Insert one row. Never updates an existing entity.
+
+        A duplicate ``entity_id`` or ``secondary_key`` raises
+        ``PersistenceConflictError``. Callers decide whether that conflict is
+        a retry of the same contents or a closed failure.
+        """
+
+        row = OperationalEntityModel(
+            store=store,
+            entity_id=entity_id,
+            secondary_key=secondary_key,
+            owner_id=owner_id,
+            payload=encode_entity(entity),
+            seq=version,
+        )
+        self._session.add(row)
+        try:
+            self._session.flush()
+        except IntegrityError as exc:
+            raise translate_db_error(exc) from exc
+        return entity
+
     def delete(self, store: str, entity_id: str) -> bool:
         result = self._session.execute(
             delete(OperationalEntityModel).where(

@@ -1,4 +1,9 @@
-"""Fail-closed tracking permission — essential-only until Sprint 39 / EXT-22.
+"""Fail-closed third-party tracking permission — essential-only.
+
+Sprint 39.1 adds a separate first-party analytics preference. That preference
+does not flip these globals, does not set a CMP vendor, and does not set an
+external analytics provider. Silence stays essential-only. EXT-22 stays
+not_started.
 
 PiqSavi currently has no approved non-essential analytics provider. This module
 does not implement a CMP banner, does not load third-party pixels, and does not
