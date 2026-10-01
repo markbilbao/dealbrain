@@ -257,4 +257,4 @@ Sprints 31–38 own certified research orchestration, router/provider execution 
 
 The Sprint 31 research execution router / certified provider contract is implemented as planning only. See [`SPRINT_31_RESEARCH_EXECUTION_ROUTER.md`](SPRINT_31_RESEARCH_EXECUTION_ROUTER.md).
 
-Live research execution remains **not implemented**. The next bounded step is Sprint 32–36 provider/market certification, then Sprint 38 execution — not uncontrolled live research.
+Sprint 29 and this contract still own proposal, confirmation, and the authorization artifact only. They do not own Sprint 38 code. Sprint 38 now contains the engineered execution continuation. Live production execution remains NOT OPERATIONAL and awaits Sprint 41 validation. That validation is not another independent Sprint 38 engineering slice, and it is not uncontrolled live research.

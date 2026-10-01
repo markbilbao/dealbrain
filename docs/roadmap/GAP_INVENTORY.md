@@ -192,7 +192,7 @@ Current PH-only closure (2026-09-26), which supersedes the open-work reading of 
 | AI-provider and affiliate-provider failure behavior | `planned_underspecified` | 38 |
 | App readiness ≠ full merchant availability | `implemented_verified` (principle) | 22 / 38 |
 
-Current Sprint 38 closure reading (2026-09-30, corrected before merge), which supersedes the open-work reading of the rows above for the PH one-connector beta: repository state and fake-transport adapter tests exist, and the shopper path still stops at durable preparation. Positive composition and canonical-results plumbing are remaining Sprint 38 engineering. The sprint is not live, not production-deployed, and not launch-ready. Multi-connector live chaos is future scope and does not block this beta. Production probes, alerts, paging, and incident operations are Sprint 42. Real Shopify validation, the production UCP profile, and the deployed kill-switch drill are blocked on Sprint 41. Sprint 41 does not own domain engine changes. Query-time Shopify policy refuses persistent cache admission. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False. Sprint 38 stays IN PROGRESS and is not COMPLETE / CLOSED. Audit: [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md).
+Current Sprint 38 closure reading (2026-10-01, after merged PR #175), which supersedes the open-work reading of the rows above for the PH one-connector beta: positive shopper composition is implemented. Production composition is structurally wired behind closed gates. Durable evidence and canonical Results integration are implemented. Fake transport cannot become production evidence. Class B count is 0. Engineering is ENGINEERING COMPLETE. Real Shopify validation remains blocked on Sprint 41. Sprint 38 remains IN PROGRESS and live execution remains NOT OPERATIONAL. The sprint is not COMPLETE / CLOSED, not production-deployed, and not launch-ready. The B1/B2 slice is merged. No further independent Sprint 38 engineering slice is currently identified. Sprint 38 stays open awaiting Sprint 41-dependent validation. Do not enable routing, provider status, public PH shopping coverage, or live mode merely to close Sprint 38. Multi-connector live chaos is future scope and does not block this beta. Production probes, alerts, paging, and incident operations are Sprint 42. The production UCP profile and the deployed kill-switch drill are blocked on Sprint 41. Sprint 41 does not own domain engine changes. Query-time Shopify policy refuses persistent cache admission. `DESTINATION_REEVALUATION_IMPLEMENTED` stays False. Sprint 39 may begin now; predecessors are Sprint 28 and Sprint 29. Sprint 40 may run in parallel with Sprint 39. Sprint 41 starts after Sprint 40; production-infrastructure preparation may overlap Sprint 40 where already documented. Sprint 42 remains after Sprint 41. The dated addenda below keep the pre-slice classifications as history. Audit: [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md).
 
 ---
 
@@ -1128,6 +1128,8 @@ This addendum does **not** rewrite earlier snapshots. The live-start note that a
 
 ## 2026-09-30 Sprint 38 closure-readiness audit addendum
 
+Historical pre-B1/B2 closure reading. Superseded for current status by the section F reading above and by the 2026-10-01 post-merge addendum below. The Class B count of 2 and `SPRINT_38_ENGINEERING_STATUS` of IN PROGRESS in the table are the record of that correction, not the current engineering status. Current engineering status is ENGINEERING COMPLETE. Class B count is 0.
+
 This addendum does **not** rewrite earlier snapshots. It records the closure-readiness audit after the Shopify execution adapter. A same-day correction, before merge, withdraws the first draft's engineering-complete verdict and its Class B count of zero. It does **not** complete or close Sprint 38, does **not** start Sprint 41 or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage. It does **not** implement the remaining engineering.
 
 | Field | Value |
@@ -1169,4 +1171,25 @@ This addendum does **not** rewrite earlier snapshots. It records the bounded eng
 | Real Shopify validation | Blocked on Sprint 41 production profile plus routing and operational eligibility. Real calls stay 0 |
 | Routing / provider / public markets | Routing 0. Provider DISABLED. Public certified shopping markets 0 |
 | Sprint 41 / Sprint 42 | Sprint 41 remains UNSTARTED. Sprint 42 remains later operations work |
+| Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |
+
+## 2026-10-01 Sprint 38 post-merge roadmap reconciliation
+
+This addendum does **not** rewrite earlier snapshots, including the pre-slice closure reading that recorded Class B count 2. PR #175 is merged on `07d94bd71d4bbf6ea656c1f20f44f3cb772bddfe`. It does **not** close Sprint 38, does **not** start Sprint 39, Sprint 40, Sprint 41, or Sprint 42, does **not** deploy, does **not** call Shopify, and does **not** enable public PH shopping coverage.
+
+| Field | Value |
+|-------|-------|
+| B1/B2 slice | Merged. No further independent Sprint 38 engineering slice is currently identified |
+| Engineering | ENGINEERING COMPLETE. Class B count is 0 |
+| Closure | IN PROGRESS. Waiting on Sprint 41-dependent validation. Not LIVE OPERATIONAL. Not COMPLETE / CLOSED. Not PRODUCTION DEPLOYED. Not LAUNCH READY |
+| Positive composition | Implemented. Production composition is structurally wired behind closed gates |
+| Durable evidence and canonical Results | Implemented. Fake transport cannot become production evidence |
+| Real Shopify validation | Blocked on Sprint 41. Real calls stay 0 |
+| Routing / provider / public markets | Routing 0. Provider `ph-shopify-global-catalog` DISABLED. Public certified shopping markets 0. Production UCP profile undeployed |
+| Sprint 39 | May begin now. Predecessors are Sprint 28 and Sprint 29 |
+| Sprint 40 | May run in parallel with Sprint 39 |
+| Sprint 41 | Starts after Sprint 40. Production-infrastructure preparation may overlap Sprint 40 where already documented. Remains UNSTARTED. Does not own domain engine changes |
+| Sprint 42 | Remains after Sprint 41. Still owns production probes, alerts, paging, and incident operations |
+| Sprint 44 / 45 | Still own claims, rehearsal, public activation, and launch |
+| Do not | Enable routing, provider status, public PH coverage, or live mode merely to close Sprint 38 |
 | Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |

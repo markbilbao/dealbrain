@@ -82,7 +82,10 @@ Every follow-up resolves to exactly one server-selected action:
    [`PHASE_29_4B_SESSION_RECOMMENDATION_REFINEMENT.md`](PHASE_29_4B_SESSION_RECOMMENDATION_REFINEMENT.md).
 3. `propose_research` — implemented in Phase 29.4C as a pending confirmation
    boundary. Explicit confirmation is turned into a Research Authorization /
-   Execution Handoff Contract; live execution remains unimplemented. See
+   Execution Handoff Contract. Sprint 29 still owns proposal and confirmation
+   only. Sprint 38 contains the engineered execution continuation. Live
+   production execution remains NOT OPERATIONAL and awaits Sprint 41
+   validation. Sprint 29 does not own Sprint 38 code. See
    [`PHASE_29_4C_PROPOSE_RESEARCH.md`](PHASE_29_4C_PROPOSE_RESEARCH.md) and
    [`RESEARCH_AUTHORIZATION_HANDOFF_CONTRACT.md`](RESEARCH_AUTHORIZATION_HANDOFF_CONTRACT.md).
 
