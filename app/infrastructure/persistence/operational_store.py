@@ -188,6 +188,34 @@ class OperationalStore:
                 items = items[: max(0, limit)]
         return items
 
+    def list_newest_inserted(
+        self,
+        store: str,
+        cls: type[T],
+        *,
+        limit: int,
+    ) -> list[T]:
+        """Newest database-inserted rows for one exact store.
+
+        Order is the monotonic operational row primary key, descending.
+        ``seq`` is not an insertion clock. Immutable Sprint 39 rows are
+        written with ``version=1``, so every row shares ``seq = 1``.
+        ``list(reverse=True)`` therefore still returns older inserted rows
+        first when those versions tie.
+
+        ``limit`` is a hard cap. ``id`` is unique, so the order is
+        deterministic without a secondary key.
+        """
+
+        stmt: Select[Any] = (
+            select(OperationalEntityModel)
+            .where(OperationalEntityModel.store == store)
+            .order_by(OperationalEntityModel.id.desc())
+            .limit(max(0, limit))
+        )
+        rows = self._session.scalars(stmt).all()
+        return [decode_entity(cls, row.payload) for row in rows]
+
     def insert_immutable(
         self,
         store: str,

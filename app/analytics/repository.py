@@ -40,6 +40,17 @@ class FirstPartyProductAnalyticsRepository(SessionBound):
         with self._ops() as ops:
             return ops.list(PRODUCT_ANALYTICS_EVENTS, ProductAnalyticsEvent)
 
+    def list_recent(self, limit: int) -> list[ProductAnalyticsEvent]:
+        """Newest inserted rows only. ``limit`` is a hard cap."""
+
+        bounded = max(0, limit)
+        with self._ops() as ops:
+            return ops.list_newest_inserted(
+                PRODUCT_ANALYTICS_EVENTS,
+                ProductAnalyticsEvent,
+                limit=bounded,
+            )
+
     def count(self) -> int:
         with self._ops() as ops:
             return ops.count(PRODUCT_ANALYTICS_EVENTS)

@@ -21,7 +21,7 @@ EXT-15 remains `not_started`. The external register allows a privacy-safe first-
 - Preference cookie `piqsavi_tracking_preference` (choice, schema, selected time only)
 - Opaque analytics subject cookie created only after opt-in and deleted on opt-out
 - Advertising remains unavailable
-- Event schema `piqsavi.product_analytics.v1` with the full roadmap vocabulary. The browser may submit only `results_viewed`, `compare_opened`, `why_opened`, and `outbound_merchant_click`, each with fixed surface / action / outcome semantics. Server-owned names are rejected on `/analytics/events`. Trusted server code uses a separate validator. A client-supplied decision id that does not resolve for the current owner returns `decision_not_found` and writes no row
+- Event schema `piqsavi.product_analytics.v1` with the full roadmap vocabulary. As of this slice the browser could submit only `results_viewed`, `compare_opened`, `why_opened`, and `outbound_merchant_click`, each with fixed surface / action / outcome semantics. Sprint 39.2 adds `ask_opened` and `ask_closed` to that client set. Other names stay server-owned and are rejected on `/analytics/events`. Trusted server code uses a separate validator. A client-supplied decision id that does not resolve for the current owner returns `decision_not_found` and writes no row
 - `product.analytics_events` and `product.feedback_reports` are documented in the engineering PII inventory. Account export excludes them. Account delete does not cascade them in this slice. That is remaining privacy-integration work, not a legal retention exception
 - `ProductAnalyticsSink`, `NullProductAnalyticsSink`, and `FirstPartyProductAnalyticsRepository`
 - Consent-off suppression with zero analytics rows; consent-on durable rows in `operational_entities` namespace `product.analytics_events`
@@ -33,6 +33,8 @@ EXT-15 remains `not_started`. The external register allows a privacy-safe first-
 - View offer click instrumentation as `outbound_merchant_click` without storing the destination URL and without affiliate parameters
 
 ### Still remaining
+
+Remaining at the end of 39.1. The 39.2 section below is the current slice. Do not read this list as the status after 39.2.
 
 - Broader funnel instrumentation, including decision started/completed coverage beyond this slice
 - Beta-learning dashboards and staging populated-event evidence
@@ -47,7 +49,47 @@ Search Console setup remains an owner action. Do not treat this slice as verific
 
 ### Engineering retention
 
-`PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS` is 400. That is an **ENGINEERING / PRODUCT TTL**, not legal retention. Sprint 39.1 does not run a purge job. See [`../../privacy/ENGINEERING_RETENTION.md`](../../privacy/ENGINEERING_RETENTION.md).
+`PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS` is 400. That is an **ENGINEERING / PRODUCT TTL**, not legal retention. Sprint 39.1 does not run a purge job. Sprint 39.2 does not add one. A cookie max-age of 400 days does not delete stored rows. See [`../../privacy/ENGINEERING_RETENTION.md`](../../privacy/ENGINEERING_RETENTION.md).
+
+## Sprint 39.2 — core funnel instrumentation and beta-learning dashboard
+
+Sprint 39 stays **IN PROGRESS**. This slice does not close it, does not deploy staging, and does not mark EXT-15, EXT-22, or EXT-29 started.
+
+### Implemented
+
+- Server observers for research proposal, confirmation, decline, start, completion, and failure, recorded only after those services already transition. Closed production gates do not emit start or failure. `research_partial` stays uninstrumented because no authoritative partial transition exists
+- `ask_evidence_answered` for evidence status `answered` only, with no answer text
+- Browser `ask_opened` / `ask_closed` with exact surface, action, and outcome
+- Recommendation refinement attempted versus applied, using the refinement service flag
+- `updated_results_viewed` only when the server resolves an owner snapshot with `context_version > 1`
+- `ProductLearningDashboardService`, separate from the Sprint 22 launch dashboard, Sprint 21 merchant analytics, and Sprint 19 shopper dashboard
+- Internal `GET /api/v1/launch/product-learning` and `GET /api/v1/launch/product-feedback`, reusing the existing demo/internal launch admin token. Not production IAM
+- Feedback review queue with report id, category, time, product id, context version, surface, status, and message. No owner digest, analytics subject, or decision id
+- Learning cadence and an empty staging evidence template
+- Search Console left explicitly deferred
+- Dashboard and feedback review scan the newest inserted operational rows (`id` descending), then filter by event `occurred_at` or report `created_at`. Immutable rows share `seq = 1`, so `seq` is not the scan order. A truncated scan stays partial and still withholds returning and repeat-decision metrics
+
+### Decision events
+
+`decision_started` and `decision_completed` have emitters and tests, and no production caller. No current service creates the initial canonical decision snapshot. Definitions are in [`../../analytics/CORE_FUNNEL_EVENTS.md`](../../analytics/CORE_FUNNEL_EVENTS.md). The completion rate, when events exist, is a distinct authorized decision-hash ratio.
+
+### Support paths
+
+- Direct support email: the existing mailto to `support@piqsavi.com` reaches the monitored EXT-17 inbox. This slice does not re-provision mail
+- Structured in-product feedback: stored in `product.feedback_reports` and shown on the internal review queue. These reports are not emailed
+
+### Still remaining after 39.2
+
+- Actual staging deployment and filled staging evidence
+- A production path that creates the initial canonical decision, so `decision_started` / `decision_completed` can be emitted truthfully
+- `research_partial`, if a real partial transition is added later
+- Final monitored workflow evidence beyond the existing support inbox and the internal review queue
+- Retention purge. The 400-day engineering TTL is still not a delete job
+- Search Console setup, or this deferral left in place with no ranking claim
+- Production project and environment separation
+- Account export and account deletion still exclude `product.analytics_events` and `product.feedback_reports`. No identity join was added
+- EXT-15 external provider decision, if still desired
+- EXT-22 external CMP decision, if still desired
 
 ## Objective
 

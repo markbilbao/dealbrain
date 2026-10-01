@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.analytics.learning import ProductLearningDashboardService
 from app.core.config import settings
 from app.core.dependencies import (
     get_db,
@@ -15,6 +16,7 @@ from app.core.dependencies import (
     get_launch_dashboard_service,
     get_launch_demo_service,
     get_launch_performance_service,
+    get_product_learning_dashboard_service,
 )
 from app.core.validation import validate_settings
 from app.domain.exceptions import (
@@ -23,6 +25,7 @@ from app.domain.exceptions import (
     LaunchValidationError,
 )
 from app.launch.feature_flags import get_feature_flags
+from app.launch.internal_auth import require_internal_launch_admin
 from app.schemas.health import ServiceStatus
 from app.schemas.launch import ChecklistUpdateRequest, ConfigImportRequest, DemoSwitchRequest
 from app.services.launch_config_service import LaunchConfigService
@@ -53,11 +56,8 @@ def _require_launch_enabled() -> None:
 
 def _require_admin(authorization: str | None) -> None:
     """Demo admin gate — bearer demo-token-internal-admin (no real IAM)."""
-    if not authorization or not authorization.lower().startswith("bearer "):
-        raise LaunchAuthorizationError("Admin bearer token required")
-    token = authorization.split(" ", 1)[1].strip()
-    if token != "demo-token-internal-admin":
-        raise LaunchAuthorizationError("Internal admin token required for this action")
+
+    require_internal_launch_admin(authorization)
 
 
 @router.get(
@@ -284,3 +284,47 @@ def performance_clear(
         raise _map_error(exc) from exc
     cleared = service.invalidate_namespace("*")
     return {"cleared": cleared, "stats": service.stats()}
+
+
+@router.get(
+    "/product-learning",
+    summary="Internal beta-learning dashboard for consented first-party analytics",
+)
+def product_learning_dashboard(
+    window: str = "7d",
+    authorization: str | None = Header(default=None),
+    service: ProductLearningDashboardService = Depends(get_product_learning_dashboard_service),
+) -> dict[str, Any]:
+    """Operator aggregate. Not a public consumer route and not production IAM."""
+
+    _require_launch_enabled()
+    try:
+        _require_admin(authorization)
+        return service.summary(window, environment=settings.app_env)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except LaunchAuthorizationError as exc:
+        raise _map_error(exc) from exc
+
+
+@router.get(
+    "/product-feedback",
+    summary="Internal feedback review queue",
+)
+def product_feedback_review(
+    limit: int = 50,
+    category: str | None = None,
+    window: str | None = None,
+    authorization: str | None = Header(default=None),
+    service: ProductLearningDashboardService = Depends(get_product_learning_dashboard_service),
+) -> dict[str, Any]:
+    """Bounded operator review. The submitted message is included. Identity is not."""
+
+    _require_launch_enabled()
+    try:
+        _require_admin(authorization)
+        return service.feedback_review(limit=limit, category=category, window=window)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except LaunchAuthorizationError as exc:
+        raise _map_error(exc) from exc

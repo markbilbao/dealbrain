@@ -7,6 +7,7 @@ from typing import Any
 from starlette.requests import Request
 from starlette.responses import Response
 
+from app.analytics.funnel import emit_refinement_observations, emit_research_observations
 from app.analytics.identity import identity_kind_for_owner
 from app.analytics.preference import (
     ANALYTICS_SUBJECT_COOKIE,
@@ -32,10 +33,13 @@ def emit_ask_product_events(
     owner: ConversationOwner | None,
     analytics: ProductAnalyticsService,
     snapshots: Any,
+    processing: dict[str, Any] | None = None,
 ) -> None:
-    """Record ask submission and insufficient-evidence when consent allows.
+    """Record Ask and related server transitions when consent allows.
 
     Failures are swallowed. Shopping answers must not depend on analytics.
+    ``ask_evidence_answered`` is emitted only for status ``answered``.
+    Question and answer text are not parameters.
     """
 
     try:
@@ -86,5 +90,17 @@ def emit_ask_product_events(
                 evidence_count=count,
                 outcome="insufficient_evidence",
             )
+        elif answer_status == "answered":
+            analytics.record_server_event(
+                context,
+                event_name="ask_evidence_answered",
+                surface=safe_surface,
+                action_type="submit",
+                evidence_count=count,
+                outcome="answered",
+            )
+        observed = processing if isinstance(processing, dict) else {}
+        emit_research_observations(context, observed, analytics)
+        emit_refinement_observations(context, observed, analytics)
     except Exception:
         return

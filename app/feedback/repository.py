@@ -43,6 +43,17 @@ class FirstPartyFeedbackRepository(SessionBound):
         with self._ops() as ops:
             return ops.list(PRODUCT_FEEDBACK_REPORTS, FeedbackReport)
 
+    def list_recent(self, limit: int) -> list[FeedbackReport]:
+        """Newest inserted reports only. ``limit`` is a hard cap."""
+
+        bounded = max(0, limit)
+        with self._ops() as ops:
+            return ops.list_newest_inserted(
+                PRODUCT_FEEDBACK_REPORTS,
+                FeedbackReport,
+                limit=bounded,
+            )
+
     def count(self) -> int:
         with self._ops() as ops:
             return ops.count(PRODUCT_FEEDBACK_REPORTS)

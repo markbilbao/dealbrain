@@ -9,7 +9,8 @@ The horizon is long enough for DAU and MAU if a later slice enforces expiry.
 from __future__ import annotations
 
 # Days a first-party analytics preference or subject cookie may live.
-# Event rows are not deleted by this constant in Sprint 39.1.
+# Event rows are not deleted by this constant. Sprint 39.2 does not add a purge job.
+# Cookie max-age is not row expiry.
 PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS = 400
 
 PRODUCT_ANALYTICS_ENGINEERING_TTL_SECONDS = PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS * 24 * 60 * 60

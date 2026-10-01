@@ -51,13 +51,16 @@ EVENT_NAMES: frozenset[str] = frozenset(
 )
 
 # Events the browser can truthfully observe in the current UI.
-# ``ask_opened`` / ``ask_closed`` stay server-only until a real UI emitter exists.
+# ``ask_opened`` / ``ask_closed`` are panel open/close only. Every other name
+# stays server-owned, including decision, research, and Ask outcomes.
 CLIENT_EVENT_NAMES: frozenset[str] = frozenset(
     {
         "results_viewed",
         "compare_opened",
         "why_opened",
         "outbound_merchant_click",
+        "ask_opened",
+        "ask_closed",
     }
 )
 SERVER_EVENT_NAMES: frozenset[str] = EVENT_NAMES - CLIENT_EVENT_NAMES
@@ -83,6 +86,24 @@ CLIENT_EVENT_SEMANTICS: dict[str, dict[str, str | frozenset[str]]] = {
         "action_type": "click",
         "outcome": "clicked",
     },
+    "ask_opened": {
+        "surface": "ask",
+        "action_type": "open",
+        "outcome": "opened",
+    },
+    "ask_closed": {
+        "surface": "ask",
+        "action_type": "close",
+        "outcome": "closed",
+    },
+}
+EXACT_CLIENT_FIELDS: dict[str, frozenset[str]] = {
+    "ask_opened": frozenset(
+        {"event_name", "event_id", "decision_id", "surface", "action_type", "outcome"}
+    ),
+    "ask_closed": frozenset(
+        {"event_name", "event_id", "decision_id", "surface", "action_type", "outcome"}
+    ),
 }
 
 # Stored properties. ``event_name`` is required even though callers also pass it
@@ -186,7 +207,9 @@ FORBIDDEN_ANALYTICS_FIELDS: frozenset[str] = frozenset(
 )
 
 SURFACES: frozenset[str] = frozenset({"results", "compare", "why", "ask", "support", "account"})
-ACTION_TYPES: frozenset[str] = frozenset({"view", "open", "submit", "click", "report"})
+ACTION_TYPES: frozenset[str] = frozenset(
+    {"view", "open", "close", "submit", "click", "report", "start", "complete"}
+)
 LATENCY_BANDS: frozenset[str] = frozenset(
     {"under_100ms", "under_300ms", "under_1s", "under_3s", "over_3s"}
 )
@@ -209,6 +232,16 @@ OUTCOMES: frozenset[str] = frozenset(
         "source_issue",
         "bug",
         "other_feedback",
+        "closed",
+        "started",
+        "completed",
+        "answered",
+        "attempted",
+        "applied",
+        "proposed",
+        "confirmed",
+        "declined",
+        "failed",
     }
 )
 IDENTITY_KINDS: frozenset[str] = frozenset({"guest", "authenticated"})
@@ -317,7 +350,13 @@ def validate_client_event_payload(payload: Any) -> str | None:
         return "invalid_turn_number"
     if _bounded_int(payload, "evidence_count", 0, 10_000):
         return "invalid_evidence_count"
-    return _client_event_semantics(payload)
+    semantics = _client_event_semantics(payload)
+    if semantics is not None:
+        return semantics
+    exact = EXACT_CLIENT_FIELDS.get(event_name) if isinstance(event_name, str) else None
+    if exact is not None and any(key not in exact for key in payload):
+        return "contradictory_event"
+    return None
 
 
 SERVER_EVENT_INPUT_FIELDS: frozenset[str] = CLIENT_EVENT_FIELDS - {"decision_id"}
