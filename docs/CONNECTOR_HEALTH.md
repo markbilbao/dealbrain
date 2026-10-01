@@ -78,6 +78,8 @@ Monitoring must not call this provider healthy, live, available, or
 production-ready while it is disabled. Registration and trusted
 reduced-capability certification do not make the connector healthy.
 
+Historical foundation status. Superseded by the 2026-09-30 closure-readiness section below.
+
 Sprint 38 engineering foundation (2026-09-26) is **IN PROGRESS** and is not
 complete. Connector health for this disabled provider stays not healthy, not
 live, and not available. The foundation adds a separate health report and
@@ -147,10 +149,14 @@ Current Shopify production state cannot acquire either reservation.
 ``SHOPPING_RESEARCH_EXECUTION_MODE`` stays disabled. Production deployment
 remains Sprint 41. Alerts, paging, and synthetic probes remain Sprint 42.
 
-Sprint 38 closure-readiness audit (2026-09-30) is the current reading.
-Engineering is ENGINEERING COMPLETE. Sprint 38 stays IN PROGRESS and is
-not COMPLETE / CLOSED. Live execution stays NOT OPERATIONAL. Confirmed
-research can continue through the live-start claim and the Shopify adapter
+Sprint 38 closure-readiness audit (2026-09-30), read after merged PR #175,
+is the current reading. It supersedes the 2026-09-26 foundation statement
+that Sprint 38 engineering was still incomplete.
+Engineering is ENGINEERING COMPLETE. The B1/B2 slice is merged. No further
+independent Sprint 38 engineering slice is currently identified. Class B
+count is 0. Sprint 38 stays IN PROGRESS awaiting Sprint 41-dependent
+validation and is not COMPLETE / CLOSED. Live execution stays NOT OPERATIONAL.
+Confirmed research can continue through the live-start claim and the Shopify adapter
 when every production gate is open. Current gates are closed, so production
 composition refuses before transport. The permanent
 ``production_execution_not_wired`` fallback was removed. Fake transport

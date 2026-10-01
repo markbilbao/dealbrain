@@ -131,4 +131,4 @@ If 29.4B already refined session Best Piq, that overlay remains. A later authori
 
 29.4C still owns proposal creation and the explicit-confirmation classifier. A later Research Authorization / Execution Handoff Contract turns explicit confirmation of the exact active proposal into a server-authoritative authorization.
 
-Live research execution remains owned by Sprints 31–38. A proposal is not authorization, and authorization is not execution.
+Sprint 29 still owns proposal and confirmation only. Sprint 38 contains the engineered execution continuation. Live production execution remains NOT OPERATIONAL and awaits Sprint 41 validation. Sprint 29 does not own Sprint 38 code. A proposal is not authorization, and authorization is not execution.

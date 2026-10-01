@@ -255,7 +255,7 @@ These candidates stay outside Class B:
 | Multi-connector live chaos and cross-merchant live aggregation | F for this one-connector PH beta |
 | A new durable `cancelled` execution state | Pre-start cancellation already cancels the authorization and does not start research. Not a Class B item in this audit |
 
-A later B1 or B2 implementation may use deterministic repository fixtures. Those tests are not production live evidence. Fake transport output must not become a shopper-visible canonical live decision.
+B1 and B2 are implemented. Their tests may use deterministic repository fixtures. Those tests are not production live evidence. Fake transport output must not become a shopper-visible canonical live decision.
 
 ---
 
@@ -273,12 +273,14 @@ The bounded engineering slice for B1 and B2 is implemented:
 
 | Sprint | Dependency that matters here | Recommendation |
 |--------|------------------------------|----------------|
-| 38 | B1 and B2 are implemented. Real Shopify validation still needs Sprint 41 | Leave the sprint IN PROGRESS. Do not call it COMPLETE / CLOSED |
-| 39 | Predecessors are Sprint 28 and Sprint 29. Parallel with Sprint 40 | Sprint 39 may still run in parallel. It must not become a disguised Sprint 38 implementation |
-| 40 | Predecessors are Sprint 27, Sprint 28, and Sprint 29. Parallel with Sprint 39 | May run in parallel, as already documented |
-| 41 | Predecessor recommendation is Sprint 40. Non-goal: domain engine changes | Supplies the production environment, the production UCP profile, deployment, and the conditions for production validation. Does not own B1 or B2. Do not start Sprint 41 implementation in this audit |
-| 42 | Predecessor is Sprint 41 | Stays later. Owns probes, alerts, paging, and incident operations |
+| 38 | B1 and B2 are implemented and the slice is merged. No further independent Sprint 38 engineering slice is currently identified. Real Shopify validation still needs Sprint 41 | Leave the sprint IN PROGRESS. Do not call it COMPLETE / CLOSED. Do not enable anything merely to close Sprint 38 |
+| 39 | Predecessors are Sprint 28 and Sprint 29. Parallel with Sprint 40 | Sprint 39 may still run in parallel. It may begin now. It must not become a disguised Sprint 38 implementation |
+| 40 | Predecessors are Sprint 27, Sprint 28, and Sprint 29. Parallel with Sprint 39 | May run in parallel with Sprint 39, as already documented |
+| 41 | Predecessor recommendation is Sprint 40. Non-goal: domain engine changes | Starts after Sprint 40. Production-infrastructure preparation may overlap Sprint 40 where already documented. Supplies the production environment, the production UCP profile, deployment, and the conditions for production validation. Does not own B1 or B2. Do not start Sprint 41 implementation in this audit |
+| 42 | Predecessor is Sprint 41 | Remains after Sprint 41. Owns probes, alerts, paging, and incident operations |
 | 44 / 45 | Launch claims and the public PH market | Public certified shopping markets stay 0 until those gates |
+
+Post-merge reading (PR #175, `07d94bd71d4bbf6ea656c1f20f44f3cb772bddfe`): Sprint 38 is ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 validation. Sprint 39 may begin now. Sprint 40 may run in parallel with Sprint 39. Sprint 41 starts after Sprint 40 and remains UNSTARTED. Sprint 42 remains after Sprint 41. Sprint 44 and Sprint 45 still own claims, rehearsal, public activation, and launch. This note does not start those sprints and does not close Sprint 38.
 
 Do not enable routing, provider status, or the public PH market in order to manufacture a Sprint 38 close.
 
