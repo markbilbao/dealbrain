@@ -23441,6 +23441,162 @@
         ]
       }
     },
+    "/api/v1/launch/product-feedback": {
+      "get": {
+        "description": "Bounded operator review. The submitted message is included. Identity is not.",
+        "operationId": "product_feedback_review_api_v1_launch_product_feedback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Window"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Product Feedback Review Api V1 Launch Product Feedback Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Internal feedback review queue",
+        "tags": [
+          "launch-readiness"
+        ]
+      }
+    },
+    "/api/v1/launch/product-learning": {
+      "get": {
+        "description": "Operator aggregate. Not a public consumer route and not production IAM.",
+        "operationId": "product_learning_dashboard_api_v1_launch_product_learning_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "default": "7d",
+              "title": "Window",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Product Learning Dashboard Api V1 Launch Product Learning Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Internal beta-learning dashboard for consented first-party analytics",
+        "tags": [
+          "launch-readiness"
+        ]
+      }
+    },
     "/api/v1/launch/system-status": {
       "get": {
         "operationId": "system_status_api_v1_launch_system_status_get",

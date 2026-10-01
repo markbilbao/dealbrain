@@ -261,9 +261,7 @@ _RATE_LIMITER = ConfigurableRateLimiter(
         "registration": RateLimitRule(
             "registration", settings.rate_limit_registration_per_minute, 60
         ),
-        "auth_email": RateLimitRule(
-            "auth_email", settings.rate_limit_auth_email_per_minute, 60
-        ),
+        "auth_email": RateLimitRule("auth_email", settings.rate_limit_auth_email_per_minute, 60),
         "early_access_events": RateLimitRule(
             "early_access_events",
             settings.rate_limit_early_access_events_per_minute,
@@ -1717,6 +1715,19 @@ def get_launch_dashboard_service() -> LaunchDashboardService:
             campaign_counter=_campaigns,
         )
     return _LAUNCH_DASHBOARD_SERVICE
+
+
+def get_product_learning_dashboard_service():
+    """Read-only Sprint 39 product-learning aggregate. Does not write events."""
+
+    from app.analytics.learning import ProductLearningDashboardService
+    from app.analytics.repository import FirstPartyProductAnalyticsRepository
+    from app.feedback.repository import FirstPartyFeedbackRepository
+
+    return ProductLearningDashboardService(
+        FirstPartyProductAnalyticsRepository(),
+        FirstPartyFeedbackRepository(),
+    )
 
 
 def get_product_analytics_service():
