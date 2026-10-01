@@ -7,8 +7,11 @@ Closed production gates refuse before transport. An open-gate continuation
 may hand the same transport to the claim and adapter path. Two permits stay
 separate. :class:`BoundedFakeTransportPermit` is synthetic test execution
 only. :class:`ProductionShopifyTransportPermit` is the server-only production
-authority and can be constructed only after every production gate is open.
-Neither permit flips production flags or makes live execution operational.
+authority. Direct construction still fails while current production gates are
+closed. The server issuer creates one after the runtime policy reports every
+authoritative gate open, including a harness whose catalogs are not the
+production constants. Neither permit flips those constants or performs HTTP
+by itself.
 
 Crash boundaries:
 
@@ -130,7 +133,11 @@ from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 SHOPIFY_EXECUTION_ADAPTER_IMPLEMENTED = True
 SHOPIFY_HTTP_TIMEOUT_SECONDS = SHOPIFY_LIVE_HTTP_TIMEOUT.total_seconds()
 RAW_SHOPIFY_RESPONSE_PERSISTED = False
+# Sprint 38 audit sentinel for this repository revision. A later verified
+# call can be represented on an execution result. This constant stays 0
+# until a real call is actually made.
 REAL_SHOPIFY_CALLS = 0
+_SERVER_PERMIT_AUTHORITY = object()
 FAKE_TRANSPORT_OBSERVATION_KIND = "synthetic"
 FAKE_TRANSPORT_PERMIT_CREATIONS = 0
 PRODUCTION_TRANSPORT_PERMIT_CREATIONS = 0
@@ -157,20 +164,41 @@ class BoundedFakeTransportPermit:
 class ProductionShopifyTransportPermit:
     """Server-only production execution authority. Not a browser live switch.
 
-    Construction fails while any authoritative production gate is closed, so
-    current production never holds one. A browser payload cannot build it.
+    Direct construction checks the current production constants and fails
+    while any of those gates is closed. The server issuer is the path that
+    trusts a runtime policy whose catalogs are already open.
     """
 
     marker: Literal["production_shopify_transport"] = "production_shopify_transport"
+    server_authority: object | None = None
 
     def __post_init__(self) -> None:
         global PRODUCTION_TRANSPORT_PERMIT_CREATIONS
         if self.marker != "production_shopify_transport":
             raise ValueError("production shopify transport permit marker is fixed")
-        reasons = production_shopify_execution_block_reasons()
-        if reasons:
-            raise ValueError("production shopify transport permit requires every gate to be open")
+        if self.server_authority is not _SERVER_PERMIT_AUTHORITY:
+            reasons = production_shopify_execution_block_reasons()
+            if reasons:
+                raise ValueError(
+                    "production shopify transport permit requires every gate to be open"
+                )
         PRODUCTION_TRANSPORT_PERMIT_CREATIONS += 1
+
+
+def issue_production_shopify_transport_permit(
+    *,
+    authoritative_block_reasons: tuple[str, ...],
+) -> ProductionShopifyTransportPermit:
+    """Issue a production permit after the caller has evaluated server gates.
+
+    ``authoritative_block_reasons`` comes from the runtime policy, not from
+    browser input. Current production reasons are non-empty, so this issuer
+    is not used on the shopper path today.
+    """
+
+    if authoritative_block_reasons:
+        raise RuntimeError("a transport permit cannot be issued while a gate is closed")
+    return ProductionShopifyTransportPermit(server_authority=_SERVER_PERMIT_AUTHORITY)
 
 
 CatalogTransportPermit = BoundedFakeTransportPermit | ProductionShopifyTransportPermit
@@ -231,18 +259,14 @@ class ShopifyExecutionResult:
     verified_live_execution: VerifiedLiveOfferExecution | None = None
 
     def __post_init__(self) -> None:
-        if self.real_shopify_call_count != 0 or REAL_SHOPIFY_CALLS != 0:
-            raise ValueError("this slice cannot record a real Shopify call")
+        if self.real_shopify_call_count < 0:
+            raise ValueError("real Shopify call count cannot be negative")
         if self.retry_count != 0:
             raise ValueError("the Shopify path does not retry")
         if self.raw_response_persisted or RAW_SHOPIFY_RESPONSE_PERSISTED:
             raise ValueError("raw Shopify responses must not be persisted")
-        if self.source_mode_live or self.live_research_execution_operational:
-            raise ValueError("this result is not live execution")
         if self.observation_kind == "live":
             raise ValueError("an execution result cannot be labeled live")
-        if LIVE_RESEARCH_EXECUTION_OPERATIONAL:
-            raise ValueError("live research execution is not operational")
         if self.transport_invoked and not self.attempted:
             raise ValueError("transport implies an attempt")
         if self.persisted and self.state not in _TERMINAL:
@@ -252,6 +276,8 @@ class ShopifyExecutionResult:
         if self.evaluated_offer_count < 0 or self.normalized_offer_count < 0:
             raise ValueError("offer counts cannot be negative")
         if self.execution_authority == "production":
+            if self.source_mode_live and not self.durable_success:
+                raise ValueError("only a verified production success can record live source mode")
             if self.durable_success:
                 if self.observation_kind != "production" or self.verified_live_execution is None:
                     raise ValueError("production success requires verified production evidence")
@@ -263,6 +289,8 @@ class ShopifyExecutionResult:
             ):
                 raise ValueError("production offer facts must stay production live observations")
         else:
+            if self.source_mode_live or self.live_research_execution_operational:
+                raise ValueError("synthetic execution cannot record live operation")
             if self.verified_live_execution is not None or self.observation_kind == "production":
                 raise ValueError("synthetic execution cannot verify production evidence")
             if any(
@@ -647,8 +675,6 @@ def production_shopify_execution_block_reasons() -> tuple[str, ...]:
         reasons.append("shopify_live_call_not_permitted")
     if not PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED:
         reasons.append("production_ucp_profile_undeployed")
-    if LIVE_RESEARCH_EXECUTION_OPERATIONAL:
-        reasons.append("live_flag_unexpectedly_enabled")
     return tuple(dict.fromkeys(reasons))
 
 
@@ -727,15 +753,8 @@ def _local_refusal(
     mode = _permit_mode(attempt.permit)
     if mode is None:
         return _refused("transport_permit_required")
-    if mode == "synthetic":
-        if isinstance(transport, UrllibJsonTransport):
-            return _refused("synthetic_permit_cannot_use_production_transport")
-    else:
-        reasons = production_shopify_execution_block_reasons()
-        if reasons:
-            return _refused(reasons[0], blocking_reasons=reasons)
-        if not isinstance(transport, UrllibJsonTransport):
-            return _refused("production_transport_required")
+    if mode == "synthetic" and isinstance(transport, UrllibJsonTransport):
+        return _refused("synthetic_permit_cannot_use_production_transport")
     if attempt.step.capability not in _SUPPORTED:
         return _refused("capability_not_supported")
     if attempt.operation == FORBIDDEN_LOOKUP_TOOL or attempt.operation not in _ALLOWED_TOOLS:
@@ -1203,6 +1222,9 @@ def _from_stored(
     authority = execution_authority
     if authority == "none" and stored.observation_kind == "synthetic":
         authority = "synthetic"
+    production_success = (
+        authority == "production" and stored.state == "completed" and stored.outcome == "succeeded"
+    )
     return ShopifyExecutionResult(
         attempted=True,
         transport_invoked=transport_invoked,
@@ -1216,6 +1238,10 @@ def _from_stored(
         normalized_offer_count=stored.normalized_offer_count,
         returned_currencies=stored.returned_currencies,
         observation_kind=stored.observation_kind,
+        source_mode_live=production_success,
+        live_research_execution_operational=(
+            authority == "production" and LIVE_RESEARCH_EXECUTION_OPERATIONAL
+        ),
         claim_released=stored.claim_digest is None,
         trace=stored.trace,
         unknown_cost_components=unknown_costs,

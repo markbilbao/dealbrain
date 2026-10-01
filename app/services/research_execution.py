@@ -55,7 +55,6 @@ from app.research.routing import (
 )
 from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
 from app.research.sprint38_live_execution import (
-    LIVE_RESEARCH_EXECUTION_OPERATIONAL,
     SHOPPING_RESEARCH_EXECUTION_MODE,
     ExecutionTrace,
     LiveResearchTarget,
@@ -380,8 +379,6 @@ def execute_research_plan(
 
     if plan is None:
         raise ValueError("A research execution plan is required")
-    if LIVE_RESEARCH_EXECUTION_OPERATIONAL:
-        raise RuntimeError("live research execution is not operational in this slice")
 
     decision = decision_id or plan.decision_id
     if authorization is None or owner is None:

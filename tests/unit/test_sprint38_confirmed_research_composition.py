@@ -613,6 +613,15 @@ def test_production_composition_wires_continuation_and_stays_closed(monkeypatch)
     assert isinstance(service.executions, OperationalAuthorizedExecutionRepository)
     assert service.integrator is not None
     assert isinstance(service.integrator._integrations, OperationalResultsIntegrationRepository)  # noqa: SLF001
+    from app.services.confirmed_research_execution import ProductionResearchRuntimePolicy
+
+    provider = shopify_global_catalog_ph_provider()
+    policy = ProductionResearchRuntimePolicy()
+    assert policy.operational_status is provider.descriptor.operational_status
+    assert policy.operational_status is ConnectorOperationalStatus.DISABLED
+    assert policy.kill_switch == provider.descriptor.kill_switch
+    assert policy.kill_switch.engaged is False
+    assert "live_flag_unexpectedly_enabled" not in production_shopify_execution_block_reasons()
     with pytest.raises(ValueError, match="every gate"):
         ProductionShopifyTransportPermit()
     snapshots, conversations, executions, _reliability, _snapshot = _stores()
@@ -640,39 +649,14 @@ def test_production_composition_wires_continuation_and_stays_closed(monkeypatch)
     assert REAL_SHOPIFY_CALLS == 0
 
 
-def test_production_permit_does_not_run_on_fake_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_synthetic_permit_cannot_use_production_transport() -> None:
     from app.domain.entities.research_execution import ResearchCapability
-    from app.research.shopify_global_catalog_execution import (
-        ProductionShopifyTransportPermit,
-        ShopifyCatalogAttempt,
-    )
     from app.research.shopify_global_catalog_transport import UrllibJsonTransport
 
     from tests.unit.test_sprint38_shopify_execution_adapter import _attempt, _prepare
 
-    monkeypatch.setattr(
-        "app.research.shopify_global_catalog_execution.production_shopify_execution_block_reasons",
-        lambda: (),
-    )
     prepared = _prepare(capability=ResearchCapability.CURRENT_PRICING)
-    fake = FakeCatalogTransport(_ok(_product()))
     executions = prepared["executions"]
-    service = in_memory_shopify_execution(
-        executions,
-        prepared["reliability"],
-        prepared["conversations"],
-        fake,
-    )
-    attempt = _attempt(
-        prepared,
-        capability=ResearchCapability.CURRENT_PRICING,
-        operation="search_catalog",
-        permit=ProductionShopifyTransportPermit(),
-    )
-    refused = service.execute(attempt)
-    assert refused.block_reason == "production_transport_required"
-    assert fake.calls == []
-    assert refused.transport_invoked is False
     synthetic = in_memory_shopify_execution(
         executions,
         prepared["reliability"],
@@ -687,8 +671,8 @@ def test_production_permit_does_not_run_on_fake_transport(monkeypatch: pytest.Mo
         )
     )
     assert blocked.block_reason == "synthetic_permit_cannot_use_production_transport"
+    assert blocked.transport_invoked is False
     assert REAL_SHOPIFY_CALLS == 0
-    del ShopifyCatalogAttempt
 
 
 def test_live_research_completed_is_a_real_field() -> None:
@@ -865,3 +849,347 @@ def test_live_research_completed_rejects_synthetic_completion() -> None:
             test_fixture=True,
             prior_decision_preserved=True,
         )
+
+
+def _harness_provider(*, kill_switch: KillSwitch | None = None):
+    from app.research.providers import StaticResearchProvider
+
+    base = shopify_global_catalog_ph_provider()
+    descriptor = replace(
+        base.descriptor,
+        operational_status=ConnectorOperationalStatus.AVAILABLE,
+        kill_switch=kill_switch or KillSwitch(),
+    )
+    return StaticResearchProvider(descriptor)
+
+
+def _open_production_policy(*, kill_switch: KillSwitch | None = None):
+    from app.research.registry import ResearchProviderRegistry
+    from app.services.confirmed_research_execution import ProductionResearchRuntimePolicy
+
+    _ignored, _registry, catalog, routing, markets = _world()
+    provider = _harness_provider(kill_switch=kill_switch)
+    registry = ResearchProviderRegistry((provider,), allow_test_providers=False)
+    policy = ProductionResearchRuntimePolicy(
+        registry=registry,
+        certifications=catalog,
+        routing=routing,
+        certified_markets=markets,
+        mode="live",
+        live_call_permitted=True,
+        profile_deployed=True,
+    )
+    return policy, registry, catalog, routing
+
+
+def _sqlite_factory(tmp_path):  # noqa: ANN001
+    from pathlib import Path
+
+    from app.infrastructure.database.models.operational_entity import OperationalEntityModel
+    from app.infrastructure.persistence.session import reset_sync_engine
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    reset_sync_engine()
+    root = tmp_path if isinstance(tmp_path, Path) else Path(tmp_path)
+    engine = create_engine(
+        f"sqlite:///{root / 'future-open.db'}",
+        future=True,
+        connect_args={"check_same_thread": False, "timeout": 30},
+    )
+    OperationalEntityModel.__table__.create(engine)
+    factory = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
+    return engine, factory
+
+
+def _future_open_stack(
+    tmp_path,  # noqa: ANN001
+    *,
+    execution_kill_switch: KillSwitch | None = None,
+):
+    from app.infrastructure.database.repositories.shopping_conversation_repository import (
+        SqlAlchemyConversationRepository,
+    )
+    from app.research.authorized_execution_repository import (
+        OperationalAuthorizedExecutionRepository,
+    )
+    from app.research.execution_evidence import OperationalResearchExecutionEvidenceRepository
+    from app.research.live_start_claim import operational_live_start_claims
+    from app.research.shopify_global_catalog_execution import (
+        PRODUCTION_TRANSPORT_PERMIT_CREATIONS,
+        operational_shopify_execution,
+    )
+    from app.services.canonical_research_results import OperationalResultsIntegrationRepository
+    from app.services.confirmed_research_execution import ConfirmedResearchExecutionService
+
+    engine, factory = _sqlite_factory(tmp_path)
+    policy, planning_registry, catalog, routing = _open_production_policy()
+    if execution_kill_switch is not None:
+        policy, _execution_registry, catalog, routing = _open_production_policy(
+            kill_switch=execution_kill_switch,
+        )
+    snapshots = InMemoryDecisionSnapshotRepository(clock=_clock)
+    snapshots.add(_presentation())
+    conversations = SqlAlchemyConversationRepository(session_factory=factory, clock=_clock)
+    executions = OperationalAuthorizedExecutionRepository(session_factory=factory)
+    evidence = OperationalResearchExecutionEvidenceRepository(session_factory=factory)
+    integrations = OperationalResultsIntegrationRepository(session_factory=factory)
+    integrator = CanonicalResearchResultsService(
+        executions,
+        evidence,
+        snapshots,
+        conversations,
+        integrations,
+        clock=_clock,
+    )
+    transport = FakeCatalogTransport(_ok(_product()))
+    service = ConfirmedResearchExecutionService(
+        policy,
+        claims=operational_live_start_claims(factory, token_factory=_token_factory()),
+        adapter=operational_shopify_execution(factory, transport, clock=_clock),
+        evidence=evidence,
+        executions=executions,
+        integrator=integrator,
+        clock=_clock,
+        production_composition=True,
+    )
+    assistant = ShoppingAssistantService(
+        snapshot_repository=snapshots,
+        conversation_repository=conversations,
+        clock=_clock,
+        execution_ledger=executions,
+        confirmed_execution=service,
+        planning_registry=planning_registry,
+        planning_catalog=catalog,
+        planning_routing=routing,
+    )
+    return {
+        "engine": engine,
+        "policy": policy,
+        "transport": transport,
+        "assistant": assistant,
+        "snapshots": snapshots,
+        "evidence": evidence,
+        "integrations": integrations,
+        "executions": executions,
+        "permits_before": PRODUCTION_TRANSPORT_PERMIT_CREATIONS,
+    }
+
+
+def _close_stack(stack) -> None:  # noqa: ANN001
+    from app.infrastructure.persistence.session import reset_sync_engine
+
+    stack["engine"].dispose()
+    reset_sync_engine()
+
+
+def test_provider_status_and_kill_switch_come_from_the_registry() -> None:
+    from app.research.registry import ResearchProviderRegistry
+    from app.services.confirmed_research_execution import ProductionResearchRuntimePolicy
+
+    current = ProductionResearchRuntimePolicy()
+    descriptor = shopify_global_catalog_ph_provider().descriptor
+    assert current.operational_status is descriptor.operational_status
+    assert current.operational_status is ConnectorOperationalStatus.DISABLED
+    assert current.kill_switch == descriptor.kill_switch
+    assert current.kill_switch.engaged is False
+    opened, _registry, _catalog, _routing = _open_production_policy()
+    assert opened.operational_status is ConnectorOperationalStatus.AVAILABLE
+    assert opened.kill_switch.engaged is False
+    assert opened.block_reasons() == ()
+    missing = ProductionResearchRuntimePolicy(
+        registry=ResearchProviderRegistry((), allow_test_providers=False),
+    )
+    assert missing.operational_status is ConnectorOperationalStatus.DISABLED
+    assert missing.kill_switch.engaged is True
+    assert missing.kill_switch.reason == "provider_missing"
+    assert "provider_not_operationally_eligible" in missing.block_reasons()
+    assert shopify_global_catalog_ph_provider().descriptor.operational_status is (
+        ConnectorOperationalStatus.DISABLED
+    )
+
+
+def test_live_operational_status_is_not_an_execution_block(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.research.shopify_global_catalog_execution.LIVE_RESEARCH_EXECUTION_OPERATIONAL",
+        True,
+    )
+    reasons = production_shopify_execution_block_reasons()
+    assert "live_flag_unexpectedly_enabled" not in reasons
+    assert LIVE_RESEARCH_EXECUTION_OPERATIONAL is False
+
+
+def test_production_result_can_represent_future_verified_live_operation() -> None:
+    from app.research.execution_evidence import NormalizedOfferFact, VerifiedLiveOfferExecution
+    from app.research.shopify_global_catalog_provider import SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID
+
+    from tests.unit.test_sprint38_execution_evidence_results import _SOURCE
+
+    fact = NormalizedOfferFact(
+        product_id="outside-the-evaluated-set",
+        variant_id=None,
+        seller_identity="North Audio",
+        amount_minor=79900,
+        currency="USD",
+        availability="in_stock",
+        observed_at=START,
+        normalized_offer_digest="ab" * 32,
+        observation_kind="production",
+        source_mode=SourceMode.LIVE.value,
+        provider_id=SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
+        capability=ResearchCapability.CURRENT_PRICING.value,
+        market="PH",
+        source=_SOURCE,
+    )
+    verification = VerifiedLiveOfferExecution(
+        execution_id="research-exec:future-open",
+        decision_id=DECISION_ID,
+        plan_id="plan-sprint38-future",
+        permit_marker="production_shopify_transport",
+        facts=(fact,),
+    )
+    assert LIVE_RESEARCH_EXECUTION_OPERATIONAL is False
+    represented = ShopifyExecutionResult(
+        attempted=True,
+        transport_invoked=True,
+        persisted=True,
+        state="completed",
+        block_reason=None,
+        outcome="succeeded",
+        observation_kind="production",
+        source_mode_live=True,
+        live_research_execution_operational=True,
+        real_shopify_call_count=1,
+        evaluated_offer_count=1,
+        normalized_offer_count=1,
+        execution_authority="production",
+        offer_facts=(fact,),
+        verified_live_execution=verification,
+    )
+    assert represented.source_mode_live is True
+    assert represented.live_research_execution_operational is True
+    assert represented.real_shopify_call_count == 1
+    assert REAL_SHOPIFY_CALLS == 0
+    with pytest.raises(ValueError, match="synthetic execution cannot record live operation"):
+        ShopifyExecutionResult(
+            attempted=False,
+            transport_invoked=False,
+            persisted=False,
+            state=None,
+            block_reason="closed",
+            source_mode_live=True,
+        )
+    with pytest.raises(ValueError, match="only a verified production success"):
+        ShopifyExecutionResult(
+            attempted=True,
+            transport_invoked=True,
+            persisted=True,
+            state="failed",
+            block_reason=None,
+            outcome="timed_out",
+            execution_authority="production",
+            source_mode_live=True,
+        )
+
+
+def test_future_open_harness_reaches_canonical_integration(tmp_path) -> None:  # noqa: ANN001
+    """Server-owned harness only. Not production evidence and not launch evidence."""
+
+    import app.research.shopify_global_catalog_execution as shopify_execution
+
+    stack = _future_open_stack(tmp_path)
+    try:
+        before = stack["snapshots"].get(DECISION_ID, 1)
+        assert before is not None
+        piq = before.canonical_piqscore_set_sha256
+        recommendation = before.recommendation
+        assert stack["policy"].block_reasons() == ()
+        assert stack["policy"].operational_status is ConnectorOperationalStatus.AVAILABLE
+        _first, confirmed = _confirm(stack["assistant"])
+        public = confirmed.processing["confirmed_research"]
+        assert public["claim_invoked"] is True
+        assert public["adapter_invoked"] is True
+        assert public["transport_invoked"] is True
+        assert public["authorization_consumed"] is True
+        assert public["attempted"] is True
+        assert public["source_checked"] is True
+        assert public["research_executed"] is True
+        assert public["live_research_completed"] is True
+        assert public["synthetic"] is False
+        assert public["test_fixture"] is False
+        assert public["shopper_results_updated"] is False
+        assert public["prior_decision_preserved"] is True
+        assert public["integration_outcome"] == "canonical_reevaluation_required"
+        assert len(stack["transport"].calls) == 1
+        created = shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+        assert stack["permits_before"] + 1 == created
+        assert public["evidence_ids"]
+        for evidence_id in public["evidence_ids"]:
+            record = stack["evidence"].get(evidence_id)
+            assert record is not None
+            assert record.observation_kind == "production"
+            assert record.source_mode is SourceMode.LIVE
+            assert record.test_fixture is False
+            assert record.launch_evidence is False
+            assert record.activates_public_market is False
+            assert record.amount_minor == 79900
+        integration = stack["integrations"].get(public["execution_id"])
+        assert integration is not None
+        assert integration.outcome == "canonical_reevaluation_required"
+        assert stack["snapshots"].get(DECISION_ID, 2) is None
+        preserved = stack["snapshots"].get(DECISION_ID, 1)
+        assert preserved is not None
+        assert preserved.canonical_piqscore_set_sha256 == piq
+        assert preserved.recommendation == recommendation
+    finally:
+        _close_stack(stack)
+    assert shopify_global_catalog_ph_provider().descriptor.operational_status is (
+        ConnectorOperationalStatus.DISABLED
+    )
+    assert production_research_provider_routing_policy_catalog().list_records() == ()
+    assert production_certified_shopping_markets().to_tuple() == ()
+    assert SHOPPING_RESEARCH_EXECUTION_MODE == "disabled"
+    assert SHOPIFY_LIVE_CALL_PERMITTED is False
+    assert LIVE_RESEARCH_EXECUTION_OPERATIONAL is False
+    assert PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED is False
+    assert REAL_SHOPIFY_CALLS == 0
+
+
+def test_authoritative_kill_switch_blocks_before_transport(tmp_path) -> None:  # noqa: ANN001
+    import app.research.shopify_global_catalog_execution as shopify_execution
+
+    engaged = KillSwitch(engaged=True, reason="stop")
+    stack = _future_open_stack(tmp_path, execution_kill_switch=engaged)
+    try:
+        before = stack["snapshots"].get(DECISION_ID, 1)
+        assert before is not None
+        assert stack["policy"].operational_status is ConnectorOperationalStatus.AVAILABLE
+        assert stack["policy"].kill_switch.engaged is True
+        assert stack["policy"].kill_switch.reason == "stop"
+        assert stack["policy"].block_reasons() == ()
+        provider = stack["policy"].registry.get("ph-shopify-global-catalog")
+        assert provider is not None
+        assert stack["policy"].kill_switch == provider.descriptor.kill_switch
+        permits = shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+        _first, confirmed = _confirm(stack["assistant"])
+        public = confirmed.processing["confirmed_research"]
+        assert public["claim_invoked"] is True
+        assert public["block_reason"] == "kill_switch"
+        assert public["adapter_invoked"] is False
+        assert public["transport_invoked"] is False
+        assert public["authorization_consumed"] is False
+        assert public["shopper_results_updated"] is False
+        assert public["prior_decision_preserved"] is True
+        assert stack["transport"].calls == []
+        assert permits == shopify_execution.PRODUCTION_TRANSPORT_PERMIT_CREATIONS
+        assert confirmed.processing["authorization_status"] == "authorized_pending_execution"
+        assert stack["snapshots"].get(DECISION_ID, 2) is None
+        assert stack["snapshots"].get(DECISION_ID, 1) == before
+        execution = stack["executions"].get(public["execution_id"])
+        assert execution is not None
+        assert execution.state == "prepared_unavailable"
+        assert execution.claimed_at is None
+    finally:
+        _close_stack(stack)

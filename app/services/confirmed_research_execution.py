@@ -8,9 +8,10 @@ certification, routing, market, mode, provider status, kill switch, breaker,
 claim, and authorization consumption. The Shopify adapter owns transport.
 
 Current production policy is closed. A shopper confirmation therefore stops
-before a claim, before the adapter, and before transport. An injected open
-policy can traverse the claim and a fake transport. Fake-transport evidence
-stays synthetic and cannot update shopper-visible canonical Results.
+before a claim, before the adapter, and before transport. Provider status and
+the kill switch come from the server registry descriptor. An injected open
+policy can traverse the claim and a fake transport. Synthetic permit evidence
+stays a fixture and cannot update shopper-visible canonical Results.
 """
 
 from __future__ import annotations
@@ -43,10 +44,15 @@ from app.research.execution_evidence import (
     evidence_from_verified_live_offer_fact,
 )
 from app.research.live_start_claim import LiveStartClaimRequest, LiveStartClaimService
+from app.research.providers import StaticResearchProvider
 from app.research.registry import ResearchProviderRegistry, production_research_provider_registry
 from app.research.routing import (
     ResearchProviderRoutingPolicyCatalog,
     production_research_provider_routing_policy_catalog,
+)
+from app.research.shopify_global_catalog_capability_policy import SHOPIFY_GLOBAL_CATALOG_MARKET
+from app.research.shopify_global_catalog_certification_evidence import (
+    SHOPIFY_GLOBAL_CATALOG_SOURCE,
 )
 from app.research.shopify_global_catalog_execution import (
     BoundedFakeTransportPermit,
@@ -54,6 +60,7 @@ from app.research.shopify_global_catalog_execution import (
     ShopifyCatalogAttempt,
     ShopifyCatalogExecutionService,
     ShopifyExecutionResult,
+    issue_production_shopify_transport_permit,
     production_shopify_execution_block_reasons,
 )
 from app.research.shopify_global_catalog_ph_probe import PH_COUNTRY, SEARCH_TOOL
@@ -61,9 +68,15 @@ from app.research.shopify_global_catalog_provider import (
     SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID,
     SHOPIFY_GLOBAL_CATALOG_SUPPORTED_CAPABILITIES,
 )
-from app.research.sprint38_live_execution import SHOPPING_RESEARCH_EXECUTION_MODE
+from app.research.sprint38_live_execution import (
+    SHOPIFY_LIVE_CALL_PERMITTED,
+    SHOPPING_RESEARCH_EXECUTION_MODE,
+    LiveResearchTarget,
+    assess_live_research_mode,
+)
 from app.services.canonical_research_results import CanonicalResearchResultsService
 from app.services.research_execution import ResearchExecutionPreparation
+from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
 
 _SERVER_CATALOG_QUERY = "piq-savi-authorized-catalog-search"
 _SUPPORTED = frozenset(SHOPIFY_GLOBAL_CATALOG_SUPPORTED_CAPABILITIES)
@@ -114,38 +127,143 @@ class InjectedResearchRuntimePolicy:
 
 
 class ProductionResearchRuntimePolicy:
-    """Current repository gates. Closed means no claim and no transport."""
+    """Server registry gates. Status and the kill switch are not browser input.
+
+    Defaults read the production catalogs. A harness may supply server-owned
+    catalogs without changing production constants. Operational status and the
+    kill switch always come from ``ph-shopify-global-catalog``. A missing
+    provider fails closed. The claim service remains the kill-switch authority.
+    """
+
+    def __init__(
+        self,
+        *,
+        registry: ResearchProviderRegistry | None = None,
+        certifications: ResearchProviderCertificationCatalog | None = None,
+        routing: ResearchProviderRoutingPolicyCatalog | None = None,
+        certified_markets: CertifiedShoppingMarketCatalog | None = None,
+        mode: str | None = None,
+        live_call_permitted: bool | None = None,
+        profile_deployed: bool | None = None,
+    ) -> None:
+        self._registry = registry
+        self._certifications = certifications
+        self._routing = routing
+        self._certified_markets = certified_markets
+        self._mode = mode
+        self._live_call_permitted = live_call_permitted
+        self._profile_deployed = profile_deployed
 
     def block_reasons(self) -> tuple[str, ...]:
-        return production_shopify_execution_block_reasons()
+        if not self._uses_injected_catalogs():
+            return production_shopify_execution_block_reasons()
+        return self._catalog_block_reasons()
 
     @property
     def mode(self) -> str:
-        return SHOPPING_RESEARCH_EXECUTION_MODE
+        if self._mode is None:
+            return SHOPPING_RESEARCH_EXECUTION_MODE
+        return self._mode
 
     @property
     def operational_status(self) -> ConnectorOperationalStatus:
-        return ConnectorOperationalStatus.DISABLED
+        provider = self._shopify_provider()
+        if provider is None:
+            return ConnectorOperationalStatus.DISABLED
+        return provider.descriptor.operational_status
 
     @property
     def kill_switch(self) -> KillSwitch:
-        return KillSwitch()
+        provider = self._shopify_provider()
+        if provider is None:
+            return KillSwitch(engaged=True, reason="provider_missing")
+        return provider.descriptor.kill_switch
 
     @property
     def registry(self) -> ResearchProviderRegistry:
-        return production_research_provider_registry()
+        if self._registry is None:
+            return production_research_provider_registry()
+        return self._registry
 
     @property
     def certifications(self) -> ResearchProviderCertificationCatalog:
-        return production_research_provider_certification_catalog()
+        if self._certifications is None:
+            return production_research_provider_certification_catalog()
+        return self._certifications
 
     @property
     def routing(self) -> ResearchProviderRoutingPolicyCatalog:
-        return production_research_provider_routing_policy_catalog()
+        if self._routing is None:
+            return production_research_provider_routing_policy_catalog()
+        return self._routing
 
     @property
     def certified_markets(self) -> CertifiedShoppingMarketCatalog:
-        return production_certified_shopping_markets()
+        if self._certified_markets is None:
+            return production_certified_shopping_markets()
+        return self._certified_markets
+
+    def _uses_injected_catalogs(self) -> bool:
+        return any(
+            value is not None
+            for value in (
+                self._registry,
+                self._certifications,
+                self._routing,
+                self._certified_markets,
+                self._mode,
+                self._live_call_permitted,
+                self._profile_deployed,
+            )
+        )
+
+    def _shopify_provider(self) -> StaticResearchProvider | None:
+        return self.registry.get(SHOPIFY_GLOBAL_CATALOG_PROVIDER_ID)
+
+    def _call_permitted(self) -> bool:
+        if self._live_call_permitted is None:
+            return SHOPIFY_LIVE_CALL_PERMITTED
+        return self._live_call_permitted
+
+    def _profile_is_deployed(self) -> bool:
+        if self._profile_deployed is None:
+            return PIQSAVI_UCP_AGENT_PROFILE_PRODUCTION_DEPLOYED
+        return self._profile_deployed
+
+    def _catalog_block_reasons(self) -> tuple[str, ...]:
+        """Same gates as production, read from this policy's server catalogs.
+
+        Kill-switch engagement is left to the live-start claim. Folding it
+        into these reasons would skip the claim that already owns that check.
+        """
+
+        assessment = assess_live_research_mode(
+            mode=self.mode,
+            requested=LiveResearchTarget(
+                market=SHOPIFY_GLOBAL_CATALOG_MARKET,
+                capability=ResearchCapability.CURRENT_PRICING,
+                source=SHOPIFY_GLOBAL_CATALOG_SOURCE,
+            ),
+            registry=self.registry,
+            certifications=self.certifications,
+            routing=self.routing,
+            certified_markets=self.certified_markets,
+            trace_handling_present=True,
+        )
+        reasons = [
+            reason
+            for reason in assessment.reasons
+            if reason != "provider_not_operationally_eligible"
+        ]
+        if self.operational_status is not ConnectorOperationalStatus.AVAILABLE:
+            reasons.append("provider_not_operationally_eligible")
+        if self.mode != "live" and "mode_not_live" not in reasons:
+            reasons.append("mode_not_live")
+        if not self._call_permitted():
+            reasons.append("shopify_live_call_not_permitted")
+        if not self._profile_is_deployed():
+            reasons.append("production_ucp_profile_undeployed")
+        return tuple(dict.fromkeys(reasons))
 
 
 class ClosedProductionClaims:
@@ -293,10 +411,13 @@ class ConfirmedResearchExecutionService:
     def _issue_permit(self) -> BoundedFakeTransportPermit | ProductionShopifyTransportPermit:
         """Issue a permit only after the runtime policy reports every gate open."""
 
-        if self._policy.block_reasons():
+        reasons = self._policy.block_reasons()
+        if reasons:
             raise RuntimeError("a transport permit cannot be issued while a gate is closed")
         if self._production_composition:
-            return ProductionShopifyTransportPermit()
+            return issue_production_shopify_transport_permit(
+                authoritative_block_reasons=reasons,
+            )
         return BoundedFakeTransportPermit()
 
     def continue_confirmed(self, request: ConfirmedResearchRequest) -> ConfirmedResearchResult:
