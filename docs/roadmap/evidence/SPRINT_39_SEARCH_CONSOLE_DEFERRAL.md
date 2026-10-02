@@ -14,3 +14,5 @@ Not done:
 Private UUID decision routes stay `noindex`.
 
 Sprint 39 acceptance allows Search Console to be deferred with no ranking claim. Setup, if it happens, is a later owner action. It is not part of Sprint 39.2.
+
+The 2026-10-02 closure-readiness audit confirms that this deferral still satisfies the Sprint 39 acceptance alternative. EXT-29 stays `not_started`. That audit does not call Google Search Console and does not add a verification token.
