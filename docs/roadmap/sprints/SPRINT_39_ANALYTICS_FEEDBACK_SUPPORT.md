@@ -1,9 +1,27 @@
 # Sprint 39 — Analytics, Feedback & Support
 
-**Status:** IN PROGRESS
+**Status:** IN PROGRESS (2026-10-06). Audit verdict: SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN. Not COMPLETE / CLOSED. Not PRODUCTION PROVEN. Not LAUNCH READY. The 2026-10-02 ENGINEERING COMPLETE reading is withdrawn.
 **Primary owner / domain:** Product analytics + support
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
+**Closure-readiness audit:** [`../evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](../evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md)
+**Staging evidence:** [`../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md)
 **Beta blocker classification:** Soft yes — learning; hard if privacy claims require it
+
+## Current closure reading (2026-10-02)
+
+The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. Class C count is 27. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
+
+The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. That section still lists registration, login, DAU/MAU, search, coverage, error, latency, deletion, support-contact, expiry, and authentication-transition measurements that are not product-analytics events. Those rows are Class C. This status change does not implement them.
+
+The instruments that do exist remain: the consent gate, schema, dedup, first-party store, dashboard, feedback and incorrect-information path, support mailto, Ask open serialization, and the server observers that do not invent a decision. Core funnel counts stay 0.
+
+Deploy Staging #41 remains the historical `ask_opened` failure. Deploy Staging #42 of `374c9e2f45cb1810626c4138b3a145d3cff170a0` recorded the corrected partial proof. Core funnel counts stay 0 because the public staging root is Early Access and no production caller creates the initial canonical decision. That chain stays with Sprint 29, Sprint 31, and Sprint 38. Sprint 38 remains ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41. Sprint 39 does not fabricate the chain.
+
+The documented 400-day engineering TTL satisfies "Retention policy for analytics." A purge job is not a current Sprint 39 acceptance requirement. Account export and account deletion exclusions stay documented and are not a partial identity join. EXT-15, EXT-22, and EXT-29 stay `not_started`. Search Console stays explicitly deferred with no ranking claim. Affiliate tracking stays off.
+
+Sprint 40 may still run in parallel. This reading does not start Sprint 40 or Sprint 41.
+
+The dated 39.1, 39.2, and 39.3 sections below are slice history. Their residual lists are not the current closure checklist.
 
 ## Sprint 39.1 — consent-gated analytics foundation
 
@@ -49,7 +67,7 @@ Search Console setup remains an owner action. Do not treat this slice as verific
 
 ### Engineering retention
 
-`PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS` is 400. That is an **ENGINEERING / PRODUCT TTL**, not legal retention. Sprint 39.1 does not run a purge job. Sprint 39.2 does not add one. A cookie max-age of 400 days does not delete stored rows. See [`../../privacy/ENGINEERING_RETENTION.md`](../../privacy/ENGINEERING_RETENTION.md).
+`PRODUCT_ANALYTICS_ENGINEERING_TTL_DAYS` is 400. That is an **ENGINEERING / PRODUCT TTL**, not legal retention. Sprint 39.1 does not run a purge job. Sprint 39.2 does not add one. A cookie max-age of 400 days does not delete stored rows. See [`../../privacy/ENGINEERING_RETENTION.md`](../../privacy/ENGINEERING_RETENTION.md). The 2026-10-02 audit classifies this documented policy as satisfying the current Sprint 39 retention-policy wording. It classifies an enforceable purge as not a Sprint 39 engineering blocker. Counsel still owns legal retention. This paragraph does not add a purge job.
 
 ## Sprint 39.2 — core funnel instrumentation and beta-learning dashboard
 
@@ -80,7 +98,9 @@ Sprint 39 stays **IN PROGRESS**. This slice does not close it, does not deploy s
 
 ### Still remaining after 39.2
 
-- Staging validation of the core funnel. Deploy Staging #41 succeeded and is recorded in the staging evidence note, then paused on `ask_opened` `contradictory_event`. Filled controlled-flow evidence is still remaining after the serializer correction is redeployed
+This residual list is the state at the end of Sprint 39.2, before Deploy Staging #42 and before the 2026-10-02 audit. The audit reclassifies it. Do not read it as the current closure checklist.
+
+- Staging validation of the core funnel. Deploy Staging #41 succeeded and is recorded in the staging evidence note, then paused on `ask_opened` `contradictory_event`. At that time, filled controlled-flow evidence was still remaining after the serializer correction was redeployed. Deploy Staging #42 later recorded the corrected partial session. Core funnel counts stayed 0
 - A production path that creates the initial canonical decision, so `decision_started` / `decision_completed` can be emitted truthfully
 - `research_partial`, if a real partial transition is added later
 - Final monitored workflow evidence beyond the existing support inbox and the internal review queue
@@ -102,6 +122,8 @@ Deploy Staging #41 (run `36822959068`) of `287cdf11ff61bfdb09d412d1cb88927c86e3c
 `FORBIDDEN_ANALYTICS_FIELDS`, `SERVER_OWNED_FIELDS`, `EXACT_CLIENT_FIELDS`, and `CLIENT_EVENT_SEMANTICS` are unchanged. Consent semantics, dashboard formulas, and feedback behavior are unchanged. This slice adds no analytics event, calls no Shopify API, and adds no third-party analytics.
 
 The failed staging attempt remains in [`../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md). Do not delete it after a later deploy succeeds.
+
+Deploy Staging #42 later deployed this correction at `374c9e2f45cb1810626c4138b3a145d3cff170a0` and recorded `ask_opened` as `recorded`. That success does not close Sprint 39 and does not remove the #41 failure from the evidence file.
 
 ## Objective
 

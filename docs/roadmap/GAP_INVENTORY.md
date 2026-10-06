@@ -214,6 +214,8 @@ Current Sprint 38 closure reading (2026-10-01, after merged PR #175), which supe
 
 ## H. Analytics and beta learning
 
+The rows in this section are the 2026-08-06 classification. The current Sprint 39 reading is the 2026-10-02 addendum at the end of this file. Do not treat these `missing_from_roadmap` cells as the closure status after Sprint 39.1, Sprint 39.2, Sprint 39.3, and Deploy Staging #42.
+
 | Requirement | Class | Owning sprint |
 |-------------|-------|---------------|
 | Analytics provider decision; consent-gated init | `missing_from_roadmap` | 39 |
@@ -1193,3 +1195,43 @@ This addendum does **not** rewrite earlier snapshots, including the pre-slice cl
 | Sprint 44 / 45 | Still own claims, rehearsal, public activation, and launch |
 | Do not | Enable routing, provider status, public PH coverage, or live mode merely to close Sprint 38 |
 | Authority | [`evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md`](evidence/SPRINT_38_CLOSURE_READINESS_AUDIT_2026-09-30.md) |
+
+## 2026-10-02 Sprint 39 closure-readiness addendum
+
+This addendum does **not** rewrite the 2026-08-06 section H rows or earlier snapshots. It records the Sprint 39 closure-readiness audit after Sprint 39.1, Sprint 39.2, Sprint 39.3, and Deploy Staging #42. It does **not** close Sprint 39. It does **not** close Sprint 38. It does **not** start Sprint 40 or Sprint 41. It does **not** deploy, call Shopify, enable the public shopper flow, enable affiliate tracking, activate an analytics provider, activate a CMP, or call Google Search Console.
+
+Section H's `missing_from_roadmap` cells are the 2026-08-06 snapshot. They are not the current Sprint 39 status.
+
+| Field | Value |
+|-------|-------|
+| Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED |
+| Audit verdict | SPRINT 39 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON UPSTREAM/DOWNSTREAM GATES |
+| Engineering | ENGINEERING COMPLETE. Class C count is 0 |
+| Staging | PARTIAL. Deploy Staging #42 proved consent, one `ask_opened`, and feedback on/off. Deploy Staging #41 `ask_opened` failure remains historical |
+| Core funnel | All listed shopper counts 0. Not invented. Public staging root is Early Access. No production caller creates the initial canonical decision |
+| Decision-chain owners | Sprint 29 / 31 / 38. Sprint 38 remains ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
+| Retention policy | Documented 400-day engineering TTL. Not a purge job. Purge is not a Sprint 39 engineering blocker |
+| Export / delete | `product.analytics_events` and `product.feedback_reports` stay excluded. No partial identity join. Legal sufficiency is not decided here |
+| EXT-15 / EXT-22 / EXT-29 | Stay `not_started`. Statuses are not changed |
+| Search Console | Explicit deferral remains. No ranking claim |
+| Affiliate | Tracking stays off. Conversion is not a launch-acceptance metric |
+| Production / launch | Not PRODUCTION PROVEN. Not LAUNCH READY. Production project separation waits on Sprint 41 |
+| Sprint 40 | May still run in parallel. Not started by this addendum |
+| Sprint 41 | Remains UNSTARTED |
+| Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md); [`evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md) |
+
+## 2026-10-06 Sprint 39 included-requirements correction
+
+This addendum does **not** rewrite the 2026-08-06 section H rows. It corrects the 2026-10-02 addendum above. That addendum's engineering-complete verdict and Class C count of 0 are withdrawn. Priority measurements did not remove the Sprint 39 Included requirements. This correction does **not** implement the missing measurements, does **not** close Sprint 39, does **not** change Sprint 38, and does **not** start Sprint 40 or Sprint 41.
+
+| Field | Value |
+|-------|-------|
+| Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED |
+| Audit verdict | SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN |
+| Engineering | Not ENGINEERING COMPLETE. The 2026-10-02 engineering-complete reading is withdrawn |
+| Class C count | 27. Registration, verification, login, DAU/MAU, search and its outcomes, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore views, funnel abandonment, frontend/backend/merchant/AI errors, slow pages, slow endpoints, deletion metrics, the support-contact analytics event, expiry, and authentication transition |
+| Not Class C | Save and Watch are F until an authoritative shopper transition exists. Conversational reopen is F. `research_partial` is F. Core funnel emitters that exist stay B. Deploy #42 consent, `ask_opened`, and feedback facts stay A |
+| Staging facts | Unchanged. Analytics 0 to 2. Feedback 0 to 2. Core funnel 0 |
+| Sprint 38 | Unchanged. ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
+| EXT-15 / EXT-22 / EXT-29 | Stay `not_started` |
+| Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md) |
