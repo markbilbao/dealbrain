@@ -1219,3 +1219,19 @@ Section H's `missing_from_roadmap` cells are the 2026-08-06 snapshot. They are n
 | Sprint 40 | May still run in parallel. Not started by this addendum |
 | Sprint 41 | Remains UNSTARTED |
 | Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md); [`evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md) |
+
+## 2026-10-06 Sprint 39 included-requirements correction
+
+This addendum does **not** rewrite the 2026-08-06 section H rows. It corrects the 2026-10-02 addendum above. That addendum's engineering-complete verdict and Class C count of 0 are withdrawn. Priority measurements did not remove the Sprint 39 Included requirements. This correction does **not** implement the missing measurements, does **not** close Sprint 39, does **not** change Sprint 38, and does **not** start Sprint 40 or Sprint 41.
+
+| Field | Value |
+|-------|-------|
+| Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED |
+| Audit verdict | SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN |
+| Engineering | Not ENGINEERING COMPLETE. The 2026-10-02 engineering-complete reading is withdrawn |
+| Class C count | 27. Registration, verification, login, DAU/MAU, search and its outcomes, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore views, funnel abandonment, frontend/backend/merchant/AI errors, slow pages, slow endpoints, deletion metrics, the support-contact analytics event, expiry, and authentication transition |
+| Not Class C | Save and Watch are F until an authoritative shopper transition exists. Conversational reopen is F. `research_partial` is F. Core funnel emitters that exist stay B. Deploy #42 consent, `ask_opened`, and feedback facts stay A |
+| Staging facts | Unchanged. Analytics 0 to 2. Feedback 0 to 2. Core funnel 0 |
+| Sprint 38 | Unchanged. ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
+| EXT-15 / EXT-22 / EXT-29 | Stay `not_started` |
+| Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md) |

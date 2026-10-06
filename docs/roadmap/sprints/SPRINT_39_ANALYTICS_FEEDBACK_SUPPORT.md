@@ -1,6 +1,6 @@
 # Sprint 39 — Analytics, Feedback & Support
 
-**Status:** IN PROGRESS (2026-10-02). Audit verdict: SPRINT 39 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON UPSTREAM/DOWNSTREAM GATES. Not COMPLETE / CLOSED. Not PRODUCTION PROVEN. Not LAUNCH READY.
+**Status:** IN PROGRESS (2026-10-06). Audit verdict: SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN. Not COMPLETE / CLOSED. Not PRODUCTION PROVEN. Not LAUNCH READY. The 2026-10-02 ENGINEERING COMPLETE reading is withdrawn.
 **Primary owner / domain:** Product analytics + support
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Closure-readiness audit:** [`../evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](../evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md)
@@ -9,9 +9,11 @@
 
 ## Current closure reading (2026-10-02)
 
-The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is ENGINEERING COMPLETE. Class C count is 0. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
+The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. Class C count is 27. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
 
-ENGINEERING COMPLETE means the Sprint 39 instruments are present: the consent gate, schema, dedup, first-party store, dashboard, feedback and incorrect-information path, support mailto, Ask open serialization, and the server observers that do not invent a decision. It does not mean the core funnel was populated.
+The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. That section still lists registration, login, DAU/MAU, search, coverage, error, latency, deletion, support-contact, expiry, and authentication-transition measurements that are not product-analytics events. Those rows are Class C. This status change does not implement them.
+
+The instruments that do exist remain: the consent gate, schema, dedup, first-party store, dashboard, feedback and incorrect-information path, support mailto, Ask open serialization, and the server observers that do not invent a decision. Core funnel counts stay 0.
 
 Deploy Staging #41 remains the historical `ask_opened` failure. Deploy Staging #42 of `374c9e2f45cb1810626c4138b3a145d3cff170a0` recorded the corrected partial proof. Core funnel counts stay 0 because the public staging root is Early Access and no production caller creates the initial canonical decision. That chain stays with Sprint 29, Sprint 31, and Sprint 38. Sprint 38 remains ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41. Sprint 39 does not fabricate the chain.
 

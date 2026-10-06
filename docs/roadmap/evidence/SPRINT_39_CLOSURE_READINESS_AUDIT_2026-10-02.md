@@ -1,10 +1,12 @@
 # Sprint 39 closure-readiness audit — 2026-10-02
 
-**Audit verdict:** SPRINT 39 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON UPSTREAM/DOWNSTREAM GATES
+**Audit verdict:** SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN
+
+**Withdrawn verdict:** The earlier verdict in this file, SPRINT 39 ENGINEERING COMPLETE — CLOSURE VALIDATION BLOCKED ON UPSTREAM/DOWNSTREAM GATES, is withdrawn. The 2026-09-07 priority measurements do not supersede the current Included requirements section. That section is still active. Priority alone is not supersession.
 
 **Sprint closure status:** IN PROGRESS. Not COMPLETE / CLOSED.
 
-**Engineering status:** ENGINEERING COMPLETE. No independent Sprint 39 engineering blocker is identified by this audit.
+**Engineering status:** Not ENGINEERING COMPLETE. Class C count is 27. This correction does not implement those blockers.
 
 **Staging proof:** PARTIAL. Deploy Staging #42 proved the consent gate, first-party storage, one corrected `ask_opened`, feedback with analytics on, and feedback after opt-out with no new analytics row. The core funnel stays at zero.
 
@@ -28,7 +30,7 @@ No deploy was performed. No Shopify call was made. Sprint 40 was not started. Sp
 
 | Meaning | Current value | What would make it true |
 |---------|---------------|-------------------------|
-| ENGINEERING COMPLETE | Yes | Consent-gated first-party analytics, the event contract, dedup, feedback, the dashboard, and the funnel observers that can be wired without inventing a decision are implemented. This is not sprint closure |
+| ENGINEERING COMPLETE | No. Withdrawn on 2026-10-06 | Every current Included requirement is implemented, owned elsewhere with proof, conditional on a missing transition, or explicitly deferred. The Included requirements section still lists measurements that have no product-analytics event |
 | SPRINT COMPLETE / CLOSED | No | Every current Sprint 39 acceptance criterion and evidence requirement is satisfied, including core-funnel visibility from a real shopper decision and production project separation |
 | STAGING PROVEN | Partial | Deploy Staging #42 records the consent, `ask_opened`, and feedback results below. Core funnel counts are honest zeros |
 | PRODUCTION PROVEN | No | A separated production environment has recorded the same contract. Sprint 41 has not started |
@@ -44,7 +46,7 @@ No deploy was performed. No Shopify call was made. Sprint 40 was not started. Sp
 | F | Conditional, and not applicable until an authoritative domain transition exists |
 | G | Historical or superseded wording |
 
-**Class C count: 0.** This audit does not implement another slice. It does not close Sprint 39.
+**Class C count: 27.** The count is the number of Included-requirements rows in the 2026-10-06 re-audit marked C. This correction does not implement them. It does not close Sprint 39. Deploy Staging #41 and Deploy Staging #42 facts in this file are unchanged.
 
 ---
 
@@ -132,14 +134,110 @@ Sprint 29 owns canonical snapshot capture and presentation and the UUID UI. Spri
 | 36. Learning cadence | `docs/analytics/BETA_LEARNING_CADENCE.md`. Internal review windows `1d`, `7d`, and `30d`. Subject counts are not account DAU or MAU | The document exists. It says the review does not decide Sprint 39 closure. Deploy #42 is one staging read, not a beta review series | A for the documented cadence | Sprint 39 for the cadence. Live review practice is during beta, not a code gap | None for the document | Does not block engineering completion and does not close the sprint by itself |
 | 37. Affiliate exclusion | Affiliate conversion is not a launch-acceptance metric. Outbound instrumentation does not store the destination URL or affiliate parameters. Tracking is not enabled | Sprint 39 text and `docs/AFFILIATE_ATTRIBUTION.md`. Deploy #42 recorded no affiliate attribution. EXT-07 stays `n_a_beta` | A | Sprint 39 for the exclusion. Later monetization is out of this sprint | None | Do not enable affiliate tracking to close Sprint 39 |
 
+## Included-requirements re-audit (2026-10-06)
+
+The current `## Included requirements` section is still the requirement source. The 2026-09-07 block is titled "Priority measurements." No sentence in that block, and no later sprint note, says the rest of the Included requirements were removed. `app/analytics/schema.py` `EVENT_NAMES` does not contain several of those names. A security audit row or an operational health snapshot is not product analytics. The sprint non-goal "Counting logs as analytics done" forbids that substitution.
+
+`EVENT_NAMES` today: `decision_started`, `decision_completed`, `results_viewed`, `compare_opened`, `why_opened`, `outbound_merchant_click`, `ask_opened`, `ask_closed`, `ask_question_submitted`, `ask_evidence_answered`, `insufficient_evidence`, `recommendation_refinement_attempted`, `recommendation_refinement_applied`, `research_proposed`, `research_confirmed`, `research_declined`, `research_started`, `research_partial`, `research_completed`, `research_failed`, `updated_results_viewed`, `recommendation_helpful`, `recommendation_not_helpful`, `incorrect_information_report`, `bug_report`, `support_contact`, `return_visit`, `repeat_decision`.
+
+`support_contact`, `return_visit`, and `repeat_decision` are names only. No server emitter writes `support_contact`. Return visits and repeat decisions are dashboard derivations.
+
+### Events list
+
+| Item | Current implementation | Evidence | Class | Owner | Remaining dependency | Closure effect |
+|------|------------------------|----------|-------|-------|----------------------|----------------|
+| registrations | No product-analytics event. `AuthService` writes security audit `register` | `app/auth/service.py`; `SecurityEventType` in `app/domain/entities/user_platform.py`. Sprint 17 owns that audit row. Gap inventory section H still assigns the product measurement to Sprint 39 | C | Sprint 39 for the product measurement. Sprint 17 for the security audit | A sanitized product-analytics registration event. The audit log does not close it | Class C blocker. Not implemented here |
+| verified registrations | No product-analytics event. Security audit `email_verified` | `app/auth/service.py` `email_verified`. Sprint 27 owns verification | C | Sprint 39 for the product measurement. Sprint 27 for verification | A sanitized product-analytics event | Class C blocker |
+| login success | No product-analytics event. Security audit `login_success` | `app/auth/service.py` | C | Sprint 39 for the product measurement. Sprint 17 for the security audit | A sanitized product-analytics event | Class C blocker |
+| login failure | No product-analytics event. Security audit `login_failure` | `app/auth/service.py` | C | Sprint 39 for the product measurement. Sprint 17 for the security audit | A sanitized product-analytics event | Class C blocker |
+| DAU / MAU | Not implemented. Consented-subject counts are a different metric | `docs/analytics/BETA_LEARNING_CADENCE.md` says those counts "are not account DAU or MAU." Sprint 43 owns capacity gates that consume DAU, not the definition | C | Sprint 39 | An account DAU/MAU read that is not the consented-subject count | Class C blocker |
+| searches | No search observer and no search event name | `EVENT_NAMES` has no search name. `GET /search` is not instrumented | C | Sprint 39 owes the observer. Sprint 29 presents search. Sprint 4 owns the search engine | A search observer. Live result population is a separate evidence problem | Class C blocker |
+| success | No search-success event | Same absence | C | Sprint 39 | Same search observer | Class C blocker |
+| failure | No search-failure event | Same absence | C | Sprint 39 | Same search observer | Class C blocker |
+| zero | No zero-result event | Same absence | C | Sprint 39 | Same search observer | Class C blocker |
+| partial | No search-partial event. This is not `research_partial` | The two words are different list items | C | Sprint 39 | Same search observer | Class C blocker |
+| latency | `latency_band` is an optional property. No caller records a latency measurement | `app/analytics/schema.py`; `emit_research_observations` does not pass `latency_band`. Sprint 25 states API latency SLOs. Sprint 42 owns operational metrics. Sprint 43 owns capacity evidence. None of those remove this bullet | C | Sprint 39 for the product measurement. Sprint 42 / 43 for operational latency | A product-analytics latency measurement | Class C blocker |
+| merchant coverage | No product-analytics coverage metric | `docs/CONNECTOR_HEALTH.md` is Sprint 18 health, updated for the disabled Sprint 32 provider. It is not the beta-learning dashboard. Gap inventory assigns "Merchant/market coverage metrics" to Sprint 39 | C | Sprint 39 for the metric. Sprint 32 / 38 own provider status | A coverage metric. Provider status stays a different fact | Class C blocker |
+| market coverage | No product-analytics market-coverage metric | Public certified shopping markets stay 0. Sprint 37 owns market honesty. That is not this metric | C | Sprint 39 for the metric. Sprint 37 for market honesty | A coverage metric | Class C blocker |
+| Recommendation views | No `recommendation_viewed` event. `results_viewed` is a different listed item | `EVENT_NAMES` | C | Sprint 39 | A recommendation-view event or an explicit requirement change | Class C blocker |
+| DealScore / PiqScore views | No view event | DealScore remains the scoring engine. No analytics view event | C | Sprint 39 | A view event or an explicit requirement change | Class C blocker |
+| explanation views | `why_opened` is the Why / explanation surface | Client event exists. Staging count 0 | B | Sprint 39 instrument. The page needs the decision chain | Sprint 29 / 31 / 38 | Blocks a non-zero count. Not Class C |
+| CTR | `results_to_outbound_ctr` | Staging rate unavailable, denominator 0 | B | Sprint 39 formula | Results views and outbound clicks | Not Class C |
+| funnel abandonment | No event and no dashboard formula | `docs/analytics/CORE_FUNNEL_EVENTS.md` does not define it | C | Sprint 39 | A defined abandonment measurement | Class C blocker |
+| retention | Returning consented subjects are derived. This is not account DAU/MAU and not the 400-day data TTL | `ProductLearningDashboardService._retention` | B | Sprint 39 derivation | Two UTC dates of consented shopper traffic | Not Class C |
+| frontend errors | No product-analytics frontend-error event | Sprint 42 owns operational error tracking and has not started. Gap inventory says 39 / 42. That split does not delete the Sprint 39 bullet | C | Sprint 39 for the product event. Sprint 42 for operational tracking | A product-analytics error event | Class C blocker |
+| backend errors | No product-analytics backend-error event | Same split | C | Sprint 39 and Sprint 42, as above | A product-analytics error event | Class C blocker |
+| merchant errors | No general merchant-error event. `research_failed` is the separate connector/research item | `research_failed` is classified with that other item | C | Sprint 39 for this bullet. Sprint 18 health is not this event | A product-analytics merchant-error event | Class C blocker |
+| AI errors | No product-analytics AI-error event | Sprint 13 owns assistant fallback behavior. Sprint 42 owns AI-provider monitoring. Neither is this event | C | Sprint 39 for the product event. Sprint 42 for provider monitoring | A product-analytics AI-error event | Class C blocker |
+| slow pages | No slow-page event | Operational page latency is not this bullet | C | Sprint 39 | A product-analytics slow-page event | Class C blocker |
+| slow endpoints | No slow-endpoint event | Sprint 25 / 42 / 43 own operational endpoint latency. They do not implement this event | C | Sprint 39 for the product event | A product-analytics slow-endpoint event | Class C blocker |
+| feedback | `product.feedback_reports` | Deploy #42 stored two reports | A | Sprint 39 | None for storage | Not Class C |
+| bugs | Category `bug` maps to `bug_report` on the same feedback service | Deploy #42 did not submit `bug`. The dashboard read other categories as 0. The emitter exists | A | Sprint 39 | None for the emitter | Not Class C |
+| support | Mailto and the internal review queue | EXT-17. This row is the support path, not the analytics event | A | Sprint 39 and EXT-17 | None for the mailto | Not Class C |
+| deletion metrics | No product-analytics deletion event. Security audit `account_deleted` exists | `app/privacy/lifecycle.py`. Sprint 28 owns the deletion API and that audit row. The non-goal forbids counting that log as analytics | C | Sprint 39 for the product metric. Sprint 28 for deletion | A sanitized deletion metric | Class C blocker |
+| consent state | Preference plus stored `consent_state` on analytics rows | Deploy #42 opt-in and opt-out | A | Sprint 39 | None for the gate | Not Class C |
+
+### Consent-aware measurement list
+
+| Item | Current implementation | Evidence | Class | Owner | Remaining dependency | Closure effect |
+|------|------------------------|----------|-------|-------|----------------------|----------------|
+| search started | No observer | Not in `EVENT_NAMES`. Same missing search work as the events-list search rows | C | Sprint 39 | A search-started observer | Class C blocker |
+| research started / completed | Observers after the research services transition | Staging counts 0. Closed gates do not emit start | B | Sprint 39 observers. Sprint 38 execution, waiting on Sprint 41 | A real research transition | Not Class C |
+| decision started | Emitter only. No production caller | Staging count 0 | B | Emitter Sprint 39. Caller Sprint 29 / 31 / 38 | Live decision creation | Not Class C |
+| decision completed | Emitter only. A research version bump is not this event | Staging count 0 | B | Same split | Live decision creation | Not Class C |
+| Results viewed | Client `results_viewed` | Staging count 0 | B | Sprint 39 instrument | The public Results journey | Not Class C |
+| Compare opened | Client `compare_opened` | Staging count 0 | B | Sprint 39 instrument | The public Compare journey | Not Class C |
+| Why opened | Client `why_opened` | Staging count 0 | B | Sprint 39 instrument | The public Why journey | Not Class C |
+| Ask PiqSavi used | `ask_opened` recorded on Deploy #42. `ask_question_submitted` is server-owned and was not submitted | Event id `1578ca76-d354-4c09-ab83-bf952364dcce`. Question count 0 | A for open. B for a submitted question | Sprint 39 | A shopper question was not part of Deploy #42 | Not Class C |
+| Recommendation refinement attempted / applied | Observers read the refinement service flag | Not exercised on Deploy #42 | B | Sprint 39 observers. Sprint 29.4B behavior | A real refinement transition | Not Class C |
+| research proposed | Observer | Staging count 0 | B | Sprint 39 | A real proposal | Not Class C |
+| research confirmed | Observer | Staging count 0 | B | Sprint 39 | A real confirmation | Not Class C |
+| Save | No decision-Save analytics event. Sprint 29 recorded that functional decision-Save wiring was not added | `docs/roadmap/evidence/SPRINT_29_REMAINING_INTERNAL_CLOSEOUT_AUDIT.md`. Account saved-product storage is Sprint 10 and is not this journey | F | Sprint 29 did not create the public decision-Save transition. Sprint 39 must not invent one in order to measure it | An authoritative decision-Save transition | Not Class C |
+| Watch | Public copy says Watch is not available. No shopper Watch analytics event | `app/consumer/account_pages.py`. Master roadmap row 25: primitives exist; monitoring uncertified. Sprint 10 / 19 / 47 | F | Later Watch capability. Sprint 39 must not invent Watch telemetry | An authoritative shopper Watch transition | Not Class C |
+| View offer / outbound merchant click | Client `outbound_merchant_click`. Destination URL and affiliate parameters are not stored | Staging count 0 | B | Sprint 39 instrument | A real offer on a decision | Not Class C |
+| return visits | Derived from two UTC dates. Not a stored event | Not in the sanitized Deploy #42 extract. Not invented | B | Sprint 39 | Multi-day consented traffic | Not Class C |
+| repeat decisions | Derived from two `decision_completed` hashes | No `decision_completed` rows | B | Sprint 39 derivation. Completions need the decision chain | `decision_completed` | Not Class C |
+| insufficient evidence | Server event for that answer status | Staging count 0 | B | Sprint 39 | A real insufficient-evidence answer | Not Class C |
+| connector / research failure | `research_failed` only after execution started. A closed gate is not a failure | Staging count 0. `live_research_operational` false | B | Sprint 39 observer. Sprint 38 / 41 for a real attempt | An authoritative failed execution | Not Class C |
+| incorrect-information report | Form and `incorrect_information_report` | Deploy #42 `incorrect_price` and `outdated_offer` | A | Sprint 39 | None for the path | Not Class C |
+| Recommendation helpful / not helpful | Feedback categories emit `recommendation_helpful` and `recommendation_not_helpful` | Deploy #42 left those categories at 0. The emitter exists | A | Sprint 39 | None for the emitter | Not Class C |
+| support contact | `support_contact` is in `EVENT_NAMES` and has no production emitter. The mailto is a different path | Schema name only. Mailto remains the monitored inbox | C | Sprint 39 for the analytics event. EXT-17 for the inbox | An emitter for support contact. The mailto does not close this measurement | Class C blocker |
+
+### Conversational Continuity list
+
+| Item | Current implementation | Evidence | Class | Owner | Remaining dependency | Closure effect |
+|------|------------------------|----------|-------|-------|----------------------|----------------|
+| Ask open | `ask_opened` | Deploy #42 recorded | A | Sprint 39 | None | Not Class C |
+| Ask close | `ask_closed` uses the corrected exact-field contract | Not submitted on Deploy #42 | A | Sprint 39 | None for the contract | Not Class C |
+| question submission | `ask_question_submitted` | Staging count 0 | B | Sprint 39 | Not submitted | Not Class C |
+| evidence answer | `ask_evidence_answered` only for status `answered` | Staging count 0 | B | Sprint 39 | An answered shopper Ask | Not Class C |
+| insufficient evidence | Same server event as the consent-aware row | Staging count 0 | B | Sprint 39 | An insufficient answer | Not Class C |
+| refinement | Same observers as the consent-aware row | Not exercised | B | Sprint 39 | A real refinement | Not Class C |
+| research proposal | `research_proposed` | Staging count 0 | B | Sprint 39 | A real proposal | Not Class C |
+| confirmation | `research_confirmed` | Staging count 0 | B | Sprint 39 | A real confirmation | Not Class C |
+| decline | `research_declined` | Staging count 0 | B | Sprint 39 | A real decline | Not Class C |
+| start | `research_started` | Staging count 0 | B | Sprint 39 / Sprint 38 | A started execution | Not Class C |
+| partial | Name exists. Not emitted. No authoritative partial transition | Dashboard `research_partial` unavailable | F | Sprint 39 left it uninstrumented because the transition does not exist | An authoritative partial transition | Not Class C |
+| completion | `research_completed` | Staging count 0 | B | Sprint 39 / Sprint 38 | A completed live execution | Not Class C |
+| failure | `research_failed` | Staging count 0 | B | Sprint 39 / Sprint 38 | A failed execution | Not Class C |
+| updated Results | `updated_results_viewed` when `context_version > 1` | Not a non-zero staging count | B | Sprint 39 emitter. Sprint 38 writes the next version from validated evidence | A real updated snapshot | Not Class C |
+| reopen | No Ask or conversation reopen transition. Circuit-breaker `reopen_at` is Sprint 38 reliability, not this event. Sprint 29 close/reopen is UI continuity | Search of `app/` finds `reopen` only on the breaker | F | No authoritative conversational reopen transition | That transition, if a later sprint defines one | Not Class C |
+| expiry | `cleanup_expired` exists for shopping conversations. No analytics event | `ConversationRepository.cleanup_expired`. Guest owner TTL is separate and also uninstrumented | C | Sprint 39 for the event. Sprint 29 owns conversation TTL | A consent-gated expiry event on the existing cleanup | Class C blocker |
+| authentication transition | `claim_guest_conversation` exists. No analytics event | `app/consumer/guest_continuity.py`. Sprint 29 owns the claim. Sprint 27 / 40 also touch guest continuity | C | Sprint 39 for the event. Sprint 29 owns the claim | A consent-gated event on that claim | Class C blocker |
+
+Class C rows are: registrations, verified registrations, login success, login failure, DAU/MAU, searches, search success, search failure, search zero, search partial, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend errors, backend errors, merchant errors, AI errors, slow pages, slow endpoints, deletion metrics, support contact analytics event, expiry, and authentication transition.
+
+**Class C count: 27.**
+
+No Included-requirements item in these three lists is classified G. The 2026-09-07 priority list does not contain a removal sentence.
+
 ### Historical wording
 
 | Wording | Classification | Current reading |
 |---------|----------------|-----------------|
-| Master roadmap Sprint 39 row that described only Sprint 39.1 | G | Superseded by the 2026-10-02 row. 39.1, 39.2, 39.3, and Deploy #42 are the current implementation history |
-| Sprint 39.2 residual list that left purge, a further monitored workflow, and external providers as open Sprint 39 work | G as a closure checklist | Reclassified above. The list stays in the sprint document as history |
-| Original included-requirements catalog of registrations, login success/failure, account DAU/MAU, latency, and frontend/backend error events | G | Superseded for this closure by the 2026-09-07 priority measurements and by the rule that essential operational telemetry is not product analytics. Those operational signals are not a hidden Class C list |
-| Sprint 39.1 sentence that account export and delete exclusion is "remaining privacy-integration work" | G as a Sprint 39 engineering assignment | The exclusion remains the contract. Completing it is not a partial identity join and is not Class C |
+| Sprint 39.1 residual list | G as a closure checklist | The sprint document says not to read that list as the status after 39.2. That sentence is the supersession. It does not remove the Included requirements |
+| Earlier engineering-complete verdict in this file | Withdrawn. Not G | Priority was used as if it were supersession. That inference is withdrawn |
+| Sprint 39.1 sentence that account export and delete exclusion is "remaining privacy-integration work" | Not a Sprint 39 engineering assignment | The exclusion remains the contract. Completing it is not a partial identity join and is not Class C |
 
 ---
 
@@ -185,13 +283,11 @@ The product copy says a submitted report is stored and that the person can still
 
 ### 7. Can Sprint 39 be engineering complete while closure stays blocked?
 
-Yes. The status is the same shape as Sprint 38: engineering complete, sprint still IN PROGRESS, closure evidence blocked on upstream and downstream gates.
+No. That conclusion is withdrawn.
 
-The independent Sprint 39 instruments are present: consent, schema, dedup, first-party storage, dashboard, feedback, incorrect-information categories, support mailto, Ask open serialization, server Ask and research observers, refinement observers, updated-Results observer, derived return and repeat metrics, the engineering retention policy, and the affiliate exclusion.
+Class B remains true for the core shopper funnel. Those counters stay 0 because the public staging root is Early Access and no production caller creates the initial canonical decision. That chain stays with Sprint 29, Sprint 31, and Sprint 38. Sprint 38 stays ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41. Production project separation stays Sprint 41. Those facts do not make the rest of the Included requirements implemented.
 
-The evidence that cannot be collected now is the non-zero shopper funnel. That depends on live owner-bound decision creation, owned by Sprint 29, Sprint 31, and Sprint 38, with Sprint 38's own validation waiting on Sprint 41. Production project separation waits on Sprint 41. Those gaps are Class B. They are not a reason to invent decisions, open the public shopper flow, or mark Sprint 39 closed.
-
-Class C count is 0. Sprint 39 is not COMPLETE / CLOSED.
+Class C count is 27. Engineering status is not ENGINEERING COMPLETE. Sprint 39 stays IN PROGRESS. It is not COMPLETE / CLOSED. This correction does not implement the Class C rows.
 
 ---
 
