@@ -223,7 +223,7 @@ def _guest(principal_id: str) -> ConversationOwner:
         principal_type="guest",
         principal_id=principal_id,
         session_id=f"session-{principal_id}",
-        expires_at=NOW + timedelta(hours=2),
+        expires_at=datetime.now(UTC) + timedelta(hours=2),
     )
 
 
