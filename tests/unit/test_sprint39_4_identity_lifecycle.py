@@ -575,9 +575,7 @@ async def test_login_success_and_failure_codes_do_not_enumerate(stores: dict) ->
     assert "bad_password" not in blob
     assert "not-an-email" not in blob
     audit_details = [
-        event.detail
-        for event in store.audit.list_events()
-        if event.event_type == "login_failure"
+        event.detail for event in store.audit.list_events() if event.event_type == "login_failure"
     ]
     assert "unknown_or_inactive" in audit_details
     assert "bad_password" in audit_details
