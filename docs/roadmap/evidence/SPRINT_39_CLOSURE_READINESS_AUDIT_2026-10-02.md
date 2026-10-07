@@ -314,23 +314,17 @@ The pre-Sprint-39.4 Class C count was 27. Current Class C count is 21. Registrat
 
 ---
 
-## Next bounded Class C family (not started)
+## Next bounded Class C family (not selected)
 
-This reconciliation does not implement the next slice.
+This reconciliation does not select a next engineering slice and does not implement one. It does not put the other 20 Class C rows behind conversation expiry.
 
-The remaining 21 Class C rows were grouped by the domain transition that would have to already exist before Sprint 39 could observe it. `/search` was not selected. `GET /search` is still an Early Access gate: production redirects home, and the non-production path redirects to a fixture catalog decision. It does not produce search success, failure, zero, or partial outcomes. Sprint 4 owns the search engine. Sprint 29 owns search presentation. An observer on that redirect would measure fixture presentation. The six search rows stay Class C together and are not the next slice.
+Conversation expiry remains Class C. It is not currently executable as a bounded Sprint 39 slice. `cleanup_expired` has no production caller. Read-time expiry has no consent-bearing request. Sprint 29 owns conversation TTL. Sprint 39 must not invent a scheduler or a fake transition. Do not implement expiry until an authoritative request-scoped expiry caller exists.
 
-| Family | Current Class C rows | Authoritative transition on this SHA | Next-slice decision |
-|--------|----------------------|--------------------------------------|---------------------|
-| Search outcomes | searches, success, failure, zero, partial, search started | `GET /search` fixture / Early Access redirect | Not next |
-| Operational quality | latency, slow pages, slow endpoints, frontend errors, backend errors, merchant errors, AI errors | No product transition. `latency_band` has no caller. `research_failed` is a different Class B row. Sprint 42 owns operational tracking and has not started | Not next. Counting logs as analytics remains a non-goal |
-| Coverage | merchant coverage, market coverage | Sprint 37 coverage assessment and Sprint 18 connector health. Public certified markets stay 0 | Not next. Provider status stays a different fact |
-| Shopper views | Recommendation views, DealScore / PiqScore views | No view transition apart from Class B `results_viewed` and `why_opened` | Not next. The public Results surface is not active |
-| Undefined metrics | DAU / MAU, funnel abandonment | None. Consented-subject counts and `identity_lifecycle` are not account DAU or MAU. Sprint 43 consumes DAU and does not define it. No abandonment formula exists | Not next |
-| Support-contact event | support contact | `support_contact` is a schema name. The mailto does not hit the server | Not next. No request to observe |
-| Conversation expiry | expiry | `cleanup_expired` exists and has no production caller. Read-time expiry has no consent-bearing request | Held. This is the next bounded row once a request-scoped caller exists |
+`/search` is not selected either. `GET /search` is still an Early Access gate: production redirects home, and the non-production path redirects to a fixture catalog decision. That route does not expose truthful search success, failure, zero, or partial outcomes. Sprint 4 owns the search engine. Sprint 29 owns search presentation. Do not implement a search observer blindly on that redirect. That caution does not sequence the remaining rows behind search.
 
-**Recommended next bounded slice:** conversation-expiry product analytics, held until a request-scoped caller exists. Do not start it here. Do not start the search-outcome family ahead of it. Sprint 29 owns conversation TTL. Sprint 39 would only add a consent-gated event after that caller has already expired the conversation. On this SHA the repository method is not invoked by a request, so an emitter would either skip consent or invent a scheduler. A server-side support-contact action, if one is later added, would be the other single-row candidate ahead of search. Neither caller exists now.
+The 21 Class C rows stay as audited: DAU / MAU, searches, search success, search failure, search zero, search partial, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend errors, backend errors, merchant errors, AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry. No classification in that list changes here.
+
+**Next action:** a bounded next-slice readiness audit across those 21 rows. That audit should identify which family has an existing authoritative request or domain transition and can be implemented without fabricating product behavior. Sprint 40 may still run in parallel according to the existing roadmap. This reconciliation does not start Sprint 40.
 
 ## Sequencing
 

@@ -169,11 +169,9 @@ These current Class C blockers remain unimplemented. The pre-Sprint-39.4 count w
 - support-contact analytics
 - conversation expiry
 
-### Next bounded slice (not started)
+### Next bounded slice (not selected)
 
-Do not start `/search` next. That route is still an Early Access fixture redirect and does not produce success, failure, zero, or partial outcomes. Sprint 4 owns the search engine and Sprint 29 owns presentation.
-
-The recommended next bounded slice is conversation-expiry product analytics, held until a request-scoped caller exists. `cleanup_expired` has no production caller, and read-time expiry has no consent-bearing request. Sprint 29 owns conversation TTL. Sprint 39 would only observe that caller. This reading does not add the event, a scheduler, or a guest owner cookie. Operational errors, latency, coverage, Recommendation views, DealScore views, DAU/MAU, and funnel abandonment are separate families and are not that slice. The audit records the ownership grouping.
+No next engineering slice is selected by this reconciliation. Conversation expiry remains Class C. It is not currently executable: `cleanup_expired` has no production caller, and read-time expiry has no consent-bearing request. Do not implement expiry until an authoritative request-scoped caller exists. `/search` is not selected either. That route is still an Early Access fixture redirect and does not expose truthful success, failure, zero, or partial outcomes. The next action is a bounded next-slice readiness audit across the remaining 21 Class C rows. Sprint 40 may still run in parallel. This reading does not start that audit or Sprint 40.
 
 ## Objective
 

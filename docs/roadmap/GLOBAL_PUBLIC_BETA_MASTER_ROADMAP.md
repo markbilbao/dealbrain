@@ -1055,7 +1055,7 @@ Audit: [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPR
 
 This note does not rewrite the 2026-10-02 reading above. The pre-Sprint-39.4 Class C count was 27. The current Class C count is 21. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. It is not COMPLETE / CLOSED.
 
-Deploy Staging #43 (run `37567160567`, SHA `d0f117b426010f629ec32b7d3f96f39dc6b865f7`, host `staging_ok`) proved registrations, login success, login failure, and deletion metrics. Verified registrations and authentication transition are implemented and have no staging proof. No other classification changed. The next slice is not started and is not `/search`. Evidence: [`evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md).
+Deploy Staging #43 (run `37567160567`, SHA `d0f117b426010f629ec32b7d3f96f39dc6b865f7`, host `staging_ok`) proved registrations, login success, login failure, and deletion metrics. Verified registrations and authentication transition are implemented and have no staging proof. No other classification changed. No next engineering slice is selected. The next action is a bounded next-slice readiness audit. Evidence: [`evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md).
 
 ### Parallelizable after prerequisites
 

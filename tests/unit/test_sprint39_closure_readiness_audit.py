@@ -313,8 +313,22 @@ def test_sprint_39_4_reconciliation_keeps_two_rows_unproven() -> None:
     assert "access_token" not in evidence
     assert "session_id" not in evidence
     assert "No staging proof is claimed for those two B rows" in audit
-    assert "Recommended next bounded slice:" in audit
-    assert "Do not start the search-outcome family ahead of it." in audit
+    expiry_section = _section(
+        audit,
+        "### Conversational Continuity list",
+        "Class C rows, current after Sprint 39.4, are:",
+    )
+    assert _classified_rows(expiry_section)["expiry"] == "C"
+    assert "does not select a next engineering slice" in audit
+    assert (
+        "Do not implement expiry until an authoritative request-scoped expiry caller exists."
+        in audit
+    )
+    assert "`/search` is not selected either." in audit
+    assert "bounded next-slice readiness audit" in audit
+    assert "Sprint 40 may still run in parallel" in audit
+    assert "No next engineering slice is selected" in sprint39
+    assert "bounded next-slice readiness audit" in sprint39
     roadmap = (ROOT / "docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md").read_text(
         encoding="utf-8"
     )

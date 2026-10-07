@@ -1253,5 +1253,5 @@ This addendum does **not** rewrite the 2026-08-06 section H rows or the 2026-10-
 | Moved C to B | verified registrations and authentication transition. Implemented. No staging proof |
 | Still Class C | DAU/MAU, search and its outcomes, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore views, funnel abandonment, frontend/backend/merchant/AI errors, slow pages, slow endpoints, the support-contact analytics event, and expiry |
 | Sprint 38 | Unchanged. ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
-| Next slice | Not started. Not `/search`. Conversation-expiry analytics is held until a request-scoped caller exists |
+| Next slice | Not selected. Conversation expiry stays Class C and is not executable until an authoritative request-scoped caller exists. `/search` is not selected either. Next action is a bounded next-slice readiness audit across the 21 Class C rows. Sprint 40 may still run in parallel |
 | Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md); [`evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md) |
