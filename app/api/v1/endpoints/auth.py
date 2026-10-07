@@ -7,15 +7,23 @@ Password reset, email verification, and email change are Sprint 27 identity flow
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 
+from app.analytics.identity_lifecycle import (
+    emit_account_deleted,
+    emit_login_failure,
+    emit_login_success,
+    emit_registration_completed,
+    emit_registration_verified,
+)
+from app.analytics.service import ProductAnalyticsService
 from app.api.v1.mappers.user_platform import (
     to_auth_response,
     to_demo_response,
     to_meta_response,
     to_user_payload,
 )
-from app.core.dependencies import get_user_platform_service
+from app.core.dependencies import get_product_analytics_service, get_user_platform_service
 from app.domain.exceptions import (
     UserPlatformAuthError,
     UserPlatformConflictError,
@@ -90,7 +98,10 @@ def map_user_platform_error(exc: Exception) -> HTTPException:
 )
 async def register(
     body: RegisterRequest,
+    request: Request,
+    response: Response,
     service: UserPlatformService = Depends(get_user_platform_service),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
 ) -> AuthResponse:
     try:
         result = service.register(
@@ -107,6 +118,7 @@ async def register(
         UserPlatformRateLimitError,
     ) as exc:
         raise map_user_platform_error(exc) from exc
+    emit_registration_completed(request, response, analytics)
     return to_auth_response(result)
 
 
@@ -117,7 +129,10 @@ async def register(
 )
 async def login(
     body: LoginRequest,
+    request: Request,
+    response: Response,
     service: UserPlatformService = Depends(get_user_platform_service),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
 ) -> AuthResponse:
     try:
         result = service.login(
@@ -130,7 +145,9 @@ async def login(
         UserPlatformAuthError,
         UserPlatformRateLimitError,
     ) as exc:
+        emit_login_failure(request, response, analytics, exc)
         raise map_user_platform_error(exc) from exc
+    emit_login_success(request, response, analytics)
     return to_auth_response(result)
 
 
@@ -220,7 +237,10 @@ async def request_email_verification(
 )
 async def confirm_email_verification(
     body: EmailVerificationConfirmRequest,
+    request: Request,
+    response: Response,
     service: UserPlatformService = Depends(get_user_platform_service),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
 ) -> EmailVerificationConfirmResponse:
     try:
         payload = service.confirm_email_verification(body.token)
@@ -230,6 +250,7 @@ async def confirm_email_verification(
         UserPlatformRateLimitError,
     ) as exc:
         raise map_user_platform_error(exc) from exc
+    emit_registration_verified(request, response, analytics)
     return EmailVerificationConfirmResponse.model_validate(payload)
 
 
@@ -304,8 +325,11 @@ async def me(
 )
 async def delete_account(
     body: AccountDeleteRequest,
+    request: Request,
+    response: Response,
     authorization: str | None = Header(default=None),
     service: UserPlatformService = Depends(get_user_platform_service),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
 ) -> AccountDeleteResponse:
     token = extract_bearer_token(authorization)
     try:
@@ -316,6 +340,7 @@ async def delete_account(
         )
     except (UserPlatformAuthError, UserPlatformValidationError) as exc:
         raise map_user_platform_error(exc) from exc
+    emit_account_deleted(request, response, analytics)
     return AccountDeleteResponse.model_validate(result.to_dict())
 
 

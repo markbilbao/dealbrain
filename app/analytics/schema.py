@@ -47,6 +47,24 @@ EVENT_NAMES: frozenset[str] = frozenset(
         "support_contact",
         "return_visit",
         "repeat_decision",
+        "registration_completed",
+        "registration_verified",
+        "login_success",
+        "login_failure",
+        "account_deleted",
+        "authentication_transition",
+    }
+)
+
+# Server-owned identity lifecycle names. The browser cannot submit these.
+IDENTITY_LIFECYCLE_EVENT_NAMES: frozenset[str] = frozenset(
+    {
+        "registration_completed",
+        "registration_verified",
+        "login_success",
+        "login_failure",
+        "account_deleted",
+        "authentication_transition",
     }
 )
 
