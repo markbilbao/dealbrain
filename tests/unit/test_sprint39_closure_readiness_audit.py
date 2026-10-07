@@ -322,7 +322,10 @@ def test_sprint_39_4_reconciliation_keeps_two_rows_unproven() -> None:
     gaps = (ROOT / "docs/roadmap/GAP_INVENTORY.md").read_text(encoding="utf-8")
     for text in (roadmap, readme, gaps, sprint39):
         assert "Current Class C count is 21" in text or "current Class C count is 21" in text
-        assert "Pre-Sprint-39.4 Class C count was 27" in text or "pre-Sprint-39.4 Class C count" in text
+        assert (
+            "Pre-Sprint-39.4 Class C count was 27" in text
+            or "pre-Sprint-39.4 Class C count" in text
+        )
         assert "not ENGINEERING COMPLETE" in text or "Not ENGINEERING COMPLETE" in text
     assert "not ENGINEERING COMPLETE" in sprint39
     assert "IN PROGRESS" in sprint39
