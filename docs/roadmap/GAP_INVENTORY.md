@@ -1224,6 +1224,8 @@ Section H's `missing_from_roadmap` cells are the 2026-08-06 snapshot. They are n
 
 This addendum does **not** rewrite the 2026-08-06 section H rows. It corrects the 2026-10-02 addendum above. That addendum's engineering-complete verdict and Class C count of 0 are withdrawn. Priority measurements did not remove the Sprint 39 Included requirements. This correction does **not** implement the missing measurements, does **not** close Sprint 39, does **not** change Sprint 38, and does **not** start Sprint 40 or Sprint 41.
 
+The Class C count in the table below is the pre-Sprint-39.4 count. The 2026-10-07 addendum is the current count.
+
 | Field | Value |
 |-------|-------|
 | Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED |
@@ -1235,3 +1237,21 @@ This addendum does **not** rewrite the 2026-08-06 section H rows. It corrects th
 | Sprint 38 | Unchanged. ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
 | EXT-15 / EXT-22 / EXT-29 | Stay `not_started` |
 | Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md) |
+
+## 2026-10-07 Sprint 39.4 staging reconciliation
+
+This addendum does **not** rewrite the 2026-08-06 section H rows or the 2026-10-06 table above. The pre-Sprint-39.4 Class C count was 27. The current Class C count is 21. This addendum records Deploy Staging #43 after Sprint 39.4 merged. Sprint 39 is not ENGINEERING COMPLETE. It does **not** close Sprint 39. It does **not** close Sprint 38. It does **not** start Sprint 40 or Sprint 41. It does **not** deploy, call Shopify, enable the public shopper flow, or fabricate a verification token or guest owner cookie.
+
+| Field | Value |
+|-------|-------|
+| Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED |
+| Audit verdict | SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN |
+| Engineering | Not ENGINEERING COMPLETE |
+| Pre-Sprint-39.4 Class C count | 27 |
+| Current Class C count | 21. No other classification changed |
+| Moved C to A | registrations, login success, login failure, deletion metrics. Deploy Staging #43, run `37567160567`, SHA `d0f117b426010f629ec32b7d3f96f39dc6b865f7`, host `staging_ok` |
+| Moved C to B | verified registrations and authentication transition. Implemented. No staging proof |
+| Still Class C | DAU/MAU, search and its outcomes, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore views, funnel abandonment, frontend/backend/merchant/AI errors, slow pages, slow endpoints, the support-contact analytics event, and expiry |
+| Sprint 38 | Unchanged. ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
+| Next slice | Not started. Not `/search`. Conversation-expiry analytics is held until a request-scoped caller exists |
+| Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md); [`evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md) |

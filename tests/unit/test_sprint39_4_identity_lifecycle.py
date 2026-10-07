@@ -942,7 +942,9 @@ def test_sprint_status_boundaries_stay_closed() -> None:
     assert sprint.startswith("# Sprint 39")
     assert "**Status:** IN PROGRESS" in sprint
     assert "not ENGINEERING COMPLETE" in sprint
-    assert "Sprint 39.4 does not revise that count" in sprint
+    assert "pre-Sprint-39.4 Class C count was 27" in sprint
+    assert "current Class C count is 21" in sprint
+    assert "No staging proof is claimed for those two" in sprint
     assert "DAU / MAU" in sprint
     for name in _IDENTITY_ORDER:
         assert name in identity
