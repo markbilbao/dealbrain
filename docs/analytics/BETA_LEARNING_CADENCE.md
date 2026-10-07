@@ -16,6 +16,7 @@ Review the current UTC day:
 - insufficient-evidence rate
 - feedback problem reports
 - bug reports
+- identity lifecycle counts for registration, verification, login, account deletion, and guest-to-account claim
 
 Decision start and completion stay at zero until a production path creates the initial canonical decision. Do not treat that zero as a failed shopping session.
 
@@ -32,7 +33,7 @@ Review `7d` and `30d`:
 - highest feedback categories
 - funnel changes against the prior week
 
-These subject counts are consented analytics subjects. They are not account DAU or MAU. Non-consenting shoppers are absent from the analytics series. Feedback totals can include those shoppers and are labeled separately.
+These subject counts are consented analytics subjects. They are not account DAU or MAU. `identity_lifecycle` is also not account DAU or MAU. Non-consenting shoppers are absent from the analytics series. Feedback totals can include those shoppers and are labeled separately.
 
 ## What this review does not decide
 

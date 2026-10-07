@@ -9,9 +9,9 @@
 
 ## Current closure reading (2026-10-02)
 
-The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. Class C count is 27. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
+The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. The audit's Class C count remains 27. Sprint 39.4 does not revise that count. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
 
-The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. That section still lists registration, login, DAU/MAU, search, coverage, error, latency, deletion, support-contact, expiry, and authentication-transition measurements that are not product-analytics events. Those rows are Class C. This status change does not implement them.
+The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. Sprint 39.4 adds consent-gated product-analytics events for registrations, verified registrations, login success, login failure, deletion metrics, and the guest-to-account authentication transition. DAU/MAU, search analytics, merchant and market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend, backend, merchant, and AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry remain unimplemented. Consented-subject counts are not account DAU or MAU.
 
 The instruments that do exist remain: the consent gate, schema, dedup, first-party store, dashboard, feedback and incorrect-information path, support mailto, Ask open serialization, and the server observers that do not invent a decision. Core funnel counts stay 0.
 
@@ -21,7 +21,7 @@ The documented 400-day engineering TTL satisfies "Retention policy for analytics
 
 Sprint 40 may still run in parallel. This reading does not start Sprint 40 or Sprint 41.
 
-The dated 39.1, 39.2, and 39.3 sections below are slice history. Their residual lists are not the current closure checklist.
+The dated 39.1, 39.2, and 39.3 sections below are slice history. Sprint 39.4 is the identity-lifecycle slice. Earlier residual lists are not the current closure checklist.
 
 ## Sprint 39.1 — consent-gated analytics foundation
 
@@ -124,6 +124,48 @@ Deploy Staging #41 (run `36822959068`) of `287cdf11ff61bfdb09d412d1cb88927c86e3c
 The failed staging attempt remains in [`../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md). Do not delete it after a later deploy succeeds.
 
 Deploy Staging #42 later deployed this correction at `374c9e2f45cb1810626c4138b3a145d3cff170a0` and recorded `ask_opened` as `recorded`. That success does not close Sprint 39 and does not remove the #41 failure from the evidence file.
+
+## Sprint 39.4 — consent-gated identity lifecycle product analytics
+
+Sprint 39 stays **IN PROGRESS**. It is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. This slice does not deploy, does not change Deploy Staging #41 or #42 evidence, and does not revise the closure audit's Class C count of 27.
+
+### Implemented
+
+Server-owned product events, recorded only after the existing transition succeeds:
+
+- `registration_completed` after `POST /api/v1/auth/register` creates the account and session
+- `registration_verified` after `POST /api/v1/auth/verify-email/confirm` marks the account verified
+- `login_success` after `POST /api/v1/auth/login` authenticates
+- `login_failure` after that login endpoint has determined the attempt failed
+- `account_deleted` after the existing Sprint 28 account-deletion operation completes
+- `authentication_transition` after `POST /consumer/claim-decision` returns `claimed` true
+
+The browser cannot submit these names. `POST /api/v1/analytics/events` returns `server_owned_event` and writes zero rows.
+
+Consent reuses `analytics_context_for_request` and `ProductAnalyticsService.record_server_event`. Analytics off writes zero rows and does not change auth or claim behavior. These routes do not mint an analytics subject. Explicit consent without an existing opaque subject suppresses the event. `identity_kind` stays the helper's reading of the request owner. A successful login while that owner is still a guest stays `guest`.
+
+`login_failure` stores only `auth_failed`, `validation_failed`, or `rate_limited`. Unknown email, inactive account, and a wrong password share `auth_failed`. Security audit details are unchanged and are not copied into the product row.
+
+Event ids are random server UUIDs. Email, user id, session id, token, conversation id, and the analytics subject cookie are not id material. Definitions are in [`../../analytics/IDENTITY_LIFECYCLE_EVENTS.md`](../../analytics/IDENTITY_LIFECYCLE_EVENTS.md).
+
+`ProductLearningDashboardService` adds `metrics.identity_lifecycle` with those six counts and `partial`. A truncated scan marks the section partial and counts only scanned rows. The section is not account DAU or MAU. `account_deleted` does not claim legal erasure beyond the Sprint 28 deletion operation.
+
+No staging proof is recorded for these events. That proof comes after a later deploy.
+
+### Still unimplemented
+
+These Class C blockers remain unimplemented. This list does not reduce the audit's Class C count:
+
+- DAU / MAU
+- searches, search success, search failure, search zero, search partial, and search started
+- latency
+- merchant coverage and market coverage
+- Recommendation views and DealScore / PiqScore views
+- funnel abandonment
+- frontend errors, backend errors, merchant errors, and AI errors
+- slow pages and slow endpoints
+- support-contact analytics
+- conversation expiry
 
 ## Objective
 

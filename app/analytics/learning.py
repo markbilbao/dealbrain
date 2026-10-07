@@ -99,6 +99,7 @@ class ProductLearningDashboardService:
         ask = _ask(in_window, partial=event_scan["truncated"])
         research = _research(in_window, partial=event_scan["truncated"])
         retention = _retention(in_window, partial=event_scan["truncated"])
+        identity = _identity_lifecycle(in_window, partial=event_scan["truncated"])
         feedback_metrics = _feedback(feedback_in_window, partial=report_scan["truncated"])
         return {
             "generated_at": clock.isoformat(),
@@ -113,6 +114,7 @@ class ProductLearningDashboardService:
                 "ask": ask,
                 "research": research,
                 "return_retention": retention,
+                "identity_lifecycle": identity,
             },
             "feedback": feedback_metrics,
             "coverage": {
@@ -299,6 +301,30 @@ def _research(events: list[ProductAnalyticsEvent], *, partial: bool) -> dict[str
     return payload
 
 
+_IDENTITY_LIFECYCLE_EVENTS = (
+    "registration_completed",
+    "registration_verified",
+    "login_success",
+    "login_failure",
+    "account_deleted",
+    "authentication_transition",
+)
+
+
+def _identity_lifecycle(events: list[ProductAnalyticsEvent], *, partial: bool) -> dict[str, Any]:
+    """Count consented identity events already stored in the scanned window.
+
+    A truncated scan keeps these counts and sets ``partial``. The counts are
+    event totals only. They are not account DAU or MAU.
+    """
+
+    totals = {name: 0 for name in _IDENTITY_LIFECYCLE_EVENTS}
+    for event in events:
+        if event.event_name in totals:
+            totals[event.event_name] += 1
+    return {**totals, "partial": partial}
+
+
 def _retention(events: list[ProductAnalyticsEvent], *, partial: bool) -> dict[str, Any]:
     if partial:
         return {
@@ -422,6 +448,9 @@ def _limitations() -> list[str]:
         "Research metrics may be zero while live research is not operational.",
         "research_partial is unavailable because no authoritative partial transition exists.",
         "Returning and repeat-decision figures are analytics-subject metrics.",
+        "identity_lifecycle counts consented product events only and is not account DAU or MAU.",
+        "account_deleted counts the existing account-deletion operation and does not "
+        "claim legal erasure of audit logs, backups, analytics rows, or feedback rows.",
         "Account export and account deletion do not include these stores.",
         "No automatic retention purge is implemented.",
         "Internal staging operator surface. Not production IAM.",

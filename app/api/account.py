@@ -5,6 +5,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from app.analytics.identity_lifecycle import emit_authentication_transition
+from app.analytics.service import ProductAnalyticsService
 from app.api.v1.endpoints.auth import extract_bearer_token
 from app.consumer.account_pages import (
     render_account_settings_page,
@@ -25,6 +27,7 @@ from app.consumer.robots import apply_private_decision_noindex
 from app.consumer.seo import apply_noindex
 from app.core.dependencies import (
     get_legal_publication_catalog,
+    get_product_analytics_service,
     get_shopping_conversation_repository,
     get_shopping_decision_snapshot_repository,
     get_user_platform_service,
@@ -149,6 +152,7 @@ async def claim_decision(
     service: UserPlatformService = Depends(get_user_platform_service),
     conversations: ConversationRepository = Depends(get_shopping_conversation_repository),
     snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+    analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
 ) -> JSONResponse:
     token = extract_bearer_token(authorization)
     try:
@@ -179,6 +183,7 @@ async def claim_decision(
         snapshots=snapshots,
     )
     response = JSONResponse(result)
-    if result.get("claimed"):
+    if result.get("claimed") is True:
         set_owner_cookie(response, account_owner)
+        emit_authentication_transition(request, response, analytics, claimed=True)
     return apply_noindex(response)
