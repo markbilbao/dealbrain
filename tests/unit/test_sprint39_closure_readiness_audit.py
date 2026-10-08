@@ -25,10 +25,10 @@ ASK_USED = "A for open. B for a submitted question"
 
 # Current Included requirements, expanded to one row each. Priority is not a class.
 EVENTS = {
-    "registrations": "C",
-    "verified registrations": "C",
-    "login success": "C",
-    "login failure": "C",
+    "registrations": "A",
+    "verified registrations": "B",
+    "login success": "A",
+    "login failure": "A",
     "DAU / MAU": "C",
     "searches": "C",
     "success": "C",
@@ -53,7 +53,7 @@ EVENTS = {
     "feedback": "A",
     "bugs": "A",
     "support": "A",
-    "deletion metrics": "C",
+    "deletion metrics": "A",
     "consent state": "A",
 }
 CONSENT_AWARE = {
@@ -96,7 +96,7 @@ CONVERSATIONAL = {
     "updated Results": "B",
     "reopen": "F",
     "expiry": "C",
-    "authentication transition": "C",
+    "authentication transition": "B",
 }
 
 
@@ -126,7 +126,8 @@ def test_audit_keeps_sprint_39_in_progress() -> None:
     assert "Priority alone is not supersession." in withdrawn
     assert VERDICT in status
     assert "ENGINEERING COMPLETE reading is withdrawn" in status
-    assert "Class C count: 27." in audit
+    assert "Pre-Sprint-39.4 Class C count: 27." in audit
+    assert "Class C count: 21." in audit
     assert "Class C count: 0." not in audit
     assert "This audit does not close Sprint 39." in audit
     assert "Not COMPLETE / CLOSED." in audit
@@ -223,7 +224,11 @@ def test_included_requirements_are_classified_item_by_item() -> None:
         _section(audit, "### Consent-aware measurement list", "### Conversational Continuity list")
     )
     conversational = _classified_rows(
-        _section(audit, "### Conversational Continuity list", "Class C rows are:")
+        _section(
+            audit,
+            "### Conversational Continuity list",
+            "Class C rows, current after Sprint 39.4, are:",
+        )
     )
     assert events == EVENTS
     assert consent == CONSENT_AWARE
@@ -232,13 +237,10 @@ def test_included_requirements_are_classified_item_by_item() -> None:
     class_c = [name for name, kind in events.items() if kind == "C"]
     class_c += [name for name, kind in consent.items() if kind == "C"]
     class_c += [name for name, kind in conversational.items() if kind == "C"]
-    assert len(class_c) == 27
-    assert "Class C count: 27." in audit
+    assert len(class_c) == 21
+    assert "Pre-Sprint-39.4 Class C count: 27." in audit
+    assert "Class C count: 21." in audit
     for name in (
-        "registrations",
-        "verified registrations",
-        "login success",
-        "login failure",
         "DAU / MAU",
         "searches",
         "search started",
@@ -251,12 +253,23 @@ def test_included_requirements_are_classified_item_by_item() -> None:
         "AI errors",
         "slow pages",
         "slow endpoints",
-        "deletion metrics",
         "support contact",
         "expiry",
-        "authentication transition",
     ):
         assert name in class_c
+    moved_a = ("registrations", "login success", "login failure", "deletion metrics")
+    moved_b = ("verified registrations", "authentication transition")
+    for name in moved_a:
+        assert name not in class_c
+        assert events[name] == "A" or conversational.get(name) == "A"
+    assert events["registrations"] == "A"
+    assert events["login success"] == "A"
+    assert events["login failure"] == "A"
+    assert events["deletion metrics"] == "A"
+    assert events["verified registrations"] == "B"
+    assert conversational["authentication transition"] == "B"
+    for name in moved_b:
+        assert name not in class_c
     assert events["success"] == "C"
     assert events["failure"] == "C"
     assert events["zero"] == "C"
@@ -273,3 +286,62 @@ def test_included_requirements_are_classified_item_by_item() -> None:
     historical = _section(audit, "### Historical wording", "## Answers to the ownership questions")
     assert "| Sprint 39.1 residual list | G as a closure checklist |" in historical
     assert "does not remove the Included requirements" in historical
+
+
+def test_sprint_39_4_reconciliation_keeps_two_rows_unproven() -> None:
+    audit = AUDIT.read_text(encoding="utf-8")
+    evidence = (
+        ROOT / "docs/roadmap/evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md"
+    ).read_text(encoding="utf-8")
+    sprint39 = SPRINT39.read_text(encoding="utf-8")
+    assert "37567160567" in evidence
+    assert "d0f117b426010f629ec32b7d3f96f39dc6b865f7" in evidence
+    assert "rel-20261007T024027Z-d0f117b42601" in evidence
+    assert "staging_ok" in evidence
+    assert "registration_completed` | 0" in evidence
+    assert "registration_completed` | 1" in evidence
+    assert "HTTP status | 401" in evidence
+    assert "Invalid email or password." in evidence
+    assert "`partial` | false" in evidence
+    assert "sessions_revoked` | 2" in evidence
+    assert "was not exercised" in evidence
+    assert "ALLOW_DEMO_RESET_TOKENS" in evidence
+    assert "No guest owner cookie was fabricated" in evidence
+    assert "Not Class A" in evidence
+    assert "@" not in evidence
+    assert "password=" not in evidence.lower()
+    assert "access_token" not in evidence
+    assert "session_id" not in evidence
+    assert "No staging proof is claimed for those two B rows" in audit
+    expiry_section = _section(
+        audit,
+        "### Conversational Continuity list",
+        "Class C rows, current after Sprint 39.4, are:",
+    )
+    assert _classified_rows(expiry_section)["expiry"] == "C"
+    assert "does not select a next engineering slice" in audit
+    assert (
+        "Do not implement expiry until an authoritative request-scoped expiry caller exists."
+        in audit
+    )
+    assert "`/search` is not selected either." in audit
+    assert "bounded next-slice readiness audit" in audit
+    assert "Sprint 40 may still run in parallel" in audit
+    assert "No next engineering slice is selected" in sprint39
+    assert "bounded next-slice readiness audit" in sprint39
+    roadmap = (ROOT / "docs/roadmap/GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md").read_text(
+        encoding="utf-8"
+    )
+    readme = (ROOT / "docs/roadmap/sprints/README.md").read_text(encoding="utf-8")
+    gaps = (ROOT / "docs/roadmap/GAP_INVENTORY.md").read_text(encoding="utf-8")
+    for text in (roadmap, readme, gaps, sprint39):
+        assert "Current Class C count is 21" in text or "current Class C count is 21" in text
+        assert (
+            "Pre-Sprint-39.4 Class C count was 27" in text
+            or "pre-Sprint-39.4 Class C count" in text
+        )
+        assert "not ENGINEERING COMPLETE" in text or "Not ENGINEERING COMPLETE" in text
+    assert "not ENGINEERING COMPLETE" in sprint39
+    assert "IN PROGRESS" in sprint39
+    assert "COMPLETE / CLOSED" in sprint39
+    assert sprint39.split("**Status:**", 1)[1].split(".", 1)[0].strip().startswith("IN PROGRESS")

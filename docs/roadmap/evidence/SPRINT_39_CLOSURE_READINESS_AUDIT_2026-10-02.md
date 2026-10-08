@@ -6,9 +6,9 @@
 
 **Sprint closure status:** IN PROGRESS. Not COMPLETE / CLOSED.
 
-**Engineering status:** Not ENGINEERING COMPLETE. Class C count is 27. This correction does not implement those blockers.
+**Engineering status:** Not ENGINEERING COMPLETE. Current Class C count is 21. The pre-Sprint-39.4 Class C count was 27. This reconciliation does not implement the remaining blockers.
 
-**Staging proof:** PARTIAL. Deploy Staging #42 proved the consent gate, first-party storage, one corrected `ask_opened`, feedback with analytics on, and feedback after opt-out with no new analytics row. The core funnel stays at zero.
+**Staging proof:** PARTIAL. Deploy Staging #42 proved the consent gate, first-party storage, one corrected `ask_opened`, feedback with analytics on, and feedback after opt-out with no new analytics row. The core funnel stays at zero. Deploy Staging #43 proved `registration_completed`, `login_success`, `login_failure`, and `account_deleted`. It did not prove `registration_verified` or `authentication_transition`.
 
 **Production proof:** No. Not PRODUCTION PROVEN.
 
@@ -22,7 +22,9 @@
 
 **Staging evidence:** [`SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md)
 
-No deploy was performed. No Shopify call was made. Sprint 40 was not started. Sprint 41 was not started. Affiliate tracking was not enabled. No third-party analytics provider was activated. No CMP was activated. Google Search Console was not called. Sprint 38 status is unchanged.
+**Sprint 39.4 staging evidence:** [`SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md)
+
+No deploy was performed by the 2026-10-02 audit or by this 2026-10-07 reconciliation. Deploy Staging #43 is recorded evidence of an already completed deploy. No Shopify call was made. Sprint 40 was not started. Sprint 41 was not started. Affiliate tracking was not enabled. No third-party analytics provider was activated. No CMP was activated. Google Search Console was not called. Sprint 38 status is unchanged.
 
 ---
 
@@ -46,7 +48,9 @@ No deploy was performed. No Shopify call was made. Sprint 40 was not started. Sp
 | F | Conditional, and not applicable until an authoritative domain transition exists |
 | G | Historical or superseded wording |
 
-**Class C count: 27.** The count is the number of Included-requirements rows in the 2026-10-06 re-audit marked C. This correction does not implement them. It does not close Sprint 39. Deploy Staging #41 and Deploy Staging #42 facts in this file are unchanged.
+**Pre-Sprint-39.4 Class C count: 27.** That count is the number of Included-requirements rows the 2026-10-06 re-audit marked C, before Sprint 39.4 staging reconciliation. It is historical. It is not erased.
+
+**Class C count: 21.** After Sprint 39.4 and Deploy Staging #43, registrations, login success, login failure, and deletion metrics are A. Verified registrations and authentication transition are B. No other Included-requirements classification changed. This reconciliation does not implement the remaining rows. It does not close Sprint 39. Deploy Staging #41 and Deploy Staging #42 facts in this file are unchanged.
 
 ---
 
@@ -75,6 +79,21 @@ No deploy was performed. No Shopify call was made. Sprint 40 was not started. Sp
 | `CMP_VENDOR` | `None` |
 | EXT-15 / EXT-22 / EXT-29 | `not_started`. Statuses are not changed by this audit |
 | EXT-17 | `provisioned`. Status is not changed by this audit |
+
+### Deploy Staging #43 identity lifecycle
+
+Recorded in [`SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md). No email, password, access token, session id, analytics subject, account id, or raw cookie is stored.
+
+| Fact | Value |
+|------|-------|
+| Deploy Staging #43 | Run `37567160567`. SHA `d0f117b426010f629ec32b7d3f96f39dc6b865f7`. Release `rel-20261007T024027Z-d0f117b42601`. Host `staging_ok`. SUCCESS. CI #441 SUCCESS. Build Image #156 SUCCESS |
+| Initial identity lifecycle | all six counts 0. `partial` false |
+| Opt-in | `analytics_allowed`, analytics true, advertising false, explicit true |
+| After registration | `registration_completed` 1. The other five identity counts stayed 0 |
+| After both logins | `login_success` 1. `login_failure` 1. Failed login HTTP 401. Public detail: Invalid email or password. |
+| After deletion | status `deleted`. Sessions revoked 2. Sessions deleted 2. `account_deleted` 1 |
+| Final identity lifecycle | `registration_completed` 1, `login_success` 1, `login_failure` 1, `account_deleted` 1, `registration_verified` 0, `authentication_transition` 0, `partial` false |
+| Not exercised | `registration_verified` and `authentication_transition`. No verification token and no guest owner cookie were fabricated |
 
 ---
 
@@ -146,10 +165,10 @@ The current `## Included requirements` section is still the requirement source. 
 
 | Item | Current implementation | Evidence | Class | Owner | Remaining dependency | Closure effect |
 |------|------------------------|----------|-------|-------|----------------------|----------------|
-| registrations | No product-analytics event. `AuthService` writes security audit `register` | `app/auth/service.py`; `SecurityEventType` in `app/domain/entities/user_platform.py`. Sprint 17 owns that audit row. Gap inventory section H still assigns the product measurement to Sprint 39 | C | Sprint 39 for the product measurement. Sprint 17 for the security audit | A sanitized product-analytics registration event. The audit log does not close it | Class C blocker. Not implemented here |
-| verified registrations | No product-analytics event. Security audit `email_verified` | `app/auth/service.py` `email_verified`. Sprint 27 owns verification | C | Sprint 39 for the product measurement. Sprint 27 for verification | A sanitized product-analytics event | Class C blocker |
-| login success | No product-analytics event. Security audit `login_success` | `app/auth/service.py` | C | Sprint 39 for the product measurement. Sprint 17 for the security audit | A sanitized product-analytics event | Class C blocker |
-| login failure | No product-analytics event. Security audit `login_failure` | `app/auth/service.py` | C | Sprint 39 for the product measurement. Sprint 17 for the security audit | A sanitized product-analytics event | Class C blocker |
+| registrations | `registration_completed` after `POST /api/v1/auth/register` creates the account and session. The browser cannot submit the name | Deploy Staging #43 moved the count from 0 to 1. The security audit row remains a different fact. Pre-Sprint-39.4 this row was Class C | A | Sprint 39 | None for this event | Does not block engineering completion. Other Class C rows still keep Sprint 39 in progress |
+| verified registrations | `registration_verified` after `POST /api/v1/auth/verify-email/confirm` marks the account verified | Implemented. Deploy Staging #43 left the count at 0. `ALLOW_DEMO_RESET_TOKENS` is development only, and staging / production must be false. The controlled account used a non-deliverable example.invalid address. No verification token was fabricated. Pre-Sprint-39.4 this row was Class C | B | Sprint 39 for the event. Sprint 27 for verification delivery | A real transactional email / verification flow. This controlled run does not prove one | Not Class A. Not left Class C. Blocks closure evidence for this row only |
+| login success | `login_success` after `POST /api/v1/auth/login` authenticates | Deploy Staging #43 moved the count from 0 to 1. Pre-Sprint-39.4 this row was Class C | A | Sprint 39 | None for this event | Does not block engineering completion |
+| login failure | `login_failure` after that login endpoint has determined the attempt failed. The stored code stays generic | Deploy Staging #43 moved the count from 0 to 1. Failed login HTTP 401. Public detail: Invalid email or password. Pre-Sprint-39.4 this row was Class C | A | Sprint 39 | None for this event | Does not block engineering completion |
 | DAU / MAU | Not implemented. Consented-subject counts are a different metric | `docs/analytics/BETA_LEARNING_CADENCE.md` says those counts "are not account DAU or MAU." Sprint 43 owns capacity gates that consume DAU, not the definition | C | Sprint 39 | An account DAU/MAU read that is not the consented-subject count | Class C blocker |
 | searches | No search observer and no search event name | `EVENT_NAMES` has no search name. `GET /search` is not instrumented | C | Sprint 39 owes the observer. Sprint 29 presents search. Sprint 4 owns the search engine | A search observer. Live result population is a separate evidence problem | Class C blocker |
 | success | No search-success event | Same absence | C | Sprint 39 | Same search observer | Class C blocker |
@@ -174,7 +193,7 @@ The current `## Included requirements` section is still the requirement source. 
 | feedback | `product.feedback_reports` | Deploy #42 stored two reports | A | Sprint 39 | None for storage | Not Class C |
 | bugs | Category `bug` maps to `bug_report` on the same feedback service | Deploy #42 did not submit `bug`. The dashboard read other categories as 0. The emitter exists | A | Sprint 39 | None for the emitter | Not Class C |
 | support | Mailto and the internal review queue | EXT-17. This row is the support path, not the analytics event | A | Sprint 39 and EXT-17 | None for the mailto | Not Class C |
-| deletion metrics | No product-analytics deletion event. Security audit `account_deleted` exists | `app/privacy/lifecycle.py`. Sprint 28 owns the deletion API and that audit row. The non-goal forbids counting that log as analytics | C | Sprint 39 for the product metric. Sprint 28 for deletion | A sanitized deletion metric | Class C blocker |
+| deletion metrics | `account_deleted` after the existing Sprint 28 account-deletion operation completes. It does not claim legal erasure | Deploy Staging #43: status `deleted`, sessions revoked 2, sessions deleted 2, count 0 then 1. Final `partial` false. Pre-Sprint-39.4 this row was Class C | A | Sprint 39 for the product metric. Sprint 28 for deletion | None for this metric | Does not block engineering completion. Not a legal-erasure claim |
 | consent state | Preference plus stored `consent_state` on analytics rows | Deploy #42 opt-in and opt-out | A | Sprint 39 | None for the gate | Not Class C |
 
 ### Consent-aware measurement list
@@ -223,11 +242,15 @@ The current `## Included requirements` section is still the requirement source. 
 | updated Results | `updated_results_viewed` when `context_version > 1` | Not a non-zero staging count | B | Sprint 39 emitter. Sprint 38 writes the next version from validated evidence | A real updated snapshot | Not Class C |
 | reopen | No Ask or conversation reopen transition. Circuit-breaker `reopen_at` is Sprint 38 reliability, not this event. Sprint 29 close/reopen is UI continuity | Search of `app/` finds `reopen` only on the breaker | F | No authoritative conversational reopen transition | That transition, if a later sprint defines one | Not Class C |
 | expiry | `cleanup_expired` exists for shopping conversations. No analytics event | `ConversationRepository.cleanup_expired`. Guest owner TTL is separate and also uninstrumented | C | Sprint 39 for the event. Sprint 29 owns conversation TTL | A consent-gated expiry event on the existing cleanup | Class C blocker |
-| authentication transition | `claim_guest_conversation` exists. No analytics event | `app/consumer/guest_continuity.py`. Sprint 29 owns the claim. Sprint 27 / 40 also touch guest continuity | C | Sprint 39 for the event. Sprint 29 owns the claim | A consent-gated event on that claim | Class C blocker |
+| authentication transition | `authentication_transition` after `POST /consumer/claim-decision` returns `claimed` true | Implemented. Deploy Staging #43 left the count at 0. The endpoint needs an authenticated account session, a valid server-signed guest owner cookie from `ensure_guest_owner_cookie()`, and a conversation owned by that guest. Public staging root remains Early Access. The unfinished Results / Compare / Why flow is not publicly active. A shopping-assistant conversation id does not mint that cookie. No guest owner cookie was fabricated. Pre-Sprint-39.4 this row was Class C | B | Sprint 39 for the event. Sprint 29 owns the claim | The real guest-to-account continuity flow | Not Class A. Not left Class C. Blocks staging proof for this row only |
 
-Class C rows are: registrations, verified registrations, login success, login failure, DAU/MAU, searches, search success, search failure, search zero, search partial, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend errors, backend errors, merchant errors, AI errors, slow pages, slow endpoints, deletion metrics, support contact analytics event, expiry, and authentication transition.
+Class C rows, current after Sprint 39.4, are: DAU / MAU, searches, success, failure, zero, partial, latency, merchant coverage, market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend errors, backend errors, merchant errors, AI errors, slow pages, slow endpoints, search started, support contact, and expiry.
 
-**Class C count: 27.**
+The pre-Sprint-39.4 Class C set also included registrations, verified registrations, login success, login failure, deletion metrics, and authentication transition. Those six rows are no longer Class C.
+
+**Pre-Sprint-39.4 Class C count: 27.**
+
+**Class C count: 21.**
 
 No Included-requirements item in these three lists is classified G. The 2026-09-07 priority list does not contain a removal sentence.
 
@@ -287,9 +310,21 @@ No. That conclusion is withdrawn.
 
 Class B remains true for the core shopper funnel. Those counters stay 0 because the public staging root is Early Access and no production caller creates the initial canonical decision. That chain stays with Sprint 29, Sprint 31, and Sprint 38. Sprint 38 stays ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41. Production project separation stays Sprint 41. Those facts do not make the rest of the Included requirements implemented.
 
-Class C count is 27. Engineering status is not ENGINEERING COMPLETE. Sprint 39 stays IN PROGRESS. It is not COMPLETE / CLOSED. This correction does not implement the Class C rows.
+The pre-Sprint-39.4 Class C count was 27. Current Class C count is 21. Registrations, login success, login failure, and deletion metrics moved from C to A on Deploy Staging #43. Verified registrations and authentication transition moved from C to B. No staging proof is claimed for those two B rows. No other classification changed. Engineering status is not ENGINEERING COMPLETE. Sprint 39 stays IN PROGRESS. It is not COMPLETE / CLOSED. This reconciliation does not implement the remaining Class C rows.
 
 ---
+
+## Next bounded Class C family (not selected)
+
+This reconciliation does not select a next engineering slice and does not implement one. It does not put the other 20 Class C rows behind conversation expiry.
+
+Conversation expiry remains Class C. It is not currently executable as a bounded Sprint 39 slice. `cleanup_expired` has no production caller. Read-time expiry has no consent-bearing request. Sprint 29 owns conversation TTL. Sprint 39 must not invent a scheduler or a fake transition. Do not implement expiry until an authoritative request-scoped expiry caller exists.
+
+`/search` is not selected either. `GET /search` is still an Early Access gate: production redirects home, and the non-production path redirects to a fixture catalog decision. That route does not expose truthful search success, failure, zero, or partial outcomes. Sprint 4 owns the search engine. Sprint 29 owns search presentation. Do not implement a search observer blindly on that redirect. That caution does not sequence the remaining rows behind search.
+
+The 21 Class C rows stay as audited: DAU / MAU, searches, search success, search failure, search zero, search partial, search started, latency, merchant coverage, market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend errors, backend errors, merchant errors, AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry. No classification in that list changes here.
+
+**Next action:** a bounded next-slice readiness audit across those 21 rows. That audit should identify which family has an existing authoritative request or domain transition and can be implemented without fabricating product behavior. Sprint 40 may still run in parallel according to the existing roadmap. This reconciliation does not start Sprint 40.
 
 ## Sequencing
 

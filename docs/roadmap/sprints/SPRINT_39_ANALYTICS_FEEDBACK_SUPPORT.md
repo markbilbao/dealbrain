@@ -1,17 +1,19 @@
 # Sprint 39 — Analytics, Feedback & Support
 
-**Status:** IN PROGRESS (2026-10-06). Audit verdict: SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN. Not COMPLETE / CLOSED. Not PRODUCTION PROVEN. Not LAUNCH READY. The 2026-10-02 ENGINEERING COMPLETE reading is withdrawn.
+**Status:** IN PROGRESS (2026-10-07). Audit verdict: SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. The 2026-10-02 ENGINEERING COMPLETE reading is withdrawn.
 **Primary owner / domain:** Product analytics + support
 **Master roadmap:** [`../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md`](../GLOBAL_PUBLIC_BETA_MASTER_ROADMAP.md)
 **Closure-readiness audit:** [`../evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](../evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md)
 **Staging evidence:** [`../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md)
+
+**Sprint 39.4 staging evidence:** [`../evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](../evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md)
 **Beta blocker classification:** Soft yes — learning; hard if privacy claims require it
 
 ## Current closure reading (2026-10-02)
 
-The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. The audit's Class C count remains 27. Sprint 39.4 does not revise that count. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
+The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. The pre-Sprint-39.4 Class C count was 27. The current Class C count is 21. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
 
-The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. Sprint 39.4 adds consent-gated product-analytics events for registrations, verified registrations, login success, login failure, deletion metrics, and the guest-to-account authentication transition. DAU/MAU, search analytics, merchant and market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend, backend, merchant, and AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry remain unimplemented. Consented-subject counts are not account DAU or MAU.
+The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. Sprint 39.4 adds consent-gated product-analytics events for registrations, verified registrations, login success, login failure, deletion metrics, and the guest-to-account authentication transition. Deploy Staging #43 proved registrations, login success, login failure, and deletion metrics. It did not prove verified registrations or authentication transition. No staging proof is claimed for those two. DAU/MAU, search analytics, merchant and market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend, backend, merchant, and AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry remain unimplemented. Consented-subject counts are not account DAU or MAU.
 
 The instruments that do exist remain: the consent gate, schema, dedup, first-party store, dashboard, feedback and incorrect-information path, support mailto, Ask open serialization, and the server observers that do not invent a decision. Core funnel counts stay 0.
 
@@ -127,7 +129,7 @@ Deploy Staging #42 later deployed this correction at `374c9e2f45cb1810626c4138b3
 
 ## Sprint 39.4 — consent-gated identity lifecycle product analytics
 
-Sprint 39 stays **IN PROGRESS**. It is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. This slice does not deploy, does not change Deploy Staging #41 or #42 evidence, and does not revise the closure audit's Class C count of 27.
+Sprint 39 stays **IN PROGRESS**. It is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. The implementation slice did not deploy and did not change Deploy Staging #41 or #42 evidence. Post-merge Deploy Staging #43 is recorded in the 2026-10-07 evidence note. The pre-Sprint-39.4 Class C count of 27 is historical. The current Class C count is 21.
 
 ### Implemented
 
@@ -150,11 +152,11 @@ Event ids are random server UUIDs. Email, user id, session id, token, conversati
 
 `ProductLearningDashboardService` adds `metrics.identity_lifecycle` with those six counts and `partial`. A truncated scan marks the section partial and counts only scanned rows. The section is not account DAU or MAU. `account_deleted` does not claim legal erasure beyond the Sprint 28 deletion operation.
 
-No staging proof is recorded for these events. That proof comes after a later deploy.
+Deploy Staging #43 of `d0f117b426010f629ec32b7d3f96f39dc6b865f7` (run `37567160567`, release `rel-20261007T024027Z-d0f117b42601`, host `staging_ok`) recorded `registration_completed`, `login_success`, `login_failure`, and `account_deleted`. Final `partial` was false. `registration_verified` and `authentication_transition` stayed 0. No staging proof is claimed for those two. The controlled address, credentials, tokens, session ids, and cookies are not stored in the evidence note.
 
 ### Still unimplemented
 
-These Class C blockers remain unimplemented. This list does not reduce the audit's Class C count:
+These current Class C blockers remain unimplemented. The pre-Sprint-39.4 count was 27. This list is the current count of 21:
 
 - DAU / MAU
 - searches, search success, search failure, search zero, search partial, and search started
@@ -166,6 +168,10 @@ These Class C blockers remain unimplemented. This list does not reduce the audit
 - slow pages and slow endpoints
 - support-contact analytics
 - conversation expiry
+
+### Next bounded slice (not selected)
+
+No next engineering slice is selected by this reconciliation. Conversation expiry remains Class C. It is not currently executable: `cleanup_expired` has no production caller, and read-time expiry has no consent-bearing request. Do not implement expiry until an authoritative request-scoped caller exists. `/search` is not selected either. That route is still an Early Access fixture redirect and does not expose truthful success, failure, zero, or partial outcomes. The next action is a bounded next-slice readiness audit across the remaining 21 Class C rows. Sprint 40 may still run in parallel. This reading does not start that audit or Sprint 40.
 
 ## Objective
 
