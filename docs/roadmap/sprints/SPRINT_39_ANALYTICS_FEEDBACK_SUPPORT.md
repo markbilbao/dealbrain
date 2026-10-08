@@ -7,6 +7,7 @@
 **Staging evidence:** [`../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md`](../evidence/SPRINT_39_2_STAGING_ANALYTICS_TEMPLATE.md)
 
 **Sprint 39.4 staging evidence:** [`../evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](../evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md)
+**Next-slice readiness audit:** [`../evidence/SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md`](../evidence/SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md)
 **Beta blocker classification:** Soft yes — learning; hard if privacy claims require it
 
 ## Current closure reading (2026-10-02)
@@ -22,6 +23,8 @@ Deploy Staging #41 remains the historical `ask_opened` failure. Deploy Staging #
 The documented 400-day engineering TTL satisfies "Retention policy for analytics." A purge job is not a current Sprint 39 acceptance requirement. Account export and account deletion exclusions stay documented and are not a partial identity join. EXT-15, EXT-22, and EXT-29 stay `not_started`. Search Console stays explicitly deferred with no ranking claim. Affiliate tracking stays off.
 
 Sprint 40 may still run in parallel. This reading does not start Sprint 40 or Sprint 41.
+
+The 2026-10-08 readiness audit does not change this closure reading and does not implement a slice. Class C count remains 21. It selects one next engineering slice: canonical Results recommendation and PiqScore view observation, covering Recommendation views and DealScore / PiqScore views. Both rows are READY-B. Staging proof waits for a canonical Results serve. The other 19 Class C rows stay blocked. That selection is a planning layer. It does not change any A/B/C classification.
 
 The dated 39.1, 39.2, and 39.3 sections below are slice history. Sprint 39.4 is the identity-lifecycle slice. Earlier residual lists are not the current closure checklist.
 
@@ -172,6 +175,12 @@ These current Class C blockers remain unimplemented. The pre-Sprint-39.4 count w
 ### Next bounded slice (not selected)
 
 No next engineering slice is selected by this reconciliation. Conversation expiry remains Class C. It is not currently executable: `cleanup_expired` has no production caller, and read-time expiry has no consent-bearing request. Do not implement expiry until an authoritative request-scoped caller exists. `/search` is not selected either. That route is still an Early Access fixture redirect and does not expose truthful success, failure, zero, or partial outcomes. The next action is a bounded next-slice readiness audit across the remaining 21 Class C rows. Sprint 40 may still run in parallel. This reading does not start that audit or Sprint 40.
+
+## Next-slice readiness (2026-10-08)
+
+The readiness audit named above is that audit. It does not implement the slice. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. Class C count remains 21. No A/B/C classification changes.
+
+The selected next engineering slice is canonical Results recommendation and PiqScore view observation. The exact rows are Recommendation views and DealScore / PiqScore views. No row is READY-A. Those two rows are READY-B. A non-zero staging count waits until a canonical Results response is served. Fixture Results pages stay out of the measurement. Public Results stays disabled. The other 19 Class C rows stay blocked, including search, conversation expiry, DAU / MAU, coverage, abandonment, support-contact analytics, and the latency and error rows. Sprint 40 may still run in parallel. This section does not start Sprint 40 and does not deploy.
 
 ## Objective
 

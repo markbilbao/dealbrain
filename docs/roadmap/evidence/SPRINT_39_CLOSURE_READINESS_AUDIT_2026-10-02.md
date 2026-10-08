@@ -24,6 +24,8 @@
 
 **Sprint 39.4 staging evidence:** [`SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md)
 
+**Next-slice readiness audit:** [`SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md`](SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md). That later audit does not change the A/B/C classifications in this file.
+
 No deploy was performed by the 2026-10-02 audit or by this 2026-10-07 reconciliation. Deploy Staging #43 is recorded evidence of an already completed deploy. No Shopify call was made. Sprint 40 was not started. Sprint 41 was not started. Affiliate tracking was not enabled. No third-party analytics provider was activated. No CMP was activated. Google Search Console was not called. Sprint 38 status is unchanged.
 
 ---
@@ -335,3 +337,9 @@ Sprint 40 may still run in parallel with Sprint 39. This audit does not start Sp
 Sprint 41 stays UNSTARTED. It remains the production-environment gate for production project separation and for the production validation Sprint 38 is waiting on. Sprint 41 does not own the analytics domain changes in this audit. This audit does not start Sprint 41.
 
 Sprint 42 still owns production probes, alerts, paging, and incident operations. Sprint 44 and Sprint 45 still own claims, rehearsal, public activation, and launch.
+
+## Next-slice readiness (2026-10-08)
+
+This section does not rewrite the 2026-10-07 reconciliation above. That reconciliation does not select a next engineering slice. The later readiness audit does. Class C count remains 21. No classification in the Included-requirements tables changes. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE.
+
+The selected next engineering slice is canonical Results recommendation and PiqScore view observation. The exact rows are Recommendation views and DealScore / PiqScore views. The audit does not implement that slice. Detail: [`SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md`](SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md).
