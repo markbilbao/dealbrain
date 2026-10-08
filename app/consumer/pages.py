@@ -393,6 +393,14 @@ def _results_main(view: DecisionPageView) -> str:
     """
 
 
+def _canonical_view_attr(view: DecisionPageView, element: str) -> str:
+    """Attribute for one canonical Results element. Fixture and other pages omit it."""
+
+    if view.presentation_mode != "canonical":
+        return ""
+    return f' data-product-analytics-{element}-view="true"'
+
+
 def _hero_card(view: DecisionPageView) -> str:
     best = view.best_piq
     badge = "Best Piq for You — Qualified" if best.is_qualified else "Best Piq for You"
@@ -414,8 +422,10 @@ def _hero_card(view: DecisionPageView) -> str:
     if best.economics.dominant_state == "price_before_shipping":
         dest = view.location.display_place if view.location.is_known else "your area"
         shipping_note = f'<p class="shipping-unknown">Shipping to {h(dest)} not yet verified.</p>'
+    recommendation_attr = _canonical_view_attr(view, "recommendation")
+    piqscore_attr = _canonical_view_attr(view, "piqscore")
     return f"""
-    <article class="hero-card" aria-labelledby="hero-title">
+    <article class="hero-card"{recommendation_attr} aria-labelledby="hero-title">
       <p class="badge {badge_class}">{h(badge)}</p>
       <div class="hero-grid">
         {product_visual(best.image_key, best.identity_name)}
@@ -444,7 +454,7 @@ def _hero_card(view: DecisionPageView) -> str:
           </div>
           {_feedback_controls()}
         </div>
-        <div class="hero-score" id="piqscore">
+        <div class="hero-score" id="piqscore"{piqscore_attr}>
           {piqscore_gauge(best.piqscore.value)}
           <p class="score-name">PiqScore</p>
           <p class="score-desc"><strong>{h(best.piqscore.descriptor)}</strong></p>

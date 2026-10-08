@@ -40,6 +40,8 @@ EVENT_NAMES: frozenset[str] = frozenset(
         "research_completed",
         "research_failed",
         "updated_results_viewed",
+        "recommendation_viewed",
+        "piqscore_viewed",
         "recommendation_helpful",
         "recommendation_not_helpful",
         "incorrect_information_report",

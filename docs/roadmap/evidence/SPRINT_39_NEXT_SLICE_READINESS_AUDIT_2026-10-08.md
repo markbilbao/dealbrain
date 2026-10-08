@@ -189,3 +189,7 @@ Re-checked on this `main`. `cleanup_expired` exists on the conversation reposito
 Sprint 39 stays IN PROGRESS. It is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. Class C count remains 21.
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, waiting on Sprint 41. Sprint 40 may still run in parallel and is not started by this audit. Sprint 41 stays UNSTARTED.
+
+## Sprint 39.5 implementation note
+
+This note does not rewrite the audit above. Sprint 39.5 implements `recommendation_viewed` and `piqscore_viewed`. The closure audit still classifies Recommendation views and DealScore / PiqScore views as C in the implementation PR. Class C count remains 21. A post-merge reconciliation is expected to move those two rows from C to B. They are not A. No staging proof is claimed. Public Results stays disabled. No deploy was performed for that implementation.

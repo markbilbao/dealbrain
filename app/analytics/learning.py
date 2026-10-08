@@ -100,6 +100,7 @@ class ProductLearningDashboardService:
         research = _research(in_window, partial=event_scan["truncated"])
         retention = _retention(in_window, partial=event_scan["truncated"])
         identity = _identity_lifecycle(in_window, partial=event_scan["truncated"])
+        recommendation = _recommendation_visibility(in_window, partial=event_scan["truncated"])
         feedback_metrics = _feedback(feedback_in_window, partial=report_scan["truncated"])
         return {
             "generated_at": clock.isoformat(),
@@ -115,6 +116,7 @@ class ProductLearningDashboardService:
                 "research": research,
                 "return_retention": retention,
                 "identity_lifecycle": identity,
+                "recommendation_visibility": recommendation,
             },
             "feedback": feedback_metrics,
             "coverage": {
@@ -311,6 +313,22 @@ _IDENTITY_LIFECYCLE_EVENTS = (
 )
 
 
+def _recommendation_visibility(
+    events: list[ProductAnalyticsEvent], *, partial: bool
+) -> dict[str, Any]:
+    """Count canonical Results hero and PiqScore observations.
+
+    These are event counts. They are not unique shoppers and not numeric scores.
+    A truncated newest-row scan keeps the scanned counts and sets ``partial``.
+    """
+
+    totals = {"recommendation_viewed": 0, "piqscore_viewed": 0}
+    for event in events:
+        if event.event_name in totals:
+            totals[event.event_name] += 1
+    return {**totals, "partial": partial}
+
+
 def _identity_lifecycle(events: list[ProductAnalyticsEvent], *, partial: bool) -> dict[str, Any]:
     """Count consented identity events already stored in the scanned window.
 
@@ -449,6 +467,8 @@ def _limitations() -> list[str]:
         "research_partial is unavailable because no authoritative partial transition exists.",
         "Returning and repeat-decision figures are analytics-subject metrics.",
         "identity_lifecycle counts consented product events only and is not account DAU or MAU.",
+        "recommendation_visibility counts canonical Results hero and PiqScore control "
+        "observations. It is not unique shoppers, viewport visibility, or a numeric score.",
         "account_deleted counts the existing account-deletion operation and does not "
         "claim legal erasure of audit logs, backups, analytics rows, or feedback rows.",
         "Account export and account deletion do not include these stores.",

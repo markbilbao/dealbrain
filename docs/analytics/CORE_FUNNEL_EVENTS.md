@@ -78,6 +78,38 @@ Stable ids use the server proposal id, authorization id, or execution id. Those 
 
 The Results route emits this only after `resolve_canonical_snapshot` returns an owner-authorized snapshot with `context_version > 1`. The browser `data-context-version` attribute is not an authority. Each serve is a view; a repeated GET can add another row.
 
+## recommendation_viewed and piqscore_viewed
+
+Sprint 39.5. These names are server-owned. They are not aliases of `results_viewed` or `updated_results_viewed`.
+
+| Event | Meaning |
+| --- | --- |
+| `results_viewed` | Browser Results document view, including unavailable Results |
+| `updated_results_viewed` | Authorized canonical snapshot with `context_version > 1` was served |
+| `recommendation_viewed` | Canonical Results response contained the Best Piq recommendation hero |
+| `piqscore_viewed` | Canonical Results response contained the hero PiqScore control |
+
+The visible score control is the PiqScore gauge. Results does not render a second DealScore control. `piqscore_viewed` is the observation for the DealScore / PiqScore row. `dealscore_viewed` is not an event.
+
+The Results route emits these only for `presentation_mode = canonical` and `data_unavailable = false`, and only after an authorized snapshot resolves. `context_version` 1 is allowed. The completed HTML is checked independently:
+
+- Best Piq hero: `data-product-analytics-recommendation-view="true"`
+- Hero PiqScore control: `data-product-analytics-piqscore-view="true"`
+
+A response can contain one marker without the other. The missing element is not recorded. `presentation_mode = canonical` alone does not record either event.
+
+A successful server serve is a view. This does not claim viewport visibility, scroll depth, eye tracking, or time on screen. A repeated GET can add another row. Event ids are random. They are not derived from the decision id, product id, score, query, account id, or subject cookie.
+
+Stored properties are the existing decision hash and context version, plus surface `results`, action `view`, and outcome `viewed`. The numeric PiqScore, DealScore, product name, product id, recommendation text, query, price, merchant, raw decision id, and HTML are not stored.
+
+Analytics off writes zero rows. Serving Results does not mint an analytics subject. Consent without an existing opaque subject writes zero rows. Fixture catalogs, `/results/unavailable`, unavailable Results, the production Early Access redirect, Compare, and Why write zero rows even when they contain similar PiqScore markup.
+
+Analytics failure does not change the Results response.
+
+`ProductLearningDashboardService` exposes `metrics.recommendation_visibility` with `recommendation_viewed`, `piqscore_viewed`, and `partial`. Those are event counts, not unique shoppers and not scores. A truncated newest-row scan sets `partial` true.
+
+No non-zero staging count is claimed. Public canonical Results is not enabled. Unit tests that build canonical snapshots are engineering verification, not staging evidence.
+
 ## return_visit and repeat_decision
 
 These names stay in the vocabulary. The dashboard derives them and does not require stored copies.

@@ -18,6 +18,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 
 from app.analytics.funnel import emit_updated_results_viewed
+from app.analytics.results_events import emit_canonical_results_visibility
 from app.analytics.service import ProductAnalyticsService
 from app.consumer import mode as consumer_mode
 from app.consumer.canonical_presentation import (
@@ -249,6 +250,14 @@ async def results_page(
             analytics=analytics,
             snapshots=snapshots,
         )
+        if not view.data_unavailable:
+            emit_canonical_results_visibility(
+                request,
+                response,
+                decision_id=view.decision_id,
+                analytics=analytics,
+                snapshots=snapshots,
+            )
     return response
 
 
