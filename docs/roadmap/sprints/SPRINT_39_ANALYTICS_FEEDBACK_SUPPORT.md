@@ -14,7 +14,7 @@
 
 The audit above is the closure-reading authority. Sprint 39 stays IN PROGRESS. Engineering status is not ENGINEERING COMPLETE. The pre-Sprint-39.4 Class C count was 27. The current Class C count is 21. This is not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY.
 
-The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. Sprint 39.4 adds consent-gated product-analytics events for registrations, verified registrations, login success, login failure, deletion metrics, and the guest-to-account authentication transition. Deploy Staging #43 proved registrations, login success, login failure, and deletion metrics. It did not prove verified registrations or authentication transition. No staging proof is claimed for those two. DAU/MAU, search analytics, merchant and market coverage, Recommendation views, DealScore / PiqScore views, funnel abandonment, frontend, backend, merchant, and AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry remain unimplemented. Consented-subject counts are not account DAU or MAU.
+The 2026-10-02 engineering-complete reading is withdrawn. The 2026-09-07 priority measurements do not remove the Included requirements section. Sprint 39.4 adds consent-gated product-analytics events for registrations, verified registrations, login success, login failure, deletion metrics, and the guest-to-account authentication transition. Deploy Staging #43 proved registrations, login success, login failure, and deletion metrics. It did not prove verified registrations or authentication transition. No staging proof is claimed for those two. Sprint 39.5 implements Recommendation views and DealScore / PiqScore views as server observations of the canonical Results hero and the hero PiqScore control. This implementation PR does not reclassify those rows. They stay Class C until a post-merge reconciliation moves them to B. They are not A. No staging proof is claimed for them. DAU/MAU, search analytics, merchant and market coverage, funnel abandonment, frontend, backend, merchant, and AI errors, slow pages, slow endpoints, support-contact analytics, and conversation expiry remain unimplemented. Consented-subject counts are not account DAU or MAU.
 
 The instruments that do exist remain: the consent gate, schema, dedup, first-party store, dashboard, feedback and incorrect-information path, support mailto, Ask open serialization, and the server observers that do not invent a decision. Core funnel counts stay 0.
 
@@ -159,7 +159,7 @@ Deploy Staging #43 of `d0f117b426010f629ec32b7d3f96f39dc6b865f7` (run `375671605
 
 ### Still unimplemented
 
-These current Class C blockers remain unimplemented. The pre-Sprint-39.4 count was 27. This list is the current count of 21:
+These Class C blockers were unimplemented at the end of Sprint 39.4. The pre-Sprint-39.4 count was 27. This list is that count of 21. Sprint 39.5 implements the Recommendation views and DealScore / PiqScore views rows without changing this count:
 
 - DAU / MAU
 - searches, search success, search failure, search zero, search partial, and search started
@@ -181,6 +181,42 @@ No next engineering slice is selected by this reconciliation. Conversation expir
 The readiness audit named above is that audit. It does not implement the slice. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. Class C count remains 21. No A/B/C classification changes.
 
 The selected next engineering slice is canonical Results recommendation and PiqScore view observation. The exact rows are Recommendation views and DealScore / PiqScore views. No row is READY-A. Those two rows are READY-B. A non-zero staging count waits until a canonical Results response is served. Fixture Results pages stay out of the measurement. Public Results stays disabled. The other 19 Class C rows stay blocked, including search, conversation expiry, DAU / MAU, coverage, abandonment, support-contact analytics, and the latency and error rows. Sprint 40 may still run in parallel. This section does not start Sprint 40 and does not deploy.
+
+## Sprint 39.5 — canonical Results recommendation and PiqScore view observation
+
+Sprint 39 stays **IN PROGRESS**. It is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. This slice does not deploy and does not enable public Results. Sprint 38 is unchanged. Class C count remains 21.
+
+### Implemented
+
+Two server-owned events, recorded only from the canonical Results response:
+
+- `recommendation_viewed` when the completed HTML contains the Best Piq recommendation hero
+- `piqscore_viewed` when the completed HTML contains the hero PiqScore control
+
+`dealscore_viewed` is not added. Results does not render a second DealScore control. `piqscore_viewed` is the observation for the combined DealScore / PiqScore row.
+
+The browser cannot submit either name. `POST /api/v1/analytics/events` returns `server_owned_event` and writes zero rows. Neither name is in `CLIENT_EVENT_NAMES`.
+
+The route does not record an event only because `presentation_mode` is `canonical`. The rendered markers are:
+
+- `data-product-analytics-recommendation-view="true"` on the Best Piq hero
+- `data-product-analytics-piqscore-view="true"` on the hero PiqScore control
+
+The checks are independent. Compare, Why, fixture Results, unavailable Results, and the production Early Access redirect do not emit these events. A fixture page can contain visually similar hero and PiqScore markup and still write zero rows.
+
+Authority follows `emit_updated_results_viewed`: the request owner and `resolve_canonical_snapshot`. No authorized snapshot writes zero rows. The stored decision reference is the snapshot decision hash and context version. `context_version` 1 is allowed. These are not `updated_results_viewed`. `mint_subject` stays false. Analytics off, and analytics on without an existing opaque subject, write zero rows and do not create a subject cookie.
+
+Each successful serve is a view. Event ids are random. A repeated GET can add another row. Analytics failures are swallowed and do not change the Results HTML.
+
+`metrics.recommendation_visibility` counts `recommendation_viewed` and `piqscore_viewed`, plus `partial`. A truncated analytics scan sets `partial` true. The counts are not unique shoppers and do not include a numeric score or recommendation text.
+
+Definitions are in [`../../analytics/CORE_FUNNEL_EVENTS.md`](../../analytics/CORE_FUNNEL_EVENTS.md).
+
+### Not claimed
+
+No non-zero staging proof. Public staging and production do not expose a real canonical Results shopper flow. Fixture pages and unit-test snapshots are not staging evidence. This PR does not mark the two rows A or B. After merge, a reconciliation can move them from C to B because the observer exists and staging proof remains blocked.
+
+The other 19 Class C rows stay unimplemented: DAU / MAU; searches, search success, search failure, search zero, search partial, and search started; latency; merchant coverage and market coverage; funnel abandonment; frontend errors, backend errors, merchant errors, and AI errors; slow pages and slow endpoints; support-contact analytics; conversation expiry.
 
 ## Objective
 

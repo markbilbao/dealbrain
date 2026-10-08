@@ -1,10 +1,14 @@
-"""Sprint 39 next-slice readiness. Does not implement a slice or change A/B/C."""
+"""Sprint 39 next-slice readiness.
+
+The 2026-10-08 audit selects the slice and does not reclassify rows.
+Sprint 39.5 adds the two server events. Closure classes stay C.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from app.analytics.schema import EVENT_NAMES
+from app.analytics.schema import CLIENT_EVENT_NAMES, EVENT_NAMES
 from app.research.shopify_global_catalog_access_stage import SPRINT_38_STATUS
 from app.research.sprint38_live_execution import SPRINT_38_ENGINEERING_STATUS
 
@@ -217,8 +221,14 @@ def test_selected_slice_names_only_the_two_ready_rows() -> None:
         assert "DealScore / PiqScore views" in document
     assert "recommendation_viewed" in text
     assert "piqscore_viewed" in text
-    assert "recommendation_viewed" not in EVENT_NAMES
-    assert "piqscore_viewed" not in EVENT_NAMES
+    assert "recommendation_viewed" in EVENT_NAMES
+    assert "piqscore_viewed" in EVENT_NAMES
+    assert "recommendation_viewed" not in CLIENT_EVENT_NAMES
+    assert "piqscore_viewed" not in CLIENT_EVENT_NAMES
+    assert "dealscore_viewed" not in EVENT_NAMES
+    assert "Sprint 39.5" in sprint
+    assert "No staging proof is claimed" in sprint
+    assert "Class C count remains 21" in sprint
 
 
 def test_sprint_39_status_and_closure_classes_stay_put() -> None:

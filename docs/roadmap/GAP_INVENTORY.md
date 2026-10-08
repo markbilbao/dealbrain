@@ -1255,3 +1255,7 @@ This addendum does **not** rewrite the 2026-08-06 section H rows or the 2026-10-
 | Sprint 38 | Unchanged. ENGINEERING COMPLETE and IN PROGRESS, waiting on Sprint 41 |
 | Next slice | Not selected. Conversation expiry stays Class C and is not executable until an authoritative request-scoped caller exists. `/search` is not selected either. Next action is a bounded next-slice readiness audit across the 21 Class C rows. Sprint 40 may still run in parallel |
 | Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md); [`evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md) |
+
+## 2026-10-08 Sprint 39.5 canonical Results visibility
+
+This addendum does **not** rewrite the 2026-10-07 table above and does **not** change Included-requirements classifications. Sprint 39.5 implements `recommendation_viewed` and `piqscore_viewed`. No staging proof is claimed. Recommendation views and DealScore / PiqScore views stay Class C in this implementation PR. A post-merge reconciliation is expected to move those two rows from C to B. They are not A. The current Class C count is 21. Sprint 39 is not ENGINEERING COMPLETE. It does **not** close Sprint 39, close Sprint 38, start Sprint 40, deploy, or call Shopify.
