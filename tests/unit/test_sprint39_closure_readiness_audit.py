@@ -345,3 +345,23 @@ def test_sprint_39_4_reconciliation_keeps_two_rows_unproven() -> None:
     assert "IN PROGRESS" in sprint39
     assert "COMPLETE / CLOSED" in sprint39
     assert sprint39.split("**Status:**", 1)[1].split(".", 1)[0].strip().startswith("IN PROGRESS")
+
+
+def test_sprint_39_5_reconciliation_is_appended_without_rewriting_history() -> None:
+    audit = AUDIT.read_text(encoding="utf-8")
+    section = audit.split(
+        "Sprint 39.5 post-merge classification reconciliation (2026-10-08)",
+        1,
+    )[1]
+    assert "Pre-Sprint-39.4 Class C count: 27." in audit
+    assert "Class C count: 21." in audit
+    assert "After Sprint 39.4 Class C count: 21." in section
+    assert "After Sprint 39.5 Class C count: 19." in section
+    assert "Current Class C count is 19." in section
+    assert "| Recommendation views | B |" in section
+    assert "| DealScore / PiqScore views | B |" in section
+    assert "Neither row is A." in section
+    assert "No staging proof is claimed." in section
+    assert "is not ENGINEERING COMPLETE" in section
+    assert "No next engineering slice is selected by this reconciliation." in section
+    assert "PR #184 is merged" in section

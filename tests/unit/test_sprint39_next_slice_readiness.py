@@ -1,7 +1,8 @@
 """Sprint 39 next-slice readiness.
 
 The 2026-10-08 audit selects the slice and does not reclassify rows.
-Sprint 39.5 adds the two server events. Closure classes stay C.
+Sprint 39.5 adds the two server events. The post-merge reconciliation
+moves those two closure classes from C to B. They are not A.
 """
 
 from __future__ import annotations
@@ -279,3 +280,24 @@ def test_parallel_sprint_status_is_unchanged() -> None:
     assert "No deploy was performed." in text
     assert "No Shopify call was made." in text
     assert "Runtime code is unchanged." in text
+
+
+def test_post_merge_note_retires_the_unimplemented_slice_reading() -> None:
+    text = READINESS.read_text(encoding="utf-8")
+    verdict = next(line for line in text.splitlines() if line.startswith("**Audit verdict:**"))
+    assert verdict == (
+        "**Audit verdict:** One bounded next engineering slice is selected. "
+        "It is not implemented in this audit."
+    )
+    note = text.split(
+        "Sprint 39.5 post-merge classification reconciliation (2026-10-08)",
+        1,
+    )[1]
+    assert "Class C count remains 21" in text
+    assert "no longer represents an unimplemented selected slice" in note
+    assert "current Class C count is 19" in note
+    assert "closure Class B" in note
+    assert "They are not A." in note
+    assert "No staging proof exists." in note
+    assert "No next engineering slice is selected by this reconciliation." in note
+    assert "does not assume the findings above are enough" in note

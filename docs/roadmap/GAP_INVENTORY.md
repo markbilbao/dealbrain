@@ -1259,3 +1259,23 @@ This addendum does **not** rewrite the 2026-08-06 section H rows or the 2026-10-
 ## 2026-10-08 Sprint 39.5 canonical Results visibility
 
 This addendum does **not** rewrite the 2026-10-07 table above and does **not** change Included-requirements classifications. Sprint 39.5 implements `recommendation_viewed` and `piqscore_viewed`. No staging proof is claimed. Recommendation views and DealScore / PiqScore views stay Class C in this implementation PR. A post-merge reconciliation is expected to move those two rows from C to B. They are not A. The current Class C count is 21. Sprint 39 is not ENGINEERING COMPLETE. It does **not** close Sprint 39, close Sprint 38, start Sprint 40, deploy, or call Shopify.
+
+## 2026-10-08 Sprint 39.5 post-merge classification reconciliation
+
+This addendum does **not** rewrite the 2026-10-06, 2026-10-07, or Sprint 39.5 implementation tables above. PR #184 is merged. `main` is `8f64cdee3e4e115edbdee56428cfbe4b0570e305`. Post-merge CI #449 succeeded. Build Image #159 succeeded. Sprint 39.1, Sprint 39.2, Sprint 39.3, Sprint 39.4, and Sprint 39.5 are merged. This addendum does **not** implement runtime code, close Sprint 39, close Sprint 38, start Sprint 40, deploy, or call Shopify.
+
+| Field | Value |
+|-------|-------|
+| Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | SPRINT 39 IN PROGRESS — TRUE SPRINT 39 ENGINEERING BLOCKERS REMAIN |
+| Engineering | Not ENGINEERING COMPLETE |
+| Pre-Sprint-39.4 Class C count | 27 |
+| After Sprint 39.4 Class C count | 21 |
+| Current Class C count | 19 |
+| Recommendation views | B. IMPLEMENTED, CLOSURE EVIDENCE BLOCKED ON REAL CANONICAL RESULTS TRAFFIC. Not A. `recommendation_viewed` exists |
+| DealScore / PiqScore views | B. IMPLEMENTED, CLOSURE EVIDENCE BLOCKED ON REAL CANONICAL RESULTS TRAFFIC. Not A. `piqscore_viewed` exists. `dealscore_viewed` does not exist |
+| Staging proof | None. Public canonical Results remains unavailable in the real shopper path |
+| Still Class C | DAU / MAU; searches; search success; search failure; search zero; search partial; search started; latency; merchant coverage; market coverage; funnel abandonment; frontend errors; backend errors; merchant errors; AI errors; slow pages; slow endpoints; support-contact analytics; conversation expiry |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Next slice | Not selected. The 2026-10-08 readiness audit evaluated the prior 21-row set. Next action is a fresh bounded readiness review of the remaining 19 Class C rows. This addendum does not assume that audit is enough to select one without re-audit. Sprint 40 may still run in parallel |
+| Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md) |

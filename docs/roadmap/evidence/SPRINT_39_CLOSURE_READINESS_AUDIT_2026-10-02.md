@@ -8,6 +8,8 @@
 
 **Engineering status:** Not ENGINEERING COMPLETE. Current Class C count is 21. The pre-Sprint-39.4 Class C count was 27. This reconciliation does not implement the remaining blockers.
 
+**Later reading (2026-10-08):** The Sprint 39.5 post-merge classification reconciliation at the end of this file is the current classification. It does not rewrite the 2026-10-06 tables or the counts in this header. Pre-Sprint-39.4 Class C count remains 27. After Sprint 39.4 Class C count remains 21. Current Class C count is 19.
+
 **Staging proof:** PARTIAL. Deploy Staging #42 proved the consent gate, first-party storage, one corrected `ask_opened`, feedback with analytics on, and feedback after opt-out with no new analytics row. The core funnel stays at zero. Deploy Staging #43 proved `registration_completed`, `login_success`, `login_failure`, and `account_deleted`. It did not prove `registration_verified` or `authentication_transition`.
 
 **Production proof:** No. Not PRODUCTION PROVEN.
@@ -343,3 +345,68 @@ Sprint 42 still owns production probes, alerts, paging, and incident operations.
 This section does not rewrite the 2026-10-07 reconciliation above. That reconciliation does not select a next engineering slice. The later readiness audit does. Class C count remains 21. No classification in the Included-requirements tables changes. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE.
 
 The selected next engineering slice is canonical Results recommendation and PiqScore view observation. The exact rows are Recommendation views and DealScore / PiqScore views. The audit does not implement that slice. Detail: [`SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md`](SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md).
+
+## Sprint 39.5 post-merge classification reconciliation (2026-10-08)
+
+This section does not rewrite the 2026-10-06 Included-requirements tables or the 2026-10-07 counts above. Those tables still record Recommendation views and DealScore / PiqScore views as Class C. That was the classification before PR #184 merged. This section is the current classification.
+
+PR #184 is merged. `main` is `8f64cdee3e4e115edbdee56428cfbe4b0570e305`. Post-merge CI #449 succeeded. Build Image #159 succeeded.
+
+Sprint 39.1 merged. Sprint 39.2 merged. Sprint 39.3 merged. Sprint 39.4 merged. Sprint 39.5 merged.
+
+Sprint 39.5 implemented server-owned `recommendation_viewed` and `piqscore_viewed`. `dealscore_viewed` was not added. Results does not render a separate DealScore control.
+
+| Row | Current class | Reason |
+|-----|---------------|--------|
+| Recommendation views | B | IMPLEMENTED, CLOSURE EVIDENCE BLOCKED ON REAL CANONICAL RESULTS TRAFFIC |
+| DealScore / PiqScore views | B | IMPLEMENTED, CLOSURE EVIDENCE BLOCKED ON REAL CANONICAL RESULTS TRAFFIC |
+
+Neither row is A.
+
+Recommendation views are B because the implementation exists and is tested. `recommendation_viewed` is emitted only when Results is canonical, Results is not unavailable, an authorized snapshot resolves, the rendered HTML contains the recommendation marker, analytics consent is allowed, and an existing valid analytics subject exists. No staging proof exists because the real canonical shopper Results journey is not publicly active.
+
+DealScore / PiqScore views are B because the implementation exists and is tested. `piqscore_viewed` truthfully observes the visible PiqScore gauge. There is no separate visible DealScore control, and no `dealscore_viewed` event was invented. No staging proof exists for the same canonical Results reason.
+
+No staging proof is claimed. Public canonical Results remains unavailable in the real shopper path. Fixture pages and unit-test snapshots are not staging evidence.
+
+**Pre-Sprint-39.4 Class C count: 27.**
+
+**After Sprint 39.4 Class C count: 21.**
+
+**After Sprint 39.5 Class C count: 19.**
+
+**Current Class C count is 19.**
+
+No other Included-requirements A/B/C classification changed.
+
+Class C rows, current after Sprint 39.5, are:
+
+1. DAU / MAU
+2. searches
+3. search success
+4. search failure
+5. search zero
+6. search partial
+7. search started
+8. latency
+9. merchant coverage
+10. market coverage
+11. funnel abandonment
+12. frontend errors
+13. backend errors
+14. merchant errors
+15. AI errors
+16. slow pages
+17. slow endpoints
+18. support-contact analytics
+19. conversation expiry
+
+Sprint 39 remains IN PROGRESS. It is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. Nineteen true Class C engineering blockers remain.
+
+Sprint 38 remains IN PROGRESS and ENGINEERING COMPLETE. Its closure validation stays blocked on Sprint 41. This reconciliation does not change Sprint 38.
+
+Sprint 40 may still run in parallel according to the existing roadmap. This reconciliation does not start Sprint 40. Sprint 41 stays UNSTARTED.
+
+No next engineering slice is selected by this reconciliation. The 2026-10-08 readiness audit evaluated the prior 21-row set. Two rows have left Class C. The next action is a fresh bounded readiness review of the remaining 19 Class C rows. This reconciliation does not assume that audit already contains enough evidence to select one without re-audit. It does not pick search, expiry, latency, errors, coverage, DAU / MAU, or support.
+
+No deploy was performed by this reconciliation. No Shopify call was made. Public Results stays disabled. Routing stays 0. `SHOPIFY_LIVE_CALL_PERMITTED` stays false. Real Shopify calls stay 0. Affiliate tracking stays off. No third-party analytics provider was activated.
