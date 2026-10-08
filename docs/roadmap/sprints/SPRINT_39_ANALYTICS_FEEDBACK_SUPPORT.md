@@ -8,6 +8,7 @@
 
 **Sprint 39.4 staging evidence:** [`../evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md`](../evidence/SPRINT_39_4_IDENTITY_LIFECYCLE_STAGING_2026-10-07.md)
 **Next-slice readiness audit:** [`../evidence/SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md`](../evidence/SPRINT_39_NEXT_SLICE_READINESS_AUDIT_2026-10-08.md)
+**Remaining-19 readiness audit:** [`../evidence/SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md`](../evidence/SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md)
 **Beta blocker classification:** Soft yes — learning; hard if privacy claims require it
 
 ## Current closure reading (2026-10-02)
@@ -262,6 +263,16 @@ Sprint 39 remains IN PROGRESS. It is not ENGINEERING COMPLETE, not COMPLETE / CL
 Sprint 38 remains IN PROGRESS and ENGINEERING COMPLETE. Closure validation stays blocked on Sprint 41. This reconciliation does not change Sprint 38.
 
 No next engineering slice is selected by this reconciliation. The merged readiness audit evaluated the prior 21-row set. The next action is a fresh bounded readiness review of the remaining 19 Class C rows. This reconciliation does not assume that audit already contains enough evidence to select one without re-audit. Sprint 40 may still run in parallel. This section does not start Sprint 40 and does not deploy. No Shopify call was made. Public Results stays disabled.
+
+## Remaining-19 readiness (2026-10-08)
+
+The fresh review of the remaining 19 Class C rows is [`../evidence/SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md`](../evidence/SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md). It starts from `49a94f04948152567d4547c29f04e59268642273`. It does not implement a slice. It does not change any A/B/C classification. Current Class C count remains 19. Recommendation views remain B. DealScore / PiqScore views remain B. Neither is A. No staging proof is claimed for them.
+
+**Selected next engineering slice:** NONE
+
+No row is READY-A, READY-B, or READY-DEFINITION. Support-contact analytics is freshly `BLOCKED-DEFINITION`. The other 18 rows stay in their prior readiness classes after re-check. Twelve rows have a ROADMAP OWNERSHIP GAP for the missing prerequisite. Seven rows need a product-definition decision. None of the 19 is blocked only on another sprint.
+
+Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE, not COMPLETE / CLOSED, not PRODUCTION PROVEN, and not LAUNCH READY. The recommendation is to remain open while Sprint 40 proceeds in parallel, schedule the product-definition decision, and correct roadmap ownership. This section does not start Sprint 40 and does not deploy. No Shopify call was made. Public Results stays disabled.
 
 ## Objective
 
