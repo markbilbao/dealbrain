@@ -1279,3 +1279,17 @@ This addendum does **not** rewrite the 2026-10-06, 2026-10-07, or Sprint 39.5 im
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Next slice | Not selected. The 2026-10-08 readiness audit evaluated the prior 21-row set. Next action is a fresh bounded readiness review of the remaining 19 Class C rows. This addendum does not assume that audit is enough to select one without re-audit. Sprint 40 may still run in parallel |
 | Authority | [`evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md`](evidence/SPRINT_39_CLOSURE_READINESS_AUDIT_2026-10-02.md) |
+
+## 2026-10-08 Sprint 39 remaining-19 readiness
+
+This addendum does not rewrite the tables above. The fresh review is [`evidence/SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md`](evidence/SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md). It starts from `49a94f04948152567d4547c29f04e59268642273`. Current Class C count remains 19. Pre-Sprint-39.4 Class C count remains 27. After Sprint 39.4 Class C count remains 21. Recommendation views remain B. DealScore / PiqScore views remain B. They are not A.
+
+| Field | Value |
+|-------|-------|
+| Sprint 39 closure | IN PROGRESS. Not COMPLETE / CLOSED. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Engineering | Not ENGINEERING COMPLETE |
+| Current Class C count | 19 |
+| Selected next engineering slice | NONE |
+| READY-A / READY-B / READY-DEFINITION | none |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 40 | May still run in parallel. Not started by this review |

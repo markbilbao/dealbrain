@@ -410,3 +410,11 @@ Sprint 40 may still run in parallel according to the existing roadmap. This reco
 No next engineering slice is selected by this reconciliation. The 2026-10-08 readiness audit evaluated the prior 21-row set. Two rows have left Class C. The next action is a fresh bounded readiness review of the remaining 19 Class C rows. This reconciliation does not assume that audit already contains enough evidence to select one without re-audit. It does not pick search, expiry, latency, errors, coverage, DAU / MAU, or support.
 
 No deploy was performed by this reconciliation. No Shopify call was made. Public Results stays disabled. Routing stays 0. `SHOPIFY_LIVE_CALL_PERMITTED` stays false. Real Shopify calls stay 0. Affiliate tracking stays off. No third-party analytics provider was activated.
+
+## Remaining-19 readiness (2026-10-08)
+
+This section does not rewrite the tables above. The fresh review is [`SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md`](SPRINT_39_REMAINING_19_READINESS_AUDIT_2026-10-08.md). It starts from `49a94f04948152567d4547c29f04e59268642273`. Current Class C count remains 19. Historical counts remain 27, then 21, then 19. Recommendation views remain B. DealScore / PiqScore views remain B. Neither is A.
+
+**Selected next engineering slice:** NONE
+
+No readiness class in that review changes a closure class. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. Sprint 38 is unchanged. Sprint 40 is not started. No deploy was performed. No Shopify call was made. Public Results stays disabled.
