@@ -705,8 +705,13 @@ def test_sprint_39_5_does_not_close_sprint_39_or_touch_shopify() -> None:
     assert "not ENGINEERING COMPLETE" in sprint
     assert "current Class C count is 21" in sprint
     assert "Class C count remains 21" in sprint
+    assert "The current Class C count is 19" in sprint
+    assert "| Recommendation views | B |" in sprint
+    assert "| DealScore / PiqScore views | B |" in sprint
+    assert "Neither row is A." in sprint
     assert "Sprint 39.5" in sprint
     assert "No staging proof is claimed" in sprint
+    assert "No next engineering slice is selected by this reconciliation." in sprint
     assert "recommendation_viewed" in sprint
     assert "piqscore_viewed" in sprint
     assert "dealscore_viewed" in sprint

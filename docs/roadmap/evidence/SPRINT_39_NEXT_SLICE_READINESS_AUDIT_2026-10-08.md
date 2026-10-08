@@ -193,3 +193,9 @@ Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, waiting on Sprint 41. Spri
 ## Sprint 39.5 implementation note
 
 This note does not rewrite the audit above. Sprint 39.5 implements `recommendation_viewed` and `piqscore_viewed`. The closure audit still classifies Recommendation views and DealScore / PiqScore views as C in the implementation PR. Class C count remains 21. A post-merge reconciliation is expected to move those two rows from C to B. They are not A. No staging proof is claimed. Public Results stays disabled. No deploy was performed for that implementation.
+
+## Sprint 39.5 post-merge classification reconciliation (2026-10-08)
+
+This note does not rewrite the historical audit verdict or the readiness table above. The selected READY-B slice was implemented in Sprint 39.5 and merged in PR #184. Recommendation views and DealScore / PiqScore views are now closure Class B. They are not A. No staging proof exists. The current Class C count is 19. This readiness audit no longer represents an unimplemented selected slice. It evaluated the prior 21-row set. Two rows have left Class C.
+
+No next engineering slice is selected by this reconciliation. The next action is a fresh bounded readiness review of the remaining 19 Class C rows. This note does not assume the findings above are enough to select one without that review. It does not pick search, expiry, latency, errors, coverage, DAU / MAU, or support. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. Sprint 38 is unchanged. Sprint 40 is not started. No deploy was performed. No Shopify call was made. Public Results stays disabled.
