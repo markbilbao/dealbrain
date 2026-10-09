@@ -352,7 +352,9 @@ def test_body_profile_id_personalizes_only_when_bound_to_verified_account() -> N
     service = _service(
         user_platform_service=platform,
         personal_agent_service=personal,
-        clock=lambda: datetime.now(UTC),
+        # Guest bindings in this file expire two hours after NOW. The service
+        # clock has to stay on that same instant once wall clock passes it.
+        clock=lambda: NOW,
     )
 
     guest_result = service.query(

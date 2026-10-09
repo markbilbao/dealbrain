@@ -82,6 +82,7 @@ def _prod_settings(**overrides: object) -> Settings:
         "TRANSACTIONAL_EMAIL_FROM": "no-reply@piqsavi.com",
         "TRANSACTIONAL_EMAIL_FROM_NAME": "PiqSavi",
         "PUBLIC_APP_BASE_URL": "https://piqsavi.com",
+        "TRUSTED_PROXY_CIDRS": "10.20.0.0/24,10.20.1.0/24,172.16.0.0/12",
     }
     base.update(overrides)
     return Settings(**base)  # type: ignore[arg-type]

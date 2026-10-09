@@ -1109,6 +1109,14 @@ Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLET
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
 
+### Sprint 40.3 distributed rate-limit MVP (2026-10-09)
+
+This note does not rewrite the readiness audit or the Sprint 40.1 and Sprint 40.2 notes above and does not change Sprint 38 or Sprint 39 status. Sprint 40.3 stores rate-limit counters in the existing PostgreSQL database so staging and production workers share them. Public buckets use the client address appended by a trusted ALB or Docker proxy. The Sprint 40 HIGH "In-process rate limits only" is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Required staging evidence "Abuse controls exercised" is absent. Evidence: [`evidence/SPRINT_40_3_DISTRIBUTED_RATE_LIMIT_2026-10-09.md`](evidence/SPRINT_40_3_DISTRIBUTED_RATE_LIMIT_2026-10-09.md). Starting `main` is `81a4d6aef4e9b49bf3648245190588f87c51c152`.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. CSRF not enforced, CSP `'unsafe-inline'`, and incomplete URL validation remain the existing MEDIUMs. Dependabot, CodeQL, and Trivy are still absent. R6 stays PARTIAL. They are not relabeled launch-blocking. No risk acceptance is recorded.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

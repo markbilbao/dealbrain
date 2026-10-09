@@ -1,17 +1,21 @@
-"""Configurable HTTP rate limiting (Sprint 22).
+"""Configurable HTTP rate limiting (Sprint 22, shared counters in Sprint 40.3).
 
-In-process sliding windows — not a production WAF/CDN. Protects login,
-registration, affiliate, merchant, search, and recommendation surfaces.
+Staging and production use the PostgreSQL counter. Development may use an
+explicit in-memory window. This is not a WAF or CDN.
 """
 
 from __future__ import annotations
 
-import threading
-from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Literal
+
+from app.launch.rate_limit_backend import (
+    InMemoryRateLimitStore,
+    RateLimitStore,
+    RateLimitUnavailable,
+)
 
 RateLimitBucket = Literal[
     "default",
@@ -41,10 +45,11 @@ class RateLimitDecision:
     remaining: int
     retry_after_seconds: int
     key: str
+    unavailable: bool = False
 
 
 class ConfigurableRateLimiter:
-    """Multi-bucket sliding-window rate limiter."""
+    """Multi-bucket rate limiter over a shared or explicit in-memory store."""
 
     def __init__(
         self,
@@ -52,12 +57,12 @@ class ConfigurableRateLimiter:
         *,
         enabled: bool = True,
         clock: Callable[[], datetime] | None = None,
+        store: RateLimitStore | None = None,
     ) -> None:
         self._rules = rules
         self._enabled = enabled
         self._clock = clock or (lambda: datetime.now(UTC))
-        self._lock = threading.Lock()
-        self._attempts: dict[str, deque[datetime]] = defaultdict(deque)
+        self._store = store or InMemoryRateLimitStore()
 
     @property
     def enabled(self) -> bool:
@@ -67,11 +72,15 @@ class ConfigurableRateLimiter:
         self._enabled = enabled
 
     def reset(self, key: str | None = None) -> None:
-        with self._lock:
-            if key is None:
-                self._attempts.clear()
-            else:
-                self._attempts.pop(key, None)
+        if key is None:
+            for bucket in self._rules:
+                self._store.reset(scope=bucket)
+            return
+        scope, separator, identity = key.partition(":")
+        if separator and scope in self._rules:
+            self._store.reset(scope=scope, identity=identity)
+            return
+        self._store.reset(identity=key)
 
     def check(self, bucket: RateLimitBucket, identity: str) -> RateLimitDecision:
         rule = self._rules.get(bucket) or self._rules["default"]
@@ -85,34 +94,33 @@ class ConfigurableRateLimiter:
                 retry_after_seconds=0,
                 key=key,
             )
-
-        now = self._clock()
-        window = timedelta(seconds=rule.window_seconds)
-        with self._lock:
-            bucket_q = self._attempts[key]
-            while bucket_q and now - bucket_q[0] > window:
-                bucket_q.popleft()
-            if len(bucket_q) >= rule.max_requests:
-                oldest = bucket_q[0]
-                retry = max(1, int((oldest + window - now).total_seconds()) + 1)
-                return RateLimitDecision(
-                    allowed=False,
-                    bucket=bucket,
-                    limit=rule.max_requests,
-                    remaining=0,
-                    retry_after_seconds=retry,
-                    key=key,
-                )
-            bucket_q.append(now)
-            remaining = max(0, rule.max_requests - len(bucket_q))
+        try:
+            consumed = self._store.consume(
+                scope=bucket,
+                identity=identity,
+                limit=rule.max_requests,
+                window_seconds=rule.window_seconds,
+                now=self._clock(),
+            )
+        except RateLimitUnavailable:
             return RateLimitDecision(
-                allowed=True,
+                allowed=False,
                 bucket=bucket,
                 limit=rule.max_requests,
-                remaining=remaining,
+                remaining=0,
                 retry_after_seconds=0,
                 key=key,
+                unavailable=True,
             )
+        return RateLimitDecision(
+            allowed=consumed.allowed,
+            bucket=bucket,
+            limit=consumed.limit,
+            remaining=consumed.remaining,
+            retry_after_seconds=consumed.retry_after_seconds,
+            key=key,
+            unavailable=False,
+        )
 
 
 def classify_path(method: str, path: str) -> RateLimitBucket:

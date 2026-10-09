@@ -14,6 +14,7 @@ from app.infrastructure.database.models import (  # noqa: F401
     OperationalEntityModel,
     PriceSnapshotModel,
     Product,
+    RateLimitCounterModel,
 )
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection

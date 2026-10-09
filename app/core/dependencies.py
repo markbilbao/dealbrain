@@ -124,6 +124,7 @@ from app.launch.feature_flags import FeatureFlagRegistry, get_feature_flags
 from app.launch.fixtures import DemoLauncherState
 from app.launch.memory import InMemoryLaunchStore
 from app.launch.rate_limit import ConfigurableRateLimiter, RateLimitRule
+from app.launch.rate_limit_backend import get_auth_rate_limiter, get_shared_rate_limit_store
 from app.marketplace import (
     FixtureMarketplaceConnector,
     ImportedMarketplaceConnector,
@@ -275,6 +276,7 @@ _RATE_LIMITER = ConfigurableRateLimiter(
         ),
     },
     enabled=settings.rate_limiting_enabled,
+    store=get_shared_rate_limit_store(),
 )
 _LAUNCH_HEALTH_SERVICE: LaunchHealthService | None = None
 _LAUNCH_DASHBOARD_SERVICE: LaunchDashboardService | None = None
@@ -1228,6 +1230,7 @@ def get_user_platform_service() -> UserPlatformService:
             legal_catalog=legal_catalog,
             email_sender=build_identity_email_sender(settings),
             audit=audit,
+            rate_limiter=get_auth_rate_limiter(),
             enabled=settings.user_platform_enabled,
         )
         profiles = ProfileService(users=store.users, profiles=store.profiles)
@@ -1609,7 +1612,7 @@ def get_shopping_assistant_service(
 
 
 def get_rate_limiter() -> ConfigurableRateLimiter:
-    """Provide the process-scoped HTTP rate limiter."""
+    """Provide the HTTP rate limiter for this process's selected backend."""
     return _RATE_LIMITER
 
 

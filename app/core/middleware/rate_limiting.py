@@ -11,6 +11,8 @@ from starlette.responses import JSONResponse, Response
 from app.core.config import settings
 from app.core.dependencies import get_rate_limiter
 from app.launch.rate_limit import classify_path
+from app.launch.rate_limit_backend import RateLimitUnavailable
+from app.launch.rate_limit_keys import client_rate_limit_identity
 from app.launch.redaction import safe_log_message
 from app.ucp.agent_profile import PIQSAVI_UCP_AGENT_PROFILE_PATH
 
@@ -37,10 +39,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if path.startswith("/docs") or path.startswith("/redoc") or path == "/openapi.json":
             return await call_next(request)
 
-        identity = _client_identity(request)
         bucket = classify_path(request.method, path)
+        try:
+            identity = client_rate_limit_identity(request)
+        except RateLimitUnavailable:
+            return _unavailable_response(bucket)
         limiter = get_rate_limiter()
         decision = limiter.check(bucket, identity)
+        if decision.unavailable:
+            return _unavailable_response(bucket)
         if not decision.allowed:
             body = {
                 "error": "rate_limited",
@@ -73,12 +80,19 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def _client_identity(request: Request) -> str:
-    auth = request.headers.get("authorization") or ""
-    if auth.lower().startswith("bearer "):
-        token = auth[7:].strip()
-        # Hash-ish truncation — never log full token; identity only.
-        return f"tok:{token[:8]}" if token else "tok:empty"
-    if request.client and request.client.host:
-        return f"ip:{request.client.host}"
-    return "ip:unknown"
+def _unavailable_response(bucket: str) -> JSONResponse:
+    """Shared-store failure. Deny the request. Do not serve it and do not use memory."""
+
+    message = safe_log_message("Rate limit control is unavailable")
+    body = {
+        "error": "rate_limit_unavailable",
+        "message": message,
+        "status_code": 503,
+        "detail": "Rate limit control is unavailable",
+        "details": {"bucket": bucket},
+    }
+    return JSONResponse(
+        status_code=503,
+        content=body,
+        headers={"Retry-After": "1"},
+    )

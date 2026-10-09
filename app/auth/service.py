@@ -90,6 +90,12 @@ INVALID_EMAIL_CHANGE_TOKEN = "Invalid or expired email-change token."
 EMAIL_CHANGE_COMPLETION_ERROR = "Unable to complete email change."
 
 
+def _default_auth_rate_limiter() -> RateLimiterHook:
+    from app.launch.rate_limit_backend import default_auth_rate_limiter
+
+    return default_auth_rate_limiter()
+
+
 class AuthService:
     """Register / login / logout / session validation with security hooks."""
 
@@ -127,7 +133,7 @@ class AuthService:
         self._legal_catalog = legal_catalog or unpublished_catalog()
         self._hasher = password_hasher or PasswordHasher()
         self._email = email_sender or NullEmailSender()
-        self._rate_limiter = rate_limiter or RateLimiterHook(max_attempts=20, window_seconds=60)
+        self._rate_limiter = rate_limiter or _default_auth_rate_limiter()
         self._csrf = csrf or CsrfTokenService()
         self._audit = audit or AuditLogger()
         self._mfa = mfa or MfaExtensionPoint()
@@ -243,7 +249,7 @@ class AuthService:
             terms_accepted=terms_accepted,
             privacy_acknowledged=privacy_acknowledged,
         )
-        if not self._rate_limiter.check(f"register:{cleaned_email}"):
+        if not self._rate_limiter.check(self._abuse_key("register", cleaned_email)):
             self._audit.record("rate_limited", detail="register", metadata={"email": cleaned_email})
             raise UserPlatformRateLimitError("Too many registration attempts. Try again later.")
         if self._users.get_by_email(cleaned_email) is not None:
@@ -282,7 +288,7 @@ class AuthService:
     ) -> AuthResult:
         self._require_enabled()
         cleaned_email = self._normalize_email(email)
-        rate_key = f"login:{cleaned_email}"
+        rate_key = self._abuse_key("login", cleaned_email)
         if not self._rate_limiter.check(rate_key):
             self._audit.record("rate_limited", detail="login", metadata={"email": cleaned_email})
             raise UserPlatformRateLimitError("Too many login attempts. Try again later.")
@@ -373,7 +379,7 @@ class AuthService:
         """Enumeration-safe password-reset request. Never discloses membership."""
         self._require_enabled()
         cleaned = self._normalize_email(email)
-        if not self._rate_limiter.check(f"password_reset:{cleaned}"):
+        if not self._rate_limiter.check(self._abuse_key("password_reset", cleaned)):
             self._audit.record("rate_limited", detail="password_reset", metadata={"email": cleaned})
             raise UserPlatformRateLimitError("Too many password reset attempts. Try again later.")
         response = {
@@ -438,7 +444,7 @@ class AuthService:
         """Enumeration-safe public verification request."""
         self._require_enabled()
         cleaned = self._normalize_email(email)
-        if not self._rate_limiter.check(f"email_verification:{cleaned}"):
+        if not self._rate_limiter.check(self._abuse_key("email_verification", cleaned)):
             self._audit.record(
                 "rate_limited",
                 detail="email_verification",
@@ -492,7 +498,7 @@ class AuthService:
         """
         self._require_enabled()
         user = self.current_user(access_token)
-        if not self._rate_limiter.check(f"email_change:{user.user_id}"):
+        if not self._rate_limiter.check(self._abuse_key("email_change", user.user_id)):
             self._audit.record(
                 "rate_limited",
                 user_id=user.user_id,
@@ -773,6 +779,11 @@ class AuthService:
             )
         )
         return profile
+
+    def _abuse_key(self, action: str, material: str) -> str:
+        from app.launch.rate_limit_keys import opaque_subject_key
+
+        return opaque_subject_key(action, material)
 
     @staticmethod
     def _normalize_email(email: str) -> str:

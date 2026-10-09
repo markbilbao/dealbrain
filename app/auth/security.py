@@ -7,18 +7,29 @@ No secrets or hardcoded credentials live here.
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
 from app.domain.entities.user_platform import SecurityEvent, SecurityEventType
 from app.domain.interfaces.user_platform_repository import AuditLogRepository
+from app.launch.rate_limit_backend import (
+    InMemoryRateLimitStore,
+    RateLimitStore,
+    RateLimitUnavailable,
+)
+
+_AUTH_SCOPE = "auth"
 
 
 class RateLimiterHook:
-    """In-process sliding-window rate limiter hook (not a production WAF)."""
+    """Auth abuse counter. Staging and production pass the shared store.
+
+    A private in-memory store is used only when the caller does not pass one,
+    which development and unit tests do explicitly via the default.
+    Store failure denies the attempt. It does not fall back to another store.
+    """
 
     def __init__(
         self,
@@ -26,25 +37,32 @@ class RateLimiterHook:
         max_attempts: int = 10,
         window_seconds: int = 60,
         clock: Callable[[], datetime] | None = None,
+        store: RateLimitStore | None = None,
     ) -> None:
         self._max_attempts = max_attempts
-        self._window = timedelta(seconds=window_seconds)
+        self._window_seconds = window_seconds
         self._clock = clock or (lambda: datetime.now(UTC))
-        self._attempts: dict[str, deque[datetime]] = defaultdict(deque)
+        self._store = store or InMemoryRateLimitStore()
 
     def check(self, key: str) -> bool:
-        """Return True if the action is allowed; False if rate-limited."""
-        now = self._clock()
-        bucket = self._attempts[key]
-        while bucket and now - bucket[0] > self._window:
-            bucket.popleft()
-        if len(bucket) >= self._max_attempts:
+        """Return True if the action is allowed; False if rate-limited or unavailable."""
+        try:
+            consumed = self._store.consume(
+                scope=_AUTH_SCOPE,
+                identity=key,
+                limit=self._max_attempts,
+                window_seconds=self._window_seconds,
+                now=self._clock(),
+            )
+        except RateLimitUnavailable:
             return False
-        bucket.append(now)
-        return True
+        return consumed.allowed
 
     def reset(self, key: str) -> None:
-        self._attempts.pop(key, None)
+        try:
+            self._store.reset(scope=_AUTH_SCOPE, identity=key)
+        except RateLimitUnavailable:
+            return
 
 
 class CsrfTokenService:
