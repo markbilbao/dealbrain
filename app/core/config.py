@@ -361,6 +361,13 @@ class Settings(BaseSettings):
         default=None,
         alias="RATE_LIMIT_BACKEND",
     )
+    # Comma-separated proxy networks allowed to supply X-Forwarded-For.
+    # Empty in development. Staging and production set the ALB public subnets
+    # and the Docker bridge range. ``*`` is not a valid value.
+    trusted_proxy_cidrs: Annotated[list[str], NoDecode] = Field(
+        default_factory=list,
+        alias="TRUSTED_PROXY_CIDRS",
+    )
     security_headers_enabled: bool = Field(
         default=True,
         alias="SECURITY_HEADERS_ENABLED",
@@ -469,7 +476,7 @@ class Settings(BaseSettings):
         alias="SECURITY_PERMISSIONS_POLICY",
     )
 
-    @field_validator("cors_origins", "trusted_hosts", mode="before")
+    @field_validator("cors_origins", "trusted_hosts", "trusted_proxy_cidrs", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):

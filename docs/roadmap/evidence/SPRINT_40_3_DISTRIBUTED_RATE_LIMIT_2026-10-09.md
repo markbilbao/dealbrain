@@ -22,7 +22,7 @@ The shared window is fixed, not sliding. A client can be allowed the full limit 
 
 | Traffic | Stored key |
 |---|---|
-| No verified account credential | `ip:` plus the direct client host. `ip:unknown` when the host is absent. |
+| No verified account credential | `ip:` plus the trusted client address. `ip:unknown` when the peer is absent. |
 | Verified bearer session | `acct:` plus HMAC-SHA256 of the account id. The raw bearer token, its prefix, and the token hash are not stored. |
 | Verified account owner cookie | Same `acct:` HMAC of the account principal. The cookie value and session id are not stored. |
 | Guest owner cookie, invalid bearer, or invalid cookie | The IP key. A new cookie or a new bearer token does not open a new bucket. |
@@ -31,6 +31,16 @@ The shared window is fixed, not sliding. A client can be allowed the full limit 
 The HMAC key is the same server secret used to sign owner cookies. Staging and production do not fall back to the development constant. If that secret is missing or a placeholder, identity derivation fails closed.
 
 The first 8 characters of a bearer token are not a rate-limit identity.
+
+## Client IP behind the ALB
+
+Staging and production terminate public HTTP on an internet-facing ALB in the public subnets (`10.10.0.0/24` and `10.10.1.0/24` in staging, `10.20.0.0/24` and `10.20.1.0/24` in production). The API security group accepts TCP 8000 only from the ALB security group. Docker publishes that port into the container. The image still starts `uvicorn app.main:app --host 0.0.0.0 --port 8000`. Uvicorn 0.51 trusts `X-Forwarded-For` only for peers in `FORWARDED_ALLOW_IPS`, which defaults to `127.0.0.1` when unset. The EC2 user-data scripts install Amazon Linux Docker and do not disable the userland proxy, so the socket peer inside the container is either an ALB address in those public subnets or a Docker bridge address in `172.16.0.0/12`.
+
+`TRUSTED_PROXY_CIDRS` and `FORWARDED_ALLOW_IPS` are set to that same list in the staging and production Compose overlays. The list is not `*`, not `0.0.0.0/0`, and not the whole VPC. The whole VPC would also trust the private subnets where the API host and RDS live. A peer outside the list is the client, and a forwarding header on that request is ignored. A trusted peer contributes the rightmost `X-Forwarded-For` address that is not itself inside the list. That is the address the ALB appended. A forged prefix, including a prefix that names a trusted address, does not become the bucket. If the rightmost hop is malformed, or every hop is a trusted proxy, the key stays the socket peer.
+
+The ALB is IPv4. The VPC has no IPv6 assignment and the load balancer is not dual-stack. IPv6 client text is still parsed when a trusted proxy appends it, and an IPv4-mapped address uses the IPv4 form so it shares one bucket. A direct IPv6 caller is not a trusted proxy.
+
+This does not mark the slice PROVEN. No deploy was performed, so staging has not exercised the control.
 
 ## Failure mode
 

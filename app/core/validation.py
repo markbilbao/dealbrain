@@ -227,6 +227,26 @@ def _validate_identity_email_gate(cfg: Settings, errors: list[str], *, environme
         )
 
 
+def _validate_trusted_proxy_cidrs(cfg: Settings, errors: list[str]) -> None:
+    """Staging and production must name the proxies that may supply a client IP."""
+
+    from app.launch.client_ip import TrustedProxyConfigurationError, parse_trusted_networks
+
+    try:
+        networks = parse_trusted_networks(cfg.trusted_proxy_cidrs)
+    except TrustedProxyConfigurationError:
+        errors.append(
+            "TRUSTED_PROXY_CIDRS must be a comma-separated list of proxy networks "
+            f"in {cfg.app_env} (* and a default route are rejected)"
+        )
+        return
+    if cfg.rate_limiting_enabled and cfg.app_env in {"staging", "production"} and not networks:
+        errors.append(
+            "TRUSTED_PROXY_CIDRS must list the ALB public subnets and local proxy "
+            f"networks in {cfg.app_env}"
+        )
+
+
 def _reject_memory_rate_limit_backend(cfg: Settings, errors: list[str]) -> None:
     """Staging and production must not select the process-local limiter."""
 
@@ -284,6 +304,8 @@ def validate_settings(cfg: Settings | None = None) -> ValidationResult:
     ):
         errors.append("DATABASE_URL must be a PostgreSQL DSN in production")
 
+    _validate_trusted_proxy_cidrs(cfg, errors)
+
     if cfg.rate_limit_login_per_minute < 1:
         errors.append("RATE_LIMIT_LOGIN_PER_MINUTE must be >= 1")
     if cfg.rate_limit_default_per_minute < 1:
@@ -337,6 +359,7 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
         "launch_strict_startup": cfg.launch_strict_startup,
         "rate_limiting_enabled": cfg.rate_limiting_enabled,
         "rate_limit_backend": _export_rate_limit_backend(cfg),
+        "trusted_proxy_cidrs": list(cfg.trusted_proxy_cidrs),
         "security_headers_enabled": cfg.security_headers_enabled,
         "structured_logging_enabled": cfg.structured_logging_enabled,
         "demo_launcher_enabled": cfg.demo_launcher_enabled,

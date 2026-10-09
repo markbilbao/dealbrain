@@ -3,17 +3,22 @@
 Storage keys are HMAC digests. They do not contain raw bearer tokens, session
 tokens, owner cookies, passwords, or email addresses. Unverified credentials
 fall back to the client IP and are not keyed by a token prefix.
+
+Public traffic uses the trusted-proxy client address. Behind the ALB that is
+the shopper address the load balancer appended, not the ALB or bridge address.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Protocol
 
 from starlette.requests import Request
 
+from app.launch.client_ip import client_host_for_rate_limit
 from app.launch.rate_limit_backend import RateLimitUnavailable
 
 _PURPOSE = b"dealbrain-rate-limit-v1"
@@ -87,10 +92,12 @@ def client_rate_limit_identity(
     owner_resolver=None,
     secret: bytes | None = None,
     now: datetime | None = None,
+    trusted_proxy_cidrs: Sequence[str] | None = None,
 ) -> str:
     """Per-IP for public traffic. Account HMAC when a session is verified.
 
     An unverified bearer token or owner cookie does not create its own bucket.
+    The IP is the trusted client address, not an untrusted forwarding header.
     """
 
     clock = now or datetime.now(UTC)
@@ -102,9 +109,32 @@ def client_rate_limit_identity(
     )
     if account_id:
         return opaque_subject_key("acct", account_id, secret=secret)
-    if request.client and request.client.host:
-        return f"ip:{request.client.host}"
-    return "ip:unknown"
+    networks = (
+        list(trusted_proxy_cidrs)
+        if trusted_proxy_cidrs is not None
+        else _configured_trusted_proxy_cidrs()
+    )
+    host = client_host_for_rate_limit(
+        peer=request.client.host if request.client else None,
+        forwarded_for=_forwarded_for_header(request),
+        trusted_proxy_cidrs=networks,
+    )
+    return f"ip:{host}"
+
+
+def _configured_trusted_proxy_cidrs() -> list[str]:
+    from app.core.config import settings
+
+    return list(settings.trusted_proxy_cidrs)
+
+
+def _forwarded_for_header(request: Request) -> str:
+    values = [
+        value.decode("latin-1")
+        for name, value in request.scope.get("headers", [])
+        if name == b"x-forwarded-for"
+    ]
+    return ", ".join(values)
 
 
 def _verified_account_id(
