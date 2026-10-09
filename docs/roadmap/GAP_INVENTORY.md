@@ -1323,3 +1323,18 @@ This addendum does not rewrite the readiness section above, section I, or the Sp
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-09 Sprint 40.2 dependency audit baseline
+
+This addendum does not rewrite the readiness section above, the Sprint 40.1 section above, section I, or the Sprint 30 security-finding map. Sprint 40.2 adds a required pip-audit 2.10.1 gate on the frozen `uv.lock` closure. The one pre-fix advisory, transitive mako 1.3.12 CVE-2026-102991, is fixed by locking mako 1.4.3. The baseline exception list is empty. It is implemented and not PROVEN. Evidence: [`evidence/SPRINT_40_2_DEPENDENCY_AUDIT_BASELINE_2026-10-09.md`](evidence/SPRINT_40_2_DEPENDENCY_AUDIT_BASELINE_2026-10-09.md). Starting `main` is `ed666678691522238eb44c395a3bc5273f36fa4b`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Sprint 40.2 slice | pip-audit CI gate on the locked Python closure. Implemented. Not PROVEN |
+| Open Sprint 40 HIGH | In-process rate limits only. Still true |
+| Sprint 30 MEDIUM for no dependency scanner | No longer an open absence. pip-audit is a required CI gate. Dependabot, CodeQL, and Trivy are still absent. R6 stays PARTIAL. Section I is not rewritten |
+| Existing Sprint 40 MEDIUMs still true | CSRF not enforced; CSP `'unsafe-inline'`; URL validation / SSRF hardening incomplete. Not relabeled launch-blocking. No risk acceptance |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

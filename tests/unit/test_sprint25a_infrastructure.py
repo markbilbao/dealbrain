@@ -383,6 +383,8 @@ def test_ci_workflow_exists_with_required_gates() -> None:
         "docker compose",
         "build-push-action",
         "secret_scan_25a",
+        "check_pip_audit_baseline",
+        "test_sprint40_2_dependency_audit",
         "test_openapi_drift",
         "test_sprint25a_infrastructure",
         "test_sprint25b1_image_publication",
