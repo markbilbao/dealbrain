@@ -1085,6 +1085,14 @@ This note does not rewrite the reconciliation above. The fresh review of the rem
 
 No row is READY-A, READY-B, or READY-DEFINITION. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The recommendation is to remain open while Sprint 40 proceeds in parallel, schedule a product-definition decision for the seven definition rows, and correct roadmap ownership for the twelve rows whose missing prerequisite has no sprint owner. This note does not start Sprint 40, does not deploy, and does not call Shopify. Public Results stays disabled.
 
+### Sprint 40 security readiness (2026-10-09)
+
+This note does not rewrite the Sprint 39 reading above and does not change Sprint 38 or Sprint 39 status. The readiness audit is [`evidence/SPRINT_40_SECURITY_READINESS_AUDIT_2026-10-09.md`](evidence/SPRINT_40_SECURITY_READINESS_AUDIT_2026-10-09.md). It starts from `0452c40610ac61cd9dce4af361718cb4fd2c02d7`. CI #453 succeeded. Build Image #161 succeeded.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. The selected next engineering slice is Non-decision assistant body-identity authorization. It is not implemented. The open Sprint 40 HIGH remains in-process rate limits only. CSRF not enforced, CSP `'unsafe-inline'`, missing dependency/SAST/container scanners, and incomplete URL validation remain the existing MEDIUMs. They are not relabeled launch-blocking. No risk acceptance is recorded.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

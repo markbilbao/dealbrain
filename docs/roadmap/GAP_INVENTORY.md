@@ -1293,3 +1293,19 @@ This addendum does not rewrite the tables above. The fresh review is [`evidence/
 | READY-A / READY-B / READY-DEFINITION | none |
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 40 | May still run in parallel. Not started by this review |
+
+## 2026-10-09 Sprint 40 security readiness
+
+This addendum does not rewrite section I or the Sprint 30 security-finding map above. The fresh review is [`evidence/SPRINT_40_SECURITY_READINESS_AUDIT_2026-10-09.md`](evidence/SPRINT_40_SECURITY_READINESS_AUDIT_2026-10-09.md). It starts from `0452c40610ac61cd9dce4af361718cb4fd2c02d7`. CI #453 succeeded. Build Image #161 succeeded. No Included requirement is PROVEN. Engineering has not started.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Selected next engineering slice | Non-decision assistant body-identity authorization. Not implemented |
+| Open Sprint 40 HIGH | In-process rate limits only. Still true. Not the first slice |
+| Existing Sprint 40 MEDIUMs still true | CSRF not enforced; CSP `'unsafe-inline'`; no Dependabot/CodeQL/Trivy/pip-audit; URL validation / SSRF hardening incomplete. Not relabeled launch-blocking. No risk acceptance |
+| Sprint 30 HIGH for demo auth/email | Not an open absence. Sprint 27 remains COMPLETE / CLOSED for staging email. Production secret attach remains Sprint 41 |
+| Sprint 30 MEDIUM for account deletion | Not an absence. Sprint 28 engineering remains. Legal publication remains Sprint 28 |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
