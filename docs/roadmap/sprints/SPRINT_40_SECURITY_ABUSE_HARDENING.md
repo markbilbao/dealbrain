@@ -113,3 +113,11 @@ This section does not rewrite the Planned status or the Included requirements ab
 The open Sprint 40 HIGH remains in-process rate limits only. It is not the first slice. CSRF not enforced, CSP `'unsafe-inline'`, missing Dependabot/CodeQL/Trivy/pip-audit, and incomplete URL validation remain the existing MEDIUMs. This reading does not relabel them launch-blocking and does not risk-accept them. Production isolation, production OIDC/SSM, and paging stay with Sprint 41 and Sprint 42.
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate behavior was not changed.
+
+## Implementation record (2026-10-09)
+
+This section does not rewrite the Planned status, the Included requirements, or the readiness audit above. Sprint 40.1 implements the selected slice: non-decision assistant body-identity authorization. It is implemented and not PROVEN. Evidence: [`../evidence/SPRINT_40_1_BODY_IDENTITY_IMPLEMENTATION_2026-10-09.md`](../evidence/SPRINT_40_1_BODY_IDENTITY_IMPLEMENTATION_2026-10-09.md). Starting `main` for the slice is `09757717971ad01077cefbaf806caddf10b8624d`.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. The open Sprint 40 HIGH remains in-process rate limits only. CSRF not enforced, CSP `'unsafe-inline'`, missing Dependabot/CodeQL/Trivy/pip-audit, and incomplete URL validation remain the existing MEDIUMs. They are not relabeled launch-blocking. No risk acceptance is recorded.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate behavior was not changed.

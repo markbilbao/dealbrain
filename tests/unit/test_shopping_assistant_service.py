@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
+from app.domain.entities.shopping_assistant import ConversationOwner
 from app.domain.exceptions import ShoppingAssistantValidationError
 from app.domain.interfaces.shopping_assistant_repository import ShoppingExplanationProvider
 from app.infrastructure.ai.shopping_providers import DeterministicShoppingProviderAdapter
@@ -187,13 +188,22 @@ def test_blank_query_rejected() -> None:
 
 
 def test_follow_up_conversation_context() -> None:
-    conversations = InMemoryConversationRepository(
-        ttl_seconds=600,
-        clock=lambda: datetime(2026, 7, 29, 12, 0, tzinfo=UTC),
-    )
+    clock = datetime(2026, 7, 29, 12, 0, tzinfo=UTC)
+    conversations = InMemoryConversationRepository(ttl_seconds=600, clock=lambda: clock)
     service = _service(conversations=conversations)
+    owner = ConversationOwner(
+        principal_type="guest",
+        principal_id="guest-follow-up",
+        session_id="session-follow-up",
+        expires_at=clock + timedelta(hours=1),
+    )
     first = service.query(
-        {"query": ("Compare iPhone 17 Pro Max and Samsung Galaxy S25 Ultra for camera and battery")}
+        {
+            "query": (
+                "Compare iPhone 17 Pro Max and Samsung Galaxy S25 Ultra for camera and battery"
+            )
+        },
+        owner=owner,
     )
     assert first.conversation_id
     assert first.comparison is not None
@@ -201,10 +211,22 @@ def test_follow_up_conversation_context() -> None:
         {
             "query": "Which one has the better battery?",
             "conversation_id": first.conversation_id,
-        }
+        },
+        owner=owner,
     )
     assert second.intent == "comparison"
     assert second.conversation_id == first.conversation_id
+    # A body conversation id without the verified owner must not continue the row.
+    rejected = service.query(
+        {
+            "query": "Which one has the better battery?",
+            "conversation_id": first.conversation_id,
+        }
+    )
+    assert rejected.conversation_id != first.conversation_id
+    stored = conversations.get_for_owner(first.conversation_id, owner)
+    assert stored is not None
+    assert len(stored.turns) == 2
 
 
 def test_conversation_expiration() -> None:

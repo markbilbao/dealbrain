@@ -1309,3 +1309,17 @@ This addendum does not rewrite section I or the Sprint 30 security-finding map a
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-09 Sprint 40.1 body-identity implementation
+
+This addendum does not rewrite the readiness section above, section I, or the Sprint 30 security-finding map. Sprint 40.1 implements non-decision assistant body-identity authorization. It is implemented and not PROVEN. Evidence: [`evidence/SPRINT_40_1_BODY_IDENTITY_IMPLEMENTATION_2026-10-09.md`](evidence/SPRINT_40_1_BODY_IDENTITY_IMPLEMENTATION_2026-10-09.md). Starting `main` is `09757717971ad01077cefbaf806caddf10b8624d`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Sprint 40.1 slice | Non-decision assistant body-identity authorization. Implemented. Not PROVEN |
+| Open Sprint 40 HIGH | In-process rate limits only. Still true |
+| Existing Sprint 40 MEDIUMs still true | CSRF not enforced; CSP `'unsafe-inline'`; no Dependabot/CodeQL/Trivy/pip-audit; URL validation / SSRF hardening incomplete. Not relabeled launch-blocking. No risk acceptance |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

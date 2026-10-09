@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from app.domain.entities.shopping_assistant import ConversationOwner
 from app.infrastructure.ai.shopping_providers import DeterministicShoppingProviderAdapter
 from app.intelligence.shopping_assistant.memory import InMemoryConversationRepository
 from app.intelligence.shopping_assistant.orchestrator import (
@@ -46,17 +47,30 @@ def test_end_to_end_recommendation_flow() -> None:
 
 def test_end_to_end_comparison_and_follow_up() -> None:
     service = _service()
+    owner = ConversationOwner(
+        principal_type="guest",
+        principal_id="guest-e2e-follow-up",
+        session_id="session-e2e-follow-up",
+        expires_at=datetime(2099, 1, 1, tzinfo=UTC),
+    )
     first = service.query(
-        {"query": ("Compare iPhone 17 Pro Max and Samsung Galaxy S25 Ultra for camera and battery")}
+        {
+            "query": (
+                "Compare iPhone 17 Pro Max and Samsung Galaxy S25 Ultra for camera and battery"
+            )
+        },
+        owner=owner,
     )
     assert first.comparison is not None
     second = service.query(
         {
             "query": "Which one has the better battery?",
             "conversation_id": first.conversation_id,
-        }
+        },
+        owner=owner,
     )
     assert second.intent == "comparison"
+    assert second.conversation_id == first.conversation_id
     assert second.answer
 
 

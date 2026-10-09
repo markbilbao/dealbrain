@@ -14,6 +14,8 @@ from uuid import uuid4
 
 from app.domain.entities.shopping_assistant import (
     AssistantWarning,
+    ConversationContext,
+    ConversationOwner,
     ConversationTurn,
     ShoppingAssistantResponse,
     ShoppingEvidence,
@@ -247,14 +249,15 @@ class ShoppingAssistantService:
         prior_products: tuple[str, ...] = ()
         prior_names: tuple[str, ...] = ()
         prior_intent = None
-        conversation_id = shopping_query.conversation_id
-
-        if self._conversations is not None and conversation_id:
-            context = self._conversations.get(conversation_id)
-            if context is not None:
-                prior_products = context.last_product_ids
-                prior_names = context.last_product_names
-                prior_intent = context.last_intent
+        # Client conversation_id is a lookup hint. Continue only when the
+        # verified owner matches the stored row. Never adopt a foreign or
+        # ownerless id from the body.
+        context = self._owned_conversation_context(shopping_query.conversation_id, owner)
+        conversation_id = context.conversation_id if context is not None else None
+        if context is not None:
+            prior_products = context.last_product_ids
+            prior_names = context.last_product_names
+            prior_intent = context.last_intent
 
         overrides: dict[str, Any] = {}
         if shopping_query.budget_min is not None:
@@ -272,7 +275,9 @@ class ShoppingAssistantService:
 
         # User platform (authenticated account) overrides fill gaps first; personal
         # profile overrides may then refine further. Explicit query fields always win.
-        user_platform_context = self._user_platform_context(shopping_query.user_id)
+        # Body user_id and profile_id are lookup hints and never establish authority.
+        authorized_user_id = self._authorized_account_user_id(owner)
+        user_platform_context = self._user_platform_context(authorized_user_id)
         user_platform_overrides = dict(user_platform_context.get("overrides") or {})
         for key, value in user_platform_overrides.items():
             if key == "profile_id":
@@ -280,13 +285,16 @@ class ShoppingAssistantService:
             if key not in overrides or overrides[key] in (None, (), [], ""):
                 overrides[key] = value
 
-        # Authenticated accounts may link a Personal AI fixture profile when the
-        # personal agent collaborator is available.
-        effective_profile_id = shopping_query.profile_id
-        if not effective_profile_id and self._personal_agent is not None:
-            effective_profile_id = user_platform_context.get(
-                "personal_profile_id"
-            ) or user_platform_overrides.get("profile_id")
+        # A body profile_id personalizes only when it is the profile already
+        # bound to the verified account. Guests and anonymous callers do not.
+        effective_profile_id = self._authorized_profile_id(
+            shopping_query.profile_id,
+            bound_profile_id=self._bound_personal_profile_id(
+                user_platform_context,
+                user_platform_overrides,
+            ),
+            account_user_id=authorized_user_id,
+        )
 
         # Profile overrides fill gaps only — explicit query fields win.
         profile_overrides = self._personal_overrides(effective_profile_id)
@@ -469,7 +477,7 @@ class ShoppingAssistantService:
                 )
             )
 
-        if shopping_query.user_id and not user_platform_context.get("authenticated"):
+        if authorized_user_id and not user_platform_context.get("authenticated"):
             warnings.append(
                 AssistantWarning(
                     message=(
@@ -481,8 +489,8 @@ class ShoppingAssistantService:
             )
 
         if conversation_id is None and self._conversations is not None:
-            created = getattr(self._conversations, "create", None)
-            conversation_id = created().conversation_id if callable(created) else self._id_factory()
+            verified_owner = owner if isinstance(owner, ConversationOwner) else None
+            conversation_id = self._conversations.create(owner=verified_owner).conversation_id
 
         product_ids = tuple(item.product_id for item in candidates[:2])
         product_names = tuple(item.product_name for item in candidates[:2])
@@ -493,9 +501,9 @@ class ShoppingAssistantService:
             product_ids = (top.product_id,)
             product_names = (top.product_name,)
 
-        if self._user_platform is not None and shopping_query.user_id:
+        if self._user_platform is not None and authorized_user_id:
             self._record_user_platform_history(
-                shopping_query.user_id,
+                authorized_user_id,
                 query=cleaned,
                 summary=str(explained.get("answer") or ""),
                 product_ids=product_ids,
@@ -713,6 +721,60 @@ class ShoppingAssistantService:
             )
         except Exception:  # noqa: BLE001
             return None
+
+    def _owned_conversation_context(
+        self,
+        requested_id: str | None,
+        owner: Any | None,
+    ) -> ConversationContext | None:
+        """Return a non-decision conversation only when its stored owner matches."""
+
+        if self._conversations is None or not isinstance(owner, ConversationOwner):
+            return None
+        hint = requested_id.strip() if isinstance(requested_id, str) else ""
+        if not hint:
+            return None
+        return self._conversations.get_for_owner(hint, owner)
+
+    def _authorized_account_user_id(self, owner: Any | None) -> str | None:
+        """Account identity comes from the verified owner, never the request body."""
+
+        if not isinstance(owner, ConversationOwner) or owner.principal_type != "account":
+            return None
+        principal_id = owner.principal_id.strip()
+        return principal_id or None
+
+    def _bound_personal_profile_id(
+        self,
+        user_platform_context: dict[str, Any],
+        user_platform_overrides: dict[str, Any],
+    ) -> str | None:
+        bound = user_platform_context.get("personal_profile_id") or user_platform_overrides.get(
+            "profile_id"
+        )
+        if isinstance(bound, str) and bound.strip():
+            return bound.strip()
+        return None
+
+    def _authorized_profile_id(
+        self,
+        requested_profile_id: str | None,
+        *,
+        bound_profile_id: str | None,
+        account_user_id: str | None,
+    ) -> str | None:
+        """Apply a body profile id only when it is bound to the verified account."""
+
+        if not account_user_id or not bound_profile_id:
+            return None
+        hint = requested_profile_id.strip() if isinstance(requested_profile_id, str) else ""
+        if hint and hint != bound_profile_id:
+            hint = ""
+        if hint == bound_profile_id:
+            return bound_profile_id
+        if self._personal_agent is not None:
+            return bound_profile_id
+        return None
 
     def _user_platform_context(self, user_id: str | None) -> dict[str, Any]:
         """Return authenticated-account personalization context, or {} when unavailable."""
