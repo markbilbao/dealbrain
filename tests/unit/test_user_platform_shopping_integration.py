@@ -12,6 +12,9 @@ from datetime import UTC, datetime
 
 from app.auth.security import AuditLogger
 from app.auth.service import AuthService
+from app.consumer.guest_continuity import account_owner_from_session
+from app.domain.entities.shopping_assistant import ConversationOwner
+from app.domain.entities.user_platform import AuthResult
 from app.infrastructure.ai.shopping_providers import DeterministicShoppingProviderAdapter
 from app.intelligence.shopping_assistant.memory import InMemoryConversationRepository
 from app.intelligence.shopping_assistant.orchestrator import (
@@ -53,6 +56,23 @@ def make_platform() -> tuple[UserPlatformService, InMemoryUserPlatformStore]:
     return platform, store
 
 
+def _verified_owner(result: AuthResult) -> ConversationOwner:
+    return account_owner_from_session(
+        user_id=result.user.user_id,
+        session_id=result.session.session_id,
+        expires_at=result.session.expires_at,
+    )
+
+
+def _account(user_id: str) -> ConversationOwner:
+    return ConversationOwner(
+        principal_type="account",
+        principal_id=user_id,
+        session_id=f"session-{user_id}",
+        expires_at=datetime(2099, 1, 1, tzinfo=UTC),
+    )
+
+
 def make_assistant(*, user_platform_service: object | None = None) -> ShoppingAssistantService:
     registry = ShoppingExplanationRegistry([DeterministicShoppingProviderAdapter()])
     orchestrator = ShoppingAssistantOrchestrator(
@@ -77,7 +97,7 @@ class TestAuthenticatedUserIntegration:
         result = platform.login(email=STUDENT_EMAIL, password=DEMO_PASSWORD)
         assistant = make_assistant(user_platform_service=platform)
 
-        response = assistant.query({"query": QUERY, "user_id": result.user.user_id})
+        response = assistant.query({"query": QUERY}, owner=_verified_owner(result))
 
         assert response.processing["personalization_mode"] == "authenticated"
         assert response.processing["authenticated"] is True
@@ -90,7 +110,8 @@ class TestAuthenticatedUserIntegration:
 
         # Demo student profile has currency=PHP and category=laptop overrides.
         response = assistant.query(
-            {"query": "recommend something for me", "user_id": result.user.user_id}
+            {"query": "recommend something for me"},
+            owner=_verified_owner(result),
         )
         assert response.processing["authenticated"] is True
 
@@ -99,7 +120,7 @@ class TestAuthenticatedUserIntegration:
         result = platform.login(email=STUDENT_EMAIL, password=DEMO_PASSWORD)
         assistant = make_assistant(user_platform_service=platform)
 
-        response = assistant.query({"query": QUERY, "user_id": result.user.user_id})
+        response = assistant.query({"query": QUERY}, owner=_verified_owner(result))
         assert not any(w.code == "user_platform_unavailable" for w in response.warnings)
 
     def test_history_recorded_for_authenticated_user(self) -> None:
@@ -108,7 +129,7 @@ class TestAuthenticatedUserIntegration:
         assistant = make_assistant(user_platform_service=platform)
 
         before = platform.list_history(result.access_token)
-        assistant.query({"query": QUERY, "user_id": result.user.user_id})
+        assistant.query({"query": QUERY}, owner=_verified_owner(result))
         after = platform.list_history(result.access_token)
 
         assert len(after) == len(before) + 1
@@ -135,14 +156,19 @@ class TestAnonymousFallback:
         platform, _store = make_platform()
         assistant = make_assistant(user_platform_service=platform)
 
+        # A body user id is not authority, so it does not authenticate or warn.
         response = assistant.query({"query": QUERY, "user_id": "no-such-user"})
         assert response.processing["personalization_mode"] == "generic"
-        assert any(w.code == "user_platform_unavailable" for w in response.warnings)
+        assert response.processing["authenticated"] is False
+        assert not any(w.code == "user_platform_unavailable" for w in response.warnings)
         assert response.answer
 
     def test_none_collaborator_with_user_id_produces_warning(self) -> None:
         assistant = make_assistant(user_platform_service=None)
-        response = assistant.query({"query": QUERY, "user_id": "some-user"})
+        response = assistant.query(
+            {"query": QUERY, "user_id": "some-user"},
+            owner=_account("account-principal"),
+        )
         assert response.processing["user_platform_integrated"] is False
         assert any(w.code == "user_platform_unavailable" for w in response.warnings)
         assert response.answer
@@ -164,7 +190,7 @@ class TestGracefulDegradation:
                 raise RuntimeError("boom")
 
         assistant = make_assistant(user_platform_service=_ExplodingContext())
-        response = assistant.query({"query": QUERY, "user_id": "user-x"})
+        response = assistant.query({"query": QUERY, "user_id": "user-x"}, owner=_account("user-x"))
 
         assert response.answer
         assert response.top_recommendation is not None or response.top_recommendation is None
@@ -183,7 +209,7 @@ class TestGracefulDegradation:
                 raise RuntimeError("history backend unavailable")
 
         assistant = make_assistant(user_platform_service=_RecordFails())
-        response = assistant.query({"query": QUERY, "user_id": "user-x"})
+        response = assistant.query({"query": QUERY, "user_id": "user-x"}, owner=_account("user-x"))
 
         assert response.answer
         assert response.processing["personalization_mode"] == "authenticated"
@@ -197,7 +223,7 @@ class TestGracefulDegradation:
                 return None
 
         assistant = make_assistant(user_platform_service=_MalformedContext())
-        response = assistant.query({"query": QUERY, "user_id": "user-x"})
+        response = assistant.query({"query": QUERY, "user_id": "user-x"}, owner=_account("user-x"))
         assert response.answer
 
 
@@ -207,8 +233,13 @@ class TestQueryDictWiring:
         result = platform.login(email=STUDENT_EMAIL, password=DEMO_PASSWORD)
         assistant = make_assistant(user_platform_service=platform)
 
-        response = assistant.query(
+        body_only = assistant.query(
             {"query": QUERY, "user_id": result.user.user_id, "mode": "economy"}
+        )
+        assert body_only.processing["authenticated"] is False
+        response = assistant.query(
+            {"query": QUERY, "mode": "economy"},
+            owner=_verified_owner(result),
         )
         assert response.profile_id is None or isinstance(response.profile_id, str)
         assert response.processing["authenticated"] is True

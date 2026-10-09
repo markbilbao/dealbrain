@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
+from app.consumer.decision_owner import OWNER_COOKIE, owner_cookie_payload
+from app.consumer.guest_continuity import account_owner_from_session
 from app.main import app
+from app.user.fixtures import DEMO_PASSWORD
 from fastapi.testclient import TestClient
 
 client = TestClient(app)
@@ -37,7 +42,9 @@ def test_personal_agent_end_to_end_profile_switch_and_shopping() -> None:
     assert advice.status_code == 200
     assert advice.json()["explanation"]
 
-    sa = client.post(
+    # A body profile id is not authority. Personalization requires the profile
+    # already bound to the verified account owner.
+    unbound = client.post(
         "/api/v1/shopping-assistant/query",
         json={
             "query": "What is the best gaming laptop under 60000?",
@@ -45,10 +52,34 @@ def test_personal_agent_end_to_end_profile_switch_and_shopping() -> None:
             "mode": "economy",
         },
     )
+    assert unbound.status_code == 200
+    assert unbound.json()["processing"]["personalization_mode"] == "generic"
+
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "student@example.com", "password": DEMO_PASSWORD},
+    )
+    assert login.status_code == 200
+    auth = login.json()
+    owner = account_owner_from_session(
+        user_id=auth["user"]["user_id"],
+        session_id=auth["session"]["session_id"],
+        expires_at=datetime.fromisoformat(auth["expires_at"]),
+    )
+    sa = client.post(
+        "/api/v1/shopping-assistant/query",
+        json={
+            "query": "What is the best gaming laptop under 60000?",
+            "profile_id": "profile-budget-student",
+            "mode": "economy",
+        },
+        cookies={OWNER_COOKIE: owner_cookie_payload(owner)},
+    )
     assert sa.status_code == 200
     body = sa.json()
     assert body["processing"]["personalization_mode"] == "personal"
     assert body["personal_recommendation"] is not None
+    assert body["personal_recommendation"]["profile_id"] == "profile-budget-student"
     assert body["personal_recommendation"]["mode"] == "personal"
 
     generic = client.post(
