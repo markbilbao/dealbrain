@@ -1338,3 +1338,18 @@ This addendum does not rewrite the readiness section above, the Sprint 40.1 sect
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-09 Sprint 40.3 distributed rate-limit MVP
+
+This addendum does not rewrite section I, the readiness section above, or the Sprint 40.1 and Sprint 40.2 sections above. Sprint 40.3 stores shared rate-limit counters in the existing PostgreSQL database. The Sprint 40 HIGH "In-process rate limits only" is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Required staging evidence "Abuse controls exercised" is absent. Evidence: [`evidence/SPRINT_40_3_DISTRIBUTED_RATE_LIMIT_2026-10-09.md`](evidence/SPRINT_40_3_DISTRIBUTED_RATE_LIMIT_2026-10-09.md). Starting `main` is `81a4d6aef4e9b49bf3648245190588f87c51c152`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Sprint 40.3 slice | PostgreSQL shared rate-limit counter. IMPLEMENTED-NOT-PROVEN |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN. Staging evidence "Abuse controls exercised" is absent |
+| Existing Sprint 40 MEDIUMs still true | CSRF not enforced; CSP `'unsafe-inline'`; URL validation / SSRF hardening incomplete. Not relabeled launch-blocking. No risk acceptance |
+| R6 | PARTIAL. pip-audit remains. Dependabot, CodeQL, and Trivy are still absent |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

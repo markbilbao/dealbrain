@@ -355,6 +355,12 @@ class Settings(BaseSettings):
         default=True,
         alias="RATE_LIMITING_ENABLED",
     )
+    # None: memory in development, postgres in staging and production.
+    # memory is rejected for staging and production. There is no silent fallback.
+    rate_limit_backend: Literal["memory", "postgres"] | None = Field(
+        default=None,
+        alias="RATE_LIMIT_BACKEND",
+    )
     security_headers_enabled: bool = Field(
         default=True,
         alias="SECURITY_HEADERS_ENABLED",

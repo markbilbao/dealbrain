@@ -7,6 +7,7 @@ from app.infrastructure.database.models.canonical_product import (
 from app.infrastructure.database.models.operational_entity import OperationalEntityModel
 from app.infrastructure.database.models.price_snapshot import PriceSnapshotModel
 from app.infrastructure.database.models.product import Product
+from app.infrastructure.database.models.rate_limit_counter import RateLimitCounterModel
 
 __all__ = [
     "CanonicalProductModel",
@@ -14,4 +15,5 @@ __all__ = [
     "OperationalEntityModel",
     "PriceSnapshotModel",
     "Product",
+    "RateLimitCounterModel",
 ]

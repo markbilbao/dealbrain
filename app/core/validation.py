@@ -128,6 +128,7 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
         warnings.append("SECURITY_HEADERS_ENABLED is false in production")
     if not cfg.rate_limiting_enabled:
         warnings.append("RATE_LIMITING_ENABLED is false in production")
+    _reject_memory_rate_limit_backend(cfg, errors)
     if cfg.ai_review_live_http or cfg.ai_shopping_live_http or cfg.ai_community_live_http:
         warnings.append("Live AI HTTP is enabled — ensure API keys are vaulted")
     if cfg.app_log_level.upper() == "DEBUG":
@@ -153,8 +154,7 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
         )
     if _database_url_has_weak_secret(cfg.database_url):
         errors.append(
-            "DATABASE_URL must use a non-placeholder password in production "
-            "(value redacted)"
+            "DATABASE_URL must use a non-placeholder password in production (value redacted)"
         )
 
     secret = cfg.app_secret_key or ""
@@ -203,9 +203,7 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
         )
 
 
-def _validate_identity_email_gate(
-    cfg: Settings, errors: list[str], *, environment: str
-) -> None:
+def _validate_identity_email_gate(cfg: Settings, errors: list[str], *, environment: str) -> None:
     """Staging/production must use Resend — never a silent no-op sender."""
     if cfg.transactional_email_provider != "resend":
         errors.append(
@@ -215,14 +213,11 @@ def _validate_identity_email_gate(
     key = cfg.resend_api_key or ""
     if not key.strip() or _looks_like_placeholder(key):
         errors.append(
-            f"RESEND_API_KEY must be present and non-placeholder in {environment} "
-            "(value redacted)"
+            f"RESEND_API_KEY must be present and non-placeholder in {environment} (value redacted)"
         )
     sender = (cfg.transactional_email_from or "").strip()
     if not sender or "@" not in sender or _looks_like_placeholder(sender):
-        errors.append(
-            f"TRANSACTIONAL_EMAIL_FROM must be a real sender address in {environment}"
-        )
+        errors.append(f"TRANSACTIONAL_EMAIL_FROM must be a real sender address in {environment}")
     base = (cfg.public_app_base_url or "").strip()
     parsed = urlparse(base)
     if parsed.scheme != "https" or not parsed.netloc or parsed.username or parsed.password:
@@ -230,6 +225,28 @@ def _validate_identity_email_gate(
             f"PUBLIC_APP_BASE_URL must be an https origin in {environment} "
             "(do not use request Host)"
         )
+
+
+def _reject_memory_rate_limit_backend(cfg: Settings, errors: list[str]) -> None:
+    """Staging and production must not select the process-local limiter."""
+
+    if cfg.rate_limit_backend == "memory":
+        errors.append(
+            "RATE_LIMIT_BACKEND=memory is forbidden in "
+            f"{cfg.app_env} (shared postgres counter is required)"
+        )
+
+
+def _export_rate_limit_backend(cfg: Settings) -> str:
+    from app.launch.rate_limit_backend import (
+        RateLimitConfigurationError,
+        resolve_rate_limit_backend,
+    )
+
+    try:
+        return resolve_rate_limit_backend(cfg)
+    except RateLimitConfigurationError:
+        return "forbidden"
 
 
 def validate_settings(cfg: Settings | None = None) -> ValidationResult:
@@ -250,6 +267,7 @@ def validate_settings(cfg: Settings | None = None) -> ValidationResult:
             warnings.append("APP_DEBUG=true in staging — prefer false for beta rehearsal")
         if not cfg.rate_limiting_enabled:
             warnings.append("Rate limiting disabled in staging")
+        _reject_memory_rate_limit_backend(cfg, errors)
         if cfg.allow_demo_reset_tokens:
             errors.append("ALLOW_DEMO_RESET_TOKENS must be false in staging")
         _validate_identity_email_gate(cfg, errors, environment="staging")
@@ -318,6 +336,7 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
         "launch_readiness_enabled": cfg.launch_readiness_enabled,
         "launch_strict_startup": cfg.launch_strict_startup,
         "rate_limiting_enabled": cfg.rate_limiting_enabled,
+        "rate_limit_backend": _export_rate_limit_backend(cfg),
         "security_headers_enabled": cfg.security_headers_enabled,
         "structured_logging_enabled": cfg.structured_logging_enabled,
         "demo_launcher_enabled": cfg.demo_launcher_enabled,
