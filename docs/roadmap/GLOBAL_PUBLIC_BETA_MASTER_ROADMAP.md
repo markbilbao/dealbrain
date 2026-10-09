@@ -1101,6 +1101,14 @@ Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLET
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
 
+### Sprint 40.2 dependency audit baseline (2026-10-09)
+
+This note does not rewrite the readiness audit or the Sprint 40.1 note above and does not change Sprint 38 or Sprint 39 status. Sprint 40.2 adds a required pip-audit 2.10.1 gate on the frozen `uv.lock` closure. The one pre-fix advisory, transitive mako 1.3.12 CVE-2026-102991, is fixed by locking mako 1.4.3. The baseline exception list is empty. It is implemented and not PROVEN. Evidence: [`evidence/SPRINT_40_2_DEPENDENCY_AUDIT_BASELINE_2026-10-09.md`](evidence/SPRINT_40_2_DEPENDENCY_AUDIT_BASELINE_2026-10-09.md). Starting `main` is `ed666678691522238eb44c395a3bc5273f36fa4b`.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. The open Sprint 40 HIGH remains in-process rate limits only. The Sprint 30 MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is no longer an open absence. Dependabot, CodeQL, and Trivy are still absent. R6 stays PARTIAL. CSRF not enforced, CSP `'unsafe-inline'`, and incomplete URL validation remain the existing MEDIUMs. They are not relabeled launch-blocking. No risk acceptance is recorded.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

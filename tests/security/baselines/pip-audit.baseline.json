@@ -1,0 +1,9 @@
+{
+  "exceptions": [],
+  "policy": "exceptions is an allowlist of one package, one locked version, and one advisory id. An empty list fails every advisory. Wildcard package names, versions, and advisory ids are rejected. This file does not ignore all findings.",
+  "scanner": "pip-audit",
+  "scanner_version": "2.10.1",
+  "scope": "uv export --frozen --extra dev --no-emit-project, environment markers stripped, pip-audit --no-deps --disable-pip --strict --vulnerability-service osv",
+  "version": 1,
+  "vulnerability_service": "osv"
+}

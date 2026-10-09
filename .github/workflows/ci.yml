@@ -52,6 +52,13 @@ jobs:
       - name: Secret scan (deterministic)
         run: uv run python scripts/secret_scan_25a.py
 
+      # Sprint 40.2: pinned pip-audit against the frozen uv lock.
+      # Fails on advisories that are not version-scoped baseline exceptions.
+      # Does not replace the secret scan, Ruff, contracts, architecture locks,
+      # pytest, Terraform, Compose, or image build.
+      - name: Dependency audit (pip-audit baseline gate)
+        run: uv run python scripts/check_pip_audit_baseline.py
+
       - name: OpenAPI / API contract tests
         run: uv run pytest tests/unit/api_contract/test_openapi_drift.py tests/unit/api_contract -q
 
@@ -64,6 +71,7 @@ jobs:
             tests/unit/test_sprint25b1_image_publication.py \
             tests/unit/test_sprint25b2_oidc_iam.py \
             tests/unit/test_sprint25b5f_immutable_oidc_subject.py \
+            tests/unit/test_sprint40_2_dependency_audit.py \
             -q
 
       - name: Full pytest suite
