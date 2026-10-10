@@ -452,10 +452,13 @@ async def test_clear_device_requires_a_trusted_origin(client: AsyncClient) -> No
 
 @pytest.mark.asyncio
 async def test_feedback_and_analytics_cookie_posts_are_protected(client: AsyncClient) -> None:
+    # Invalid bodies stop in route validation. Origin coverage must not open PostgreSQL.
     cookies = _cookie()
-    feedback_body = {"category": "recommendation_not_helpful", "surface": "results"}
-    analytics_body = {"event_name": "results_viewed", "surface": "results"}
-    for path, body in ((FEEDBACK, feedback_body), (ANALYTICS, analytics_body)):
+    cases = (
+        (FEEDBACK, {"category": "not-a-category"}, "invalid_category"),
+        (ANALYTICS, {"event_name": "not-a-real-event"}, "unknown_event"),
+    )
+    for path, body, detail in cases:
         rejected = await client.post(path, json=body, headers={"Origin": FOREIGN}, cookies=cookies)
         _assert_rejected(rejected, echoed=FOREIGN)
         allowed = await client.post(
@@ -464,9 +467,11 @@ async def test_feedback_and_analytics_cookie_posts_are_protected(client: AsyncCl
             headers={"Origin": SAME_ORIGIN},
             cookies=cookies,
         )
-        assert allowed.status_code != 403, allowed.text
+        assert allowed.status_code == 400, allowed.text
+        assert allowed.json()["detail"] == detail
         anonymous = await client.post(path, json=body, headers={"Origin": FOREIGN})
-        assert anonymous.status_code != 403, anonymous.text
+        assert anonymous.status_code == 400, anonymous.text
+        assert anonymous.json()["detail"] == detail
 
 
 @pytest.mark.asyncio
