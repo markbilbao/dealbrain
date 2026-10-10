@@ -132,10 +132,14 @@ async def test_demo_html_presents_piqsavi_and_piqscore(
     # Consumer feature labels should not present DealScore; JS identifiers may.
     assert '<div class="label">DealScore</div>' not in body
     assert "<th>DealScore</th>" not in body
-    assert "dealbrain.local" in body
     assert "/api/v1/dealscore/search" in body or "dealscore/search" in body
-    assert "deal_score" in body
-    assert "personal_deal_score" in body
+    assert "/static/demo/demo.js" in body
+    script = await client.get("/static/demo/demo.js")
+    assert script.status_code == 200
+    assert "dealbrain.local" in script.text
+    assert "deal_score" in script.text
+    assert "personal_deal_score" in script.text
+    assert "DealBrain" not in script.text
 
 
 def test_affiliate_disclosure_fixture_uses_public_brand_and_score() -> None:

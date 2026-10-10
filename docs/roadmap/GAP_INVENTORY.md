@@ -1386,3 +1386,20 @@ This addendum does not rewrite section I, the readiness section above, or the Sp
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-10 Sprint 40.6 Content Security Policy
+
+This addendum does not rewrite section I, the readiness section above, or the Sprint 40.1, Sprint 40.2, Sprint 40.3, Sprint 40.4, and Sprint 40.5 sections above. Sprint 40.6 removes `'unsafe-inline'` and `'unsafe-eval'` from the default Content-Security-Policy. Scripts, styles, images, fonts, and connections stay first-party. The Sprint 40 MEDIUM CSP `'unsafe-inline'` is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging has not exercised the policy. Evidence: [`evidence/SPRINT_40_6_CSP_HARDENING_2026-10-10.md`](evidence/SPRINT_40_6_CSP_HARDENING_2026-10-10.md). Starting `main` is `c0c341187515d480bb4318c26c085d44a16af14e`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Sprint 40.6 slice | First-party Content-Security-Policy. IMPLEMENTED-NOT-PROVEN |
+| Sprint 40 CSP MEDIUM | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN. Staging evidence is absent |
+| Sprint 40 URL/SSRF MEDIUM | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 40 CSRF MEDIUM | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| R6 | PARTIAL. pip-audit remains. Dependabot, CodeQL, and Trivy are still absent |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
