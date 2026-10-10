@@ -17,6 +17,7 @@ from app.api.early_access_page import router as early_access_page_router
 from app.api.probes import router as probes_router
 from app.api.router import api_router
 from app.api.ucp import router as ucp_router
+from app.consumer.cookie_origin import OwnerCookieOriginMiddleware
 from app.core.config import settings
 from app.core.errors import ErrorBody, register_exception_handlers
 from app.core.logging import get_logger, setup_logging
@@ -315,8 +316,12 @@ def create_app() -> FastAPI:
     )
 
     # Middleware order: last added = outermost. CORS should stay outer.
+    # Last added is outermost. Origin sits inside logging and outside the
+    # rate limiter so an untrusted cookie mutation is rejected before the
+    # owner cookie is used as a rate-limit identity. CORS stays outermost.
     app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(OwnerCookieOriginMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(
         CORSMiddleware,

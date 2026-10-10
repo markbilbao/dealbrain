@@ -378,7 +378,10 @@ async def test_canonical_uuid_owner_stays_immutable_after_account_claim() -> Non
         claim = await client.post(
             "/consumer/claim-decision",
             json={"conversation_id": created.conversation_id, "decision_id": CANONICAL_UUID},
-            headers={"Authorization": f"Bearer {body['access_token']}"},
+            headers={
+                "Authorization": f"Bearer {body['access_token']}",
+                "Origin": "http://localhost:8000",
+            },
             cookies={OWNER_COOKIE: owner_cookie_payload(guest)},
         )
         assert claim.json()["claimed"] is False
@@ -426,7 +429,10 @@ async def test_session_overlay_is_not_applied_after_revocation() -> None:
 @pytest.mark.asyncio
 async def test_clear_device_still_removes_owner_cookie() -> None:
     async with _uuid_client(_snapshots()) as client:
-        cleared = await client.post("/account/clear-device")
+        cleared = await client.post(
+            "/account/clear-device",
+            headers={"Origin": "http://localhost:8000"},
+        )
     assert cleared.status_code == 200
     header = cleared.headers.get("set-cookie", "")
     assert OWNER_COOKIE in header

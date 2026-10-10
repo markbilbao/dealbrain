@@ -459,6 +459,7 @@ def test_snapshot_without_economics_still_insufficient() -> None:
 
 @pytest.mark.asyncio
 async def test_results_compare_why_ask_same_decision(client: AsyncClient) -> None:
+    client.headers["Origin"] = "http://localhost:8000"
     await client.get(
         "/consumer/location",
         params={

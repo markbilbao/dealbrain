@@ -984,6 +984,7 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         client.cookies.set(OWNER_COOKIE, owner_cookie_payload(_owner()))
+        client.headers["Origin"] = "http://localhost:8000"
         ask = await client.post(
             "/api/v1/shopping-assistant/query",
             json={
