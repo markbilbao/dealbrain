@@ -172,4 +172,7 @@ def test_demo_meta_and_ui_compatibility() -> None:
     page = client.get("/demo")
     assert page.status_code == 200
     assert "Merchant Platform" in page.text
-    assert "demo analytics" in page.text.lower() or "Demo analytics" in page.text
+    assert "/static/demo/demo.js" in page.text
+    script = client.get("/static/demo/demo.js")
+    assert script.status_code == 200
+    assert "demo analytics" in script.text.lower()

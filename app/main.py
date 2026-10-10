@@ -11,6 +11,7 @@ from app import __version__
 from app.api.account import router as account_router
 from app.api.consumer import mount_consumer_static
 from app.api.consumer import router as consumer_router
+from app.api.demo import mount_demo_static
 from app.api.demo import router as demo_router
 from app.api.early_access_page import mount_early_access_static
 from app.api.early_access_page import router as early_access_page_router
@@ -29,6 +30,7 @@ from app.core.middleware import (
 from app.core.validation import run_startup_validation
 from app.infrastructure.database.session import close_db, init_db
 from app.launch.runtime import mark_startup
+from app.legal.routes import mount_legal_static
 from app.legal.routes import router as legal_page_router
 from app.schemas.api_common import PaginationMeta
 
@@ -343,6 +345,8 @@ def create_app() -> FastAPI:
     app.include_router(demo_router)
     mount_early_access_static(app)
     mount_consumer_static(app)
+    mount_demo_static(app)
+    mount_legal_static(app)
 
     app.openapi = lambda: _custom_openapi(app)  # type: ignore[method-assign]
 

@@ -134,5 +134,8 @@ async def test_demo_page_served(intelligence_client: AsyncClient) -> None:
     assert "/api/v1/intelligence/parse" in body
     assert "/api/v1/intelligence/match" in body
     assert "/api/v1/marketplace/search" in body
-    assert "#0F172A" in body
-    assert "#10B981" in body
+    assert "/static/demo/demo.css" in body
+    stylesheet = await intelligence_client.get("/static/demo/demo.css")
+    assert stylesheet.status_code == 200
+    assert "#0F172A" in stylesheet.text
+    assert "#10B981" in stylesheet.text

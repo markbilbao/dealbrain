@@ -6,6 +6,21 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+# Browser policy for HTML responses. Server-side Resend and Shopify calls
+# are not browser connections. Merchant links are navigations, not sources.
+DEFAULT_SECURITY_CSP = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "img-src 'self'; "
+    "font-src 'self'; "
+    "connect-src 'self'; "
+    "form-action 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "object-src 'none'"
+)
+
 
 class Settings(BaseSettings):
     """Central configuration for the DealBrain backend."""
@@ -444,18 +459,9 @@ class Settings(BaseSettings):
         ge=1,
     )
 
-    # Security headers
+    # First-party documents and static assets only.
     security_csp: str = Field(
-        default=(
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: https:; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'; "
-            "base-uri 'self'; "
-            "form-action 'self'"
-        ),
+        default=DEFAULT_SECURITY_CSP,
         alias="SECURITY_CSP",
     )
     security_hsts_max_age: int = Field(
