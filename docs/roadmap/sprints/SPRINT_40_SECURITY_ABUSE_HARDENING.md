@@ -161,3 +161,21 @@ This section does not rewrite the Planned status, the Included requirements, the
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. The Sprint 40.3 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN. The Sprint 40.4 CSRF/Origin MEDIUM remains IMPLEMENTED-NOT-PROVEN. The Sprint 40.5 URL/SSRF MEDIUM remains IMPLEMENTED-NOT-PROVEN. Dependabot, CodeQL, and Trivy are still absent. R6 stays PARTIAL. They are not relabeled launch-blocking. No risk acceptance is recorded.
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
+
+## Reconciliation — post Sprint 40.6 (2026-10-10)
+
+This section does not rewrite the Planned status, the Included requirements, the 2026-10-09 readiness audit, or the Sprint 40.1 through Sprint 40.6 records above. It records a fresh reconciliation of the current tree. Evidence: [`../evidence/SPRINT_40_POST_40_6_RECONCILIATION_2026-10-10.md`](../evidence/SPRINT_40_POST_40_6_RECONCILIATION_2026-10-10.md). Starting `main` is `483d30a91f70167656b51f976ffb2bb3521a0b7e`. CI #472 succeeded. Build Image #168 succeeded. Full pytest on CI #472 was 4388 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged.
+
+**Audit verdict:** B. Sprint 40 is not ENGINEERING COMPLETE. One bounded next engineering slice is selected and is not implemented here.
+
+**Selected next engineering slice:** Decision-path body `conversation_id` must not adopt the stored owner.
+
+R18 is IMPLEMENTED-NOT-PROVEN. R11 stays MISSING. The other Included rows stay PARTIAL. No Included requirement is PROVEN. Counts: PROVEN 0, IMPLEMENTED-NOT-PROVEN 1, PARTIAL 19, MISSING 1, BLOCKED-DEPENDENCY 0, NOT-APPLICABLE 0.
+
+The non-decision half of R14 is implemented and tested. Answer-from-evidence and session refinement still read a UUID snapshot by adopting the stored owner from a body `conversation_id`. That residual is why R1, R13, and R14 stay PARTIAL. Guest-to-account rebind of a canonical UUID snapshot remains a product-definition conflict with snapshot immutability. This reconciliation does not change snapshot immutability.
+
+The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN. The CSRF/Origin, CSP `'unsafe-inline'`, and URL/SSRF MEDIUMs remain IMPLEMENTED-NOT-PROVEN. The dependency-scanner absence is CLOSED BY IMPLEMENTATION. SAST, container scanning, and IaC security scanning remain open. `terraform validate` is not IaC security scanning. R6 stays PARTIAL. They are not relabeled launch-blocking. No risk acceptance is recorded. Staging evidence remains absent.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
