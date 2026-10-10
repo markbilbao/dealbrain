@@ -148,6 +148,6 @@ A hostname that is not a literal address can still resolve to a private address 
 - Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE. Closure validation stays blocked on Sprint 41.
 - Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Class C count remains 19. The selected next engineering slice remains NONE.
 - Sprint 41 stays UNSTARTED.
-- No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate behavior was not changed.
+- No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
 
 Out of scope and not implemented here: CSP nonce or hash refactor, WAF, CDN controls, DNS pinning, account lockout, CodeQL, Trivy, Dependabot, a pen-test package, incident-response documentation, affiliate activation, Shopify activation, provider certification, routing changes, and Sprint 38, Sprint 39, or Sprint 41 production deployment.
