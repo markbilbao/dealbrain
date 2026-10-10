@@ -54,3 +54,13 @@ Repository: `markbilbao/dealbrain`.
 
 After the Environment exists, `GET /repos/markbilbao/dealbrain/environments/production`
 should return 200. Until then, production workflows cannot assume the OIDC role.
+
+## Phase 2 inspection (2026-09-11)
+
+`GET …/environments/production` returned **404**. Only Environment `staging` exists
+(`main`-only branch policy; no required reviewers; `can_admins_bypass: true`).
+The Cloud Agent token cannot create or configure Environments (Administration
+write is not available; `gh` is read-only). Owner must complete the UI steps
+above. Do not paste staging ARNs into production variables. `AWS_ROLE_ARN` and
+`PRODUCTION_TARGET_GROUP_ARN` wait for production Terraform outputs. Evidence:
+[`../roadmap/evidence/EARLY_ACCESS_PRODUCTION_PHASE2_PROVISIONING_2026-09-11.md`](../roadmap/evidence/EARLY_ACCESS_PRODUCTION_PHASE2_PROVISIONING_2026-09-11.md).
