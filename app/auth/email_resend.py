@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from app.auth.email import EmailDeliveryError, EmailMessage, EmailSender
+from app.security.url_trust import UrlTrustError, validate_server_fetch_url
 
 RESEND_EMAILS_URL = "https://api.resend.com/emails"
 _DEFAULT_TIMEOUT_SECONDS = 10.0
@@ -89,7 +90,19 @@ class ResendEmailSender(EmailSender):
         headers: dict[str, str],
         timeout: float,
     ) -> httpx.Response:
-        return httpx.post(url, json=json, headers=headers, timeout=timeout)
+        try:
+            approved = validate_server_fetch_url(url)
+        except UrlTrustError as exc:
+            raise EmailDeliveryError(_GENERIC_FAILURE) from exc
+        if approved != RESEND_EMAILS_URL:
+            raise EmailDeliveryError(_GENERIC_FAILURE)
+        return httpx.post(
+            approved,
+            json=json,
+            headers=headers,
+            timeout=timeout,
+            follow_redirects=False,
+        )
 
 
 def _is_usable_from_address(value: str) -> bool:

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import re
 from typing import Any
-from urllib.parse import urlparse
+
+from app.security.url_trust import UrlTrustError, validate_browser_destination
 
 SECRET_KEY_TOKENS = ("secret", "password", "token", "apikey", "api_key", "auth", "credential")
 FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
@@ -55,16 +56,17 @@ def looks_like_secret(text: str) -> bool:
 
 
 def validate_url(url: str | None) -> str | None:
-    """Validate http(s) URLs; return cleaned URL or raise ValueError."""
+    """Validate a browser destination URL. This does not approve a server fetch.
+
+    Imported marketplace, image, and seller URLs are stored and may be rendered
+    as links. They are not HTTP targets for this process.
+    """
     if url is None or not str(url).strip():
         return None
-    cleaned = str(url).strip()
-    parsed = urlparse(cleaned)
-    if parsed.scheme.lower() not in SAFE_URL_SCHEMES:
-        raise ValueError(f"URL scheme not allowed: {parsed.scheme or '(missing)'}")
-    if not parsed.netloc:
-        raise ValueError("URL missing host")
-    return cleaned
+    try:
+        return validate_browser_destination(str(url).strip())
+    except UrlTrustError as exc:
+        raise ValueError(str(exc)) from exc
 
 
 def validate_import_filename(filename: str) -> str:

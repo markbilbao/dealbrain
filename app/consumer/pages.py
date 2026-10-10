@@ -28,13 +28,18 @@ from app.consumer.pricing import format_money
 from app.consumer.uuid import is_canonical_uuid
 from app.consumer.view_models import DecisionPageView, ProductCardView
 from app.privacy.tracking import HTML_TRACKING_MODE_ATTR
+from app.security.url_trust import UrlTrustError, validate_browser_destination
 
 
 def _offer_link(url: str, css: str) -> str:
     if not url:
         return ""
+    try:
+        safe = validate_browser_destination(url)
+    except UrlTrustError:
+        return ""
     return (
-        f'<a class="{css}" href="{h(url)}" rel="nofollow noopener" '
+        f'<a class="{css}" href="{h(safe)}" rel="nofollow noopener" '
         f'data-analytics-event="outbound_merchant_click">View offer</a>'
     )
 

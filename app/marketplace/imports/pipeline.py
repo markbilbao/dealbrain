@@ -22,6 +22,7 @@ from app.marketplace.security import (
     sanitize_csv_cell,
     validate_import_filename,
     validate_import_size,
+    validate_url,
 )
 
 DEFAULT_FIELD_MAPPING: dict[str, str] = {
@@ -95,6 +96,14 @@ def validate_mapped_row(row: Mapping[str, Any], *, row_number: int) -> list[str]
     )
     if not has_price:
         errors.append(f"row {row_number}: regular_price or sale_price required")
+    for field in ("marketplace_url", "image_url", "seller_url"):
+        raw_url = row.get(field)
+        if raw_url is None or not str(raw_url).strip():
+            continue
+        try:
+            validate_url(str(raw_url))
+        except ValueError as exc:
+            errors.append(f"row {row_number}: {field} rejected: {exc}")
     return errors
 
 

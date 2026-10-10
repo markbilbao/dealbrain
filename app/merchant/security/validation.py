@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import urlparse
 
 from app.domain.exceptions import MerchantValidationError
+from app.security.url_trust import UrlTrustError, validate_browser_destination
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -39,15 +39,12 @@ def validate_safe_url(url: str | None, *, required: bool = False) -> str | None:
         if required:
             raise MerchantValidationError("URL is required.")
         return None
-    cleaned = str(url).strip()
-    if len(cleaned) > 2_048:
-        raise MerchantValidationError("URL is too long.")
-    parsed = urlparse(cleaned)
-    if parsed.scheme.lower() not in SAFE_URL_SCHEMES:
-        raise MerchantValidationError(f"URL scheme not allowed: {parsed.scheme or '(missing)'}")
-    if not parsed.netloc:
-        raise MerchantValidationError("URL missing host.")
-    # Block obvious credential leakage in URLs
+    try:
+        cleaned = validate_browser_destination(str(url).strip(), max_length=2_048)
+    except UrlTrustError as exc:
+        raise MerchantValidationError(str(exc)) from exc
+    # Block obvious credential leakage in query parameters. Tracking queries
+    # that do not use these names stay valid.
     lowered = cleaned.lower()
     for token in ("password=", "api_key=", "secret=", "token="):
         if token in lowered:
