@@ -79,8 +79,9 @@ No other `urlopen`, `httpx`, `requests`, or `aiohttp` call was found under `app/
 - no unusual textual IP form that `ipaddress` rejects and the platform numeric parser accepts (`2130706433`, `0x7f000001`, `0177.0.0.1`, `127.1`, `0`)
 - canonical loopback, private, link-local, unspecified, multicast, reserved, and other non-global addresses are rejected, including IPv4 and IPv6
 - the names `localhost`, `localhost.localdomain`, and `*.localhost` are rejected
+- those name and address checks use one canonical host. A DNS name is IDNA-normalized to ASCII before classification, so a Unicode spelling that canonicalizes to `localhost` or to a numeric address is judged as that canonical host
 
-The check does not resolve DNS names. `socket.getaddrinfo` is used only with `AI_NUMERICHOST`, and only after `ipaddress` has already rejected the text. A name such as `127.0.0.1.example.com` is not treated as `127.0.0.1`. DNS rebinding, where a public name resolves to a private address at connect time, is not mitigated. That needs a connect-time pinning design and is out of scope. This slice does not add a half-implemented resolver.
+The check does not resolve DNS names. IDNA conversion is a local string mapping. `socket.getaddrinfo` is used only with `AI_NUMERICHOST`, and only for ASCII numeric text that `ipaddress` has already rejected. A name such as `127.0.0.1.example.com` is not treated as `127.0.0.1`. DNS rebinding, where a public name resolves to a private address at connect time, is not mitigated. That needs a connect-time pinning design and is out of scope. This slice does not add a half-implemented resolver.
 
 Browser links do not use this policy. A canonical private or loopback address may still be a browser destination. See below.
 
@@ -109,16 +110,17 @@ The default poster checks the server-fetch policy and then requires the exact Re
 - control characters, whitespace, backslash, quotes, and angle brackets
 - percent-encoded hosts
 - IPv4-mapped addresses
-- unusual textual IP forms
+- unusual textual IP forms, including a Unicode spelling that IDNA-normalizes into a numeric address
 
 It allows:
 
 - query strings, including marketplace tracking parameters
 - CDN hostnames
 - `.local` fixture hostnames such as `imported.dealbrain.local`
-- canonical private, loopback, and link-local addresses
+- canonical private, loopback, and link-local addresses that `ipaddress` accepts as written
+- an ordinary internationalized public hostname, and a Unicode spelling whose IDNA form is the name `localhost`
 
-Canonical private and loopback browser links are not rejected. The server does not fetch them. Consumer pages render `offer_url` only as an `<a href>`, and they do not load merchant or product images from remote URLs. Applying the server-fetch block list to those fields would treat a clickable merchant URL as a server target. There is no authoritative merchant-domain list in the repository, so this slice does not add one. The merchant secret-query check (`password=`, `api_key=`, `secret=`, `token=`) stays on merchant submissions only. Marketplace import URLs may keep ordinary query parameters.
+Canonical private and loopback browser links are not rejected. The server does not fetch them. A compatibility spelling such as `127。0。0。1` is not that canonical address: IDNA turns it into a numeric address, and both classes reject that ambiguous form. A compatibility spelling of the name `localhost` is still a browser destination, because its canonical form is a name rather than a numeric address. Server fetch rejects that same canonical name. Consumer pages render `offer_url` only as an `<a href>`, and they do not load merchant or product images from remote URLs. Applying the server-fetch block list to those fields would treat a clickable merchant URL as a server target. There is no authoritative merchant-domain list in the repository, so this slice does not add one. The merchant secret-query check (`password=`, `api_key=`, `secret=`, `token=`) stays on merchant submissions only. Marketplace import URLs may keep ordinary query parameters.
 
 `_offer_link` drops a value that fails the browser policy, including a relative `/` placeholder, `javascript:`, and embedded credentials. A query-bearing `https` merchant URL is still rendered.
 

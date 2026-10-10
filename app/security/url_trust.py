@@ -1,10 +1,14 @@
 """Class-specific URL checks for browser destinations and server fetches.
 
-Server-fetch checks do not resolve DNS names. Numeric hosts that Python's
-``ipaddress`` module rejects, but that the platform numeric parser accepts,
-are classified with ``socket.getaddrinfo(..., AI_NUMERICHOST)``. That flag
-does not query DNS. A hostname that is not a numeric address is not resolved.
-DNS rebinding is outside this check.
+Host decisions use one canonical hostname. A DNS name is IDNA-normalized to
+ASCII before local-name and numeric-address classification. That conversion is
+a local string mapping. It does not resolve DNS.
+
+Numeric hosts that Python's ``ipaddress`` module rejects, but that the
+platform numeric parser accepts, are classified with
+``socket.getaddrinfo(..., AI_NUMERICHOST)``. That flag does not query DNS. A
+hostname that is not a numeric address is not resolved. DNS rebinding is
+outside this check.
 """
 
 from __future__ import annotations
@@ -108,7 +112,7 @@ def _validate(
     if port == 0:
         raise UrlTrustError("URL host is malformed")
 
-    address = _address_for_host(hostname)
+    canonical, address = _classify_host(hostname)
     if address is not None:
         mapped = address.ipv4_mapped if isinstance(address, ipaddress.IPv6Address) else None
         if mapped is not None:
@@ -117,20 +121,66 @@ def _validate(
             raise UrlTrustError("URL host is not an approved network destination")
         return cleaned
 
-    if not _is_dns_hostname(hostname):
-        raise UrlTrustError("URL host is malformed")
-    if server_fetch and _is_local_name(hostname):
+    if server_fetch and _is_local_name(canonical):
         raise UrlTrustError("URL host is not an approved network destination")
     return cleaned
 
 
-def _address_for_host(hostname: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+def _classify_host(
+    hostname: str,
+) -> tuple[str, ipaddress.IPv4Address | ipaddress.IPv6Address | None]:
+    """Return the canonical ASCII host and a parsed address when it is a literal.
+
+    ``ipaddress`` literals are classified from their own text. Every other
+    hostname is IDNA-normalized first. A spelling that is not itself an
+    ``ipaddress`` literal, but whose IDNA form is numeric, is an ambiguous
+    address and is rejected for both URL classes.
+    """
+
+    trailing_dot = hostname.endswith(".")
+    spelled = hostname[:-1] if trailing_dot else hostname
+    if not spelled or spelled.startswith(".") or ".." in spelled:
+        raise UrlTrustError("URL host is malformed")
+
+    literal = _ip_literal(spelled)
+    if literal is not None:
+        if trailing_dot:
+            raise UrlTrustError("URL host uses an unusual IP form")
+        return spelled.lower(), literal
+
+    canonical = _idna_ascii(spelled)
+    if _ip_literal(canonical) is not None:
+        raise UrlTrustError("URL host uses an unusual IP form")
+    if _NUMERIC_HOST.fullmatch(canonical):
+        _reject_unusual_numeric(canonical)
+
+    if not _dns_labels_ok(canonical):
+        raise UrlTrustError("URL host is malformed")
+    return canonical, None
+
+
+def _ip_literal(hostname: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     try:
         return ipaddress.ip_address(hostname)
     except ValueError:
-        pass
-    if _NUMERIC_HOST.fullmatch(hostname) is None:
         return None
+
+
+def _idna_ascii(hostname: str) -> str:
+    try:
+        encoded = hostname.encode("idna").decode("ascii")
+    except UnicodeError as exc:
+        raise UrlTrustError("URL host is malformed") from exc
+    return encoded.lower()
+
+
+def _reject_unusual_numeric(hostname: str) -> None:
+    """Reject ASCII numeric text that ``ipaddress`` does not accept.
+
+    ``AI_NUMERICHOST`` asks the platform parser for a literal address. It does
+    not query DNS. The function always raises.
+    """
+
     try:
         infos = socket.getaddrinfo(
             hostname,
@@ -174,17 +224,10 @@ def _is_local_name(hostname: str) -> bool:
     return name in _LOCAL_NAMES or name.endswith(".localhost")
 
 
-def _is_dns_hostname(hostname: str) -> bool:
-    name = hostname[:-1] if hostname.endswith(".") else hostname
-    if not name or name.startswith(".") or ".." in name:
+def _dns_labels_ok(canonical: str) -> bool:
+    if not canonical or len(canonical) > 253:
         return False
-    try:
-        encoded = name.encode("idna").decode("ascii")
-    except UnicodeError:
-        return False
-    if len(encoded) > 253:
-        return False
-    labels = encoded.split(".")
+    labels = canonical.split(".")
     for label in labels:
         if not label or len(label) > 63:
             return False

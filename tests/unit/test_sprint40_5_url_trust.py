@@ -131,6 +131,46 @@ def test_public_hostname_is_not_resolved(monkeypatch: pytest.MonkeyPatch) -> Non
     )
 
 
+# IDNA compatibility forms, and the canonical hosts they normalize to.
+# Server fetch rejects a canonical localhost name or blocked address.
+# Browser destinations keep a canonical private address and the localhost name.
+# A non-canonical spelling that IDNA-normalizes into a numeric address is rejected
+# for both classes. None of these cases resolve DNS.
+_IDNA_CASES = (
+    ("https://ⓛocalhost/", False, True),
+    ("https://ｌocalhost/", False, True),
+    ("https://127。0。0。1/", False, False),
+    ("https://127．0．0．1/", False, False),
+    ("https://localhost/admin", False, True),
+    ("https://127.0.0.1/", False, True),
+    ("https://münchen.example/shop", True, True),
+    ("https://example.com/path", True, True),
+)
+
+
+@pytest.mark.parametrize(("url", "server_ok", "browser_ok"), _IDNA_CASES)
+def test_idna_canonical_host_classification(
+    monkeypatch: pytest.MonkeyPatch,
+    url: str,
+    server_ok: bool,
+    browser_ok: bool,
+) -> None:
+    def _boom(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("IDNA classification must not resolve DNS")
+
+    monkeypatch.setattr("app.security.url_trust.socket.getaddrinfo", _boom)
+    if server_ok:
+        assert validate_server_fetch_url(url) == url
+    else:
+        with pytest.raises(UrlTrustError):
+            validate_server_fetch_url(url)
+    if browser_ok:
+        assert validate_browser_destination(url) == url
+    else:
+        with pytest.raises(UrlTrustError):
+            validate_browser_destination(url)
+
+
 def test_browser_destination_keeps_merchant_and_marketplace_urls() -> None:
     assert validate_browser_destination("https://techhaven.demo/products/x1-pro") == (
         "https://techhaven.demo/products/x1-pro"
