@@ -244,6 +244,7 @@ async def adapter_client(
 
 def _bind(client: AsyncClient, owner: ConversationOwner) -> None:
     client.cookies.set(OWNER_COOKIE, owner_cookie_payload(owner))
+    client.headers["Origin"] = "http://localhost:8000"
 
 
 @pytest.mark.asyncio

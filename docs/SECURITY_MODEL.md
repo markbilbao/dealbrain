@@ -39,14 +39,23 @@ claiming production-grade security guarantees.
 ## CSRF preparation
 
 `CsrfTokenService` (`app/auth/security.py`) issues an opaque CSRF token
-alongside every session and exposes `validate(expected, provided)` using
-`hmac.compare_digest`. This is **double-submit-cookie-style architecture**:
-Sprint 17 issues and can validate CSRF tokens, but no browser-cookie session
-transport or CSRF-enforcing middleware is wired into the API layer yet —
-today's API auth is header-based bearer tokens, which are not vulnerable to
-classic CSRF in the same way cookie-based sessions are. The token is
-returned in `AuthResponse.csrf_token` so a future cookie-based transport can
-adopt it directly.
+alongside every account session and exposes `validate(expected, provided)`
+using `hmac.compare_digest`. Account API auth remains header-based bearer
+tokens. Those requests are not cookie-authorized, and the issued token is
+not a route gate.
+
+The decision-owner cookie (`piqsavi_decision_owner`) is a different
+credential. It is `HttpOnly`, `SameSite=Lax`, and `Secure` in staging and
+production. SameSite=Lax is not the Sprint 40 control. Unsafe requests that
+use that cookie as authority, and `POST /account/clear-device`, must send an
+`Origin` that matches `PUBLIC_APP_BASE_URL` or an explicit `CORS_ORIGINS`
+entry (`app/consumer/cookie_origin.py`). Missing `Origin` is fail-closed on
+those requests. `Origin: null`, malformed origins, credential-bearing
+origins, and foreign origins are rejected with HTTP 403
+`origin_rejected`. The request `Host` and `Referer` are not trusted. Bearer-only
+routes and preference/location cookie writers are outside this check. The
+signed-owner authorization still runs after the origin check. This control
+is implemented and not staging-proven.
 
 ## Rate limiting
 

@@ -833,6 +833,7 @@ async def test_http_owner_can_refine_and_pages_show_session_best() -> None:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         client.cookies.set(OWNER_COOKIE, owner_cookie_payload(_owner()))
+        client.headers["Origin"] = "http://localhost:8000"
         refine = await client.post(
             "/api/v1/shopping-assistant/query",
             json={

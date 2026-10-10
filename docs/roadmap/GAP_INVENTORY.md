@@ -1353,3 +1353,19 @@ This addendum does not rewrite section I, the readiness section above, or the Sp
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-10 Sprint 40.4 cookie origin policy
+
+This addendum does not rewrite section I, the readiness section above, or the Sprint 40.1, Sprint 40.2, and Sprint 40.3 sections above. Sprint 40.4 rejects untrusted `Origin` values on unsafe requests that use the decision-owner cookie as authority, and on `POST /account/clear-device`. Missing `Origin` is fail-closed for those requests. Trusted origins come from `PUBLIC_APP_BASE_URL` and `CORS_ORIGINS`, not from the request `Host`. The Sprint 40 MEDIUM previously recorded as CSRF not enforced is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging has not exercised the policy. Evidence: [`evidence/SPRINT_40_4_COOKIE_ORIGIN_POLICY_2026-10-10.md`](evidence/SPRINT_40_4_COOKIE_ORIGIN_POLICY_2026-10-10.md). Starting `main` is `06a2c9da40c2bc49bf361569e887e64b1dccb8a6`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Sprint 40.4 slice | Origin policy for decision-owner cookie mutations. IMPLEMENTED-NOT-PROVEN |
+| Sprint 40 CSRF MEDIUM | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN. Staging evidence is absent |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Existing Sprint 40 MEDIUMs still open | CSP `'unsafe-inline'`; URL validation / SSRF hardening incomplete. Not relabeled launch-blocking. No risk acceptance |
+| R6 | PARTIAL. pip-audit remains. Dependabot, CodeQL, and Trivy are still absent |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

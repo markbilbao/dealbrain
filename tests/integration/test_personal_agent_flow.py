@@ -74,6 +74,7 @@ def test_personal_agent_end_to_end_profile_switch_and_shopping() -> None:
             "mode": "economy",
         },
         cookies={OWNER_COOKIE: owner_cookie_payload(owner)},
+        headers={"Origin": "http://localhost:8000"},
     )
     assert sa.status_code == 200
     body = sa.json()

@@ -747,6 +747,7 @@ async def test_authentication_transition_emits_only_for_successful_claim(stores:
     cookies = _consent_cookies()
     cookies[OWNER_COOKIE] = owner_cookie_payload(guest)
     async with _http(stores, service) as client:
+        client.headers["Origin"] = "http://localhost:8000"
         registered = await client.post(
             "/api/v1/auth/register",
             json=_register_body(_email("claim")),
@@ -833,6 +834,7 @@ async def test_immutable_snapshot_claim_does_not_emit(stores: dict) -> None:
         service,
         overrides={get_shopping_decision_snapshot_repository: lambda: _Snapshots()},
     ) as client:
+        client.headers["Origin"] = "http://localhost:8000"
         registered = await client.post(
             "/api/v1/auth/register",
             json=_register_body(_email("immutable")),
@@ -858,6 +860,7 @@ async def test_claim_analytics_failure_keeps_the_claim_result(stores: dict) -> N
     cookies = _consent_cookies()
     cookies[OWNER_COOKIE] = owner_cookie_payload(guest)
     async with _http(stores, service, analytics=ProductAnalyticsService(_BoomSink())) as client:
+        client.headers["Origin"] = "http://localhost:8000"
         registered = await client.post(
             "/api/v1/auth/register",
             json=_register_body(_email("claim-boom")),

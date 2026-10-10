@@ -46,6 +46,15 @@ Configurable in-process limits for:
 Consistent JSON envelope (`error`, `message`, `status_code`) while retaining
 legacy `detail` for prior clients/tests.
 
+### Decision-owner cookie origin
+
+Unsafe requests that use the `piqsavi_decision_owner` cookie as authority, and
+`POST /account/clear-device`, require an `Origin` from `PUBLIC_APP_BASE_URL`
+or `CORS_ORIGINS`. Missing `Origin` is rejected. Bearer-token API calls are
+not given this requirement. This is not a double-submit CSRF cookie. The
+account bearer flow is unchanged. The control is implemented and not
+staging-proven.
+
 ### Logging redaction
 
 Tokens, passwords, API keys, Authorization headers, and similar fields are

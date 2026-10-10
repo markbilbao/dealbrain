@@ -1117,6 +1117,14 @@ Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLET
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
 
+### Sprint 40.4 cookie origin policy (2026-10-10)
+
+This note does not rewrite the readiness audit or the Sprint 40.1, Sprint 40.2, and Sprint 40.3 notes above and does not change Sprint 38 or Sprint 39 status. Sprint 40.4 enforces a server-configured Origin check on unsafe requests authorized by the decision-owner cookie, and on `POST /account/clear-device`. Missing Origin is fail-closed. The request Host is not a trusted origin. The Sprint 40 MEDIUM previously recorded as CSRF not enforced is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Evidence: [`evidence/SPRINT_40_4_COOKIE_ORIGIN_POLICY_2026-10-10.md`](evidence/SPRINT_40_4_COOKIE_ORIGIN_POLICY_2026-10-10.md). Starting `main` is `06a2c9da40c2bc49bf361569e887e64b1dccb8a6`.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. The Sprint 40.3 distributed rate-limit HIGH remains IMPLEMENTED-NOT-PROVEN. CSP `'unsafe-inline'` and incomplete URL validation remain the existing MEDIUMs. Dependabot, CodeQL, and Trivy are still absent. R6 stays PARTIAL. They are not relabeled launch-blocking. No risk acceptance is recorded.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

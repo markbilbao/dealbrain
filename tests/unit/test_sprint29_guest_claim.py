@@ -46,6 +46,15 @@ DECISION_ID = "headphones-standard"
 START = datetime(2030, 1, 1, 15, 0, tzinfo=UTC)
 
 
+def _browser_headers(extra: dict[str, str] | None = None) -> dict[str, str]:
+    """Same-origin Origin for cookie-authorized mutations under the Sprint 40.4 policy."""
+
+    headers = {"Origin": "http://localhost:8000"}
+    if extra:
+        headers.update(extra)
+    return headers
+
+
 def _guest(*, principal_id: str = "guest-sprint29-claim") -> ConversationOwner:
     return ConversationOwner(
         principal_type="guest",
@@ -205,7 +214,7 @@ async def test_claim_endpoint_rebinds_after_register(client: AsyncClient) -> Non
     claim = await client.post(
         "/consumer/claim-decision",
         json={"conversation_id": created.conversation_id, "decision_id": DECISION_ID},
-        headers={"Authorization": f"Bearer {token}"},
+        headers=_browser_headers({"Authorization": f"Bearer {token}"}),
         cookies={OWNER_COOKIE: owner_cookie_payload(guest)},
     )
     assert claim.status_code == 200
@@ -234,7 +243,7 @@ async def test_forged_guest_principal_cannot_claim(client: AsyncClient) -> None:
         claim = await client.post(
             "/consumer/claim-decision",
             json={"conversation_id": created.conversation_id, "decision_id": DECISION_ID},
-            headers={"Authorization": f"Bearer {body['access_token']}"},
+            headers=_browser_headers({"Authorization": f"Bearer {body['access_token']}"}),
             cookies={OWNER_COOKIE: cookie},
         )
         assert claim.status_code == 200
@@ -257,7 +266,7 @@ async def test_forged_session_id_cannot_claim(client: AsyncClient) -> None:
     claim = await client.post(
         "/consumer/claim-decision",
         json={"conversation_id": created.conversation_id, "decision_id": DECISION_ID},
-        headers={"Authorization": f"Bearer {body['access_token']}"},
+        headers=_browser_headers({"Authorization": f"Bearer {body['access_token']}"}),
         cookies={OWNER_COOKIE: owner_cookie_payload(forged)},
     )
     assert claim.json()["claimed"] is False
@@ -275,7 +284,7 @@ async def test_foreign_conversation_id_cannot_claim(client: AsyncClient) -> None
     claim = await client.post(
         "/consumer/claim-decision",
         json={"conversation_id": other.conversation_id, "decision_id": DECISION_ID},
-        headers={"Authorization": f"Bearer {body['access_token']}"},
+        headers=_browser_headers({"Authorization": f"Bearer {body['access_token']}"}),
         cookies={OWNER_COOKIE: owner_cookie_payload(guest)},
     )
     assert claim.json()["claimed"] is False
@@ -297,7 +306,7 @@ async def test_expired_guest_owner_cannot_claim(client: AsyncClient) -> None:
     claim = await client.post(
         "/consumer/claim-decision",
         json={"conversation_id": created.conversation_id, "decision_id": DECISION_ID},
-        headers={"Authorization": f"Bearer {body['access_token']}"},
+        headers=_browser_headers({"Authorization": f"Bearer {body['access_token']}"}),
         cookies={OWNER_COOKIE: owner_cookie_payload(expired)},
     )
     assert parse_owner_cookie(owner_cookie_payload(expired)) is None
@@ -318,7 +327,7 @@ async def test_account_a_cannot_claim_account_or_guest_b(client: AsyncClient) ->
         expires_at=datetime.fromisoformat(account_b["session"]["expires_at"]),
     )
     account_conversation = conversations.create(owner=owner_b)
-    headers = {"Authorization": f"Bearer {account_a['access_token']}"}
+    headers = _browser_headers({"Authorization": f"Bearer {account_a['access_token']}"})
 
     guest_claim = await client.post(
         "/consumer/claim-decision",
@@ -344,7 +353,7 @@ async def test_clear_device_removes_owner_cookie(client: AsyncClient) -> None:
     guest = _guest(principal_id="guest-shared-device")
     created = conversations.create(owner=guest)
     body = await _register(client, "sprint29-shared-device@example.invalid")
-    cleared = await client.post("/account/clear-device")
+    cleared = await client.post("/account/clear-device", headers=_browser_headers())
     assert cleared.status_code == 200
     claim = await client.post(
         "/consumer/claim-decision",
@@ -365,7 +374,7 @@ async def test_client_supplied_ids_are_not_sole_authorization(client: AsyncClien
     claim = await client.post(
         "/consumer/claim-decision",
         json={"conversation_id": created.conversation_id, "decision_id": DECISION_ID},
-        headers={"Authorization": f"Bearer {body['access_token']}"},
+        headers=_browser_headers({"Authorization": f"Bearer {body['access_token']}"}),
         cookies={OWNER_COOKIE: unsigned},
     )
     assert claim.json()["claimed"] is False
