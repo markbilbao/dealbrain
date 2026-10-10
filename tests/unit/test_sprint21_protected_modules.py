@@ -32,8 +32,10 @@ EXTRA_DIGESTS = {
     "app/services/affiliate_disclosure_service.py": (
         "7f7a1a61813265ec50532bf7fa54753d7e7ca7341d77712321ced0f731229d88"
     ),
+    # Sprint 40.5 tightens browser-destination URL checks only.
+    # Ranking, commission, and template substitution are unchanged.
     "app/affiliate/linking/builder.py": (
-        "7d8836eee8355c82124bda8bc4b7b90e01931d2f7b3523abf447d35ee0ed8097"
+        "5fc0abfdd21f23e17debb9570ec1dab4d4b40b9826bda585c614be610c6e381e"
     ),
     "app/affiliate/attribution/engine.py": (
         "145376797b6db7ea884a431174d78eea5fc800f59a0b743139aa938084265591"

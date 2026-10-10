@@ -1363,13 +1363,16 @@ def test_urllib_transport_uses_the_five_second_timeout_without_a_socket(
         def __exit__(self, *_args: object) -> None:
             return None
 
-    def _urlopen(request, timeout=None):  # noqa: ANN001
+    def _open_http(request, timeout=None):  # noqa: ANN001
         captured["timeout"] = timeout
         captured["url"] = request.full_url
         captured["headers"] = dict(request.header_items())
         return _Response()
 
-    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    monkeypatch.setattr(
+        "app.research.shopify_global_catalog_transport._open_http",
+        _open_http,
+    )
     result = UrllibJsonTransport().post_json(
         GLOBAL_CATALOG_ENDPOINT,
         anonymous_http_headers(),
@@ -1664,10 +1667,13 @@ def test_urllib_urlerror_is_unavailable_unless_it_is_a_timeout(
     reason: Exception,
     timed_out: bool,
 ) -> None:
-    def _urlopen(*_args: object, **_kwargs: object) -> None:
+    def _open_http(*_args: object, **_kwargs: object) -> None:
         raise urllib.error.URLError(reason)
 
-    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    monkeypatch.setattr(
+        "app.research.shopify_global_catalog_transport._open_http",
+        _open_http,
+    )
     result = UrllibJsonTransport().post_json(
         GLOBAL_CATALOG_ENDPOINT,
         anonymous_http_headers(),
@@ -1686,7 +1692,7 @@ def test_urllib_non_json_http_error_keeps_the_status(
     monkeypatch: pytest.MonkeyPatch,
     status_code: int,
 ) -> None:
-    def _urlopen(request, timeout=None):  # noqa: ANN001
+    def _open_http(request, timeout=None):  # noqa: ANN001
         del timeout
         raise urllib.error.HTTPError(
             request.full_url,
@@ -1696,7 +1702,10 @@ def test_urllib_non_json_http_error_keeps_the_status(
             fp=io.BytesIO(b"<html>not json</html>"),
         )
 
-    monkeypatch.setattr(urllib.request, "urlopen", _urlopen)
+    monkeypatch.setattr(
+        "app.research.shopify_global_catalog_transport._open_http",
+        _open_http,
+    )
     result = UrllibJsonTransport().post_json(
         GLOBAL_CATALOG_ENDPOINT,
         anonymous_http_headers(),
@@ -1723,7 +1732,10 @@ def test_urllib_http_200_non_json_is_malformed(monkeypatch: pytest.MonkeyPatch) 
         def __exit__(self, *_args: object) -> None:
             return None
 
-    monkeypatch.setattr(urllib.request, "urlopen", lambda *_args, **_kwargs: _Response())
+    monkeypatch.setattr(
+        "app.research.shopify_global_catalog_transport._open_http",
+        lambda *_args, **_kwargs: _Response(),
+    )
     result = UrllibJsonTransport().post_json(
         GLOBAL_CATALOG_ENDPOINT,
         anonymous_http_headers(),

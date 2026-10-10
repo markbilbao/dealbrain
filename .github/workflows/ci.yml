@@ -72,6 +72,7 @@ jobs:
             tests/unit/test_sprint25b2_oidc_iam.py \
             tests/unit/test_sprint25b5f_immutable_oidc_subject.py \
             tests/unit/test_sprint40_2_dependency_audit.py \
+            tests/unit/test_sprint40_5_url_trust.py \
             -q
 
       - name: Full pytest suite

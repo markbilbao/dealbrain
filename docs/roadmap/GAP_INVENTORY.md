@@ -1369,3 +1369,20 @@ This addendum does not rewrite section I, the readiness section above, or the Sp
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-10 Sprint 40.5 URL trust boundaries
+
+This addendum does not rewrite section I, the readiness section above, or the Sprint 40.1, Sprint 40.2, Sprint 40.3, and Sprint 40.4 sections above. Sprint 40.5 rejects unsafe server-fetch destinations and pins the Shopify production transport to `https://catalog.shopify.com/api/ucp/mcp` with redirects refused. Browser merchant, product, and marketplace URLs use a separate http(s) link policy and are not fetched by the server. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged. The Sprint 40 MEDIUM "URL validation / SSRF hardening incomplete" is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. No reachable SSRF exploit is demonstrated. Staging has not exercised the policy. Evidence: [`evidence/SPRINT_40_5_URL_TRUST_2026-10-10.md`](evidence/SPRINT_40_5_URL_TRUST_2026-10-10.md). Starting `main` is `5dbc52295a38d056bca9347f7a69f605b3ad7414`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE |
+| Sprint 40.5 slice | URL trust boundaries for server fetch and browser links. IMPLEMENTED-NOT-PROVEN |
+| Sprint 40 URL/SSRF MEDIUM | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN. No reachable SSRF exploit is demonstrated. Staging evidence is absent |
+| Sprint 40 CSRF MEDIUM | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Existing Sprint 40 MEDIUM still open | CSP `'unsafe-inline'`. Not relabeled launch-blocking. No risk acceptance |
+| R6 | PARTIAL. pip-audit remains. Dependabot, CodeQL, and Trivy are still absent |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

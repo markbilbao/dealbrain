@@ -1,9 +1,11 @@
 """Shopify catalog transport.
 
-``post_json`` is the only operation. Production composition may hold an
-:class:`UrllibJsonTransport` instance. Constructing it does not connect, and
-current closed gates never call ``post_json``. Importing this module does not
-open a socket. Tests inject a fake that implements :class:`JsonPostTransport`.
+``post_json`` is the only operation. It accepts only the server-owned catalog
+endpoint, applies the server-fetch host policy, and does not follow redirects.
+Production composition may hold an :class:`UrllibJsonTransport` instance.
+Constructing it does not connect, and current closed gates never call
+``post_json``. Importing this module does not open a socket. Tests inject a
+fake that implements :class:`JsonPostTransport`.
 """
 
 from __future__ import annotations
@@ -14,6 +16,13 @@ import urllib.request
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
+
+from app.security.url_trust import UrlTrustError, validate_server_fetch_url
+
+# Server-owned catalog endpoint. Production execution passes this constant.
+# ``post_json`` refuses every other value, including a URL that would pass the
+# generic server-fetch check.
+SHOPIFY_PRODUCTION_CATALOG_ENDPOINT = "https://catalog.shopify.com/api/ucp/mcp"
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,6 +87,36 @@ def issue_production_transport_authority() -> ProductionTransportAuthority:
     return ProductionTransportAuthority(_PRODUCTION_TRANSPORT_TOKEN)
 
 
+class _RefuseRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Turn every redirect into an HTTP error without issuing another request."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        del newurl
+        raise urllib.error.HTTPError(req.full_url, code, "redirect refused", headers, fp)
+
+
+def _non_redirecting_opener() -> urllib.request.OpenerDirector:
+    return urllib.request.build_opener(_RefuseRedirectHandler)
+
+
+def _open_http(request: urllib.request.Request, timeout: float) -> Any:
+    """Open one catalog request. Redirects are not followed."""
+
+    return _non_redirecting_opener().open(request, timeout=timeout)
+
+
+def _approved_catalog_endpoint(endpoint: str) -> str:
+    """Require the server-owned endpoint and the server-fetch host policy."""
+
+    try:
+        approved = validate_server_fetch_url(endpoint)
+    except UrlTrustError as exc:
+        raise UrlTrustError("URL host is not an approved network destination") from exc
+    if approved != SHOPIFY_PRODUCTION_CATALOG_ENDPOINT:
+        raise UrlTrustError("URL host is not an approved network destination")
+    return approved
+
+
 class UrllibJsonTransport:
     """HTTP-capable catalog transport.
 
@@ -101,15 +140,23 @@ class UrllibJsonTransport:
         payload: Mapping[str, Any],
         timeout_seconds: float,
     ) -> CatalogTransportResult:
+        try:
+            approved = _approved_catalog_endpoint(endpoint)
+        except UrlTrustError:
+            return CatalogTransportResult(
+                status_code=0,
+                payload=None,
+                transport_unavailable=True,
+            )
         encoded = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
-            endpoint,
+            approved,
             data=encoded,
             headers={str(key): str(value) for key, value in headers.items()},
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            with _open_http(request, timeout_seconds) as response:
                 status = int(response.status)
                 body = response.read()
         except TimeoutError:

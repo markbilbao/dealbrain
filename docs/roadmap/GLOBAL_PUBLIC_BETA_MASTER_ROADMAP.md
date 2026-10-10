@@ -1125,6 +1125,14 @@ Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLET
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate behavior was not changed.
 
+### Sprint 40.5 URL trust boundaries (2026-10-10)
+
+This note does not rewrite the readiness audit or the Sprint 40.1, Sprint 40.2, Sprint 40.3, and Sprint 40.4 notes above and does not change Sprint 38 or Sprint 39 status. Sprint 40.5 checks server-side fetch URLs separately from browser links and browser resources. The Shopify production transport accepts only the server-owned catalog endpoint and does not follow redirects. The Sprint 40 MEDIUM "URL validation / SSRF hardening incomplete" is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. No reachable SSRF exploit is demonstrated. Evidence: [`evidence/SPRINT_40_5_URL_TRUST_2026-10-10.md`](evidence/SPRINT_40_5_URL_TRUST_2026-10-10.md). Starting `main` is `5dbc52295a38d056bca9347f7a69f605b3ad7414`. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. No Included requirement is PROVEN. The Sprint 40.3 distributed rate-limit HIGH remains IMPLEMENTED-NOT-PROVEN. The Sprint 40.4 CSRF/Origin MEDIUM remains IMPLEMENTED-NOT-PROVEN. CSP `'unsafe-inline'` remains an open MEDIUM. Dependabot, CodeQL, and Trivy are still absent. R6 stays PARTIAL. They are not relabeled launch-blocking. No risk acceptance is recorded.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

@@ -12,8 +12,8 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from app.domain.entities.affiliate import AffiliateMerchant, CommissionType
 from app.domain.exceptions import AffiliateValidationError
+from app.security.url_trust import UrlTrustError, validate_browser_destination
 
-_ALLOWED_SCHEMES = frozenset({"http", "https"})
 _TEMPLATE_TOKEN = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
 
 
@@ -21,16 +21,14 @@ class AffiliateLinkBuilder:
     """Build affiliate URLs from merchant templates (pure, no I/O)."""
 
     def validate_url(self, url: str) -> str:
-        """Validate and normalize an http(s) URL. Raises on invalid input."""
+        """Validate an http(s) click destination. This builder does not fetch it."""
         cleaned = (url or "").strip()
         if not cleaned:
             raise AffiliateValidationError("URL is required.")
-        parsed = urlparse(cleaned)
-        if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
-            raise AffiliateValidationError("URL must use http or https.")
-        if not parsed.netloc:
-            raise AffiliateValidationError("URL must include a host.")
-        return cleaned
+        try:
+            return validate_browser_destination(cleaned)
+        except UrlTrustError as exc:
+            raise AffiliateValidationError(str(exc)) from exc
 
     def apply_template(
         self,
