@@ -1428,3 +1428,20 @@ Additive finding notes, which do not replace the historical rows:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-13 Sprint 40.7 decision-path owner binding
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.6 sections, or the post-40.6 reconciliation above. Sprint 40.7 stops answer-from-evidence, session refinement, and research proposal from adopting a stored conversation owner out of a body `conversation_id`. The verified request owner is the authority. The slice is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging has not exercised the control. Evidence: [`evidence/SPRINT_40_7_DECISION_PATH_OWNER_BINDING_2026-10-13.md`](evidence/SPRINT_40_7_DECISION_PATH_OWNER_BINDING_2026-10-13.md). Starting `main` is `df051a2e122816928bb85edb75c5f27290c1aaaa`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Sprint 40.7 slice | Decision-path body `conversation_id` must not adopt the stored owner. IMPLEMENTED-NOT-PROVEN |
+| R1 | IMPLEMENTED-NOT-PROVEN. Decision-path owner adoption is closed in repository code. Not PROVEN |
+| R13 | PARTIAL. Decision-path binding is implemented. Anonymous `create(owner=None)` remains |
+| R14 | IMPLEMENTED-NOT-PROVEN. Body ids do not authorize decision or non-decision reads. Not PROVEN |
+| R18 | IMPLEMENTED-NOT-PROVEN. Unchanged. No new conversation-body or session-id logging |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

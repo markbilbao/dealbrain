@@ -288,7 +288,8 @@ def test_owner_mismatch_is_rejected() -> None:
                 "query": "Which one has better battery?",
                 "decision_id": snapshot.decision_id,
                 "conversation_id": convo.conversation_id,
-            }
+            },
+            owner=owner_b,
         )
 
 
@@ -301,6 +302,38 @@ def test_uuid_decision_without_owner_is_rejected() -> None:
 
 
 def test_bound_conversation_answers_from_snapshot() -> None:
+    """A body conversation id alone must not authorize a UUID snapshot read.
+
+    This used to succeed with no verified request owner. That success was the
+    Sprint 40.7 defect: the stored conversation owner became snapshot authority.
+    """
+
+    snapshots = InMemoryDecisionSnapshotRepository(clock=lambda: START)
+    conversations = InMemoryConversationRepository(clock=lambda: START, ttl_seconds=3600)
+    owner = _owner()
+    snapshot = _snapshot(owner=owner)
+    snapshots.add(snapshot)
+    convo = conversations.create(owner=owner, decision_context=snapshot.to_reference())
+    service = AnswerFromEvidenceService(
+        snapshots=snapshots,
+        conversations=conversations,
+        clock=lambda: START,
+    )
+    with pytest.raises(DecisionSnapshotOwnershipError):
+        service.answer(
+            {
+                "query": "Which one has better battery?",
+                "decision_id": snapshot.decision_id,
+                "conversation_id": convo.conversation_id,
+            }
+        )
+    loaded = snapshots.get(DECISION_ID, 1)
+    assert loaded is not None
+    assert snapshot.content_sha256 == loaded.content_sha256
+    assert conversations.get_for_owner(convo.conversation_id, owner) is not None
+
+
+def test_verified_owner_bound_conversation_answers_from_snapshot() -> None:
     snapshots = InMemoryDecisionSnapshotRepository(clock=lambda: START)
     conversations = InMemoryConversationRepository(clock=lambda: START, ttl_seconds=3600)
     owner = _owner()
@@ -317,7 +350,8 @@ def test_bound_conversation_answers_from_snapshot() -> None:
             "query": "Which one has better battery?",
             "decision_id": snapshot.decision_id,
             "conversation_id": convo.conversation_id,
-        }
+        },
+        owner=owner,
     )
     assert response.processing["action"] == "answer_from_evidence"
     assert "battery" in response.answer.lower()
