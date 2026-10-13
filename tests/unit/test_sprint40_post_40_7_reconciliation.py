@@ -9,7 +9,6 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-
 from app.domain.entities.shopping_assistant import (
     ConversationContext,
     ConversationOwner,
