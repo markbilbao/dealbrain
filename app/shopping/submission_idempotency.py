@@ -213,12 +213,12 @@ def request_fingerprint(
     location: DeliveryContext | None,
     selected_market: SelectedShoppingMarket | None,
 ) -> str:
-    """Digest the mutation-relevant input. Body user and profile ids are omitted.
+    """Digest the mutation-relevant submitted request.
 
-    Those fields are not request authority and do not change processing when
-    they disagree with the verified account. Conversation, decision, proposal,
-    and market values do change which row the POST mutates, so they are part
-    of the digest. The digest is not the raw question.
+    Body ``user_id`` and ``profile_id`` are included because they can change
+    the effective profile, history metadata, or affiliate decoration. They do
+    not choose ``scope``. The verified owner remains the only authority.
+    The digest is not the raw question.
     """
 
     delivery = location or DeliveryContext()
@@ -241,9 +241,11 @@ def request_fingerprint(
         },
         "mode": payload.get("mode"),
         "products": _string_list(payload.get("products")),
+        "profile_id": _blank_none(payload.get("profile_id")),
         "proposal_id": _blank_none(payload.get("proposal_id")),
         "proposal_version": _canonical_number(payload.get("proposal_version")),
         "query": str(payload.get("query") or "").strip(),
+        "user_id": _blank_none(payload.get("user_id")),
         "selected_market": market,
         "surface": payload.get("surface"),
         "use_cases": _string_list(payload.get("use_cases")),

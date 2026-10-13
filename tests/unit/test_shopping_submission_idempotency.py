@@ -143,12 +143,65 @@ def test_missing_and_malformed_keys_fail_before_a_claim() -> None:
     assert parse_submission_key(f"  {_KEY}  ") == _KEY
 
 
-def test_fingerprint_ignores_body_identity_and_changes_with_the_question() -> None:
-    base = _fingerprint("same question", user_id="body-user", profile_id="body-profile")
-    without_ids = _fingerprint("same question")
-    assert base == without_ids
-    assert _fingerprint("same question", conversation_id="conv-1") != without_ids
-    assert _fingerprint("different question") != without_ids
+def test_fingerprint_includes_body_identity_without_making_it_the_scope(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.launch.rate_limit_keys.rate_limit_identity_secret",
+        lambda: _SECRET,
+    )
+    owner = ConversationOwner(
+        principal_type="account",
+        principal_id="account-principal",
+        session_id="account-session",
+        expires_at=_NOW + timedelta(days=1),
+    )
+    request = _request()
+    scope = submission_authority_scope(owner, request, secret=_SECRET)
+    assert scope == submission_authority_scope(owner, request, secret=_SECRET)
+    scope_source = submission_authority_scope.__doc__ or ""
+    function_source = submission_authority_scope.__code__.co_names
+    assert "profile_id" not in function_source
+    assert "user_id" not in function_source
+    assert "verified owner" in scope_source
+    same = _fingerprint("same question", user_id="body-user", profile_id="body-profile")
+    assert same == _fingerprint(
+        "same question",
+        user_id="  body-user  ",
+        profile_id=" body-profile ",
+    )
+    assert _fingerprint("same question", user_id="  ", profile_id="") == _fingerprint(
+        "same question"
+    )
+    assert _fingerprint("same question", profile_id="other-profile") != same
+    assert _fingerprint("same question", user_id="other-user") != same
+    changed_profile = request_fingerprint(
+        {"query": "same question", "mode": "economy", "profile_id": "other-profile"},
+        scope=scope,
+        location=None,
+        selected_market=None,
+    )
+    changed_user = request_fingerprint(
+        {"query": "same question", "mode": "economy", "user_id": "other-user"},
+        scope=scope,
+        location=None,
+        selected_market=None,
+    )
+    original = request_fingerprint(
+        {
+            "query": "same question",
+            "mode": "economy",
+            "user_id": "body-user",
+            "profile_id": "body-profile",
+        },
+        scope=scope,
+        location=None,
+        selected_market=None,
+    )
+    assert changed_profile != original
+    assert changed_user != original
+    assert _fingerprint("same question", conversation_id="conv-1") != _fingerprint("same question")
+    assert _fingerprint("different question") != _fingerprint("same question")
 
 
 def test_scopes_are_opaque_and_isolated(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -681,14 +734,29 @@ async def test_missing_key_store_outage_and_body_identity_do_not_execute(http_cl
     first = await client.post(QUERY, json=body, headers=_headers("submission-key-0006"))
     assert first.status_code == 200, first.text
     recorded = len(calls)
-    replay = await client.post(
+    conversation = get_shopping_conversation_repository().get(first.json()["conversation_id"])
+    assert conversation is not None
+    assert conversation.owner is None
+    assert first.json().get("profile_id") != "attacker-profile"
+    replay = await client.post(QUERY, json=body, headers=_headers("submission-key-0006"))
+    assert replay.status_code == 200
+    assert replay.json() == first.json()
+    profile_conflict = await client.post(
         QUERY,
-        json={**body, "user_id": "someone-else", "profile_id": "other-profile"},
+        json={**body, "profile_id": "other-profile"},
         headers=_headers("submission-key-0006"),
     )
-    assert replay.status_code == 200
-    assert replay.json()["conversation_id"] == first.json()["conversation_id"]
+    assert profile_conflict.status_code == 409
+    assert profile_conflict.json()["detail"] == DETAIL_CONFLICT
+    user_conflict = await client.post(
+        QUERY,
+        json={**body, "user_id": "someone-else"},
+        headers=_headers("submission-key-0006"),
+    )
+    assert user_conflict.status_code == 409
+    assert user_conflict.json()["detail"] == DETAIL_CONFLICT
     assert len(calls) == recorded
+    assert len(emitted) == recorded
 
 
 @pytest.mark.asyncio
