@@ -179,6 +179,10 @@ from app.services.user_dashboard_service import UserDashboardService
 from app.services.user_platform_service import UserPlatformService
 from app.services.watchlist_service import WatchlistService
 from app.services.watchlist_service_ext import ExtendedWatchlistService
+from app.shopping.submission_idempotency import (
+    ShoppingSubmissionLedger,
+    build_shopping_submission_ledger,
+)
 from app.watchlists.memory import InMemoryWatchlistStore
 from app.watchlists.security import WatchlistAuditLogger
 
@@ -279,6 +283,7 @@ _RATE_LIMITER = ConfigurableRateLimiter(
     enabled=settings.rate_limiting_enabled,
     store=get_shared_rate_limit_store(),
 )
+_SHOPPING_SUBMISSION_LEDGER = build_shopping_submission_ledger(settings)
 _LAUNCH_HEALTH_SERVICE: LaunchHealthService | None = None
 _LAUNCH_DASHBOARD_SERVICE: LaunchDashboardService | None = None
 _LAUNCH_DEMO_SERVICE: LaunchDemoService | None = None
@@ -1616,6 +1621,12 @@ def get_shopping_assistant_service(
 def get_rate_limiter() -> ConfigurableRateLimiter:
     """Provide the HTTP rate limiter for this process's selected backend."""
     return _RATE_LIMITER
+
+
+def get_shopping_submission_ledger() -> ShoppingSubmissionLedger:
+    """Provide the process ledger selected for this environment at startup."""
+
+    return _SHOPPING_SUBMISSION_LEDGER
 
 
 def get_performance_cache() -> TtlCache:

@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from app.consumer.decision_owner import OWNER_COOKIE, owner_cookie_payload
@@ -992,6 +993,7 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
                 "decision_id": AUTH_HTTP_DECISION_ID,
                 "surface": "results",
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert ask.status_code == 200, ask.text
         body = ask.json()
@@ -1006,6 +1008,7 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
                 "proposal_version": body["research_proposal"]["proposal_version"],
                 "requested_sources": ["amazon", "shopee"],
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert confirm.status_code == 200, confirm.text
         payload = confirm.json()
@@ -1032,6 +1035,7 @@ async def test_http_authorization_is_additive_and_non_executing() -> None:
                 "proposal_id": body["research_proposal"]["proposal_id"],
                 "proposal_version": body["research_proposal"]["proposal_version"],
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert repeat.status_code == 200
         assert repeat.json()["research_handoff_id"] == payload["research_handoff_id"]

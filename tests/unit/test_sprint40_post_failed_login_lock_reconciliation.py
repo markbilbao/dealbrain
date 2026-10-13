@@ -223,7 +223,7 @@ def test_durable_login_lock_stays_implemented_not_proven() -> None:
     assert "Full WAF/CDN remains a non-goal." in text
 
 
-def test_message_retry_is_still_unprotected() -> None:
+def test_message_retry_gap_stays_in_the_historical_record() -> None:
     schema = (ROOT / "app/schemas/shopping_assistant.py").read_text(encoding="utf-8")
     endpoint = (ROOT / "app/api/v1/endpoints/shopping_assistant.py").read_text(encoding="utf-8")
     consumer = (ROOT / "app/static/consumer/js/consumer.js").read_text(encoding="utf-8")
@@ -231,12 +231,14 @@ def test_message_retry_is_still_unprotected() -> None:
     text = AUDIT.read_text(encoding="utf-8")
     assert "idempotency" not in schema
     assert "emit_ask_product_events(" in endpoint
-    assert "Idempotency-Key" not in consumer
+    assert "Idempotency-Key" in consumer
+    assert "Idempotency-Key" in endpoint
     assert "proposal_version + 1" in proposal
     assert "research-auth:" in proposal or "derive_authorization_idempotency_key" in (
         ROOT / "app/services/research_authorization.py"
     ).read_text(encoding="utf-8")
     assert "Identical question text is not the replay identity." in text
+    assert "Ordinary message submission has no idempotency field." in text
     assert SLICE in text
 
 

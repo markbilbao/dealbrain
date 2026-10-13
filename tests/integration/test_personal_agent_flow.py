@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from uuid import uuid4
 
 from app.consumer.decision_owner import OWNER_COOKIE, owner_cookie_payload
 from app.consumer.guest_continuity import account_owner_from_session
@@ -51,6 +52,7 @@ def test_personal_agent_end_to_end_profile_switch_and_shopping() -> None:
             "profile_id": "profile-gaming-enthusiast",
             "mode": "economy",
         },
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert unbound.status_code == 200
     assert unbound.json()["processing"]["personalization_mode"] == "generic"
@@ -74,7 +76,7 @@ def test_personal_agent_end_to_end_profile_switch_and_shopping() -> None:
             "mode": "economy",
         },
         cookies={OWNER_COOKIE: owner_cookie_payload(owner)},
-        headers={"Origin": "http://localhost:8000"},
+        headers={"Origin": "http://localhost:8000", "Idempotency-Key": str(uuid4())},
     )
     assert sa.status_code == 200
     body = sa.json()
@@ -86,6 +88,7 @@ def test_personal_agent_end_to_end_profile_switch_and_shopping() -> None:
     generic = client.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "What is the best gaming laptop under 60000?", "mode": "economy"},
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert generic.status_code == 200
     assert generic.json()["processing"]["personalization_mode"] == "generic"

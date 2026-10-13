@@ -1517,3 +1517,25 @@ Historical finding status, additive only:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-13 message submission idempotency
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, the post-40.6 and post-40.7 reconciliations, the failed-login lock section, or the post-failed-login-lock reconciliation above. It is not named Sprint 40.8. Ordinary shopping-assistant message submission must not apply twice when the same client request is retried. The control is in the repository. R17 is IMPLEMENTED-NOT-PROVEN. It is not PROVEN. Staging has not exercised it. Evidence: [`evidence/SPRINT_40_MESSAGE_SUBMISSION_IDEMPOTENCY_2026-10-13.md`](evidence/SPRINT_40_MESSAGE_SUBMISSION_IDEMPOTENCY_2026-10-13.md). Starting `main` is `591bcf751aae5e8f7cc14c1ffac17b81211b395a`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Message submission | IMPLEMENTED-NOT-PROVEN. `Idempotency-Key` on `POST /api/v1/shopping-assistant/query`. Not PROVEN |
+| R17 | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| R8 | PARTIAL. Bot and click-fraud controls remain. Staging exercise remains absent |
+| R10 | PARTIAL. Unchanged by message replay |
+| R11 | MISSING |
+| R15 | PARTIAL. Unchanged by message replay |
+| R16 | PARTIAL. Unchanged by message replay |
+| R19 | PARTIAL. Unchanged by message replay |
+| R9 | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 5 (R1, R9, R14, R17, R18). PARTIAL 15. MISSING 1 (R11). BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

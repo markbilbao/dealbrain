@@ -51,6 +51,7 @@ from starlette.requests import Request
 ROOT = Path(__file__).resolve().parents[2]
 _REVISION = "e5f6a7b8c9d0"
 _LOCK_REVISION = "f6a7b8c9d0e1"
+_SUBMISSION_REVISION = "a7b8c9d0e1f2"
 _SECRET = b"sprint40-shared-rate-limit-secret"
 
 
@@ -733,13 +734,16 @@ def test_rate_limit_migration_upgrades_and_rolls_back(tmp_path: Path) -> None:
     config = Config(str(ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(ROOT / "alembic"))
     script = ScriptDirectory.from_config(config)
-    assert script.get_heads() == [_LOCK_REVISION]
+    assert script.get_heads() == [_SUBMISSION_REVISION]
     revision = script.get_revision(_REVISION)
     assert revision is not None
     assert revision.down_revision == "d4e5f6a7b8c9"
     lock_revision = script.get_revision(_LOCK_REVISION)
     assert lock_revision is not None
     assert lock_revision.down_revision == _REVISION
+    submission_revision = script.get_revision(_SUBMISSION_REVISION)
+    assert submission_revision is not None
+    assert submission_revision.down_revision == _LOCK_REVISION
     revision_module = _revision_module()
 
     engine = create_engine(f"sqlite:///{tmp_path / 'migrated.db'}")

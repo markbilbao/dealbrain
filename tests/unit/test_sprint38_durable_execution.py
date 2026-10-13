@@ -7,6 +7,7 @@ import socket
 import threading
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import pytest
 from app.consumer.decision_owner import OWNER_COOKIE, owner_cookie_payload
@@ -652,6 +653,7 @@ async def test_http_confirmation_fails_closed_when_execution_store_is_down(
                 "decision_id": _OUTAGE_DECISION_ID,
                 "surface": "results",
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert ask.status_code == 200, ask.text
         body = ask.json()
@@ -669,6 +671,7 @@ async def test_http_confirmation_fails_closed_when_execution_store_is_down(
                 "proposal_id": body["research_proposal"]["proposal_id"],
                 "proposal_version": body["research_proposal"]["proposal_version"],
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert confirm.status_code == 200, confirm.text
         payload = confirm.json()

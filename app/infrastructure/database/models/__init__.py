@@ -9,6 +9,9 @@ from app.infrastructure.database.models.operational_entity import OperationalEnt
 from app.infrastructure.database.models.price_snapshot import PriceSnapshotModel
 from app.infrastructure.database.models.product import Product
 from app.infrastructure.database.models.rate_limit_counter import RateLimitCounterModel
+from app.infrastructure.database.models.shopping_submission import (
+    ShoppingAssistantSubmissionModel,
+)
 
 __all__ = [
     "CanonicalProductModel",
@@ -18,4 +21,5 @@ __all__ = [
     "PriceSnapshotModel",
     "Product",
     "RateLimitCounterModel",
+    "ShoppingAssistantSubmissionModel",
 ]

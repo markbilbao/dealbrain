@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from app.consumer.cookie_origin import (
@@ -46,6 +47,13 @@ ANALYTICS = "/api/v1/analytics/events"
 MARKET = "/consumer/shopping-market"
 LOCATION = "/consumer/location"
 PREFERENCE = "/api/v1/privacy/tracking-preference"
+
+
+def _ask_headers(headers: dict[str, str] | None = None) -> dict[str, str]:
+    merged = {"Idempotency-Key": str(uuid4())}
+    if headers:
+        merged.update(headers)
+    return merged
 
 
 def _guest(principal_id: str = "guest-sprint40-4") -> ConversationOwner:
@@ -187,13 +195,13 @@ async def test_same_origin_and_configured_frontend_owner_queries_succeed(
     same = await client.post(
         QUERY,
         json={"query": "What is the best gaming laptop under 60000?", "mode": "economy"},
-        headers={"Origin": SAME_ORIGIN},
+        headers=_ask_headers({"Origin": SAME_ORIGIN}),
         cookies=cookies,
     )
     frontend = await client.post(
         QUERY,
         json={"query": "What is the best gaming laptop under 60000?", "mode": "economy"},
-        headers={"Origin": FRONTEND_ORIGIN},
+        headers=_ask_headers({"Origin": FRONTEND_ORIGIN}),
         cookies=cookies,
     )
     assert same.status_code == 200, same.text
@@ -208,19 +216,23 @@ async def test_owner_cookie_query_rejects_foreign_null_malformed_and_missing_ori
 ) -> None:
     cookies = _cookie()
     body = {"query": "What is the best gaming laptop under 60000?", "mode": "economy"}
-    foreign = await client.post(QUERY, json=body, headers={"Origin": FOREIGN}, cookies=cookies)
-    opaque = await client.post(QUERY, json=body, headers={"Origin": "null"}, cookies=cookies)
+    foreign = await client.post(
+        QUERY, json=body, headers=_ask_headers({"Origin": FOREIGN}), cookies=cookies
+    )
+    opaque = await client.post(
+        QUERY, json=body, headers=_ask_headers({"Origin": "null"}), cookies=cookies
+    )
     malformed = await client.post(
         QUERY,
         json=body,
-        headers={"Origin": "https://user:pass@localhost:8000"},
+        headers=_ask_headers({"Origin": "https://user:pass@localhost:8000"}),
         cookies=cookies,
     )
-    missing = await client.post(QUERY, json=body, cookies=cookies)
+    missing = await client.post(QUERY, json=body, headers=_ask_headers(), cookies=cookies)
     referred = await client.post(
         QUERY,
         json=body,
-        headers={"Referer": f"{SAME_ORIGIN}/results/headphones-standard"},
+        headers=_ask_headers({"Referer": f"{SAME_ORIGIN}/results/headphones-standard"}),
         cookies=cookies,
     )
     for response in (foreign, opaque, malformed, missing, referred):
@@ -241,19 +253,19 @@ async def test_forged_host_cannot_make_a_foreign_origin_trusted(
     forged = await client.post(
         QUERY,
         json=body,
-        headers={"Host": "evil.example", "Origin": FOREIGN},
+        headers=_ask_headers({"Host": "evil.example", "Origin": FOREIGN}),
         cookies=cookies,
     )
     host_matches_victim = await client.post(
         QUERY,
         json=body,
-        headers={"Host": "piqsavi.com", "Origin": FOREIGN},
+        headers=_ask_headers({"Host": "piqsavi.com", "Origin": FOREIGN}),
         cookies=cookies,
     )
     trusted_origin_forged_host = await client.post(
         QUERY,
         json=body,
-        headers={"Host": "evil.example", "Origin": CANONICAL},
+        headers=_ask_headers({"Host": "evil.example", "Origin": CANONICAL}),
         cookies=cookies,
     )
     _assert_rejected(forged, echoed="evil.example")
@@ -268,19 +280,20 @@ async def test_staging_trusts_https_config_only(
 ) -> None:
     cookies = {OWNER_COOKIE: "present"}
     monkeypatch.setattr(settings, "app_env", "staging")
+    monkeypatch.setattr(settings, "app_secret_key", "staging-origin-test-signing-key")
     monkeypatch.setattr(settings, "public_app_base_url", CANONICAL)
     monkeypatch.setattr(settings, "cors_origins", [CANONICAL, SAME_ORIGIN])
     body = {"query": "headphones", "mode": "economy"}
     http_origin = await client.post(
         QUERY,
         json=body,
-        headers={"Origin": SAME_ORIGIN},
+        headers=_ask_headers({"Origin": SAME_ORIGIN}),
         cookies=cookies,
     )
     https_origin = await client.post(
         QUERY,
         json=body,
-        headers={"Origin": CANONICAL},
+        headers=_ask_headers({"Origin": CANONICAL}),
         cookies=cookies,
     )
     _assert_rejected(http_origin)
@@ -294,7 +307,7 @@ async def test_bearer_only_and_cookieless_posts_do_not_require_origin(
     anonymous = await client.post(
         QUERY,
         json={"query": "What is the best gaming laptop under 60000?", "mode": "economy"},
-        headers={"Origin": FOREIGN},
+        headers=_ask_headers({"Origin": FOREIGN}),
     )
     assert anonymous.status_code == 200, anonymous.text
     registered = await _register(client, "sprint40-4-logout@example.invalid")
@@ -315,7 +328,7 @@ async def test_shopping_assistant_cookie_paths_are_protected(client: AsyncClient
     started = await client.post(
         QUERY,
         json={"query": "What is the best gaming laptop under 60000?", "mode": "economy"},
-        headers={"Origin": SAME_ORIGIN},
+        headers=_ask_headers({"Origin": SAME_ORIGIN}),
         cookies=cookies,
     )
     assert started.status_code == 200, started.text
@@ -344,7 +357,7 @@ async def test_shopping_assistant_cookie_paths_are_protected(client: AsyncClient
         rejected = await client.post(
             QUERY,
             json=payload,
-            headers={"Origin": FOREIGN},
+            headers=_ask_headers({"Origin": FOREIGN}),
             cookies=cookies,
         )
         _assert_rejected(rejected, echoed=FOREIGN)
@@ -354,7 +367,7 @@ async def test_shopping_assistant_cookie_paths_are_protected(client: AsyncClient
         allowed = await client.post(
             QUERY,
             json=payload,
-            headers={"Origin": SAME_ORIGIN},
+            headers=_ask_headers({"Origin": SAME_ORIGIN}),
             cookies=cookies,
         )
         assert allowed.status_code != 403, allowed.text
@@ -368,7 +381,7 @@ async def test_foreign_origin_does_not_continue_an_owned_conversation(
     started = await client.post(
         QUERY,
         json={"query": "What is the best gaming laptop under 60000?", "mode": "economy"},
-        headers={"Origin": SAME_ORIGIN},
+        headers=_ask_headers({"Origin": SAME_ORIGIN}),
         cookies=cookies,
     )
     conversation_id = started.json()["conversation_id"]
@@ -383,7 +396,7 @@ async def test_foreign_origin_does_not_continue_an_owned_conversation(
             "conversation_id": conversation_id,
             "mode": "economy",
         },
-        headers={"Origin": FOREIGN},
+        headers=_ask_headers({"Origin": FOREIGN}),
         cookies=cookies,
     )
     _assert_rejected(rejected)

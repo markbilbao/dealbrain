@@ -7,6 +7,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from app.consumer.canonical_presentation import page_view_from_snapshot
@@ -841,6 +842,7 @@ async def test_http_owner_can_refine_and_pages_show_session_best() -> None:
                 "decision_id": DECISION_ID,
                 "surface": "results",
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert refine.status_code == 200, refine.text
         body = refine.json()
@@ -868,6 +870,7 @@ async def test_http_owner_can_refine_and_pages_show_session_best() -> None:
                 "conversation_id": body["conversation_id"],
                 "surface": "why",
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert ask.status_code == 200
         assert ask.json()["action"] == "answer_from_evidence"

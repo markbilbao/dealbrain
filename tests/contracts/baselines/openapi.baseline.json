@@ -28963,7 +28963,7 @@
     },
     "/api/v1/shopping-assistant/query": {
       "post": {
-        "description": "Organic Shopping Assistant ranking is service-owned. Caller-controlled sorting of organic results is not supported.",
+        "description": "Organic Shopping Assistant ranking is service-owned. Caller-controlled sorting of organic results is not supported. Requires the Idempotency-Key header for one logical submission.",
         "operationId": "query_shopping_assistant_api_v1_shopping_assistant_query_post",
         "requestBody": {
           "content": {
