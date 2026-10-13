@@ -18,7 +18,10 @@ class FailedLoginLockModel(Base):
     """Failure count and optional lock deadline for one opaque login identity."""
 
     __tablename__ = "failed_login_locks"
-    __table_args__ = (Index("ix_failed_login_locks_locked_until_ms", "locked_until_ms"),)
+    __table_args__ = (
+        Index("ix_failed_login_locks_locked_until_ms", "locked_until_ms"),
+        Index("ix_failed_login_locks_last_failure_ms", "last_failure_ms"),
+    )
 
     identity_key: Mapped[str] = mapped_column(String(128), primary_key=True)
     failure_count: Mapped[int] = mapped_column(Integer, nullable=False)

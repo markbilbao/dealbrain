@@ -1480,7 +1480,7 @@ This addendum does not rewrite section I, the Sprint 30 security-finding map, th
 | Field | Value |
 |-------|-------|
 | Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
-| Failed-login lock | IMPLEMENTED-NOT-PROVEN. 20 consecutive failures, then 15 minutes from the lock event. Not PROVEN |
+| Failed-login lock | IMPLEMENTED-NOT-PROVEN. 20 consecutive failures, then 15 minutes from the lock event. Unlocked sequences older than 15 minutes restart. Not PROVEN |
 | R9 | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
 | R8 | PARTIAL. Bot and click-fraud controls remain. Staging exercise remains absent |
 | R16 | PARTIAL. Login locking does not add a per-session bucket or complete Origin/CSRF |

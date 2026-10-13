@@ -8,9 +8,13 @@ The conservative beta default is therefore:
 
 The lock duration is measured from the attempt that reaches the threshold.
 It is not a fixed window that starts on the first failure and can expire
-immediately after the threshold is crossed. Failures remain until a
-successful login clears them, or until ``locked_until`` passes and the next
-failure starts a new sequence.
+immediately after the threshold is crossed. No approved retention duration
+for an unlocked failure sequence was found. An unlocked sequence is
+remembered for ``FAILED_LOGIN_FAILURE_RETENTION_SECONDS`` (15 minutes).
+When that horizon has elapsed, the next failure starts again at count 1.
+A successful login still deletes the row. An active lock is kept until
+``locked_until`` and is not extended by later attempts. Expired locks and
+unlocked rows older than the horizon are deleted during store writes.
 
 The existing 20-attempt / 60-second auth limiter stays in place. This control
 is an additional layer. Staging and production use PostgreSQL. Development
@@ -35,6 +39,7 @@ from app.launch.rate_limit_backend import resolve_rate_limit_backend
 
 FAILED_LOGIN_LOCK_THRESHOLD = 20
 FAILED_LOGIN_LOCK_DURATION_SECONDS = 15 * 60
+FAILED_LOGIN_FAILURE_RETENTION_SECONDS = 15 * 60
 LOGIN_ATTEMPT_LIMIT_MESSAGE = "Too many login attempts. Try again later."
 _IDENTITY_MAX_LENGTH = 128
 
@@ -66,9 +71,16 @@ class FailedLoginLockStore(Protocol):
         now: datetime,
         threshold: int,
         lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ) -> FailedLoginLockState: ...
 
-    def clear(self, identity: str) -> None: ...
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None: ...
 
 
 def require_opaque_login_identity(identity: str) -> str:
@@ -110,12 +122,14 @@ class FailedLoginLock:
         *,
         threshold: int = FAILED_LOGIN_LOCK_THRESHOLD,
         lock_duration_seconds: int = FAILED_LOGIN_LOCK_DURATION_SECONDS,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ) -> None:
-        if threshold < 1 or lock_duration_seconds < 1:
+        if threshold < 1 or lock_duration_seconds < 1 or failure_retention_seconds < 1:
             raise ValueError("failed login lock policy must be positive")
         self._store = store
         self._threshold = threshold
         self._lock_duration_seconds = lock_duration_seconds
+        self._failure_retention_seconds = failure_retention_seconds
 
     @property
     def store(self) -> FailedLoginLockStore:
@@ -129,6 +143,10 @@ class FailedLoginLock:
     def lock_duration_seconds(self) -> int:
         return self._lock_duration_seconds
 
+    @property
+    def failure_retention_seconds(self) -> int:
+        return self._failure_retention_seconds
+
     def is_locked(self, identity: str, *, now: datetime) -> bool:
         state = self._store.get(identity)
         if state is None or state.locked_until is None:
@@ -141,10 +159,15 @@ class FailedLoginLock:
             now=now,
             threshold=self._threshold,
             lock_duration_seconds=self._lock_duration_seconds,
+            failure_retention_seconds=self._failure_retention_seconds,
         )
 
-    def clear(self, identity: str) -> None:
-        self._store.clear(identity)
+    def clear(self, identity: str, *, now: datetime | None = None) -> None:
+        self._store.clear(
+            identity,
+            now=now,
+            failure_retention_seconds=self._failure_retention_seconds,
+        )
 
 
 class InMemoryFailedLoginLockStore:
@@ -166,12 +189,18 @@ class InMemoryFailedLoginLockStore:
         now: datetime,
         threshold: int,
         lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ) -> FailedLoginLockState:
         identity = require_opaque_login_identity(identity)
-        if threshold < 1 or lock_duration_seconds < 1:
+        if threshold < 1 or lock_duration_seconds < 1 or failure_retention_seconds < 1:
             raise FailedLoginLockUnavailable("failed login lock store unavailable")
         current_time = aware_utc(now)
         with self._lock:
+            _purge_memory_rows(
+                self._rows,
+                now=current_time,
+                failure_retention_seconds=failure_retention_seconds,
+            )
             current = self._rows.get(identity)
             state = _next_memory_state(
                 identity,
@@ -179,18 +208,75 @@ class InMemoryFailedLoginLockStore:
                 now=current_time,
                 threshold=threshold,
                 lock_duration_seconds=lock_duration_seconds,
+                failure_retention_seconds=failure_retention_seconds,
             )
             self._rows[identity] = state
             return state
 
-    def clear(self, identity: str) -> None:
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None:
         identity = require_opaque_login_identity(identity)
         with self._lock:
             self._rows.pop(identity, None)
+            if now is None or failure_retention_seconds is None:
+                return
+            if failure_retention_seconds < 1:
+                raise FailedLoginLockUnavailable("failed login lock store unavailable")
+            _purge_memory_rows(
+                self._rows,
+                now=aware_utc(now),
+                failure_retention_seconds=failure_retention_seconds,
+            )
 
 
 def _lock_deadline(now: datetime, lock_duration_seconds: int) -> datetime:
     return now + timedelta(seconds=lock_duration_seconds)
+
+
+def _retention_cutoff_ms(now: datetime, failure_retention_seconds: int) -> int:
+    return epoch_ms(now) - failure_retention_seconds * 1000
+
+
+def _reapable(state: FailedLoginLockState, *, now_ms: int, cutoff_ms: int) -> bool:
+    """Stale unlocked history and expired locks may be deleted.
+
+    An active lock stays even when its last failure is older than the
+    retention horizon. A recent unlocked sequence stays as well.
+    """
+
+    if state.locked_until is None:
+        return epoch_ms(state.last_failure_at) <= cutoff_ms
+    return epoch_ms(state.locked_until) <= now_ms
+
+
+def _purge_memory_rows(
+    rows: dict[str, FailedLoginLockState],
+    *,
+    now: datetime,
+    failure_retention_seconds: int,
+) -> None:
+    now_ms = epoch_ms(now)
+    cutoff_ms = _retention_cutoff_ms(now, failure_retention_seconds)
+    stale = [
+        key for key, state in rows.items() if _reapable(state, now_ms=now_ms, cutoff_ms=cutoff_ms)
+    ]
+    for key in stale:
+        del rows[key]
+
+
+def _unlocked_sequence_expired(
+    state: FailedLoginLockState,
+    now: datetime,
+    failure_retention_seconds: int,
+) -> bool:
+    if state.locked_until is not None:
+        return False
+    return epoch_ms(state.last_failure_at) <= _retention_cutoff_ms(now, failure_retention_seconds)
 
 
 def _next_memory_state(
@@ -200,8 +286,13 @@ def _next_memory_state(
     now: datetime,
     threshold: int,
     lock_duration_seconds: int,
+    failure_retention_seconds: int,
 ) -> FailedLoginLockState:
-    if current is None or _lock_expired(current, now):
+    if (
+        current is None
+        or _lock_expired(current, now)
+        or _unlocked_sequence_expired(current, now, failure_retention_seconds)
+    ):
         count = 1
         first_failure_at = now
         locked_until = _lock_deadline(now, lock_duration_seconds) if count >= threshold else None

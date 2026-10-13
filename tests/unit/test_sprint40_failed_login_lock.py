@@ -28,13 +28,16 @@ from app.domain.exceptions import (
 from app.infrastructure.database.failed_login_lock_store import SqlFailedLoginLockStore
 from app.infrastructure.database.models.failed_login_lock import FailedLoginLockModel
 from app.launch.failed_login_lock import (
+    FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     FAILED_LOGIN_LOCK_DURATION_SECONDS,
     FAILED_LOGIN_LOCK_THRESHOLD,
     LOGIN_ATTEMPT_LIMIT_MESSAGE,
     FailedLoginLock,
+    FailedLoginLockState,
     FailedLoginLockUnavailable,
     InMemoryFailedLoginLockStore,
     build_failed_login_lock_store,
+    epoch_ms,
 )
 from app.launch.rate_limit_backend import (
     InMemoryRateLimitStore,
@@ -95,6 +98,7 @@ class RecordingStore:
         now: datetime,
         threshold: int,
         lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ):
         self.records += 1
         return self.inner.record_failure(
@@ -102,11 +106,22 @@ class RecordingStore:
             now=now,
             threshold=threshold,
             lock_duration_seconds=lock_duration_seconds,
+            failure_retention_seconds=failure_retention_seconds,
         )
 
-    def clear(self, identity: str) -> None:
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None:
         self.clears += 1
-        self.inner.clear(identity)
+        self.inner.clear(
+            identity,
+            now=now,
+            failure_retention_seconds=failure_retention_seconds,
+        )
 
 
 class UnavailableStore:
@@ -120,10 +135,17 @@ class UnavailableStore:
         now: datetime,
         threshold: int,
         lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ):
         raise FailedLoginLockUnavailable("down")
 
-    def clear(self, identity: str) -> None:
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None:
         raise FailedLoginLockUnavailable("down")
 
 
@@ -138,10 +160,17 @@ class RecordUnavailable:
         now: datetime,
         threshold: int,
         lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ):
         raise FailedLoginLockUnavailable("down")
 
-    def clear(self, identity: str) -> None:
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None:
         raise AssertionError("clear should not run when recording fails")
 
 
@@ -156,10 +185,17 @@ class ClearUnavailable:
         now: datetime,
         threshold: int,
         lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
     ):
         raise AssertionError("record should not run on the success path")
 
-    def clear(self, identity: str) -> None:
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None:
         raise FailedLoginLockUnavailable("down")
 
 
@@ -287,12 +323,15 @@ def _revision_module():
 def test_beta_default_is_twenty_failures_then_fifteen_minutes() -> None:
     assert FAILED_LOGIN_LOCK_THRESHOLD == 20
     assert FAILED_LOGIN_LOCK_DURATION_SECONDS == 15 * 60
+    assert FAILED_LOGIN_FAILURE_RETENTION_SECONDS == 15 * 60
+    assert FAILED_LOGIN_FAILURE_RETENTION_SECONDS > 60
     backend = (ROOT / "app/launch/rate_limit_backend.py").read_text(encoding="utf-8")
     assert "max_attempts=20" in backend
     assert "window_seconds=60" in backend
     lock = FailedLoginLock(store=InMemoryFailedLoginLockStore())
     assert lock.threshold == 20
     assert lock.lock_duration_seconds == 900
+    assert lock.failure_retention_seconds == 900
 
 
 def test_failures_accumulate_after_the_short_window_expires() -> None:
@@ -724,6 +763,9 @@ def test_failed_login_lock_migration_upgrades_and_rolls_back(tmp_path: Path) -> 
         with engine.begin() as conn, Operations.context(MigrationContext.configure(conn)):
             revision_module.upgrade()
         assert "failed_login_locks" in inspect(engine).get_table_names()
+        index_names = {item["name"] for item in inspect(engine).get_indexes("failed_login_locks")}
+        assert "ix_failed_login_locks_locked_until_ms" in index_names
+        assert "ix_failed_login_locks_last_failure_ms" in index_names
         columns = {column["name"] for column in inspect(engine).get_columns("failed_login_locks")}
         assert "email" not in columns
         assert "password" not in columns
@@ -761,3 +803,315 @@ def test_memory_rate_limit_store_is_not_the_lock_store() -> None:
 
     assert not isinstance(InMemoryRateLimitStore(), InMemoryFailedLoginLockStore)
     assert InMemoryFailedLoginLockStore().get(_key(EMAIL)) is None
+
+
+def _open_store(backend: str, tmp_path: Path):
+    if backend == "memory":
+        return InMemoryFailedLoginLockStore(), ()
+    store, _other, engine_a, engine_b = _sql_stores(tmp_path)
+    return store, (engine_a, engine_b)
+
+
+def _close_store(engines) -> None:
+    for engine in engines:
+        engine.dispose()
+
+
+def _record(store, identity: str, now: datetime, *, threshold: int = 20):
+    return store.record_failure(
+        identity,
+        now=now,
+        threshold=threshold,
+        lock_duration_seconds=FAILED_LOGIN_LOCK_DURATION_SECONDS,
+        failure_retention_seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
+    )
+
+
+def _plant(
+    store,
+    engine,
+    identity: str,
+    *,
+    failure_count: int,
+    locked_until: datetime | None,
+    first_failure_at: datetime,
+    last_failure_at: datetime,
+) -> None:
+    if isinstance(store, InMemoryFailedLoginLockStore):
+        store._rows[identity] = FailedLoginLockState(
+            identity_key=identity,
+            failure_count=failure_count,
+            locked_until=locked_until,
+            first_failure_at=first_failure_at,
+            last_failure_at=last_failure_at,
+        )
+        return
+    with engine.begin() as conn:
+        conn.execute(
+            FailedLoginLockModel.__table__.insert(),
+            {
+                "identity_key": identity,
+                "failure_count": failure_count,
+                "locked_until_ms": None if locked_until is None else epoch_ms(locked_until),
+                "first_failure_ms": epoch_ms(first_failure_at),
+                "last_failure_ms": epoch_ms(last_failure_at),
+            },
+        )
+
+
+@pytest.mark.parametrize("backend", ["memory", "sql"])
+def test_failures_still_survive_the_sixty_second_window(backend: str, tmp_path: Path) -> None:
+    store, engines = _open_store(backend, tmp_path)
+    try:
+        state = _record(store, _key(EMAIL), _START, threshold=20)
+        assert state.failure_count == 1
+        state = _record(store, _key(EMAIL), _START + timedelta(seconds=61), threshold=20)
+        assert state.failure_count == 2
+        assert state.locked_until is None
+        assert state.first_failure_at == _START
+    finally:
+        _close_store(engines)
+
+
+@pytest.mark.parametrize("backend", ["memory", "sql"])
+def test_sequence_younger_than_retention_continues(backend: str, tmp_path: Path) -> None:
+    store, engines = _open_store(backend, tmp_path)
+    try:
+        _record(store, _key(EMAIL), _START, threshold=20)
+        last = _START + timedelta(seconds=10)
+        _record(store, _key(EMAIL), last, threshold=20)
+        state = _record(store, _key(EMAIL), last + timedelta(seconds=899), threshold=20)
+        assert state.failure_count == 3
+        assert state.locked_until is None
+        assert state.first_failure_at == _START
+    finally:
+        _close_store(engines)
+
+
+@pytest.mark.parametrize("backend", ["memory", "sql"])
+def test_unlocked_sequence_older_than_retention_restarts_at_one(
+    backend: str, tmp_path: Path
+) -> None:
+    store, engines = _open_store(backend, tmp_path)
+    try:
+        last = _START
+        for offset in range(4):
+            last = _START + timedelta(seconds=offset)
+            _record(store, _key(EMAIL), last, threshold=20)
+        assert store.get(_key(EMAIL)).failure_count == 4
+        restart_at = last + timedelta(seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS)
+        state = _record(store, _key(EMAIL), restart_at, threshold=20)
+        assert state.failure_count == 1
+        assert state.locked_until is None
+        assert state.first_failure_at == restart_at
+        assert state.last_failure_at == restart_at
+    finally:
+        _close_store(engines)
+
+
+@pytest.mark.parametrize("backend", ["memory", "sql"])
+def test_active_lock_survives_stale_cleanup_and_keeps_its_deadline(
+    backend: str, tmp_path: Path
+) -> None:
+    store, engines = _open_store(backend, tmp_path)
+    engine = engines[0] if engines else None
+    try:
+        active = _key("active.lock@example.com")
+        stale = _key("stale.row@example.com")
+        now = _START + timedelta(hours=3)
+        deadline = now + timedelta(seconds=FAILED_LOGIN_LOCK_DURATION_SECONDS)
+        _plant(
+            store,
+            engine,
+            active,
+            failure_count=FAILED_LOGIN_LOCK_THRESHOLD,
+            locked_until=deadline,
+            first_failure_at=_START,
+            last_failure_at=_START,
+        )
+        _plant(
+            store,
+            engine,
+            stale,
+            failure_count=4,
+            locked_until=None,
+            first_failure_at=_START,
+            last_failure_at=_START,
+        )
+        state = _record(store, active, now, threshold=FAILED_LOGIN_LOCK_THRESHOLD)
+        assert state.failure_count == FAILED_LOGIN_LOCK_THRESHOLD + 1
+        assert state.locked_until == deadline
+        assert store.get(active).locked_until == deadline
+        assert store.get(stale) is None
+        assert "active.lock@example.com" not in active
+        assert "@" not in active
+    finally:
+        _close_store(engines)
+
+
+@pytest.mark.parametrize("backend", ["memory", "sql"])
+def test_expired_lock_starts_a_fresh_sequence(backend: str, tmp_path: Path) -> None:
+    store, engines = _open_store(backend, tmp_path)
+    try:
+        for _ in range(3):
+            _record(store, _key(EMAIL), _START, threshold=3)
+        locked = store.get(_key(EMAIL))
+        assert locked.locked_until == _START + timedelta(seconds=900)
+        restart_at = _START + timedelta(seconds=900)
+        state = _record(store, _key(EMAIL), restart_at, threshold=3)
+        assert state.failure_count == 1
+        assert state.locked_until is None
+        assert state.first_failure_at == restart_at
+    finally:
+        _close_store(engines)
+
+
+def test_stale_unknown_email_rows_do_not_accumulate(tmp_path: Path) -> None:
+    store, _other, engine_a, engine_b = _sql_stores(tmp_path)
+    try:
+        for index in range(25):
+            _record(store, _key(f"unknown-{index}@example.com"), _START)
+        recent_at = _START + timedelta(seconds=100)
+        recent = _key("recent.person@example.com")
+        _record(store, recent, recent_at)
+        with engine_a.connect() as conn:
+            assert len(conn.execute(select(FailedLoginLockModel.identity_key)).all()) == 26
+
+        later = _START + timedelta(seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS)
+        later_identity = _key("later.person@example.com")
+        _record(store, later_identity, later)
+        with engine_a.connect() as conn:
+            remaining = {
+                row[0] for row in conn.execute(select(FailedLoginLockModel.identity_key)).all()
+            }
+        assert remaining == {recent, later_identity}
+        for row in remaining:
+            assert "@" not in row
+            assert "example.com" not in row
+
+        for index in range(10):
+            _record(store, _key(f"wave-{index}@example.com"), later)
+        with engine_a.connect() as conn:
+            assert len(conn.execute(select(FailedLoginLockModel.identity_key)).all()) == 12
+
+        final_at = later + timedelta(seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS + 1)
+        final_identity = _key("final.person@example.com")
+        _record(store, final_identity, final_at)
+        with engine_a.connect() as conn:
+            rows = conn.execute(select(FailedLoginLockModel)).all()
+        assert len(rows) == 1
+        assert rows[0].identity_key == final_identity
+        assert rows[0].failure_count == 1
+        assert rows[0].locked_until_ms is None
+        blob = " ".join(str(value) for row in rows for value in row)
+        assert "unknown-" not in blob
+        assert "recent.person@example.com" not in blob
+        assert "final.person@example.com" not in blob
+    finally:
+        engine_a.dispose()
+        engine_b.dispose()
+
+
+def test_concurrent_stale_sql_updates_restart_without_losing_increments(tmp_path: Path) -> None:
+    store_a, store_b, engine_a, engine_b = _sql_stores(tmp_path)
+    stores = (store_a, store_b)
+    identity = _key(EMAIL)
+    _record(store_a, identity, _START, threshold=100)
+    now = _START + timedelta(seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS + 1)
+    workers = 40
+    barrier = threading.Barrier(workers)
+    errors: list[BaseException] = []
+    lock = threading.Lock()
+
+    def worker(index: int) -> None:
+        try:
+            barrier.wait(timeout=10)
+            stores[index % 2].record_failure(
+                identity,
+                now=now,
+                threshold=100,
+                lock_duration_seconds=900,
+                failure_retention_seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
+            )
+        except BaseException as exc:  # noqa: BLE001 — the assertion reports the thread error
+            with lock:
+                errors.append(exc)
+
+    threads = [threading.Thread(target=worker, args=(index,)) for index in range(workers)]
+    try:
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=30)
+        assert errors == []
+        assert not any(thread.is_alive() for thread in threads)
+        state = store_b.get(identity)
+        assert state is not None
+        assert state.failure_count == workers
+        assert state.locked_until is None
+        assert state.first_failure_at == now
+        assert EMAIL not in state.identity_key
+    finally:
+        engine_a.dispose()
+        engine_b.dispose()
+
+
+def test_successful_login_still_clears_its_row_and_reaps_only_stale_rows(tmp_path: Path) -> None:
+    store, _other, engine_a, engine_b = _sql_stores(tmp_path)
+    try:
+        clock = _Clock(_START)
+        _record(store, _key(UNKNOWN_EMAIL), _START, threshold=5)
+        recent = _key("recent.person@example.com")
+        _record(store, recent, _START + timedelta(seconds=850), threshold=5)
+        clock.advance(seconds=FAILED_LOGIN_FAILURE_RETENTION_SECONDS)
+        auth, login_lock, _hasher, _platform, _clock, _audit = _service(
+            clock=clock,
+            login_lock=FailedLoginLock(store=store, threshold=5, lock_duration_seconds=900),
+            max_attempts=20,
+            window_seconds=60,
+        )
+        _fail(auth, 1)
+        assert login_lock.store.get(_key(EMAIL)).failure_count == 1
+        assert login_lock.store.get(_key(UNKNOWN_EMAIL)) is None
+        assert login_lock.store.get(recent) is not None
+        result = auth.login(email=EMAIL, password=PASSWORD)
+        assert result.access_token
+        assert login_lock.store.get(_key(EMAIL)) is None
+        assert login_lock.store.get(recent) is not None
+        assert login_lock.store.get(recent).failure_count == 1
+    finally:
+        engine_a.dispose()
+        engine_b.dispose()
+
+
+def test_retention_cleanup_does_not_store_or_log_a_raw_email(tmp_path: Path, caplog) -> None:
+    import logging
+
+    caplog.set_level(logging.DEBUG)
+    email = "retention.secret@example.com"
+    other = "other.secret@example.com"
+    store, _other, engine_a, engine_b = _sql_stores(tmp_path)
+    try:
+        _record(store, _key(email), _START)
+        _record(store, _key(other), _START + timedelta(seconds=901))
+        with engine_a.connect() as conn:
+            rows = conn.execute(select(FailedLoginLockModel)).all()
+        blob = " ".join(str(value) for row in rows for value in row)
+        assert email not in blob
+        assert other not in blob
+        assert "@" not in blob
+        assert email not in caplog.text
+        assert other not in caplog.text
+        for path in (
+            ROOT / "app/infrastructure/database/failed_login_lock_store.py",
+            ROOT / "app/launch/failed_login_lock.py",
+        ):
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if "logger." not in line:
+                    continue
+                assert "identity" not in line
+                assert "email" not in line
+                assert "@" not in line
+    finally:
+        engine_a.dispose()
+        engine_b.dispose()

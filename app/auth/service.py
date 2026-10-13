@@ -839,7 +839,7 @@ class AuthService:
 
     def _clear_durable_login_failure(self, rate_key: str) -> None:
         try:
-            self._login_lock.clear(rate_key)
+            self._login_lock.clear(rate_key, now=self._clock())
         except FailedLoginLockUnavailable:
             self._audit.record(
                 "rate_limited",

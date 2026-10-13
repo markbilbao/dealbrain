@@ -10,14 +10,17 @@ This record is not named Sprint 40.8. It does not rewrite the 2026-10-09 readine
 
 ## Policy
 
-No approved failed-login threshold or lock duration was found in the repository. Searches for `locked_until`, `failed_login`, `lockout`, and a consecutive-failure duration found only the existing shared auth window: 20 attempts / 60 seconds.
+No approved failed-login threshold, lock duration, or unlocked-failure retention duration was found in the repository. Searches for `locked_until`, `failed_login`, `lockout`, and a consecutive-failure duration found only the existing shared auth window: 20 attempts / 60 seconds. `docs/privacy/ENGINEERING_RETENTION.md` records technical TTLs and states that it is not an approved retention schedule. It does not name a failed-login history lifetime.
 
 The conservative beta default is therefore named and used:
 
 - `FAILED_LOGIN_LOCK_THRESHOLD` = 20 consecutive failures
 - `FAILED_LOGIN_LOCK_DURATION_SECONDS` = 900 (15 minutes)
+- `FAILED_LOGIN_FAILURE_RETENTION_SECONDS` = 900 (15 minutes)
 
-The 15 minutes are measured from the attempt that reaches the threshold (`locked_until = now + 15 minutes`). They are not a bucket that starts on the first failure and can expire immediately after the threshold is crossed. There is no permanent exponential lockout in this slice.
+The lock's 15 minutes are measured from the attempt that reaches the threshold (`locked_until = now + 15 minutes`). They are not a bucket that starts on the first failure and can expire immediately after the threshold is crossed. There is no permanent exponential lockout in this slice.
+
+The retention horizon is intentionally longer than the 60-second auth window. An unlocked sequence is remembered while `last_failure_at + 15 minutes` is still ahead of the current attempt. When `locked_until` is null and the previous failure is at least 15 minutes old, the next failure starts a new sequence at count 1. It does not continue the stale count. An active lock is unchanged by that horizon: later attempts do not extend `locked_until`, and stale-row cleanup does not delete it.
 
 ## What was added
 
@@ -31,7 +34,7 @@ Before the password check:
 
 On an unknown email, an inactive account, or a bad password, one durable failure is recorded for that opaque identity. The public error remains `UserPlatformAuthError("Invalid email or password.")`, including on the attempt that reaches the threshold. The next attempt is blocked until `locked_until`.
 
-When the threshold is reached, the row's `locked_until_ms` is set from that event. Later failures during the lock do not move the deadline. After `locked_until`, the next failure starts a new sequence at count 1. A successful login deletes the row and still resets the 20/60 window, then issues the session as before.
+When the threshold is reached, the row's `locked_until_ms` is set from that event. Later failures during the lock do not move the deadline. After `locked_until`, the next failure starts a new sequence at count 1. An unlocked sequence whose previous failure is at least 15 minutes old also starts again at count 1. A successful login deletes the row and still resets the 20/60 window, then issues the session as before.
 
 `User.is_active` is not the lock. An inactive account stays inactive. An active account stays active while locked.
 
@@ -42,18 +45,31 @@ Table `failed_login_locks`, Alembic revision `f6a7b8c9d0e1` (revises `e5f6a7b8c9
 | Column | Meaning |
 |--------|---------|
 | `identity_key` | Opaque `login:<hmac-sha256>` of the normalized email. Primary key. |
-| `failure_count` | Consecutive failures since the last success or expired lock. |
+| `failure_count` | Consecutive failures in the current sequence. The sequence restarts after success, after an expired lock, or when an unlocked previous failure is at least 15 minutes old. |
 | `locked_until_ms` | Deadline of the current lock, or null when not locked. |
 | `first_failure_ms` | Start of the current failure sequence. |
-| `last_failure_ms` | Most recent failure in that sequence. |
+| `last_failure_ms` | Most recent failure in that sequence. Indexed by `ix_failed_login_locks_last_failure_ms` so retention cleanup can find stale rows. |
 
 The table has no email, password, bearer token, session token, or owner-cookie column. Staging and production use `SqlFailedLoginLockStore` on the same PostgreSQL selection as `SqlRateLimitStore`. `RATE_LIMIT_BACKEND=memory` remains forbidden there. Development and unit tests use `InMemoryFailedLoginLockStore`. The SQL module does not reference the memory store.
 
+`ix_failed_login_locks_last_failure_ms` was added in the existing unmerged revision `f6a7b8c9d0e1`. No later revision was added.
+
+## Stale-row cleanup
+
+Lock-store writes delete rows that are safe to forget. `record_failure` and a successful-login `clear` do this in the same transaction as their own change. There is no new scheduler.
+
+A row may be deleted only when:
+
+- it is unlocked (`locked_until_ms` is null) and `last_failure_ms` is at or before `now - 15 minutes`, or
+- its lock has expired (`locked_until_ms <= now`)
+
+Cleanup does not delete an active lock, including one whose last failure is older than 15 minutes, and it does not delete an unlocked sequence that is still inside the horizon. The identity just written has `last_failure_ms = now` and either no lock or a future lock, so that write is not deleted. The delete is conditional. A concurrent update of a row that is no longer stale does not match it.
+
 ## Concurrency
 
-An active or not-yet-locked row is updated with one conditional `UPDATE` that sets `failure_count = failure_count + 1`. The database applies that expression to the locked row, so concurrent failures do not lose increments. `locked_until_ms` is written only when it is null and the new count reaches the threshold. A row that is already locked keeps its deadline.
+An active lock, or an unlocked sequence still inside the 15-minute horizon, is updated with one conditional `UPDATE` that sets `failure_count = failure_count + 1`. The database applies that expression to the locked row, so concurrent failures do not lose increments. `locked_until_ms` is written only when it is null and the new count reaches the threshold. A row that is already locked keeps its deadline. A stale unlocked row does not match that increment, so its old count is not continued.
 
-An expired lock is not incremented. A second conditional `UPDATE` matches `locked_until_ms <= now` and replaces the row with failure count 1. If two sessions race that reset, one matches; the other matches zero rows and then increments. The first row is inserted, and a primary-key conflict retries the update. Store errors raise `FailedLoginLockUnavailable` and never open an in-memory substitute.
+An expired lock is not incremented. A conditional `UPDATE` matches `locked_until_ms <= now` and replaces the row with failure count 1. A stale unlocked row is replaced the same way, matching `locked_until_ms IS NULL` and `last_failure_ms` at or before the horizon. If two sessions race that reset, one matches; the other matches zero rows and then increments. The first row is inserted, and a primary-key conflict retries the update. Store errors raise `FailedLoginLockUnavailable` and never open an in-memory substitute.
 
 ## Enumeration safety
 
@@ -79,16 +95,15 @@ CAPTCHA, WAF/CDN bot protection, MFA, IP reputation, click-fraud scoring, device
 
 ## Local verification
 
-This run is repository verification on the implementation branch. It is not a GitHub CI run and not staging proof. The starting `main` result remains CI #480 SUCCESS, Build Image #171 SUCCESS, full pytest 4416 passed and 5 skipped, pip-audit 71 packages, 0 vulnerabilities, 0 exceptions.
+This run is repository verification on the implementation branch, including the 15-minute unlocked-failure retention and stale-row cleanup. It is not a GitHub CI run and not staging proof. The starting `main` result remains CI #480 SUCCESS, Build Image #171 SUCCESS, full pytest 4416 passed and 5 skipped, pip-audit 71 packages, 0 vulnerabilities, 0 exceptions. Draft PR #197's previous head `124aff7e1e2aaa0c5a0e6029f0aa384a04bb8fac` had CI #482 green before this retention fix.
 
-- Focused durable-login-lock tests: 15 passed.
-- Existing auth, rate-limit, login/session, identity-lifecycle, migration, and post-40.7 reconciliation tests: 171 passed.
-- Sprint 40 security tests and database persistence tests: 282 passed, 15 deselected (the new lock file, run separately above).
-- Architecture-lock tests: 5 passed.
+- Focused durable-login-lock tests, including retention, cleanup, and SQL concurrency: 29 passed.
+- Auth, rate-limit, login/session, identity-lifecycle, Sprint 40, migration, persistence, and post-40.7 reconciliation tests, including the lock file: 459 passed.
+- Architecture-lock tests: 5 passed, 4445 deselected.
 - Ruff baseline gate: check=91 (baseline 91), unformatted=82 (baseline 86). No new regressions.
 - `secret_scan_25a`: OK.
 - pip-audit: 71 packages, 0 vulnerabilities, 0 exceptions, scanner 2.10.1.
-- Full pytest: 4428 passed, 8 skipped, 0 failed, 268 warnings, 312.57s. The local skip count is 8, the same shape as the prior local run. It is not the GitHub count of 5 skipped.
+- Full pytest: 4442 passed, 8 skipped, 0 failed, 268 warnings, 315.12s. The local skip count is 8. It is not the GitHub count of 5 skipped. The 14 additional passes are the retention regressions.
 
 ## Roadmap truths
 
