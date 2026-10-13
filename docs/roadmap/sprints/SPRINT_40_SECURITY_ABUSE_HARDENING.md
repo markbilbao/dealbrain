@@ -209,3 +209,13 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
+
+## Implementation record — failed-login lock (2026-10-13)
+
+This section does not rewrite the Planned status, the Included requirements, the 2026-10-09 readiness audit, the Sprint 40.1 through Sprint 40.7 records, or the post-40.6 and post-40.7 reconciliations above. It is not named Sprint 40.8. Failed logins against one normalized email now stay limited after the 60-second shared auth window expires. The existing 20-attempt / 60-second limiter remains. The additional control is a temporary `locked_until` lock: 20 consecutive failures, then 15 minutes measured from the threshold event. No repository policy named a different threshold or duration. The slice is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging has not exercised the control. Evidence: [`../evidence/SPRINT_40_FAILED_LOGIN_LOCK_2026-10-13.md`](../evidence/SPRINT_40_FAILED_LOGIN_LOCK_2026-10-13.md). Starting `main` is `551f70d0b00a7368056e20ec859e29939ce53bb2`.
+
+R9 is IMPLEMENTED-NOT-PROVEN. R8 stays PARTIAL because bot and click-fraud controls, and the staging exercise, remain. R16 stays PARTIAL. Login locking is not a per-session bucket and does not complete the Origin/CSRF policy. R11 stays MISSING. No Included requirement is PROVEN. The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN and is not closed by this lock.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.

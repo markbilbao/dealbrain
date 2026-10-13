@@ -195,3 +195,6 @@ def reset_rate_limit_singletons_for_tests() -> None:
     global _SHARED_STORE, _AUTH_LIMITER
     _SHARED_STORE = None
     _AUTH_LIMITER = None
+    from app.launch.failed_login_lock import reset_failed_login_lock_singletons_for_tests
+
+    reset_failed_login_lock_singletons_for_tests()

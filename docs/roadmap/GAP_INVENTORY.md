@@ -1472,3 +1472,20 @@ Additive finding notes, which do not replace the historical rows:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-13 failed-login lock
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, or the post-40.6 and post-40.7 reconciliations above. It is not named Sprint 40.8. Failed logins against one normalized email stay limited after the 60-second shared auth window expires. The lock is temporary, uses an opaque HMAC identity, and is IMPLEMENTED-NOT-PROVEN. Staging has not exercised it. Evidence: [`evidence/SPRINT_40_FAILED_LOGIN_LOCK_2026-10-13.md`](evidence/SPRINT_40_FAILED_LOGIN_LOCK_2026-10-13.md). Starting `main` is `551f70d0b00a7368056e20ec859e29939ce53bb2`.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Failed-login lock | IMPLEMENTED-NOT-PROVEN. 20 consecutive failures, then 15 minutes from the lock event. Not PROVEN |
+| R9 | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| R8 | PARTIAL. Bot and click-fraud controls remain. Staging exercise remains absent |
+| R16 | PARTIAL. Login locking does not add a per-session bucket or complete Origin/CSRF |
+| R11 | MISSING |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

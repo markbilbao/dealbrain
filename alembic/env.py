@@ -11,6 +11,7 @@ from app.infrastructure.database.base import Base
 from app.infrastructure.database.models import (  # noqa: F401
     CanonicalProductModel,
     CanonicalProductRelationModel,
+    FailedLoginLockModel,
     OperationalEntityModel,
     PriceSnapshotModel,
     Product,
