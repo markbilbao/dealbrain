@@ -1445,3 +1445,30 @@ This addendum does not rewrite section I, the Sprint 30 security-finding map, th
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-13 Sprint 40 post-40.7 reconciliation
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, or the post-40.6 reconciliation above. The reconciliation re-reads the tree at `bbf7158dfa70c969e851f032702732f0e7e863ea`. CI #477 succeeded. Build Image #170 succeeded. Full pytest on CI #477 was 4410 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged. Evidence: [`evidence/SPRINT_40_POST_40_7_RECONCILIATION_2026-10-13.md`](evidence/SPRINT_40_POST_40_7_RECONCILIATION_2026-10-13.md).
+
+Additive finding notes, which do not replace the historical rows:
+
+- HIGH "In-process rate limits only" is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging evidence "Abuse controls exercised" is absent. Shared counters are not account lockout.
+- MEDIUM "CSRF not enforced" is IMPLEMENTED-NOT-PROVEN for decision-owner cookie mutations and `POST /account/clear-device`. Staging evidence is absent. It is not closed and not PROVEN.
+- MEDIUM CSP `'unsafe-inline'` is IMPLEMENTED-NOT-PROVEN. Staging evidence is absent. It is not closed and not PROVEN. FastAPI `/docs` and `/redoc` incompatibility does not reopen it.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is CLOSED BY IMPLEMENTATION for the dependency class. SAST, container scanning, and IaC security scanning remain STILL OPEN. `terraform validate` is not IaC security scanning. A successful Docker build is not container vulnerability scanning. R6 stays PARTIAL.
+- MEDIUM "URL validation / SSRF hardening incomplete" is IMPLEMENTED-NOT-PROVEN. No reachable SSRF exploit is demonstrated. Staging evidence is absent. It is not closed and not PROVEN.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | B. Sprint 40 is not ENGINEERING COMPLETE |
+| Selected next engineering slice | Failed logins must stay limited after the shared auth window expires. Not implemented. Not named Sprint 40.8 |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 3 (R1, R14, R18). PARTIAL 17. MISSING 1 (R11). BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| R1, R14, R18 | IMPLEMENTED-NOT-PROVEN. Decision-path owner adoption is closed in repository code. Not PROVEN |
+| R13 | PARTIAL. Anonymous `create(owner=None)` remains. It does not expose a decision context |
+| R9 | PARTIAL. The shared auth window expires and forgets failures. This is the selected slice |
+| R6 | PARTIAL. Secrets and pip-audit remain. SAST, container scanning, and IaC security scanning are absent |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
