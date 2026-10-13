@@ -1159,6 +1159,16 @@ R1 is IMPLEMENTED-NOT-PROVEN. R14 is IMPLEMENTED-NOT-PROVEN. R13 stays PARTIAL b
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
 
+### Sprint 40 post-40.7 reconciliation (2026-10-13)
+
+This note does not rewrite the readiness audit, the Sprint 40.1 through Sprint 40.7 notes, or the post-40.6 reconciliation above, and it does not change Sprint 38 or Sprint 39 status. The reconciliation re-reads `main` at `bbf7158dfa70c969e851f032702732f0e7e863ea`. CI #477 succeeded. Build Image #170 succeeded. Full pytest on CI #477 was 4410 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged. Evidence: [`evidence/SPRINT_40_POST_40_7_RECONCILIATION_2026-10-13.md`](evidence/SPRINT_40_POST_40_7_RECONCILIATION_2026-10-13.md).
+
+**Audit verdict:** B. Sprint 40 is not ENGINEERING COMPLETE. The selected next engineering slice is Failed logins must stay limited after the shared auth window expires. It is not implemented. It is not named Sprint 40.8. R1, R14, and R18 are IMPLEMENTED-NOT-PROVEN. R13 stays PARTIAL. R11 stays MISSING. The other Included rows stay PARTIAL. No Included requirement is PROVEN. Counts: PROVEN 0, IMPLEMENTED-NOT-PROVEN 3, PARTIAL 17, MISSING 1, BLOCKED-DEPENDENCY 0, NOT-APPLICABLE 0.
+
+The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN. The CSRF/Origin, CSP `'unsafe-inline'`, and URL/SSRF MEDIUMs remain IMPLEMENTED-NOT-PROVEN. The dependency-scanner absence is CLOSED BY IMPLEMENTATION. SAST, container scanning, and IaC security scanning remain open. R6 stays PARTIAL. They are not relabeled launch-blocking. No risk acceptance is recorded. Canonical snapshot immutability is unchanged. Guest-to-account rebind of a canonical snapshot remains a product-definition conflict. Anonymous ownerless conversations do not expose a decision context.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |
