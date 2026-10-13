@@ -81,7 +81,14 @@ CAPTCHA, WAF/CDN bot protection, MFA, IP reputation, click-fraud scoring, device
 
 This run is repository verification on the implementation branch. It is not a GitHub CI run and not staging proof. The starting `main` result remains CI #480 SUCCESS, Build Image #171 SUCCESS, full pytest 4416 passed and 5 skipped, pip-audit 71 packages, 0 vulnerabilities, 0 exceptions.
 
-Focused durable-login-lock tests passed (15). Existing auth rate-limit, login/session, Sprint 40.3 migration, identity-lifecycle, and post-40.7 reconciliation tests passed (171). Full-suite commands are recorded in the verification addendum for this file.
+- Focused durable-login-lock tests: 15 passed.
+- Existing auth, rate-limit, login/session, identity-lifecycle, migration, and post-40.7 reconciliation tests: 171 passed.
+- Sprint 40 security tests and database persistence tests: 282 passed, 15 deselected (the new lock file, run separately above).
+- Architecture-lock tests: 5 passed.
+- Ruff baseline gate: check=91 (baseline 91), unformatted=82 (baseline 86). No new regressions.
+- `secret_scan_25a`: OK.
+- pip-audit: 71 packages, 0 vulnerabilities, 0 exceptions, scanner 2.10.1.
+- Full pytest: 4428 passed, 8 skipped, 0 failed, 268 warnings, 312.57s. The local skip count is 8, the same shape as the prior local run. It is not the GitHub count of 5 skipped.
 
 ## Roadmap truths
 
