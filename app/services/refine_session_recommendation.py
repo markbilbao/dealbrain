@@ -271,17 +271,13 @@ class RefineSessionRecommendationService:
         if snapshot is not None:
             return packet_from_snapshot(snapshot), snapshot
 
-        bound_owner = owner
-        if conversation_id and self._conversations is not None:
-            context = self._conversations.get(conversation_id)
+        # Verified request owner is the only authority. A body conversation_id
+        # may select a conversation that already belongs to that owner. It must
+        # not be used to discover or adopt a stored owner.
+        if conversation_id and self._conversations is not None and owner is not None:
+            context = self._conversations.get_for_owner(conversation_id, owner)
             if context is None:
                 raise ShoppingAssistantNotFoundError(conversation_id)
-            if context.owner is None:
-                raise DecisionSnapshotOwnershipError(
-                    decision_id,
-                    "conversation has no owner binding",
-                )
-            bound_owner = context.owner
             if context.decision_context is not None:
                 decision_id = context.decision_context.decision_id
                 context_version = context.decision_context.context_version
@@ -289,12 +285,12 @@ class RefineSessionRecommendationService:
         if _UUID_RE.match(decision_id):
             if self._snapshots is None:
                 raise ShoppingAssistantNotFoundError(decision_id)
-            if bound_owner is None:
+            if owner is None:
                 raise DecisionSnapshotOwnershipError(
                     decision_id,
                     "snapshot access requires a verified owner",
                 )
-            loaded = self._snapshots.get_for_owner(decision_id, context_version, bound_owner)
+            loaded = self._snapshots.get_for_owner(decision_id, context_version, owner)
             if loaded is None:
                 raise ShoppingAssistantNotFoundError(decision_id)
             return packet_from_snapshot(loaded), loaded
@@ -315,20 +311,15 @@ class RefineSessionRecommendationService:
         decision_id: str,
         conversation_id: str | None,
     ) -> SessionRecommendationRefinement | None:
-        if self._conversations is None:
+        if self._conversations is None or owner is None:
             return None
         if conversation_id:
-            context = (
-                self._conversations.get_for_owner(conversation_id, owner)
-                if owner is not None
-                else self._conversations.get(conversation_id)
-            )
+            context = self._conversations.get_for_owner(conversation_id, owner)
             if context is not None and context.session_refinement is not None:
                 return context.session_refinement
-        if owner is not None:
-            context = self._conversations.find_bound_for_owner(owner, decision_id)
-            if context is not None:
-                return context.session_refinement
+        context = self._conversations.find_bound_for_owner(owner, decision_id)
+        if context is not None:
+            return context.session_refinement
         return None
 
     def _persist_overlay(

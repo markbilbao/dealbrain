@@ -1151,6 +1151,14 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
 
+### Sprint 40.7 decision-path owner binding (2026-10-13)
+
+This note does not rewrite the readiness audit, the Sprint 40.1 through Sprint 40.6 notes, or the post-40.6 reconciliation above, and it does not change Sprint 38 or Sprint 39 status. Sprint 40.7 implements the selected slice: a body `conversation_id` must not adopt the stored owner on answer-from-evidence, session refinement, or research proposal. The verified request owner is the authority. The slice is IMPLEMENTED-NOT-PROVEN. Evidence: [`evidence/SPRINT_40_7_DECISION_PATH_OWNER_BINDING_2026-10-13.md`](evidence/SPRINT_40_7_DECISION_PATH_OWNER_BINDING_2026-10-13.md). Starting `main` is `df051a2e122816928bb85edb75c5f27290c1aaaa`.
+
+R1 is IMPLEMENTED-NOT-PROVEN. R14 is IMPLEMENTED-NOT-PROVEN. R13 stays PARTIAL because anonymous `create(owner=None)` remains the merged Sprint 40.1 contract. R18 stays IMPLEMENTED-NOT-PROVEN. No other reconciliation row was reclassified. No Included requirement is PROVEN. Canonical snapshot immutability is unchanged. Guest-to-account rebind of a canonical snapshot remains a product-definition conflict.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

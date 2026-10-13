@@ -179,3 +179,15 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
+
+## Implementation record — Sprint 40.7 (2026-10-13)
+
+This section does not rewrite the Planned status, the Included requirements, the 2026-10-09 readiness audit, the Sprint 40.1 through Sprint 40.6 records, or the post-40.6 reconciliation above. Sprint 40.7 stops decision-path answer, refinement, and research proposal from adopting a stored conversation owner out of a body `conversation_id`. The verified request owner is the authority. Body `conversation_id`, `decision_id`, and `context_version` stay lookup values. The slice is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging has not exercised the control. Evidence: [`../evidence/SPRINT_40_7_DECISION_PATH_OWNER_BINDING_2026-10-13.md`](../evidence/SPRINT_40_7_DECISION_PATH_OWNER_BINDING_2026-10-13.md). Starting `main` is `df051a2e122816928bb85edb75c5f27290c1aaaa`.
+
+R1 is IMPLEMENTED-NOT-PROVEN. R14 is IMPLEMENTED-NOT-PROVEN. R13 stays PARTIAL because anonymous non-decision `create(owner=None)` and ownerless `append_turn` materialization remain, and this slice does not change that Sprint 40.1 contract. R18 stays IMPLEMENTED-NOT-PROVEN. No other reconciliation row was reclassified. No Included requirement is PROVEN.
+
+The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN. The CSRF/Origin, CSP `'unsafe-inline'`, and URL/SSRF MEDIUMs remain IMPLEMENTED-NOT-PROVEN. The dependency-scanner absence stays CLOSED BY IMPLEMENTATION. SAST, container scanning, and IaC security scanning remain open. R6 stays PARTIAL. R11 stays MISSING. They are not relabeled launch-blocking. No risk acceptance is recorded. Canonical snapshot immutability is unchanged. Guest-to-account rebind of a canonical snapshot remains a product-definition conflict.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged.
