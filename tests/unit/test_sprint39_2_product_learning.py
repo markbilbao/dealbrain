@@ -804,6 +804,7 @@ async def test_shopping_paths_do_not_emit_decision_events_and_survive_analytics_
     asked = await client.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "headphones under 200"},
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert asked.status_code == 200
     names = {event.event_name for event in stores["analytics_repo"].list_events()}
@@ -824,6 +825,7 @@ async def test_shopping_paths_do_not_emit_decision_events_and_survive_analytics_
     survived = await client.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "compare the top two"},
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert survived.status_code == 200
 

@@ -51,6 +51,7 @@ from sqlalchemy.orm import sessionmaker
 
 ROOT = Path(__file__).resolve().parents[2]
 _REVISION = "f6a7b8c9d0e1"
+_SUBMISSION_REVISION = "a7b8c9d0e1f2"
 EMAIL = "lock.user@example.com"
 UNKNOWN_EMAIL = "ghost.user@example.com"
 PASSWORD = "CorrectPass123!"
@@ -752,10 +753,13 @@ def test_failed_login_lock_migration_upgrades_and_rolls_back(tmp_path: Path) -> 
     config = Config(str(ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(ROOT / "alembic"))
     script = ScriptDirectory.from_config(config)
-    assert script.get_heads() == [_REVISION]
+    assert script.get_heads() == [_SUBMISSION_REVISION]
     revision = script.get_revision(_REVISION)
     assert revision is not None
     assert revision.down_revision == "e5f6a7b8c9d0"
+    head = script.get_revision(_SUBMISSION_REVISION)
+    assert head is not None
+    assert head.down_revision == _REVISION
     revision_module = _revision_module()
 
     engine = create_engine(f"sqlite:///{tmp_path / 'migrated-locks.db'}")

@@ -1187,6 +1187,14 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
 
+### Message submission idempotency (2026-10-13)
+
+This note does not rewrite the readiness audit, the Sprint 40.1 through Sprint 40.7 notes, the post-40.6 and post-40.7 reconciliations, the failed-login lock note, or the post-failed-login-lock reconciliation above, and it does not change Sprint 38 or Sprint 39 status. It is not named Sprint 40.8. Ordinary shopping-assistant message submission must not apply twice when the same client request is retried. That control is now in the repository and is IMPLEMENTED-NOT-PROVEN. It is not PROVEN. Staging has not exercised it. `POST /api/v1/shopping-assistant/query` requires `Idempotency-Key`, scoped to the verified subject, with a durable shared ledger in staging and production. Completed retries replay the stored response and do not call `service.query` or `emit_ask_product_events` again. Research-authorization idempotency is unchanged. Evidence: [`evidence/SPRINT_40_MESSAGE_SUBMISSION_IDEMPOTENCY_2026-10-13.md`](evidence/SPRINT_40_MESSAGE_SUBMISSION_IDEMPOTENCY_2026-10-13.md). Starting `main` is `591bcf751aae5e8f7cc14c1ffac17b81211b395a`.
+
+R17 is IMPLEMENTED-NOT-PROVEN. R8, R10, R11, R15, R16, and R19 stay independent. R1, R9, R14, and R18 stay IMPLEMENTED-NOT-PROVEN. R11 stays MISSING. No Included requirement is PROVEN. Counts: PROVEN 0, IMPLEMENTED-NOT-PROVEN 5 (R1, R9, R14, R17, R18), PARTIAL 15, MISSING 1 (R11), BLOCKED-DEPENDENCY 0, NOT-APPLICABLE 0. The historical HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN and is not closed.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. This note does not select a later engineering slice. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

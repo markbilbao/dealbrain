@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from app.consumer.location import DeliveryContext, skipped_context
@@ -521,6 +522,7 @@ async def test_results_compare_why_ask_same_decision(client: AsyncClient) -> Non
                 "decision_id": "headphones-standard",
                 "surface": surface,
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert ask.status_code == 200, ask.text
         body = ask.json()
@@ -539,5 +541,6 @@ async def test_invalid_decision_id_for_uuid_snapshot(client: AsyncClient) -> Non
             "query": "Why is this Best Piq for me?",
             "decision_id": "00000000-0000-4000-8000-000000000099",
         },
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert response.status_code in {404, 400}

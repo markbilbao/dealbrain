@@ -6,7 +6,10 @@ are disabled by default and never receive client-supplied API keys.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from pydantic import ValidationError
 
 from app.analytics.ask_events import emit_ask_product_events
 from app.analytics.service import ProductAnalyticsService
@@ -22,6 +25,7 @@ from app.core.dependencies import (
     get_product_analytics_service,
     get_shopping_assistant_service,
     get_shopping_decision_snapshot_repository,
+    get_shopping_submission_ledger,
 )
 from app.domain.exceptions import (
     DecisionSnapshotIntegrityError,
@@ -37,6 +41,20 @@ from app.schemas.shopping_assistant import (
     ShoppingAssistantResponse,
 )
 from app.services.shopping_assistant_service import ShoppingAssistantService
+from app.shopping.submission_idempotency import (
+    DETAIL_CONFLICT,
+    DETAIL_IN_PROGRESS,
+    DETAIL_INDETERMINATE,
+    DETAIL_UNAVAILABLE,
+    HEADER_NAME,
+    ShoppingSubmissionLedger,
+    ShoppingSubmissionUnavailable,
+    SubmissionIdentityError,
+    apply_shopping_submission,
+    parse_submission_key,
+    request_fingerprint,
+    submission_authority_scope,
+)
 
 router = APIRouter(prefix="/shopping-assistant")
 
@@ -109,17 +127,56 @@ async def query_shopping_assistant(
     service: ShoppingAssistantService = Depends(get_shopping_assistant_service),
     analytics: ProductAnalyticsService = Depends(get_product_analytics_service),
     snapshots: DecisionSnapshotRepository = Depends(get_shopping_decision_snapshot_repository),
+    ledger: ShoppingSubmissionLedger = Depends(get_shopping_submission_ledger),
 ) -> ShoppingAssistantResponse:
+    try:
+        submission_key = parse_submission_key(request.headers.get(HEADER_NAME))
+    except SubmissionIdentityError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.message) from exc
     location = parse_delivery_cookie(request.cookies.get(DELIVERY_COOKIE))
     owner = authorized_owner_from_request(request)
     selected_market = shopping_market_from_cookie(request.cookies.get(SHOPPING_MARKET_COOKIE))
+    payload = body.model_dump()
     try:
+        scope = submission_authority_scope(owner, request)
+        fingerprint = request_fingerprint(
+            payload,
+            scope=scope,
+            location=location,
+            selected_market=selected_market,
+        )
+    except ShoppingSubmissionUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=DETAIL_UNAVAILABLE,
+        ) from exc
+    now = datetime.now(UTC)
+
+    def execute() -> str:
+        # Mutation boundary. Anything this call writes is not safe to repeat.
         result = service.query(
-            body.model_dump(),
+            payload,
             location=location,
             owner=owner,
             selected_market=selected_market,
         )
+        mapped = to_assistant_response(result, allowed_modes=service.allowed_modes())
+        return mapped.model_dump_json()
+
+    try:
+        applied = apply_shopping_submission(
+            ledger,
+            scope=scope,
+            key=submission_key,
+            fingerprint=fingerprint,
+            execute=execute,
+            now=now,
+        )
+    except ShoppingSubmissionUnavailable as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=DETAIL_UNAVAILABLE,
+        ) from exc
     except (
         ShoppingAssistantValidationError,
         ShoppingAssistantNotFoundError,
@@ -129,20 +186,34 @@ async def query_shopping_assistant(
         raise _map_error(exc) from exc
     except Exception as exc:  # noqa: BLE001
         raise _map_error(exc) from exc
-    processing = result.processing if isinstance(result.processing, dict) else {}
-    answer_status = processing.get("answer_status")
-    decision_id = processing.get("decision_id")
-    evidence = getattr(result, "evidence", ())
-    emit_ask_product_events(
-        request,
-        response,
-        surface=body.surface,
-        answer_status=answer_status if isinstance(answer_status, str) else None,
-        evidence_count=len(evidence) if evidence is not None else None,
-        decision_id=decision_id if isinstance(decision_id, str) else None,
-        owner=owner,
-        analytics=analytics,
-        snapshots=snapshots,
-        processing=processing,
-    )
-    return to_assistant_response(result, allowed_modes=service.allowed_modes())
+    if applied.outcome == "in_progress":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=DETAIL_IN_PROGRESS)
+    if applied.outcome == "conflict":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=DETAIL_CONFLICT)
+    if applied.outcome == "indeterminate" or not applied.response_json:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=DETAIL_INDETERMINATE)
+    try:
+        model = ShoppingAssistantResponse.model_validate_json(applied.response_json)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=DETAIL_INDETERMINATE,
+        ) from exc
+    if applied.fresh:
+        processing = model.processing if isinstance(model.processing, dict) else {}
+        answer_status = processing.get("answer_status")
+        decision_id = processing.get("decision_id")
+        evidence = model.evidence
+        emit_ask_product_events(
+            request,
+            response,
+            surface=body.surface,
+            answer_status=answer_status if isinstance(answer_status, str) else None,
+            evidence_count=len(evidence) if evidence is not None else None,
+            decision_id=decision_id if isinstance(decision_id, str) else None,
+            owner=owner,
+            analytics=analytics,
+            snapshots=snapshots,
+            processing=processing,
+        )
+    return model

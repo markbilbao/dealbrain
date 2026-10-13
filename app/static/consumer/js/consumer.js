@@ -172,6 +172,66 @@ function bindAskChips(root) {
   });
 }
 
+function newSubmissionKey() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+  const bytes = new Uint8Array(16);
+  window.crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20),
+  ].join("-");
+}
+
+let pendingAskSubmission = null;
+
+async function postAskSubmission(body, key) {
+  let lastResponse = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(ASK_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Idempotency-Key": key,
+        },
+        body,
+      });
+    } catch {
+      continue;
+    }
+    if (response.status === 503 || response.status === 429) {
+      lastResponse = response;
+      continue;
+    }
+    if (response.status === 409) {
+      let detail = "";
+      try {
+        const parsed = await response.clone().json();
+        detail = String(parsed.detail || "");
+      } catch {
+        detail = "";
+      }
+      if (detail === "Request already in progress.") {
+        lastResponse = response;
+        continue;
+      }
+      return { terminal: true, response, detail };
+    }
+    return { terminal: true, response, detail: "" };
+  }
+  return { terminal: false, response: lastResponse, detail: "Request already in progress." };
+}
+
 function initAsk() {
   const overlay = qs("ask-overlay");
   document.querySelectorAll(".js-close-ask").forEach((btn) => {
@@ -205,6 +265,7 @@ function initAsk() {
   document.querySelectorAll(".js-ask-form").forEach((form) => {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+      if (form.dataset.askSubmitting === "1") return;
       const input = form.querySelector(".ask-input");
       const question = (input?.value || "").trim();
       if (!question) return;
@@ -227,12 +288,37 @@ function initAsk() {
       } catch {
         /* sessionStorage may be unavailable */
       }
+      const body = JSON.stringify(payload);
+      const submissionKey =
+        pendingAskSubmission && pendingAskSubmission.body === body
+          ? pendingAskSubmission.key
+          : newSubmissionKey();
+      pendingAskSubmission = { key: submissionKey, body };
+      form.dataset.askSubmitting = "1";
+      const submitter = form.querySelector("[type='submit']");
+      if (submitter) submitter.disabled = true;
       try {
-        const response = await fetch(ASK_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(payload),
-        });
+        const posted = await postAskSubmission(body, submissionKey);
+        if (!posted.terminal || !posted.response) {
+          showAsk("<p>Ask PiqSavi is still working on that. Try again in a moment.</p>");
+          return;
+        }
+        const response = posted.response;
+        if (response.status === 409) {
+          pendingAskSubmission = null;
+          const message =
+            posted.detail === "Idempotency-Key does not match the original request."
+              ? "That submission was already used for a different question."
+              : "Ask PiqSavi could not safely retry that submission.";
+          showAsk(`<p>${message}</p>`);
+          return;
+        }
+        if (!response.ok) {
+          pendingAskSubmission = null;
+          showAsk("<p>Ask PiqSavi is unavailable right now. Try again in a moment.</p>");
+          return;
+        }
+        pendingAskSubmission = null;
         const payloadJson = await response.json();
         if (payloadJson.conversation_id) {
           try {
@@ -291,6 +377,9 @@ function initAsk() {
         }
       } catch {
         showAsk("<p>Ask PiqSavi is unavailable right now. Try again in a moment.</p>");
+      } finally {
+        form.dataset.askSubmitting = "0";
+        if (submitter) submitter.disabled = false;
       }
     });
   });

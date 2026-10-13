@@ -7,6 +7,7 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from app.consumer.canonical_presentation import page_view_from_snapshot
@@ -354,6 +355,7 @@ async def test_cross_surface_consistency_and_ask(
             "decision_id": DECISION_ID,
             "surface": "results",
         },
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert ask.status_code == 200
     body = ask.json()
@@ -646,6 +648,7 @@ async def test_rendering_does_not_mutate_snapshot(
     await adapter_client.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "Does this include shipping?", "decision_id": DECISION_ID},
+        headers={"Idempotency-Key": str(uuid4())},
     )
     loaded = snapshots.get(DECISION_ID, 1)
     assert loaded is not None
@@ -675,6 +678,7 @@ async def test_client_cannot_override_canonical_fields(
             "piqscore": 1,
             "recommendation": "buy",
         },
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert ask.status_code == 200
     assert "18,990" in ask.json()["answer"]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 from app.core.dependencies import get_shopping_assistant_service
@@ -65,6 +66,10 @@ def _build_service(*, ai_enabled: bool = False, mode: str = "economy") -> Shoppi
     )
 
 
+def _submission_headers() -> dict[str, str]:
+    return {"Idempotency-Key": str(uuid4())}
+
+
 @pytest.fixture
 async def client():
     app = create_app()
@@ -82,6 +87,7 @@ async def test_post_query_recommendation(client) -> None:
     response = await http.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "What is the best gaming laptop under ₱60,000?", "mode": "economy"},
+        headers=_submission_headers(),
     )
     assert response.status_code == 200
     body = response.json()
@@ -121,6 +127,7 @@ async def test_query_length_restriction_api(client) -> None:
     response = await http.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "x" * 501},
+        headers=_submission_headers(),
     )
     assert response.status_code == 400
 
@@ -131,6 +138,7 @@ async def test_mode_restriction_clamps_to_server(client) -> None:
     response = await http.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "Best gaming laptop under 60000", "mode": "maximum"},
+        headers=_submission_headers(),
     )
     assert response.status_code == 200
     assert response.json()["mode"] == "economy"
@@ -148,6 +156,7 @@ async def test_structured_filters_accepted(client) -> None:
             "use_cases": ["gaming"],
             "mode": "economy",
         },
+        headers=_submission_headers(),
     )
     assert response.status_code == 200
     body = response.json()
@@ -165,6 +174,7 @@ async def test_comparison_response_shape(client) -> None:
                 "Compare iPhone 17 Pro Max and Samsung Galaxy S25 Ultra for camera and battery"
             )
         },
+        headers=_submission_headers(),
     )
     assert response.status_code == 200
     body = response.json()
@@ -179,6 +189,7 @@ async def test_no_secrets_in_api_response(client) -> None:
     response = await http.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "Best gaming laptop under 60000"},
+        headers=_submission_headers(),
     )
     text = response.text.lower()
     assert "api_key" not in text

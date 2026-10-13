@@ -606,6 +606,7 @@ async def test_http_owner_can_propose_from_ask() -> None:
                 "decision_id": HTTP_DECISION_ID,
                 "surface": "results",
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert ask.status_code == 200, ask.text
         body = ask.json()
@@ -627,6 +628,7 @@ async def test_http_owner_can_propose_from_ask() -> None:
                 "proposal_id": body["research_proposal"]["proposal_id"],
                 "proposal_version": body["research_proposal"]["proposal_version"],
             },
+            headers={"Idempotency-Key": str(uuid4())},
         )
         assert confirm.status_code == 200
         assert confirm.json()["research_proposal"]["status"] == (

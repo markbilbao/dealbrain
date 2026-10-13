@@ -6,6 +6,7 @@ Covers the §13.6 matrix cells using the real FastAPI app where practical.
 from __future__ import annotations
 
 from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 from app.core.dependencies import get_db, get_product_service
@@ -194,6 +195,7 @@ async def test_shopping_assistant_meta_and_query(app_client) -> None:
     query = await client.post(
         "/api/v1/shopping-assistant/query",
         json={"query": "best phone under 20000"},
+        headers={"Idempotency-Key": str(uuid4())},
     )
     assert query.status_code in {200, 400, 422}
     if query.status_code == 200:
