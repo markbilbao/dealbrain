@@ -120,6 +120,7 @@ from app.intelligence.watchlists import (
     MockNotificationService,
 )
 from app.launch.cache import TtlCache
+from app.launch.failed_login_lock import get_failed_login_lock
 from app.launch.feature_flags import FeatureFlagRegistry, get_feature_flags
 from app.launch.fixtures import DemoLauncherState
 from app.launch.memory import InMemoryLaunchStore
@@ -1231,6 +1232,7 @@ def get_user_platform_service() -> UserPlatformService:
             email_sender=build_identity_email_sender(settings),
             audit=audit,
             rate_limiter=get_auth_rate_limiter(),
+            login_lock=get_failed_login_lock(),
             enabled=settings.user_platform_enabled,
         )
         profiles = ProfileService(users=store.users, profiles=store.profiles)

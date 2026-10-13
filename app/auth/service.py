@@ -62,6 +62,11 @@ from app.domain.interfaces.user_platform_repository import (
     SessionRepository,
     UserRepository,
 )
+from app.launch.failed_login_lock import (
+    LOGIN_ATTEMPT_LIMIT_MESSAGE,
+    FailedLoginLock,
+    FailedLoginLockUnavailable,
+)
 from app.legal.publication import (
     POLICY_PRIVACY,
     POLICY_TERMS,
@@ -96,6 +101,12 @@ def _default_auth_rate_limiter() -> RateLimiterHook:
     return default_auth_rate_limiter()
 
 
+def _default_failed_login_lock():
+    from app.launch.failed_login_lock import default_failed_login_lock
+
+    return default_failed_login_lock()
+
+
 class AuthService:
     """Register / login / logout / session validation with security hooks."""
 
@@ -113,6 +124,7 @@ class AuthService:
         password_hasher: PasswordHasher | None = None,
         email_sender: EmailSender | None = None,
         rate_limiter: RateLimiterHook | None = None,
+        login_lock: FailedLoginLock | None = None,
         csrf: CsrfTokenService | None = None,
         audit: AuditLogger | None = None,
         mfa: MfaExtensionPoint | None = None,
@@ -134,6 +146,7 @@ class AuthService:
         self._hasher = password_hasher or PasswordHasher()
         self._email = email_sender or NullEmailSender()
         self._rate_limiter = rate_limiter or _default_auth_rate_limiter()
+        self._login_lock = login_lock or _default_failed_login_lock()
         self._csrf = csrf or CsrfTokenService()
         self._audit = audit or AuditLogger()
         self._mfa = mfa or MfaExtensionPoint()
@@ -289,17 +302,20 @@ class AuthService:
         self._require_enabled()
         cleaned_email = self._normalize_email(email)
         rate_key = self._abuse_key("login", cleaned_email)
+        self._reject_if_login_locked(rate_key)
         if not self._rate_limiter.check(rate_key):
             self._audit.record("rate_limited", detail="login", metadata={"email": cleaned_email})
             raise UserPlatformRateLimitError("Too many login attempts. Try again later.")
 
         user = self._users.get_by_email(cleaned_email)
         if user is None or not user.is_active:
+            self._record_durable_login_failure(rate_key)
             self._audit.record(
                 "login_failure", detail="unknown_or_inactive", metadata={"email": cleaned_email}
             )
             raise UserPlatformAuthError("Invalid email or password.")
         if not self._hasher.verify(password, user.password_hash):
+            self._record_durable_login_failure(rate_key)
             self._audit.record("login_failure", user_id=user.user_id, detail="bad_password")
             raise UserPlatformAuthError("Invalid email or password.")
 
@@ -308,6 +324,7 @@ class AuthService:
             self._audit.record("mfa_challenge", user_id=user.user_id)
             raise UserPlatformAuthError("MFA required but not implemented in Sprint 17.")
 
+        self._clear_durable_login_failure(rate_key)
         self._rate_limiter.reset(rate_key)
         self._audit.record("login_success", user_id=user.user_id)
         return self._issue_session(
@@ -784,6 +801,52 @@ class AuthService:
         from app.launch.rate_limit_keys import opaque_subject_key
 
         return opaque_subject_key(action, material)
+
+    def _reject_if_login_locked(self, rate_key: str) -> None:
+        """Deny before password verification when the durable lock is active.
+
+        Store failure uses the same public rate-limit error. The account is
+        not looked up, so the response does not reveal whether it exists.
+        """
+
+        try:
+            locked = self._login_lock.is_locked(rate_key, now=self._clock())
+        except FailedLoginLockUnavailable:
+            self._audit.record(
+                "rate_limited",
+                detail="login_lock_unavailable",
+                metadata={"control": "failed_login_lock", "condition": "unavailable"},
+            )
+            raise UserPlatformRateLimitError(LOGIN_ATTEMPT_LIMIT_MESSAGE) from None
+        if locked:
+            self._audit.record(
+                "rate_limited",
+                detail="login_locked",
+                metadata={"control": "failed_login_lock"},
+            )
+            raise UserPlatformRateLimitError(LOGIN_ATTEMPT_LIMIT_MESSAGE)
+
+    def _record_durable_login_failure(self, rate_key: str) -> None:
+        try:
+            self._login_lock.record_failure(rate_key, now=self._clock())
+        except FailedLoginLockUnavailable:
+            self._audit.record(
+                "rate_limited",
+                detail="login_lock_unavailable",
+                metadata={"control": "failed_login_lock", "condition": "unavailable"},
+            )
+            raise UserPlatformRateLimitError(LOGIN_ATTEMPT_LIMIT_MESSAGE) from None
+
+    def _clear_durable_login_failure(self, rate_key: str) -> None:
+        try:
+            self._login_lock.clear(rate_key, now=self._clock())
+        except FailedLoginLockUnavailable:
+            self._audit.record(
+                "rate_limited",
+                detail="login_lock_unavailable",
+                metadata={"control": "failed_login_lock", "condition": "unavailable"},
+            )
+            raise UserPlatformRateLimitError(LOGIN_ATTEMPT_LIMIT_MESSAGE) from None
 
     @staticmethod
     def _normalize_email(email: str) -> str:

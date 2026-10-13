@@ -1,0 +1,374 @@
+"""PostgreSQL (and test SQLite) failed-login lock store.
+
+Increments are a single conditional UPDATE so concurrent failures cannot lose
+counts. The first writer to cross the threshold sets ``locked_until_ms`` from
+that statement's clock. Later failures in the same lock keep that deadline.
+An expired lock, or an unlocked sequence older than the retention horizon, is
+replaced by a fresh count of 1 rather than an increment of the old total.
+The same transaction deletes other stale unlocked rows and expired locks.
+It does not delete an active lock or a recent unlocked sequence. Store errors
+raise FailedLoginLockUnavailable and never switch to process memory.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import datetime
+
+from sqlalchemy import and_, case, delete, insert, or_, select, update
+from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.core.logging import get_logger
+from app.infrastructure.database.models.failed_login_lock import FailedLoginLockModel
+from app.launch.failed_login_lock import (
+    FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
+    FailedLoginLockState,
+    FailedLoginLockUnavailable,
+    epoch_ms,
+    from_epoch_ms,
+    require_opaque_login_identity,
+)
+
+logger = get_logger(__name__)
+
+_TABLE = FailedLoginLockModel.__table__
+_MAX_ATTEMPTS = 16
+
+
+def _state_from_row(
+    identity: str,
+    failure_count: int,
+    locked_until_ms: int | None,
+    first_failure_ms: int,
+    last_failure_ms: int,
+) -> FailedLoginLockState:
+    locked_until = None if locked_until_ms is None else from_epoch_ms(int(locked_until_ms))
+    return FailedLoginLockState(
+        identity_key=identity,
+        failure_count=int(failure_count),
+        locked_until=locked_until,
+        first_failure_at=from_epoch_ms(int(first_failure_ms)),
+        last_failure_at=from_epoch_ms(int(last_failure_ms)),
+    )
+
+
+def _retryable(exc: Exception) -> bool:
+    if isinstance(exc, IntegrityError):
+        return True
+    if not isinstance(exc, OperationalError):
+        return False
+    message = str(getattr(exc, "orig", exc)).lower()
+    return any(
+        token in message
+        for token in ("locked", "busy", "deadlock", "serialization", "could not serialize")
+    )
+
+
+class SqlFailedLoginLockStore:
+    """Shared failed-login memory. One row per opaque identity."""
+
+    def __init__(self, session_factory: sessionmaker[Session] | None = None) -> None:
+        self._session_factory = session_factory
+
+    def _factory(self) -> sessionmaker[Session]:
+        if self._session_factory is not None:
+            return self._session_factory
+        from app.infrastructure.persistence.session import get_sync_session_factory
+
+        return get_sync_session_factory()
+
+    @contextmanager
+    def _session(self) -> Iterator[Session]:
+        session = self._factory()()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def get(self, identity: str) -> FailedLoginLockState | None:
+        identity = require_opaque_login_identity(identity)
+        stmt = select(
+            _TABLE.c.failure_count,
+            _TABLE.c.locked_until_ms,
+            _TABLE.c.first_failure_ms,
+            _TABLE.c.last_failure_ms,
+        ).where(_TABLE.c.identity_key == identity)
+        try:
+            with self._session() as session:
+                row = session.execute(stmt).first()
+        except FailedLoginLockUnavailable:
+            raise
+        except Exception as exc:
+            logger.warning("failed login lock store unavailable: %s", type(exc).__name__)
+            raise FailedLoginLockUnavailable("failed login lock store unavailable") from exc
+        if row is None:
+            return None
+        return _state_from_row(identity, row[0], row[1], row[2], row[3])
+
+    def record_failure(
+        self,
+        identity: str,
+        *,
+        now: datetime,
+        threshold: int,
+        lock_duration_seconds: int,
+        failure_retention_seconds: int = FAILED_LOGIN_FAILURE_RETENTION_SECONDS,
+    ) -> FailedLoginLockState:
+        identity = require_opaque_login_identity(identity)
+        if threshold < 1 or lock_duration_seconds < 1 or failure_retention_seconds < 1:
+            raise FailedLoginLockUnavailable("failed login lock store unavailable")
+        now_ms = epoch_ms(now)
+        lock_until_ms = now_ms + lock_duration_seconds * 1000
+        cutoff_ms = now_ms - failure_retention_seconds * 1000
+        last: Exception | None = None
+        for _ in range(_MAX_ATTEMPTS):
+            try:
+                with self._session() as session:
+                    state = _apply_failure(
+                        session,
+                        identity,
+                        now_ms=now_ms,
+                        threshold=threshold,
+                        lock_until_ms=lock_until_ms,
+                        cutoff_ms=cutoff_ms,
+                    )
+                    _purge_stale_rows(session, now_ms=now_ms, cutoff_ms=cutoff_ms)
+                    return state
+            except IntegrityError as exc:
+                last = exc
+                continue
+            except FailedLoginLockUnavailable:
+                raise
+            except Exception as exc:
+                if _retryable(exc):
+                    last = exc
+                    continue
+                logger.warning("failed login lock store unavailable: %s", type(exc).__name__)
+                raise FailedLoginLockUnavailable("failed login lock store unavailable") from exc
+        logger.warning("failed login lock store unavailable: retries exhausted")
+        raise FailedLoginLockUnavailable("failed login lock store unavailable") from last
+
+    def clear(
+        self,
+        identity: str,
+        *,
+        now: datetime | None = None,
+        failure_retention_seconds: int | None = None,
+    ) -> None:
+        identity = require_opaque_login_identity(identity)
+        if failure_retention_seconds is not None and failure_retention_seconds < 1:
+            raise FailedLoginLockUnavailable("failed login lock store unavailable")
+        try:
+            with self._session() as session:
+                session.execute(delete(_TABLE).where(_TABLE.c.identity_key == identity))
+                if now is not None and failure_retention_seconds is not None:
+                    now_ms = epoch_ms(now)
+                    _purge_stale_rows(
+                        session,
+                        now_ms=now_ms,
+                        cutoff_ms=now_ms - failure_retention_seconds * 1000,
+                    )
+        except FailedLoginLockUnavailable:
+            raise
+        except Exception as exc:
+            logger.warning("failed login lock store unavailable: %s", type(exc).__name__)
+            raise FailedLoginLockUnavailable("failed login lock store unavailable") from exc
+
+
+def _apply_failure(
+    session: Session,
+    identity: str,
+    *,
+    now_ms: int,
+    threshold: int,
+    lock_until_ms: int,
+    cutoff_ms: int,
+) -> FailedLoginLockState:
+    updated = _increment_active(
+        session,
+        identity,
+        now_ms=now_ms,
+        threshold=threshold,
+        lock_until_ms=lock_until_ms,
+        cutoff_ms=cutoff_ms,
+    )
+    if updated is not None:
+        return updated
+    reset = _reset_matching(
+        session,
+        identity,
+        now_ms=now_ms,
+        threshold=threshold,
+        lock_until_ms=lock_until_ms,
+        expired_lock=True,
+        cutoff_ms=cutoff_ms,
+    )
+    if reset is not None:
+        return reset
+    stale = _reset_matching(
+        session,
+        identity,
+        now_ms=now_ms,
+        threshold=threshold,
+        lock_until_ms=lock_until_ms,
+        expired_lock=False,
+        cutoff_ms=cutoff_ms,
+    )
+    if stale is not None:
+        return stale
+    return _insert_first(
+        session,
+        identity,
+        now_ms=now_ms,
+        threshold=threshold,
+        lock_until_ms=lock_until_ms,
+    )
+
+
+def _increment_active(
+    session: Session,
+    identity: str,
+    *,
+    now_ms: int,
+    threshold: int,
+    lock_until_ms: int,
+    cutoff_ms: int,
+) -> FailedLoginLockState | None:
+    """Add one failure while the identity is actively locked or still recent.
+
+    A stale unlocked row does not match, so its count is not continued.
+    An expired ``locked_until_ms`` does not match either. A lock that is
+    already in the future is preserved, so a later failure cannot move it.
+    """
+
+    new_count = _TABLE.c.failure_count + 1
+    stmt = (
+        update(_TABLE)
+        .where(
+            _TABLE.c.identity_key == identity,
+            or_(
+                _TABLE.c.locked_until_ms > now_ms,
+                and_(
+                    _TABLE.c.locked_until_ms.is_(None),
+                    _TABLE.c.last_failure_ms > cutoff_ms,
+                ),
+            ),
+        )
+        .values(
+            failure_count=new_count,
+            last_failure_ms=now_ms,
+            locked_until_ms=case(
+                (
+                    and_(_TABLE.c.locked_until_ms.is_(None), new_count >= threshold),
+                    lock_until_ms,
+                ),
+                else_=_TABLE.c.locked_until_ms,
+            ),
+        )
+        .returning(
+            _TABLE.c.failure_count,
+            _TABLE.c.locked_until_ms,
+            _TABLE.c.first_failure_ms,
+            _TABLE.c.last_failure_ms,
+        )
+    )
+    row = session.execute(stmt).first()
+    if row is None:
+        return None
+    return _state_from_row(identity, row[0], row[1], row[2], row[3])
+
+
+def _reset_matching(
+    session: Session,
+    identity: str,
+    *,
+    now_ms: int,
+    threshold: int,
+    lock_until_ms: int,
+    expired_lock: bool,
+    cutoff_ms: int,
+) -> FailedLoginLockState | None:
+    """Replace an expired lock, or a stale unlocked sequence, with count 1."""
+
+    if expired_lock:
+        match = and_(
+            _TABLE.c.locked_until_ms.is_not(None),
+            _TABLE.c.locked_until_ms <= now_ms,
+        )
+    else:
+        match = and_(
+            _TABLE.c.locked_until_ms.is_(None),
+            _TABLE.c.last_failure_ms <= cutoff_ms,
+        )
+    fresh_lock = lock_until_ms if threshold <= 1 else None
+    stmt = (
+        update(_TABLE)
+        .where(_TABLE.c.identity_key == identity, match)
+        .values(
+            failure_count=1,
+            first_failure_ms=now_ms,
+            last_failure_ms=now_ms,
+            locked_until_ms=fresh_lock,
+        )
+        .returning(
+            _TABLE.c.failure_count,
+            _TABLE.c.locked_until_ms,
+            _TABLE.c.first_failure_ms,
+            _TABLE.c.last_failure_ms,
+        )
+    )
+    row = session.execute(stmt).first()
+    if row is None:
+        return None
+    return _state_from_row(identity, row[0], row[1], row[2], row[3])
+
+
+def _insert_first(
+    session: Session,
+    identity: str,
+    *,
+    now_ms: int,
+    threshold: int,
+    lock_until_ms: int,
+) -> FailedLoginLockState:
+    fresh_lock = lock_until_ms if threshold <= 1 else None
+    session.execute(
+        insert(_TABLE).values(
+            identity_key=identity,
+            failure_count=1,
+            locked_until_ms=fresh_lock,
+            first_failure_ms=now_ms,
+            last_failure_ms=now_ms,
+        )
+    )
+    return _state_from_row(identity, 1, fresh_lock, now_ms, now_ms)
+
+
+def _purge_stale_rows(session: Session, *, now_ms: int, cutoff_ms: int) -> None:
+    """Delete unlocked history past the horizon and locks that have expired.
+
+    The caller writes the current identity first, with ``last_failure_ms``
+    equal to ``now_ms`` and either no lock or a future lock. That row does
+    not match. An active lock does not match even if its last failure is old.
+    """
+
+    session.execute(
+        delete(_TABLE).where(
+            or_(
+                and_(
+                    _TABLE.c.locked_until_ms.is_(None),
+                    _TABLE.c.last_failure_ms <= cutoff_ms,
+                ),
+                and_(
+                    _TABLE.c.locked_until_ms.is_not(None),
+                    _TABLE.c.locked_until_ms <= now_ms,
+                ),
+            )
+        )
+    )

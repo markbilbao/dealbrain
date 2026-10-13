@@ -1169,6 +1169,14 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
 
+### Failed-login lock (2026-10-13)
+
+This note does not rewrite the readiness audit, the Sprint 40.1 through Sprint 40.7 notes, or the post-40.6 and post-40.7 reconciliations above, and it does not change Sprint 38 or Sprint 39 status. It is not named Sprint 40.8. Failed logins stay limited after the shared auth window expires. Unlocked failure history is kept for 15 minutes, then a new sequence starts at 1, and stale rows are deleted on lock-store writes. The control is IMPLEMENTED-NOT-PROVEN. Evidence: [`evidence/SPRINT_40_FAILED_LOGIN_LOCK_2026-10-13.md`](evidence/SPRINT_40_FAILED_LOGIN_LOCK_2026-10-13.md). Starting `main` is `551f70d0b00a7368056e20ec859e29939ce53bb2`.
+
+R9 is IMPLEMENTED-NOT-PROVEN. R8 stays PARTIAL. R16 stays PARTIAL. R11 stays MISSING. R1, R14, and R18 stay IMPLEMENTED-NOT-PROVEN. No Included requirement is PROVEN. The historical HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN and is not closed. Counts: PROVEN 0, IMPLEMENTED-NOT-PROVEN 4 (R1, R9, R14, R18), PARTIAL 16, MISSING 1 (R11), BLOCKED-DEPENDENCY 0, NOT-APPLICABLE 0.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |
