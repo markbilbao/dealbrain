@@ -67,6 +67,17 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 
 Guest-to-account rebind of a canonical UUID snapshot remains a product-definition conflict. Account lockout, message idempotency, prompt-injection redesign, merchant and review sanitation, and the pen-test, security IR, and vulnerability-response packages were not changed.
 
+## Local verification
+
+This run is repository verification on the implementation branch. It is not a GitHub CI run and not staging proof. The starting `main` CI result remains 4392 passed, 5 skipped.
+
+- Focused answer-from-evidence, refinement, research-proposal, Sprint 40.1 body-identity, owner-cookie, and research-authorization tests passed.
+- Architecture-lock tests passed.
+- Ruff baseline gate: check=91 (baseline 91), unformatted=82 (baseline 86). No new regressions.
+- `secret_scan_25a`: OK.
+- pip-audit: 71 packages, 0 vulnerabilities, 0 exceptions, scanner 2.10.1.
+- Full pytest: 4407 passed, 8 skipped, 0 failed, 267 warnings, 1571.61s.
+
 ## Roadmap truths
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE. Closure validation stays blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. Routing stays 0. Shopify stays disabled. Real Shopify calls stay 0. Affiliate activation stays off. No deploy was performed. No Shopify call was made.
