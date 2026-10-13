@@ -36,6 +36,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal, Protocol
 
+from starlette.requests import Request
+
 from app.consumer.location import DeliveryContext
 from app.core.config import Settings, settings
 from app.domain.entities.shopping_assistant import ConversationOwner
@@ -43,7 +45,6 @@ from app.launch.client_ip import client_host_for_rate_limit
 from app.launch.rate_limit_backend import resolve_rate_limit_backend
 from app.launch.rate_limit_keys import opaque_subject_key
 from app.market.selection import SelectedShoppingMarket
-from starlette.requests import Request
 
 HEADER_NAME = "Idempotency-Key"
 DETAIL_REQUIRED = "Idempotency-Key is required."

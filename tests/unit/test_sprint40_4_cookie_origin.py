@@ -280,6 +280,7 @@ async def test_staging_trusts_https_config_only(
 ) -> None:
     cookies = {OWNER_COOKIE: "present"}
     monkeypatch.setattr(settings, "app_env", "staging")
+    monkeypatch.setattr(settings, "app_secret_key", "staging-origin-test-signing-key")
     monkeypatch.setattr(settings, "public_app_base_url", CANONICAL)
     monkeypatch.setattr(settings, "cors_origins", [CANONICAL, SAME_ORIGIN])
     body = {"query": "headphones", "mode": "economy"}

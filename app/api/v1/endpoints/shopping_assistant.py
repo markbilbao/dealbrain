@@ -117,7 +117,8 @@ async def shopping_assistant_meta(
     summary="Ask the AI shopping assistant a product-shopping question",
     description=(
         "Organic Shopping Assistant ranking is service-owned. "
-        "Caller-controlled sorting of organic results is not supported."
+        "Caller-controlled sorting of organic results is not supported. "
+        "Requires the Idempotency-Key header for one logical submission."
     ),
 )
 async def query_shopping_assistant(
