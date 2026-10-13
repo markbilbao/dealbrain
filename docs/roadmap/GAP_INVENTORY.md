@@ -1539,3 +1539,30 @@ This addendum does not rewrite section I, the Sprint 30 security-finding map, th
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-13 post-message-idempotency reconciliation
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, the post-40.6 and post-40.7 reconciliations, the failed-login lock section, the post-failed-login-lock reconciliation, or the message-submission section above. It is not named Sprint 40.8. The reconciliation re-reads the tree at `32b5a0292195588625e8e515badd5e176cbeb6e8`. CI #491 succeeded. Build Image #174 succeeded. Full pytest on CI #491 was 4471 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged. Evidence: [`evidence/SPRINT_40_POST_MESSAGE_IDEMPOTENCY_RECONCILIATION_2026-10-13.md`](evidence/SPRINT_40_POST_MESSAGE_IDEMPOTENCY_RECONCILIATION_2026-10-13.md).
+
+Historical finding status, additive only:
+
+- HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN. The submission ledger does not close it.
+- MEDIUM "CSRF not enforced" stays IMPLEMENTED-NOT-PROVEN. Origin enforcement is the beta control for the covered cookie mutations. CSRF-token non-enforcement is not a second required control for that set.
+- MEDIUM "CSP `'unsafe-inline'`" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is CLOSED BY IMPLEMENTATION for the dependency class. SAST, container scanning, and IaC security scanning remain STILL OPEN. `terraform validate` is not IaC security scanning. A successful Docker build is not container vulnerability scanning.
+- MEDIUM "URL validation / SSRF hardening incomplete" stays IMPLEMENTED-NOT-PROVEN. No current repository evidence proves a reachable SSRF.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | B. Sprint 40 is not ENGINEERING COMPLETE |
+| Selected next engineering slice | Write the Sprint 40 security-readiness package: a penetration-test readiness checklist, a security incident-response runbook, a vulnerability-response process, and a Sprint 44 security go/no-go draft. Not implemented |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 9 (R1, R3, R5, R7, R9, R14, R17, R18, R20). PARTIAL 11. MISSING 1 (R11). BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| R17 | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| R16 | PARTIAL. A per-session rate-limit bucket is still absent. Origin enforcement does not replace it |
+| R11 | MISSING. This is the selected slice |
+| R20 | IMPLEMENTED-NOT-PROVEN. The coverage review is the reconciliation. Open findings do not keep the review partial |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
