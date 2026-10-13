@@ -1489,3 +1489,31 @@ This addendum does not rewrite section I, the Sprint 30 security-finding map, th
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-13 post-failed-login-lock reconciliation
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, the post-40.6 and post-40.7 reconciliations, or the failed-login lock section above. It is not named Sprint 40.8. The reconciliation re-reads the tree at `bfdac461250d67f8e144df0811e707410b685437`. CI #484 succeeded. Build Image #172 succeeded. Full pytest on CI #484 was 4445 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged. Evidence: [`evidence/SPRINT_40_POST_FAILED_LOGIN_LOCK_RECONCILIATION_2026-10-13.md`](evidence/SPRINT_40_POST_FAILED_LOGIN_LOCK_RECONCILIATION_2026-10-13.md).
+
+Historical finding status, additive only:
+
+- HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN. The durable login lock does not close it.
+- MEDIUM "CSRF not enforced" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSP `'unsafe-inline'`" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is CLOSED BY IMPLEMENTATION for the dependency class. SAST, container scanning, and IaC security scanning remain STILL OPEN. `terraform validate` is not IaC security scanning. A successful Docker build is not container vulnerability scanning.
+- MEDIUM "URL validation / SSRF hardening incomplete" stays IMPLEMENTED-NOT-PROVEN. No current repository evidence proves a reachable SSRF.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | B. Sprint 40 is not ENGINEERING COMPLETE |
+| Selected next engineering slice | Ordinary shopping-assistant message submission must not apply twice when the same client request is retried. Not implemented |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 4 (R1, R9, R14, R18). PARTIAL 16. MISSING 1 (R11). BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| R9 | IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| R8 | PARTIAL. Bot and click-fraud controls remain. Staging exercise remains absent |
+| R16 | PARTIAL. Login locking does not add a per-session bucket or CSRF-token enforcement |
+| R11 | MISSING. Does not outrank the message-replay slice |
+| R17 | PARTIAL. This is the selected slice |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
