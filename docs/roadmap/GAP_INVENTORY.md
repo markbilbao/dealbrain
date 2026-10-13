@@ -1403,3 +1403,28 @@ This addendum does not rewrite section I, the readiness section above, or the Sp
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-10 Sprint 40 post-40.6 reconciliation
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, or the Sprint 40.1 through Sprint 40.6 sections above. The reconciliation re-reads the tree at `483d30a91f70167656b51f976ffb2bb3521a0b7e`. CI #472 succeeded. Build Image #168 succeeded. Full pytest on CI #472 was 4388 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged. Evidence: [`evidence/SPRINT_40_POST_40_6_RECONCILIATION_2026-10-10.md`](evidence/SPRINT_40_POST_40_6_RECONCILIATION_2026-10-10.md).
+
+Additive finding notes, which do not replace the historical rows:
+
+- HIGH "In-process rate limits only" is IMPLEMENTED-NOT-PROVEN. It is not closed and not PROVEN. Staging evidence "Abuse controls exercised" is absent. Shared counters are not complete abuse protection.
+- MEDIUM "CSRF not enforced" is IMPLEMENTED-NOT-PROVEN for decision-owner cookie mutations and `POST /account/clear-device`. Staging evidence is absent. It is not closed and not PROVEN.
+- MEDIUM CSP `'unsafe-inline'` is IMPLEMENTED-NOT-PROVEN. Staging evidence is absent. It is not closed and not PROVEN. FastAPI `/docs` and `/redoc` incompatibility does not reopen it.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is CLOSED BY IMPLEMENTATION for the dependency class. SAST, container scanning, and IaC security scanning remain STILL OPEN. `terraform validate` is not IaC security scanning. R6 stays PARTIAL.
+- MEDIUM "URL validation / SSRF hardening incomplete" is IMPLEMENTED-NOT-PROVEN. No reachable SSRF exploit is demonstrated. Staging evidence is absent. It is not closed and not PROVEN.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | B. Sprint 40 is not ENGINEERING COMPLETE |
+| Selected next engineering slice | Decision-path body `conversation_id` must not adopt the stored owner. Not implemented |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 1 (R18). PARTIAL 19. MISSING 1 (R11). BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| R1, R13, R14 | Stay PARTIAL. Non-decision body identity is implemented and tested. Decision answer and refinement still adopt the stored owner from a body `conversation_id` |
+| R6 | PARTIAL. Secrets and pip-audit remain. SAST, container scanning, and IaC security scanning are absent |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
