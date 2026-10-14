@@ -1590,3 +1590,27 @@ Historical finding status, additive only:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-14 Sprint 40 post-security-readiness reconciliation
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, the later reconciliations, or the security-readiness package section above. It is not named Sprint 40.8. The reconciliation re-reads the merged tree. Evidence: [`evidence/SPRINT_40_POST_SECURITY_READINESS_RECONCILIATION_2026-10-14.md`](evidence/SPRINT_40_POST_SECURITY_READINESS_RECONCILIATION_2026-10-14.md). Starting `main` is `e4a8802e7edd87e234996e2f86be4ca2dee31c3e`. CI #495 succeeded. Build Image #176 succeeded. Full pytest on CI #495 was 4484 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged.
+
+Historical finding status, additive only:
+
+- HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN. Staging evidence "Abuse controls exercised" is absent. This reconciliation does not close it.
+- MEDIUM "CSRF not enforced" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSP `'unsafe-inline'`" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is CLOSED BY IMPLEMENTATION for the original no-scanner condition. SAST, container scanning, and IaC security scanning remain STILL OPEN as R6 capability gaps. `terraform validate` is not IaC security scanning. A successful Docker build is not container vulnerability scanning.
+- MEDIUM "URL validation / SSRF hardening incomplete" stays IMPLEMENTED-NOT-PROVEN. No current repository evidence proves a reachable SSRF.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | B. Sprint 40 is not ENGINEERING COMPLETE |
+| Selected next engineering slice | Add one deterministic SAST gate in CI over application code. Not implemented. Not named Sprint 40.8 |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 13 (R1, R2, R3, R4, R5, R7, R8, R9, R11, R14, R17, R18, R20). PARTIAL 8 (R6, R10, R12, R13, R15, R16, R19, R21). MISSING 0. BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| R11 | IMPLEMENTED-NOT-PROVEN. R11 is not PROVEN |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
