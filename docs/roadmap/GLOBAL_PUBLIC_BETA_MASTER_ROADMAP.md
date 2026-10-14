@@ -1205,6 +1205,14 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged.
 
+### Sprint 40 security-readiness package (2026-10-14)
+
+This note does not rewrite the readiness audit, the Sprint 40.1 through Sprint 40.7 notes, the later reconciliations, or the message-idempotency note above, and it does not change Sprint 38 or Sprint 39 status. It is not named Sprint 40.8. The security-readiness package selected by the post-message-idempotency reconciliation is now written. It is preparation and process evidence. No penetration test has been executed. The incident runbook does not configure paging. The Sprint 44 security go/no-go file is DRAFT / NOT APPROVED, and SECURITY GO: NOT DECIDED. Evidence: [`evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md`](evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md). Starting `main` is `e088cba9a87175e387038afb98a1754fe8cc885e`. CI #493 succeeded. Build Image #175 succeeded. Full pytest on CI #493 was 4477 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged.
+
+R11 was MISSING. R11 is IMPLEMENTED-NOT-PROVEN. R11 is not PROVEN. No Included requirement is PROVEN. Counts: PROVEN 0, IMPLEMENTED-NOT-PROVEN 10 (R1, R3, R5, R7, R9, R11, R14, R17, R18, R20), PARTIAL 11, MISSING 0, BLOCKED-DEPENDENCY 0, NOT-APPLICABLE 0. The historical HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN. The CSRF/Origin, CSP, and URL/SSRF MEDIUMs stay IMPLEMENTED-NOT-PROVEN. SAST, container scanning, and IaC security scanning remain open. This note does not select a later engineering slice. This note does not close Sprint 40.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

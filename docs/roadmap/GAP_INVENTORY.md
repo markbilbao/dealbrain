@@ -1566,3 +1566,27 @@ Historical finding status, additive only:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-14 Sprint 40 security-readiness package
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, the later reconciliations, or the message-submission section above. It is not named Sprint 40.8. The security-readiness package is written. It is preparation and process evidence. No penetration test has been executed. The incident runbook does not configure paging. The Sprint 44 file is DRAFT / NOT APPROVED. SECURITY GO: NOT DECIDED. Evidence: [`evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md`](evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md). Starting `main` is `e088cba9a87175e387038afb98a1754fe8cc885e`. CI #493 succeeded. Build Image #175 succeeded. Full pytest on CI #493 was 4477 passed, 5 skipped. pip-audit on that run was 71 packages, 0 vulnerabilities, 0 exceptions. Runtime code is unchanged.
+
+Historical finding status, additive only:
+
+- HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN. This package does not close it.
+- MEDIUM "CSRF not enforced" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSP `'unsafe-inline'`" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" is CLOSED BY IMPLEMENTATION for the dependency class. SAST, container scanning, and IaC security scanning remain STILL OPEN. `terraform validate` is not IaC security scanning. A successful Docker build is not container vulnerability scanning.
+- MEDIUM "URL validation / SSRF hardening incomplete" stays IMPLEMENTED-NOT-PROVEN. No current repository evidence proves a reachable SSRF.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Security-readiness package | Written. Checklist, security incident runbook, vulnerability process, and Sprint 44 draft. Execution and approval evidence are pending |
+| R11 | IMPLEMENTED-NOT-PROVEN. R11 is not PROVEN |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 10 (R1, R3, R5, R7, R9, R11, R14, R17, R18, R20). PARTIAL 11. MISSING 0. BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| Selected next engineering slice | Not selected by this package. A later reconciliation chooses the next blocker |
+| Sprint 40 HIGH | In-process rate limits only. IMPLEMENTED-NOT-PROVEN. Not closed. Not PROVEN |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

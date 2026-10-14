@@ -75,3 +75,16 @@ never written to logs.
 - Production secret vault (AWS SM, GCP SM, Vault)
 - CSRF cookie flows for SPA (bearer-header auth remains)
 - Real payment / PII compliance certifications
+
+## Sprint 40 security-readiness package (2026-10-14)
+
+This section does not rewrite the Sprint 22 controls above. Sprint 40 prepared a security-readiness package from `main` `e088cba9a87175e387038afb98a1754fe8cc885e`. The package is documentation. Execution evidence and approval evidence are still pending. No penetration test has been executed. Production incident response is not operational. Sprint 44 security approval does not exist. Launch approval does not exist. R11 is IMPLEMENTED-NOT-PROVEN. R11 is not PROVEN. Sprint 40 stays Planned and is not ENGINEERING COMPLETE.
+
+| Document | Role |
+|----------|------|
+| [security/PENETRATION_TEST_READINESS.md](security/PENETRATION_TEST_READINESS.md) | Pre-beta checklist. Every row is READY TO TEST. No row is TESTED / PASSED. |
+| [runbooks/SECURITY_INCIDENT_RESPONSE.md](runbooks/SECURITY_INCIDENT_RESPONSE.md) | Security-response process. It does not configure paging. Sprint 42 owns paging and operational incident response. |
+| [security/VULNERABILITY_RESPONSE.md](security/VULNERABILITY_RESPONSE.md) | Intake-to-close process. Closure requires a regression test and a retest for security-critical findings. |
+| [roadmap/evidence/SPRINT_44_SECURITY_GO_NO_GO_DRAFT.md](roadmap/evidence/SPRINT_44_SECURITY_GO_NO_GO_DRAFT.md) | DRAFT / NOT APPROVED. SECURITY GO: NOT DECIDED. |
+
+Evidence for the package: [roadmap/evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md](roadmap/evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md).
