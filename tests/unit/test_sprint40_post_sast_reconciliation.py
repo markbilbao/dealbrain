@@ -177,7 +177,7 @@ def test_historical_records_are_not_rewritten() -> None:
     text = AUDIT.read_text(encoding="utf-8")
     assert "SAST: no CodeQL, Bandit, or Semgrep workflow scans `app/`." in prior
     assert "**Selected next engineering slice:** Add one deterministic SAST gate in CI" in prior
-    assert "This record does not select a later engineering slice." in sast
+    assert "It does not select a later engineering slice." in sast
     assert "The SAST capability is IMPLEMENTED-NOT-PROVEN." in sast
     assert "not copied forward" in text
     assert "CLOSED BY IMPLEMENTATION for the original no-scanner condition" in text
