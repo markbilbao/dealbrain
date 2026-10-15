@@ -88,3 +88,17 @@ This section does not rewrite the Sprint 22 controls above. Sprint 40 prepared a
 | [roadmap/evidence/SPRINT_44_SECURITY_GO_NO_GO_DRAFT.md](roadmap/evidence/SPRINT_44_SECURITY_GO_NO_GO_DRAFT.md) | DRAFT / NOT APPROVED. SECURITY GO: NOT DECIDED. |
 
 Evidence for the package: [roadmap/evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md](roadmap/evidence/SPRINT_40_SECURITY_READINESS_PACKAGE_2026-10-14.md).
+
+## Scanner inventory (2026-10-14)
+
+This section does not rewrite the Sprint 22 controls or the security-readiness package above. Sprint 40 stays Planned and is not ENGINEERING COMPLETE.
+
+| Scanner | Current gate |
+|---------|----------------|
+| Secrets | `scripts/secret_scan_25a.py` in CI. |
+| Dependencies | `scripts/check_pip_audit_baseline.py` runs pip-audit 2.10.1. After the SAST pin, the frozen dev closure is 73 packages, 0 vulnerabilities, 0 exceptions. |
+| SAST | `scripts/check_sast_baseline.py` runs bandit 1.9.4 over `app/**/*.py`. The capability is IMPLEMENTED-NOT-PROVEN. Evidence: [roadmap/evidence/SPRINT_40_SAST_GATE_2026-10-14.md](roadmap/evidence/SPRINT_40_SAST_GATE_2026-10-14.md). Starting `main` is `871e761685fe663c4d0ef4cf3b11094c32ed90b9`. |
+| Container vulnerability scanning | Not present. |
+| IaC security scanning | Not present. `terraform validate` is a syntax check. |
+
+R6 stays PARTIAL. The SAST gate does not upload findings and does not use GitHub code scanning. No deploy was performed.
