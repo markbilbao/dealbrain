@@ -1,0 +1,323 @@
+{
+  "version": 1,
+  "scanner": "bandit",
+  "scanner_version": "1.9.4",
+  "scope": "app/**/*.py",
+  "exceptions": [
+    {
+      "path": "app/analytics/service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "c625cb258d99d2a1836af9f76808fadd519ea67b5a544dff673de32b1f20700a",
+      "rationale": "false_positive",
+      "reason": "Type-narrowing assert on a dict payload. It is not an authorization check."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "02b51bb6a9e3881642f4c9834285b588ddf0f3e74e25c55d29575f87c03b50a6",
+      "rationale": "false_positive",
+      "reason": "Invariant that the password-reset store was constructed. It is not an authorization check."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "79de92d7b98367270546f9886b722ad131fe865e53757377ad7d647b5b9bc098",
+      "rationale": "false_positive",
+      "reason": "validate_session already raises on an invalid session. The assert only narrows the type."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "e468161264919cb0747cf5d44fdfd310d35b9598ebe1f904456b41dbaaf791c5",
+      "rationale": "false_positive",
+      "reason": "Invariant that the email-change store was constructed. It is not an authorization check."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "e468161264919cb0747cf5d44fdfd310d35b9598ebe1f904456b41dbaaf791c5",
+      "rationale": "false_positive",
+      "reason": "Invariant that the email-change store was constructed. It is not an authorization check."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "0a192a382af2cf366355a99856eb8d5895523304d0f7c07ba7b73379427f53f8",
+      "rationale": "false_positive",
+      "reason": "User-facing error text. The name contains token; the value is not a credential."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "1c406772adb09d0f7b146d0c3a2ea911eb9dd371fe87470c1111b898345701c4",
+      "rationale": "false_positive",
+      "reason": "User-facing error text. The name contains token; the value is not a credential."
+    },
+    {
+      "path": "app/auth/service.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "71f51b374c016ce424423688659ae42d7ce79a86b30abec4265dd3ca9aa2171a",
+      "rationale": "false_positive",
+      "reason": "User-facing error text. The name contains token; the value is not a credential."
+    },
+    {
+      "path": "app/core/config.py",
+      "test_id": "B104",
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "code_sha256": "26edf520ac1d731040ab1dc9507acefc33411957e58a471b2183654ea5c3c0b5",
+      "rationale": "framework_managed",
+      "reason": "Settings default for the container listen address. This line does not open a socket."
+    },
+    {
+      "path": "app/core/dependencies.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "56812ddee4936e4a72c736e2444c49ff56661c3b98c7f2c2c86a51d749a9439a",
+      "rationale": "false_positive",
+      "reason": "Dependency-injection type invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/core/validation.py",
+      "test_id": "B104",
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "code_sha256": "a3c838590bb02be02ca514065ae2b47ed214b854da8f8204fd1065f5d3e81c21",
+      "rationale": "false_positive",
+      "reason": "Database-host denylist entry. The string is not a bind address."
+    },
+    {
+      "path": "app/core/validation.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "889a49adbd3d26eae8da2f077733c5ac51b04b5f4b68312d8a306eb9ddf46632",
+      "rationale": "false_positive",
+      "reason": "Export placeholder for a redacted setting. The value is not a secret."
+    },
+    {
+      "path": "app/domain/entities/user_platform.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "644c1127c31845693a71ae0a1692df7e05113cc8283242766ff80960209655ba",
+      "rationale": "false_positive",
+      "reason": "OAuth token_type label. The value is the scheme name, not a credential."
+    },
+    {
+      "path": "app/infrastructure/database/repositories/price_history_repository.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "7fed9f58878f71bc0b56b7d273c397c56df1a4ae628df783d45bad293bc9c009",
+      "rationale": "false_positive",
+      "reason": "Row just inserted by the same statement. The assert is not an authorization check."
+    },
+    {
+      "path": "app/infrastructure/database/repositories/price_history_repository.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "b8cac90b55e259e60517ed839dbef5dd4cbe9fd5e38dba2680343a27dde12604",
+      "rationale": "false_positive",
+      "reason": "Uniqueness lookup after a conflict. The assert is not an authorization check."
+    },
+    {
+      "path": "app/infrastructure/persistence/codec.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "1af4c8f932038aea343097096cdbcecc0f16d772a3fe91ee6ec3adf8cd6f7fc9",
+      "rationale": "false_positive",
+      "reason": "Type-narrowing assert on decoded JSON. It is not an authorization check."
+    },
+    {
+      "path": "app/infrastructure/persistence/stores.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "c48a018ba3c5f89f0e54c50fbc0f98a646d90a6057a9b1d856cc99387a54f922",
+      "rationale": "false_positive",
+      "reason": "Schema identifier whose name contains password. It is not a credential."
+    },
+    {
+      "path": "app/intelligence/community/collector.py",
+      "test_id": "B112",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "f2fe6187d4ded02b8dfadfe8b8a126efeaffb1a9f227b6539161b9e5db06a489",
+      "rationale": "false_positive",
+      "reason": "Optional community provider failure skips that provider. It does not authorize a request."
+    },
+    {
+      "path": "app/intelligence/personal/fixtures.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "d7bb37529e0d7cd8d5bbc2bc74180660c3b5df68abe8e4d14c7c98f88c512ff6",
+      "rationale": "false_positive",
+      "reason": "Fixture lookup invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/intelligence/shopping_assistant/orchestrator.py",
+      "test_id": "B112",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "d01235e039ad590900becefeef909d0f840953cd86d39c22a526e372c035d94a",
+      "rationale": "false_positive",
+      "reason": "Optional model provider failure falls through. It does not authorize a request."
+    },
+    {
+      "path": "app/launch/internal_auth.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "bdee2cd56f6b5b2c58ec6cef1e03e88298e52e172608fef5898bbcb02cce0457",
+      "rationale": "safe_constant",
+      "reason": "Published launch-readiness demo gate string. It is not a production credential store."
+    },
+    {
+      "path": "app/merchant/security/validation.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "231ae75e0be03ef5dd4719119ebf121c4ca9b45a3c2a53b425c7d47b38f0aaff",
+      "rationale": "false_positive",
+      "reason": "Validation result invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/privacy/inventory.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "384000e727f662802022bc309ad53f804cc529a29f2d68886972c8dc0511ec3f",
+      "rationale": "false_positive",
+      "reason": "Export-exclusion description. The key name matches a secret heuristic; the value is not a credential."
+    },
+    {
+      "path": "app/privacy/inventory.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "873dc6dd628390fd7eaaba3367abd3a0e3f1534b4301486a3c350dbc391dac10",
+      "rationale": "false_positive",
+      "reason": "Export-exclusion description. The key name matches a secret heuristic; the value is not a credential."
+    },
+    {
+      "path": "app/research/public_web_extract.py",
+      "test_id": "B108",
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "code_sha256": "0a13ea00642ff38e01415ead5efb02301ef4240c7e0878704a6e41f2d8b98ce0",
+      "rationale": "false_positive",
+      "reason": "Documented private local artifact path. It is not a request-path temporary file."
+    },
+    {
+      "path": "app/research/public_web_extract.py",
+      "test_id": "B108",
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "code_sha256": "7e3cd5b7f90dfb6afb5a98f622d0ac3b7587357957506212586f1d4e60d2f8c1",
+      "rationale": "false_positive",
+      "reason": "Documented private local artifact directory. It is not a request-path temporary file."
+    },
+    {
+      "path": "app/research/shopify_global_catalog_execution.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "0d26b29b00c4b22777862304c10931f2da3c940e209b0accae56f1e4c8e7b8c3",
+      "rationale": "false_positive",
+      "reason": "Execution-record invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/research/shopify_global_catalog_execution.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "faebc5d12af720643cac313aeb81b017aba5bf704b54103723bde497b4206261",
+      "rationale": "false_positive",
+      "reason": "Failure-kind invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/research/shopify_global_catalog_ph_probe.py",
+      "test_id": "B108",
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "code_sha256": "5dbed22dc35365a26e5af6d3ddb1781096b65075f9c1ac2d5766e990de1dea02",
+      "rationale": "false_positive",
+      "reason": "Documented private local artifact directory. It is not a request-path temporary file."
+    },
+    {
+      "path": "app/services/deal_recommendation_service.py",
+      "test_id": "B110",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "35a38ab9f76d28488e0365f3bae4eacf26093b668edc215a0f3dd187026a8660",
+      "rationale": "false_positive",
+      "reason": "Optional provenance annotation failure is ignored. Scores and authorization are unchanged."
+    },
+    {
+      "path": "app/services/knowledge_graph_service.py",
+      "test_id": "B112",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "f2fe6187d4ded02b8dfadfe8b8a126efeaffb1a9f227b6539161b9e5db06a489",
+      "rationale": "false_positive",
+      "reason": "Optional graph lookup failure skips that product. It does not authorize a request."
+    },
+    {
+      "path": "app/services/marketplace_data_service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "d854f3c4063bda7344d12e1197613325fc4e098c803a6f13d8777f5df8fd0a67",
+      "rationale": "false_positive",
+      "reason": "Connector lookup invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/services/price_history_service.py",
+      "test_id": "B101",
+      "severity": "LOW",
+      "confidence": "HIGH",
+      "code_sha256": "e8219ab42961a8a1da6966836833c8403af66ebb4ac50d52a908f098b9f5314f",
+      "rationale": "false_positive",
+      "reason": "Service wiring invariant. It is not an authorization check."
+    },
+    {
+      "path": "app/ucp/agent_profile.py",
+      "test_id": "B104",
+      "severity": "MEDIUM",
+      "confidence": "MEDIUM",
+      "code_sha256": "d8296968beb58e8a879385de89f8640d7c680790fb0a2d618874fb11a54fd262",
+      "rationale": "false_positive",
+      "reason": "Marker used to detect internal addresses. The string is not a bind."
+    },
+    {
+      "path": "app/user/fixtures.py",
+      "test_id": "B105",
+      "severity": "LOW",
+      "confidence": "MEDIUM",
+      "code_sha256": "c54d0263577a78fafb7b9e82018cd4c87ae24768f04e6a7d7b5ed15f3090f18f",
+      "rationale": "safe_constant",
+      "reason": "Published in-memory demo password. Production forbids seeding it and forbids the memory user-platform backend."
+    }
+  ]
+}

@@ -1614,3 +1614,25 @@ Historical finding status, additive only:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-14 Sprint 40 SAST gate
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section above, the Sprint 40.1 through Sprint 40.7 sections, the later reconciliations, or the security-readiness package section above. It is not named Sprint 40.8. Bandit 1.9.4 now scans `app/**/*.py` in CI through `scripts/check_sast_baseline.py`. The first run scanned 649 files and reported 35 findings. Each finding has one exact baseline exception. No application source was changed. pip-audit on the updated frozen dev closure reported 73 packages, 0 vulnerabilities, 0 exceptions. Evidence: [`evidence/SPRINT_40_SAST_GATE_2026-10-14.md`](evidence/SPRINT_40_SAST_GATE_2026-10-14.md). Starting `main` is `871e761685fe663c4d0ef4cf3b11094c32ed90b9`.
+
+Historical finding status, additive only:
+
+- HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSRF not enforced" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSP `'unsafe-inline'`" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" stays CLOSED BY IMPLEMENTATION for the original no-dependency-scanner condition. This addendum does not rewrite it into a SAST finding.
+- MEDIUM "URL validation / SSRF hardening incomplete" stays IMPLEMENTED-NOT-PROVEN.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| SAST | IMPLEMENTED-NOT-PROVEN. Bandit 1.9.4. Scope `app/**/*.py`. 649 files. 35 reviewed exceptions. Not PROVEN |
+| R6 | PARTIAL. Secret scanning, pip-audit, and the SAST gate are present. Container vulnerability scanning and IaC security scanning remain absent |
+| Selected later engineering slice | None. This record does not select one. Not named Sprint 40.8 |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |
