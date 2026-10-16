@@ -1265,6 +1265,10 @@ The local scan reported 1182 packages and 172 findings, including 55 HIGH Debian
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
 
+### Sprint 40 runtime-base comparison (2026-10-17)
+
+This note does not rewrite the container-gate note above and does not select IaC scanning. Bookworm reported 3 Critical and 79 High. Bookworm plus `apt-get upgrade` matched it. Alpine reported 1 High and uses musl, so it is not selected. Removing uv and global pip left the 55 Debian 13 HIGH matches. The committed Dockerfile stays `python:3.12-slim`. No exception was added. Evidence: [`evidence/SPRINT_40_CONTAINER_BASE_COMPARISON_2026-10-17.md`](evidence/SPRINT_40_CONTAINER_BASE_COMPARISON_2026-10-17.md). R6 stays PARTIAL. Sprint 40 stays Planned and is not ENGINEERING COMPLETE.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

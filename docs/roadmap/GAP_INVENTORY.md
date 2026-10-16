@@ -1737,3 +1737,7 @@ Historical finding status, additive only:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-17 runtime-base comparison
+
+This addendum does not rewrite the container-gate section above and does not select IaC scanning. Temporary full images were scanned with Grype 0.120.1. Bookworm reported 3 Critical and 79 High. Bookworm plus `apt-get upgrade` matched that result. Alpine reported 1 High and is a musl image, so it is not selected. Removing uv and global pip left the 55 Debian 13 HIGH matches. The committed Dockerfile stays `python:3.12-slim`. No exception was added. Evidence: [`evidence/SPRINT_40_CONTAINER_BASE_COMPARISON_2026-10-17.md`](evidence/SPRINT_40_CONTAINER_BASE_COMPARISON_2026-10-17.md). R6 stays PARTIAL. Sprint 40 stays Planned and is not ENGINEERING COMPLETE.
