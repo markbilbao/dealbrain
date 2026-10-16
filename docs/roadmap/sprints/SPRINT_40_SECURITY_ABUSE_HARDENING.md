@@ -315,3 +315,17 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
 
 Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged. Live research stays off. Real Shopify calls stay 0.
+
+## Correction — secret-scan scope (2026-10-16)
+
+This section does not rewrite the Planned status, the Included requirements, the earlier records, or the post-SAST reconciliation section above. It corrects that section's secret-scan status and its selected slice. Evidence remains [`../evidence/SPRINT_40_POST_SAST_RECONCILIATION_2026-10-15.md`](../evidence/SPRINT_40_POST_SAST_RECONCILIATION_2026-10-15.md). CI #501 is green on `3b7adfd7be1782bfebc6379e472c61e5fb8579dd`. Runtime code is unchanged. This correction is not named Sprint 40.8.
+
+The first reading called secret scanning present and selected a container-vulnerability scan. That selection is withdrawn. `scripts/secret_scan_25a.py` scans `infra/**/*`, `.env*.example`, `scripts/**/*`, and `.github/workflows/**/*`. It does not scan `app/`. Bandit is not a secret scanner. `DEMO_PASSWORD` in `app/user/fixtures.py` matches the existing password-assignment rule. `INTERNAL_LAUNCH_ADMIN_TOKEN` in `app/launch/internal_auth.py` is a credential-shaped constant outside the gate. R6 stays PARTIAL. SAST stays IMPLEMENTED-NOT-PROVEN. Container vulnerability scanning and IaC security scanning stay absent.
+
+**Audit verdict:** B. Sprint 40 is not ENGINEERING COMPLETE. The corrected slice is not implemented here.
+
+**Selected next engineering slice:** Extend the deterministic secret-scanning gate to application source with an explicit reviewed exact-exception mechanism for intentional safe demo constants.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
+
+Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Affiliate activation is unchanged. Click URL validation uses the browser policy. Ranking and commission are unchanged. Live research stays off. Real Shopify calls stay 0.

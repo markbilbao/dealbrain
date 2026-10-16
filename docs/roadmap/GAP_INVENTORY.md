@@ -1662,3 +1662,25 @@ Historical finding status, additive only:
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-16 Sprint 40 secret-scan scope correction
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section, the Sprint 40.1 through Sprint 40.7 sections, the later reconciliations, the security-readiness package section, the SAST gate section, or the 2026-10-15 post-SAST section above. It is not named Sprint 40.8. It corrects the secret-scan status and the selected slice in that 2026-10-15 reading. Evidence remains [`evidence/SPRINT_40_POST_SAST_RECONCILIATION_2026-10-15.md`](evidence/SPRINT_40_POST_SAST_RECONCILIATION_2026-10-15.md). CI #501 is green on `3b7adfd7be1782bfebc6379e472c61e5fb8579dd`. Runtime code is unchanged. This correction does not add `app/**/*` to `scripts/secret_scan_25a.py`.
+
+The first post-SAST reading called secret scanning present and selected a container-vulnerability scan. That selection is withdrawn. `SCAN_GLOBS` is `infra/**/*`, `.env*.example`, `scripts/**/*`, and `.github/workflows/**/*`. The scanner does not read `app/`. Bandit is not a secret scanner. `DEMO_PASSWORD` in `app/user/fixtures.py` matches the existing password-assignment rule. `INTERNAL_LAUNCH_ADMIN_TOKEN` in `app/launch/internal_auth.py` is a credential-shaped constant outside the gate. Those constants are not a new vulnerability finding. They show that application source can hold a credential-shaped value.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Audit verdict | B. Sprint 40 is not ENGINEERING COMPLETE |
+| Selected next engineering slice | Extend the deterministic secret-scanning gate to application source with an explicit reviewed exact-exception mechanism for intentional safe demo constants. Not implemented. Not named Sprint 40.8 |
+| Secret scanning | Incomplete. Deterministic scanning exists. `app/` is not scanned. Not a completed Sprint 40 secret-scanning capability |
+| Dependency scanning | Present |
+| SAST | IMPLEMENTED-NOT-PROVEN. Not PROVEN. Not a secret scanner |
+| Container vulnerability scanning | Absent |
+| IaC security scanning | Absent |
+| R6 | PARTIAL. Secret-scan scope is incomplete, and container vulnerability scanning and IaC security scanning remain absent |
+| Matrix counts | PROVEN 0. IMPLEMENTED-NOT-PROVEN 13 (R1, R2, R3, R4, R5, R7, R8, R9, R11, R14, R17, R18, R20). PARTIAL 8 (R6, R10, R12, R13, R15, R16, R19, R21). MISSING 0. BLOCKED-DEPENDENCY 0. NOT-APPLICABLE 0 |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

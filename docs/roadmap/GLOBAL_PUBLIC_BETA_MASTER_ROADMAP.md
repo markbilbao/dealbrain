@@ -1241,6 +1241,14 @@ The Sprint 40 HIGH "In-process rate limits only" remains IMPLEMENTED-NOT-PROVEN.
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
 
+### Sprint 40 secret-scan scope correction (2026-10-16)
+
+This note does not rewrite the post-SAST note above or any earlier note, and it does not change Sprint 38 or Sprint 39 status. It is not named Sprint 40.8. The first post-SAST reading called secret scanning present and selected a container-vulnerability scan. That selection is withdrawn. `scripts/secret_scan_25a.py` does not scan `app/`. Bandit is not a secret scanner. CI #501 is green on `3b7adfd7be1782bfebc6379e472c61e5fb8579dd`. Runtime code is unchanged. Evidence: [`evidence/SPRINT_40_POST_SAST_RECONCILIATION_2026-10-15.md`](evidence/SPRINT_40_POST_SAST_RECONCILIATION_2026-10-15.md).
+
+**Audit verdict:** B. Sprint 40 is not ENGINEERING COMPLETE. The selected next engineering slice is Extend the deterministic secret-scanning gate to application source with an explicit reviewed exact-exception mechanism for intentional safe demo constants. It is not implemented. It is not named Sprint 40.8. SAST stays IMPLEMENTED-NOT-PROVEN. R6 stays PARTIAL. Container vulnerability scanning and IaC security scanning remain absent. No Included requirement is PROVEN.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

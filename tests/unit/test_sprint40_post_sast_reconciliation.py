@@ -46,6 +46,10 @@ README = ROOT / "docs/roadmap/sprints/README.md"
 BASELINE = ROOT / "tests/security/baselines/bandit.baseline.json"
 START_SHA = "80a4506485c7f4a6a566c495120723995dfc2c17"
 SLICE = (
+    "Extend the deterministic secret-scanning gate to application source with an "
+    "explicit reviewed exact-exception mechanism for intentional safe demo constants."
+)
+WITHDRAWN_CONTAINER_SLICE = (
     "Add one deterministic container-vulnerability scan of the locally built "
     "runtime image, and fail publication before that image is pushed."
 )
@@ -128,7 +132,7 @@ def test_matrix_classes_match_the_reconciliation() -> None:
     assert "| MISSING | 0 |" in text
 
 
-def test_verdict_selects_one_container_scan_and_leaves_it_unimplemented() -> None:
+def test_verdict_selects_application_secret_scan_and_leaves_it_unimplemented() -> None:
     text = AUDIT.read_text(encoding="utf-8")
     sprint = SPRINT40.read_text(encoding="utf-8")
     roadmap = ROADMAP.read_text(encoding="utf-8")
@@ -169,6 +173,29 @@ def test_verdict_selects_one_container_scan_and_leaves_it_unimplemented() -> Non
     assert "SECURITY GO: NOT DECIDED" in text
     assert "requires an owner decision" in text
     assert "no public security consequence" in text
+    assert "That selection is withdrawn." in text
+    assert "Bandit is not a secret scanner." in text
+    assert "This is not a completed secret-scanning capability for Sprint 40." in text
+    assert "This audit does not add `app/**/*` to `SCAN_GLOBS`." in text
+    assert "DEMO_PASSWORD" in text
+    assert "INTERNAL_LAUNCH_ADMIN_TOKEN" in text
+    assert "app/user/fixtures.py" in text
+    assert "app/launch/internal_auth.py" in text
+    assert "| Secrets | Yes | Incomplete |" in text
+    assert "| Dependency | Yes | Present |" in text
+    assert "| SAST | Yes | IMPLEMENTED-NOT-PROVEN |" in text
+    assert "| Container vulnerability scanning | Yes | Absent |" in text
+    assert "| Terraform / IaC security | Yes | Absent |" in text
+    assert "R6 stays PARTIAL" in text
+    assert f"**Selected next engineering slice:** {WITHDRAWN_CONTAINER_SLICE}" not in text
+    scanner = (ROOT / "scripts/secret_scan_25a.py").read_text(encoding="utf-8")
+    globs = scanner.split("SCAN_GLOBS = (", 1)[1].split(")", 1)[0]
+    assert '"infra/**/*"' in globs
+    assert '".env*.example"' in globs
+    assert '"scripts/**/*"' in globs
+    assert '".github/workflows/**/*"' in globs
+    assert "app/" not in globs
+    assert '"app/**/*"' not in scanner
 
 
 def test_historical_records_are_not_rewritten() -> None:
