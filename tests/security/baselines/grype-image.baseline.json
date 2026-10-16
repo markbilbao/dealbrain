@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "scanner": "grype",
+  "scanner_version": "0.120.1",
+  "target_type": "local_docker_image",
+  "max_allowed_db_built_age": "120h",
+  "exceptions": []
+}

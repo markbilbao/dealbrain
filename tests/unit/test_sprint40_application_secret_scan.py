@@ -252,7 +252,7 @@ def test_reviewed_demo_exceptions_are_exact_and_a_new_credential_fails(tmp_path:
     baseline = load_baseline(BASELINE_PATH)
     result = scan_tree(ROOT)
     assert result.application_python == 649
-    assert result.files == 809
+    assert result.files == 812
     assert compare_findings(result.findings, baseline["exceptions"]) == []
     counts = Counter(item["rationale"] for item in baseline["exceptions"])
     assert counts["safe_demo_constant"] == 2

@@ -114,13 +114,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Prepare OCI metadata
         id: prep
         run: |
@@ -133,13 +126,14 @@ jobs:
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
           echo "tag_sha=sha-${SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push immutable image
-        id: push
+      # One local build. The vulnerability gate scans this tag before any registry login or push.
+      - name: Build release image locally
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: true
+          push: false
+          load: true
           tags: |
             ${{ steps.prep.outputs.image }}:${{ steps.prep.outputs.tag_sha }}
           labels: |
@@ -150,24 +144,37 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Capture and validate image digest
-        id: digest
+      - name: Verify local release image
+        env:
+          IMAGE: ${{ steps.prep.outputs.image }}
+          TAG: ${{ steps.prep.outputs.tag_sha }}
+          GIT_SHA: ${{ steps.resolve.outputs.git_sha }}
+          CREATED: ${{ steps.prep.outputs.created }}
+          SOURCE: ${{ github.server_url }}/${{ github.repository }}
         run: |
           set -euo pipefail
-          DIGEST="${{ steps.push.outputs.digest }}"
-          if ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo "Invalid image digest (expected sha256:<64 lowercase hex>): $DIGEST" >&2
-            exit 1
-          fi
-          IMAGE="${{ steps.prep.outputs.image }}"
-          echo "Verifying digest exists in GHCR: ${IMAGE}@${DIGEST}"
-          docker buildx imagetools inspect "${IMAGE}@${DIGEST}" >/tmp/imagetools.txt
-          grep -q "$DIGEST" /tmp/imagetools.txt
-          echo "image_digest=$DIGEST" >> "$GITHUB_OUTPUT"
-          # Deployment authority is the digest only — never mutable tags.
-          echo "Deployment authority: ${IMAGE}@${DIGEST}"
-          echo "Immutable tag (pointer to same digest): ${IMAGE}:${{ steps.prep.outputs.tag_sha }}"
-          echo "NOTE: do not treat latest/ci-latest/branch tags as deployment authority."
+          REF="${IMAGE}:${TAG}"
+          docker image inspect "$REF" >/dev/null
+          python3 - "$REF" <<'PY'
+          import json, os, subprocess, sys
+          ref = sys.argv[1]
+          image = json.loads(subprocess.check_output(["docker", "image", "inspect", ref], text=True))[0]
+          labels = (image.get("Config") or {}).get("Labels") or {}
+          expected = {
+              "org.opencontainers.image.source": os.environ["SOURCE"],
+              "org.opencontainers.image.revision": os.environ["GIT_SHA"],
+              "org.opencontainers.image.created": os.environ["CREATED"],
+              "org.opencontainers.image.version": os.environ["GIT_SHA"],
+          }
+          missing = [key for key, value in expected.items() if labels.get(key) != value]
+          if missing:
+              print("release image is missing final OCI labels: " + ", ".join(missing), file=sys.stderr)
+              sys.exit(1)
+          print(f"local release image ready: {ref}")
+          PY
+
+      - name: Install Grype 0.120.1
+        run: bash scripts/security/install_grype.sh
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -181,6 +188,52 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --extra dev
+
+      - name: Container vulnerability gate
+        env:
+          IMAGE: ${{ steps.prep.outputs.image }}
+          TAG: ${{ steps.prep.outputs.tag_sha }}
+        run: uv run python scripts/check_container_vuln_baseline.py --image "docker:${IMAGE}:${TAG}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push scanned release image
+        env:
+          IMAGE: ${{ steps.prep.outputs.image }}
+          TAG: ${{ steps.prep.outputs.tag_sha }}
+        run: |
+          set -euo pipefail
+          docker push "${IMAGE}:${TAG}"
+
+      - name: Capture and validate image digest
+        id: digest
+        env:
+          IMAGE: ${{ steps.prep.outputs.image }}
+          TAG: ${{ steps.prep.outputs.tag_sha }}
+        run: |
+          set -euo pipefail
+          REF="${IMAGE}:${TAG}"
+          DIGEST="$(
+            docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "$REF" \
+              | awk -v prefix="${IMAGE}@" 'index($0, prefix) == 1 { print substr($0, length(prefix) + 1); exit }'
+          )"
+          if ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Invalid image digest (expected sha256:<64 lowercase hex>): $DIGEST" >&2
+            exit 1
+          fi
+          echo "Verifying digest exists in GHCR: ${IMAGE}@${DIGEST}"
+          docker buildx imagetools inspect "${IMAGE}@${DIGEST}" >/tmp/imagetools.txt
+          grep -q "$DIGEST" /tmp/imagetools.txt
+          echo "image_digest=$DIGEST" >> "$GITHUB_OUTPUT"
+          # Deployment authority is the registry digest only — never mutable tags.
+          echo "Deployment authority: ${IMAGE}@${DIGEST}"
+          echo "Immutable tag (pointer to same digest): ${IMAGE}:${TAG}"
+          echo "NOTE: do not treat latest/ci-latest/branch tags as deployment authority."
 
       - name: Create release manifest
         id: manifest

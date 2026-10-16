@@ -1,0 +1,16 @@
+# Pinned Grype policy for the DealBrain runtime image gate.
+# The vulnerability database stays current. The scanner binary does not.
+check-for-app-update: false
+only-fixed: false
+only-notfixed: false
+fail-on-severity: ""
+default-image-pull-source: docker
+ignore: []
+db:
+  auto-update: true
+  validate-by-hash-on-start: true
+  validate-age: true
+  # Grype's supported default: 5 days (120h). A older database fails the scan.
+  max-allowed-built-age: 120h
+  require-update-check: true
+  max-update-check-frequency: 0s
