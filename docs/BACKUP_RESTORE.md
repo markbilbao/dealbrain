@@ -16,6 +16,8 @@ production database disaster-recovery system.
 
 ## Backup guide
 
+Local development (`APP_ENV=development`) with an empty `LAUNCH_ADMIN_TOKEN` accepts the bearer in the examples below. Staging and production reject that bearer. Use the externally injected `LAUNCH_ADMIN_TOKEN` there. Do not commit it.
+
 ### 1. Configuration export
 
 ```bash

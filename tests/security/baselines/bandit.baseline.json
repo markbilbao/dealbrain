@@ -108,7 +108,7 @@
       "test_id": "B105",
       "severity": "LOW",
       "confidence": "MEDIUM",
-      "code_sha256": "889a49adbd3d26eae8da2f077733c5ac51b04b5f4b68312d8a306eb9ddf46632",
+      "code_sha256": "7be733900a4788b897129982a9613b9f7f96004eebfa8a6d77ba11f300381d94",
       "rationale": "false_positive",
       "reason": "Export placeholder for a redacted setting. The value is not a secret."
     },
@@ -183,15 +183,6 @@
       "code_sha256": "d01235e039ad590900becefeef909d0f840953cd86d39c22a526e372c035d94a",
       "rationale": "false_positive",
       "reason": "Optional model provider failure falls through. It does not authorize a request."
-    },
-    {
-      "path": "app/launch/internal_auth.py",
-      "test_id": "B105",
-      "severity": "LOW",
-      "confidence": "MEDIUM",
-      "code_sha256": "bdee2cd56f6b5b2c58ec6cef1e03e88298e52e172608fef5898bbcb02cce0457",
-      "rationale": "safe_constant",
-      "reason": "Published launch-readiness demo gate string. It is not a production credential store."
     },
     {
       "path": "app/merchant/security/validation.py",

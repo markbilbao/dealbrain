@@ -219,7 +219,8 @@ def test_sast_gate_shape_still_matches_the_reading() -> None:
     assert baseline["scanner"] == "bandit"
     assert baseline["scanner_version"] == "1.9.4"
     assert baseline["scope"] == "app/**/*.py"
-    assert len(baseline["exceptions"]) == 35
+    assert len(baseline["exceptions"]) == 34
+    assert not any(item["path"] == "app/launch/internal_auth.py" for item in baseline["exceptions"])
     assert not any("*" in item["path"] or "*" in item["test_id"] for item in baseline["exceptions"])
     gate = (ROOT / "scripts/check_sast_baseline.py").read_text(encoding="utf-8")
     assert 'BANDIT_VERSION = "1.9.4"' in gate

@@ -55,7 +55,7 @@ def _require_launch_enabled() -> None:
 
 
 def _require_admin(authorization: str | None) -> None:
-    """Demo admin gate — bearer demo-token-internal-admin (no real IAM)."""
+    """Launch-admin bearer. Staging and production use LAUNCH_ADMIN_TOKEN only."""
 
     require_internal_launch_admin(authorization)
 

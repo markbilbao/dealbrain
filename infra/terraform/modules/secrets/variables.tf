@@ -23,6 +23,9 @@ variable "secret_names" {
     ghcr_pull (Sprint 25b.2): container only for a classic PAT with
     read:packages. Expected JSON shape (values out-of-band — never in TF):
       {"username":"REPLACE_ME_OUT_OF_BAND","token":"REPLACE_ME_OUT_OF_BAND"}
+    launch_admin_token: plain-string bearer for launch-readiness admin routes.
+    Populate out-of-band. Do not commit a value. The local development bearer
+    and CHANGE_ME placeholders are rejected at assembly and startup.
     Do not create aws_secretsmanager_secret_version for these credentials.
   EOT
   type        = list(string)
@@ -35,6 +38,7 @@ variable "secret_names" {
     "monitoring",
     "ghcr_pull",
     "resend_api_key",
+    "launch_admin_token",
   ]
 }
 

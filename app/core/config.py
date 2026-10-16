@@ -362,6 +362,11 @@ class Settings(BaseSettings):
         default=True,
         alias="LAUNCH_READINESS_ENABLED",
     )
+    # Launch-admin bearer. Empty default grants no staging or production
+    # authority. Inject from Secrets Manager (dealbrain/<env>/launch_admin_token).
+    # Do not reuse APP_SECRET_KEY. Development with an empty value uses the
+    # local development bearer inside require_internal_launch_admin only.
+    launch_admin_token: str = Field(default="", alias="LAUNCH_ADMIN_TOKEN")
     launch_strict_startup: bool = Field(
         default=False,
         alias="LAUNCH_STRICT_STARTUP",

@@ -116,7 +116,7 @@ must never place RDS master passwords in Git, tfvars, or Terraform inputs.
 6. Rotation: rotate via AWS → restart Compose; no image rebuild.
 
 Categories: AWS-managed RDS master secret (ARN), `app_secret_key`, AI keys,
-`cors_origins`, `monitoring`.
+`cors_origins`, `monitoring`, `launch_admin_token` (plain bearer; value out of band).
 
 ## Compose usage
 

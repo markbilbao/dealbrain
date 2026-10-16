@@ -43,6 +43,9 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       APP_SECRET_KEY: ${APP_SECRET_KEY:-}
+      # Empty unless assemble-runtime-env.py injects dealbrain/<env>/launch_admin_token.
+      # The local development bearer is not a compose default.
+      LAUNCH_ADMIN_TOKEN: ${LAUNCH_ADMIN_TOKEN:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       TRANSACTIONAL_EMAIL_PROVIDER: ${TRANSACTIONAL_EMAIL_PROVIDER:-null}
       TRANSACTIONAL_EMAIL_FROM: ${TRANSACTIONAL_EMAIL_FROM:-}

@@ -24,9 +24,7 @@ PRODUCTION_TRUSTED_HOSTS = "piqsavi.com,www.piqsavi.com"
 STAGING_UCP_AGENT_PROFILE_URL = (
     "https://staging.piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json"
 )
-PRODUCTION_UCP_AGENT_PROFILE_URL = (
-    "https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json"
-)
+PRODUCTION_UCP_AGENT_PROFILE_URL = "https://piqsavi.com/ucp/agent-profiles/2026-08-25/piqsavi.json"
 PRODUCTION_LEGAL_PRIVACY_VERSION = "privacy-2026-09-11"
 PRODUCTION_LEGAL_TERMS_VERSION = "terms-2026-09-11"
 PUBLIC_SUPPORT_EMAIL = "support@piqsavi.com"
@@ -98,6 +96,27 @@ def _get_json_secret(secret_id: str, region: str) -> dict:
 
 def _get_plain_secret(secret_id: str, region: str) -> str:
     return _aws_get_secret_string(secret_id, region)
+
+
+# Rejected local-development bearer. Keep this exact value aligned with
+# app/launch/internal_auth.py. Staging and production must not authorize it.
+_LOCAL_DEVELOPMENT_GATE = "demo-token-internal-admin"
+_MINIMUM_LAUNCH_ADMIN_TOKEN_LENGTH = 32
+
+
+def _usable_launch_admin_token(value: str) -> bool:
+    """Return True only for an externally supplied launch-admin bearer.
+
+    Host script stays standalone — do not import application validation.
+    Never log ``value``.
+    """
+
+    token = (value or "").strip()
+    if len(token) < _MINIMUM_LAUNCH_ADMIN_TOKEN_LENGTH:
+        return False
+    if token.casefold() == _LOCAL_DEVELOPMENT_GATE.casefold():
+        return False
+    return _usable_resend_api_key(token)
 
 
 def _usable_resend_api_key(value: str) -> bool:
@@ -209,9 +228,7 @@ def assemble(
     host = rds_meta["endpoint"]
     port = rds_meta["port"]
     db_name = rds_meta["db_name"]
-    rds_secret_arn = rds_meta.get("master_user_secret_arn") or rds_meta.get(
-        "master_user_secret_id"
-    )
+    rds_secret_arn = rds_meta.get("master_user_secret_arn") or rds_meta.get("master_user_secret_id")
     if not rds_secret_arn:
         raise SecretAssemblyError("rds-nonsecret.json missing master_user_secret_arn")
 
@@ -247,18 +264,24 @@ def assemble(
     # Required application secrets
     app_secret_key = _get_plain_secret(f"{prefix}/app_secret_key", region)
     cors_origins = _get_plain_secret(f"{prefix}/cors_origins", region)
+    launch_admin_token = _get_plain_secret(f"{prefix}/launch_admin_token", region)
     if not app_secret_key.strip():
         raise SecretAssemblyError("app_secret_key is empty")
     if environment == "production" and len(app_secret_key.strip()) < 32:
         raise SecretAssemblyError("production app_secret_key must be at least 32 characters")
     if not cors_origins.strip():
         raise SecretAssemblyError("cors_origins is empty")
+    if not _usable_launch_admin_token(launch_admin_token):
+        raise SecretAssemblyError(
+            f"{environment} requires a usable launch admin token in {prefix}/launch_admin_token"
+        )
 
     mapping: dict[str, str] = {
         "APP_ENV": environment,
         "DATABASE_URL": database_url,
         "CORS_ORIGINS": cors_origins,
         "APP_SECRET_KEY": app_secret_key,
+        "LAUNCH_ADMIN_TOKEN": launch_admin_token.strip(),
         "DEALBRAIN_IMAGE": os.environ.get("DEALBRAIN_IMAGE", ""),
     }
     if not mapping["DEALBRAIN_IMAGE"]:

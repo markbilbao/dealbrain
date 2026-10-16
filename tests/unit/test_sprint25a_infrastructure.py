@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 STRONG_DB = "postgresql+asyncpg://dealbrain:Str0ngProdPass!99@rds.example:5432/dealbrain"
 STRONG_SECRET = "prod-ops-secret-key-value-32chars!!"
+LAUNCH_ADMIN_TOKEN = "injected-launch-admin-authority-32chars"
 
 
 def _prod_settings(**overrides: object) -> Settings:
@@ -51,6 +52,7 @@ def _prod_settings(**overrides: object) -> Settings:
         "TRANSACTIONAL_EMAIL_FROM_NAME": "PiqSavi",
         "PUBLIC_APP_BASE_URL": "https://piqsavi.com",
         "TRUSTED_PROXY_CIDRS": "10.20.0.0/24,10.20.1.0/24,172.16.0.0/12",
+        "LAUNCH_ADMIN_TOKEN": LAUNCH_ADMIN_TOKEN,
     }
     base.update(overrides)
     return Settings(**base)  # type: ignore[arg-type]
@@ -223,7 +225,9 @@ def test_export_redacts_app_secret() -> None:
     assert payload["app_secret_key"] == "***REDACTED***"
     assert payload["database_url"] == "***REDACTED***"
     assert payload["resend_api_key"] == "***REDACTED***"
+    assert payload["launch_admin_token"] == "***REDACTED***"
     assert STRONG_SECRET not in str(payload)
+    assert LAUNCH_ADMIN_TOKEN not in str(payload)
     assert "Str0ngProdPass" not in str(payload)
     assert "re_sprint27_1_configured_key_not_real" not in str(payload)
 
