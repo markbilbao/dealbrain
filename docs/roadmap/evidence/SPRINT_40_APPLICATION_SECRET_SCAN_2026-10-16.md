@@ -4,9 +4,11 @@
 
 **Sprint 40 status:** Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY.
 
-**Starting `main`:** `57fe37173b2ef94545b7b2bac075dcb7d1a739d6`
+**Starting `main`:** `f7060de8ac1ef362bfb8df558762a148a6e1df59`
 
 This record does not rewrite the 2026-10-09 readiness audit, the Sprint 40.1 through Sprint 40.7 records, the later reconciliations, the security-readiness package, the SAST gate record, or the secret-scan scope correction. It is not named Sprint 40.8. It does not select a later engineering slice. A CI gate is not staging or production proof. No Included requirement is PROVEN.
+
+PR #206, merged at that SHA, already removed the hard-coded launch-admin credential from production authority. Staging and production authorize only with `LAUNCH_ADMIN_TOKEN`. This secret-scan record does not recreate that remediation and does not restore the removed Bandit B105 exception.
 
 ## Scope
 
@@ -57,7 +59,9 @@ The gate fails closed on an unbaselined finding, a stale exception, a duplicate 
 
 ## Current finding inventory
 
-The expanded scanner read 809 files. 649 of those are application Python files. It reported 9 findings before review. No application source was changed. Findings after review remain 9. Each one has one exact exception. There is no unresolved blocker. No genuine production credential or private key was found.
+After synchronization with `f7060de8ac1ef362bfb8df558762a148a6e1df59`, the expanded scanner read 809 files. 649 of those are application Python files. It reported 8 findings. The earlier draft exception for `INTERNAL_LAUNCH_ADMIN_TOKEN` in `app/launch/internal_auth.py` was removed. That symbol is gone. The scanner does not report `_LOCAL_DEVELOPMENT_GATE`, and the baseline has no exception for it. That name is the local development bearer. Staging and production do not authorize with it. `launch_admin_token` defaults to an empty string and is not a finding. No application source was changed by this secret-scan slice. Each current finding has one exact exception. There is no unresolved blocker. No genuine committed production credential or private key was found.
+
+The other eight fingerprints are unchanged from the pre-rebase review. Their source statements were read again. They are the same assignments.
 
 Credential-named dict values were reviewed separately and are not findings of this rule. They are redaction markers, export-exclusion descriptions, an anonymous-catalog stage label, and an OAuth scheme label inside a serializer. None is a credential literal assigned to an identifier.
 
@@ -68,32 +72,33 @@ Credential-named dict values were reviewed separately and are not findings of th
 | `python_credential_literal` | `app/auth/service.py` | `INVALID_VERIFY_TOKEN` | false positive + `099500a7ec0221122a7653a5a0bafc6796b761cf5417edbfcc0c6e74c5a3f9e1` |
 | `python_credential_literal` | `app/domain/entities/connector_reliability.py` | `CREDENTIAL` | false positive + `1f3275e95ec94b2457bb6b72edc468a27cecb6e440b52eef7e3420fc42d77a73` |
 | `python_credential_literal` | `app/infrastructure/persistence/stores.py` | `PASSWORD_RESETS` | false positive + `6b46a0db79858adf08a8dd55265f4823cc2e7e9e3c5611b8f96666625c5c9c61` |
-| `python_credential_literal` | `app/launch/internal_auth.py` | `INTERNAL_LAUNCH_ADMIN_TOKEN` | reviewed safe demo constant + `3a8c7c8abe4a19f3000ca39db29062c9d5452664f89a6c7ed396f238cadb98b2` |
 | `python_credential_literal` | `app/schemas/user_platform.py` | `token_type` | false positive + `c3b0af0a4c21897cca4dfc6abccd0313ae9490be26428bf81be8d3054e4769df` |
 | `plaintext_password_assignment` | `app/user/fixtures.py` | `DEMO_PASSWORD` | reviewed safe demo constant + `01c384f8501bd9f392d569fdde996826033c4e49daf096c365e7523d8d81b66b` |
 | `python_credential_literal` | `app/user/fixtures.py` | `DEMO_PASSWORD` | reviewed safe demo constant + `f81198d6c77a454c70cc906e34bc6680733428ea7a10ef919d49b2732f8f5ffd` |
 
-`DEMO_PASSWORD` produces two findings because the preserved password-assignment regex and the new AST rule both match that one assignment. Each has its own exception. `INTERNAL_LAUNCH_ADMIN_TOKEN` is the published internal demo gate, not a production credential store. Replacing either constant would change product behavior, so both stay in source and are covered by `safe_demo_constant`. Changing the literal changes the fingerprint, so the current exception cannot approve a replacement.
+`DEMO_PASSWORD` produces two findings because the preserved password-assignment regex and the new AST rule both match that one assignment. Each has its own exception. Changing the literal changes the fingerprint, so the current exception cannot approve a replacement.
 
 The three `INVALID_*_TOKEN` names are user-facing error text. `CREDENTIAL` is an enum discriminant whose value is the category name. `PASSWORD_RESETS` is a persistence namespace. `token_type` is the OAuth scheme label. Those six use `false_positive`. No exception uses `documented_placeholder`.
 
 | Rationale | Count |
 |---|---|
-| `safe_demo_constant` | 3 |
+| `safe_demo_constant` | 2 |
 | `false_positive` | 6 |
 | `documented_placeholder` | 0 |
-| Total exceptions | 9 |
+| Total exceptions | 8 |
 
 ## Raw values
 
-Scanner stdout and stderr identify a finding by rule id, relative path, symbol, and source fingerprint. They do not print the literal. The committed baseline does not contain the demo password or the internal demo token. Tests import those constants only to assert their absence from the baseline file and from scanner output.
+Scanner stdout and stderr identify a finding by rule id, relative path, symbol, and source fingerprint. They do not print the literal. The committed baseline does not contain the demo password, the removed launch-admin symbol, or the local development bearer. Tests import those constants only to assert their absence from the baseline file and from scanner output.
 
-Current scanner result:
+Current scanner result on `f7060de8ac1ef362bfb8df558762a148a6e1df59` plus this gate:
 
 ```text
 secret_scan_25a: OK
-secret_scan_25a: files=809 application_python=649 findings=9 exceptions=9
+secret_scan_25a: files=809 application_python=649 findings=8 exceptions=8
 ```
+
+Bandit on this tree stays at 34 findings and 34 exceptions. The removed launch-admin B105 exception is not restored. pip-audit stays at 73 packages, 0 vulnerabilities, and 0 exceptions.
 
 ## CI
 

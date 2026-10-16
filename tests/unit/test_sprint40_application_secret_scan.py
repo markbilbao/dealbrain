@@ -7,7 +7,7 @@ from collections import Counter
 from pathlib import Path
 
 import pytest
-from app.launch.internal_auth import INTERNAL_LAUNCH_ADMIN_TOKEN
+from app.launch.internal_auth import _LOCAL_DEVELOPMENT_GATE
 from app.user.fixtures import DEMO_PASSWORD
 from scripts.secret_scan_25a import (
     APPLICATION_GLOB,
@@ -238,13 +238,14 @@ def test_scanner_and_baseline_do_not_contain_raw_secret_values(
     combined = captured.out + captured.err
     assert "secret_scan_25a: OK" in captured.out
     assert "application_python=649" in captured.out
-    assert "findings=9" in captured.out
-    assert "exceptions=9" in captured.out
-    for secret in (DEMO_PASSWORD, INTERNAL_LAUNCH_ADMIN_TOKEN, FAKE_AWS_KEY):
+    assert "findings=8" in captured.out
+    assert "exceptions=8" in captured.out
+    for secret in (DEMO_PASSWORD, _LOCAL_DEVELOPMENT_GATE, FAKE_AWS_KEY):
         assert secret not in combined
     baseline_text = BASELINE_PATH.read_text(encoding="utf-8")
     assert DEMO_PASSWORD not in baseline_text
-    assert INTERNAL_LAUNCH_ADMIN_TOKEN not in baseline_text
+    assert _LOCAL_DEVELOPMENT_GATE not in baseline_text
+    assert "INTERNAL_LAUNCH_ADMIN_TOKEN" not in baseline_text
 
 
 def test_reviewed_demo_exceptions_are_exact_and_a_new_credential_fails(tmp_path: Path) -> None:
@@ -254,7 +255,7 @@ def test_reviewed_demo_exceptions_are_exact_and_a_new_credential_fails(tmp_path:
     assert result.files == 809
     assert compare_findings(result.findings, baseline["exceptions"]) == []
     counts = Counter(item["rationale"] for item in baseline["exceptions"])
-    assert counts["safe_demo_constant"] == 3
+    assert counts["safe_demo_constant"] == 2
     assert counts["false_positive"] == 6
     assert counts.get("documented_placeholder", 0) == 0
     demo = [
@@ -264,13 +265,15 @@ def test_reviewed_demo_exceptions_are_exact_and_a_new_credential_fails(tmp_path:
     ]
     assert {item["rule_id"] for item in demo} == {RULE_PASSWORD, RULE_PYTHON_LITERAL}
     assert all(item["rationale"] == "safe_demo_constant" for item in demo)
-    gate = [
-        item for item in baseline["exceptions"] if item["symbol"] == "INTERNAL_LAUNCH_ADMIN_TOKEN"
-    ]
-    assert len(gate) == 1
-    assert gate[0]["path"] == "app/launch/internal_auth.py"
-    assert gate[0]["rule_id"] == RULE_PYTHON_LITERAL
-    assert gate[0]["rationale"] == "safe_demo_constant"
+    auth = (ROOT / "app/launch/internal_auth.py").read_text(encoding="utf-8")
+    assert "INTERNAL_LAUNCH_ADMIN_TOKEN" not in auth
+    assert "LAUNCH_ADMIN_TOKEN" in auth
+    assert not any(finding.path == "app/launch/internal_auth.py" for finding in result.findings)
+    assert not any(finding.path == "app/core/config.py" for finding in result.findings)
+    assert not any(
+        item["path"] == "app/launch/internal_auth.py" or item["symbol"] == "_LOCAL_DEVELOPMENT_GATE"
+        for item in baseline["exceptions"]
+    )
     assert all(
         "*" not in item["path"] and "*" not in item["rule_id"] for item in baseline["exceptions"]
     )
