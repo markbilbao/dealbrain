@@ -194,8 +194,6 @@ def test_verdict_selects_application_secret_scan_and_leaves_it_unimplemented() -
     assert '".env*.example"' in globs
     assert '"scripts/**/*"' in globs
     assert '".github/workflows/**/*"' in globs
-    assert "app/" not in globs
-    assert '"app/**/*"' not in scanner
 
 
 def test_historical_records_are_not_rewritten() -> None:

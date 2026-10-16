@@ -109,10 +109,16 @@ This section does not rewrite the Sprint 22 controls or the security-readiness p
 
 | Scanner | Current gate |
 |---------|----------------|
-| Secrets | `scripts/secret_scan_25a.py` in CI. |
+| Secrets | `scripts/secret_scan_25a.py` in CI. Scope is infra, env examples, scripts, workflows, and `app/**/*.py`. |
 | Dependencies | `scripts/check_pip_audit_baseline.py` runs pip-audit 2.10.1. After the SAST pin, the frozen dev closure is 73 packages, 0 vulnerabilities, 0 exceptions. |
 | SAST | `scripts/check_sast_baseline.py` runs bandit 1.9.4 over `app/**/*.py`. The capability is IMPLEMENTED-NOT-PROVEN. Evidence: [roadmap/evidence/SPRINT_40_SAST_GATE_2026-10-14.md](roadmap/evidence/SPRINT_40_SAST_GATE_2026-10-14.md). Starting `main` is `871e761685fe663c4d0ef4cf3b11094c32ed90b9`. |
 | Container vulnerability scanning | Not present. |
 | IaC security scanning | Not present. `terraform validate` is a syntax check. |
 
 R6 stays PARTIAL. The SAST gate does not upload findings and does not use GitHub code scanning. No deploy was performed.
+
+## Application secret scan (2026-10-16)
+
+This section does not rewrite the Sprint 22 controls, the security-readiness package, or the 2026-10-14 scanner inventory above. Sprint 40 stays Planned and is not ENGINEERING COMPLETE.
+
+`scripts/secret_scan_25a.py` now scans `app/**/*.py` with the existing infra, env-example, script, and workflow globs. The application rule parses Python with `ast.parse` and reports a non-empty literal assigned to a credential-sensitive name. Reviewed findings use one exact exception each in `tests/security/baselines/secret-scan.baseline.json`. After PR #206, the scan of current `main` reported 649 application files, 8 findings, and 8 exceptions. The removed launch-admin symbol has no exception. The output and the baseline do not contain the literal values. The secret-scanning capability is IMPLEMENTED-NOT-PROVEN. SAST stays IMPLEMENTED-NOT-PROVEN. Container vulnerability scanning and IaC security scanning remain absent. R6 stays PARTIAL. Evidence: [roadmap/evidence/SPRINT_40_APPLICATION_SECRET_SCAN_2026-10-16.md](roadmap/evidence/SPRINT_40_APPLICATION_SECRET_SCAN_2026-10-16.md). Starting `main` is `f7060de8ac1ef362bfb8df558762a148a6e1df59`. No deploy was performed.

@@ -1684,3 +1684,28 @@ The first post-SAST reading called secret scanning present and selected a contai
 | Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
 | Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
 | Sprint 41 | UNSTARTED |
+
+## 2026-10-16 Sprint 40 application secret scan
+
+This addendum does not rewrite section I, the Sprint 30 security-finding map, the readiness section, the Sprint 40.1 through Sprint 40.7 sections, the later reconciliations, the security-readiness package section, the SAST gate section, the 2026-10-15 post-SAST section, or the secret-scan scope correction above. It is not named Sprint 40.8. The deterministic secret gate now reads `app/**/*.py` through `scripts/secret_scan_25a.py`. After PR #206, the scan read 649 application files and reported 8 findings. Each current finding has one exact baseline exception. The removed launch-admin symbol has no exception. No application source was changed by this slice. No production credential was found. Evidence: [`evidence/SPRINT_40_APPLICATION_SECRET_SCAN_2026-10-16.md`](evidence/SPRINT_40_APPLICATION_SECRET_SCAN_2026-10-16.md). Starting `main` is `f7060de8ac1ef362bfb8df558762a148a6e1df59`.
+
+Historical finding status, additive only:
+
+- HIGH "In-process rate limits only" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSRF not enforced" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "CSP `'unsafe-inline'`" stays IMPLEMENTED-NOT-PROVEN.
+- MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" stays CLOSED BY IMPLEMENTATION for the original no-dependency-scanner condition. This addendum does not broaden it into a secret-scope, SAST, container, or IaC finding.
+- MEDIUM "URL validation / SSRF hardening incomplete" stays IMPLEMENTED-NOT-PROVEN.
+
+| Field | Value |
+|-------|-------|
+| Sprint 40 | Planned. Not COMPLETE / CLOSED. Not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY |
+| Secret scanning | IMPLEMENTED-NOT-PROVEN. Scope includes `app/**/*.py`. 649 application files. 8 findings. 8 exact exceptions. Not PROVEN |
+| SAST | IMPLEMENTED-NOT-PROVEN. Not PROVEN. Not a secret scanner |
+| Container vulnerability scanning | Absent |
+| IaC security scanning | Absent |
+| R6 | PARTIAL. Secret scanning, pip-audit, and the SAST gate are present. Container vulnerability scanning and IaC security scanning remain absent |
+| Selected later engineering slice | None. This record does not select one. Not named Sprint 40.8 |
+| Sprint 38 | Unchanged. IN PROGRESS and ENGINEERING COMPLETE. Closure validation blocked on Sprint 41 |
+| Sprint 39 | Unchanged. IN PROGRESS. Not ENGINEERING COMPLETE. Class C count remains 19. Selected next engineering slice remains NONE |
+| Sprint 41 | UNSTARTED |

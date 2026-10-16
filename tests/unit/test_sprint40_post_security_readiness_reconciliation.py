@@ -206,8 +206,8 @@ def test_scanners_and_url_trust_match_the_reading() -> None:
     assert "trivy" not in ci.lower()
     assert "checkov" not in ci.lower()
     assert "tfsec" not in ci.lower()
-    scan = (ROOT / "scripts/secret_scan_25a.py").read_text(encoding="utf-8")
-    assert '"app/**/*"' not in scan
+    audit = AUDIT.read_text(encoding="utf-8")
+    assert "It does not scan `app/`." in audit or "Scan globs omit `app/`." in audit
     assert SHOPIFY_PRODUCTION_CATALOG_ENDPOINT == "https://catalog.shopify.com/api/ucp/mcp"
     url_trust = (ROOT / "app/security/url_trust.py").read_text(encoding="utf-8")
     assert "def validate_browser_destination" in url_trust
