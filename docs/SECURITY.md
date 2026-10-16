@@ -43,6 +43,20 @@ Configurable in-process limits for:
 - `DEMO_LAUNCHER_ENABLED` must be false in production.
 - Production persistence backends must be `sqlalchemy` (no silent memory fallback).
 
+### Launch-readiness admin bearer
+
+`LAUNCH_ADMIN_TOKEN` is a dedicated bearer for launch-admin routes. It is not
+`APP_SECRET_KEY`. The default is empty and grants no staging or production
+authority. Staging and production require an externally injected value from
+Secrets Manager `dealbrain/<env>/launch_admin_token` while
+`LAUNCH_READINESS_ENABLED=true`. Empty, placeholder, and the local development
+bearer fail startup, including when staging `LAUNCH_STRICT_STARTUP` is false.
+Request handling also rejects those values and does not fall back to the
+development bearer. Development accepts that published bearer only when
+`LAUNCH_ADMIN_TOKEN` is empty. Comparison uses `hmac.compare_digest`. The
+value is not logged and is redacted from configuration export. Disabling
+launch readiness still returns 404.
+
 ### Error responses
 
 Consistent JSON envelope (`error`, `message`, `status_code`) while retaining

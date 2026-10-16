@@ -15,6 +15,8 @@ services:
       SECURITY_HEADERS_ENABLED: ${SECURITY_HEADERS_ENABLED:-true}
       STRUCTURED_LOGGING_ENABLED: ${STRUCTURED_LOGGING_ENABLED:-true}
       LAUNCH_READINESS_ENABLED: ${LAUNCH_READINESS_ENABLED:-true}
+      # Empty keeps the local development bearer. Do not commit a real token.
+      LAUNCH_ADMIN_TOKEN: ${LAUNCH_ADMIN_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy

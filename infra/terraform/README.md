@@ -168,7 +168,7 @@ Logging: [`docs/runbooks/PRODUCTION_LOGGING.md`](../../docs/runbooks/PRODUCTION_
 
 1. **RDS master password:** `manage_master_user_password = true`. Terraform stores
    the **secret ARN only**.
-2. **Application secrets:** empty containers under `dealbrain/<env>/`.
+2. **Application secrets:** empty containers under `dealbrain/<env>/`, including `launch_admin_token` (plain bearer, value out of band, never the local development bearer).
 3. **GHCR pull (25b.2):** container `ghcr_pull` only. Expected shape
    `{"username":"REPLACE_ME_OUT_OF_BAND","token":"REPLACE_ME_OUT_OF_BAND"}`.
    Classic PAT with `read:packages` only; populate out-of-band. **No**

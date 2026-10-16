@@ -442,8 +442,9 @@ DATABASE_URL=postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}
 | `dealbrain/staging/gemini_api_key` | `GEMINI_API_KEY` |
 | `dealbrain/staging/cors_origins` | `CORS_ORIGINS` |
 | `dealbrain/staging/monitoring` | optional / reserved |
+| `dealbrain/staging/launch_admin_token` | `LAUNCH_ADMIN_TOKEN` |
 
-Missing **required** secrets (`app_secret_key`, `cors_origins`, RDS secret) → fail closed.
+Missing **required** secrets (`app_secret_key`, `cors_origins`, `launch_admin_token`, RDS secret) → fail closed.
 Optional AI keys may be empty if live HTTP disabled.
 
 ### Env file contract

@@ -36,6 +36,7 @@ Product flags from prior sprints (`USER_PLATFORM_ENABLED`, `AFFILIATE_ENABLED`,
 - Production: `LAUNCH_STRICT_STARTUP` must be true; structured logging on; log level not DEBUG
 - Production: `DATABASE_URL` must be PostgreSQL with a non-placeholder password
 - Production: `APP_SECRET_KEY` present and strong (min 32 chars; value never logged)
+- Staging and production: when `LAUNCH_READINESS_ENABLED=true`, `LAUNCH_ADMIN_TOKEN` must be an externally injected non-placeholder value of at least 32 characters. The local development bearer is rejected. A missing or unacceptable value fails startup even when staging `LAUNCH_STRICT_STARTUP` is false. `APP_SECRET_KEY` is not this bearer. The value is never logged.
 - Port / database URL sanity
 - Rate limit floors
 - Warnings for live AI HTTP without keys (fatal in production when live HTTP is on)

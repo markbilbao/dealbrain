@@ -11,6 +11,7 @@ from app.core.config import Settings, settings
 from app.domain.exceptions import ConfigurationValidationError
 from app.launch.redaction import redact_value
 
+_REDACTED_SETTING = "***REDACTED***"
 _LOCAL_DB_HOSTS = frozenset(
     {
         "localhost",
@@ -201,6 +202,7 @@ def _validate_production_gate(cfg: Settings, errors: list[str], warnings: list[s
         warnings.append(
             "PRICE_HISTORY_BACKEND=memory in production — durable price history recommended"
         )
+    _validate_launch_admin_authority(cfg, errors)
 
 
 def _validate_identity_email_gate(cfg: Settings, errors: list[str], *, environment: str) -> None:
@@ -291,6 +293,7 @@ def validate_settings(cfg: Settings | None = None) -> ValidationResult:
         if cfg.allow_demo_reset_tokens:
             errors.append("ALLOW_DEMO_RESET_TOKENS must be false in staging")
         _validate_identity_email_gate(cfg, errors, environment="staging")
+        _validate_launch_admin_authority(cfg, errors)
 
     if cfg.app_port < 1 or cfg.app_port > 65535:
         errors.append(f"APP_PORT out of range: {cfg.app_port}")
@@ -400,6 +403,7 @@ def exportable_settings(cfg: Settings | None = None) -> dict[str, Any]:
         "anthropic_api_key": "***REDACTED***",
         "gemini_api_key": "***REDACTED***",
         "resend_api_key": "***REDACTED***",
+        "launch_admin_token": _REDACTED_SETTING,
     }
     return redact_value(raw)
 
@@ -414,6 +418,41 @@ def run_startup_validation(cfg: Settings | None = None) -> ValidationResult:
     """
     cfg = cfg or settings
     result = validate_settings(cfg)
-    enforce = cfg.app_env == "production" or cfg.launch_strict_startup
-    result.raise_if_fatal(enforce=enforce)
+    launch_errors = tuple(
+        error for error in result.errors if error.startswith("LAUNCH_ADMIN_TOKEN")
+    )
+    enforce_all = cfg.app_env == "production" or cfg.launch_strict_startup
+    if enforce_all:
+        result.raise_if_fatal(enforce=True)
+    elif cfg.app_env == "staging" and launch_errors:
+        # Staging deploy defaults LAUNCH_STRICT_STARTUP to false. Missing or
+        # unacceptable launch-admin authority still refuses to boot. Other
+        # staging findings stay gated by LAUNCH_STRICT_STARTUP.
+        raise ConfigurationValidationError(list(launch_errors))
     return result
+
+
+def _validate_launch_admin_authority(cfg: Settings, errors: list[str]) -> None:
+    """Fail closed when staging or production would trust a committed admin bearer.
+
+    Error text names the setting and never includes the configured value.
+    """
+
+    from app.launch.internal_auth import launch_admin_token_is_acceptable
+
+    if cfg.app_env not in {"staging", "production"}:
+        return
+    token = cfg.launch_admin_token or ""
+    if not cfg.launch_readiness_enabled:
+        if token.strip() and not launch_admin_token_is_acceptable(token):
+            errors.append(
+                "LAUNCH_ADMIN_TOKEN is set to a demo, default, or placeholder value "
+                f"in {cfg.app_env} (value redacted)"
+            )
+        return
+    if not launch_admin_token_is_acceptable(token):
+        errors.append(
+            "LAUNCH_ADMIN_TOKEN must be an externally supplied non-placeholder value "
+            f"of at least 32 characters in {cfg.app_env} when launch readiness is "
+            "enabled (value redacted)"
+        )

@@ -729,6 +729,7 @@ class TestAssembleRuntimeEnvContract:
             mapping = {
                 "dealbrain/staging/app_secret_key": "staging-only-not-for-production-use-32c",
                 "dealbrain/staging/cors_origins": "https://staging.piqsavi.com",
+                "dealbrain/staging/launch_admin_token": ("injected-launch-admin-authority-32chars"),
             }
             if secret_id not in mapping:
                 raise mod.SecretAssemblyError(f"missing {secret_id}")
@@ -783,6 +784,7 @@ class TestAssembleRuntimeEnvContract:
                 "dealbrain/staging/app_secret_key": "staging-only-not-for-production-use-32c",
                 "dealbrain/staging/cors_origins": "https://staging.piqsavi.com",
                 "dealbrain/staging/resend_api_key": CONFIGURED_KEY,
+                "dealbrain/staging/launch_admin_token": ("injected-launch-admin-authority-32chars"),
             }
             if secret_id not in mapping:
                 raise mod.SecretAssemblyError(f"missing {secret_id}")

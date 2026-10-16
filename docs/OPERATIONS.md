@@ -14,6 +14,8 @@ curl -s http://localhost:8000/ready
 
 ### Inspect launch posture
 
+Local development (`APP_ENV=development`) with an empty `LAUNCH_ADMIN_TOKEN` accepts the published bearer below. Staging and production reject that bearer. They authorize only with `LAUNCH_ADMIN_TOKEN` injected from Secrets Manager `dealbrain/<env>/launch_admin_token`, and they fail closed when that value is missing, a placeholder, or the local development bearer.
+
 ```bash
 curl -s http://localhost:8000/api/v1/launch/system-status
 curl -s http://localhost:8000/api/v1/launch/feature-flags
@@ -31,6 +33,8 @@ curl -s -X POST http://localhost:8000/api/v1/launch/demo/switch \
 ```
 
 ### Configuration export (redacted)
+
+Local development bearer only, as above.
 
 ```bash
 curl -s -X POST -H "Authorization: Bearer demo-token-internal-admin" \

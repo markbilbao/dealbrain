@@ -64,6 +64,7 @@ Do not put values in GitHub. Populate AWS Secrets Manager `dealbrain/production/
 - `ghcr_pull` (`read:packages` PAT)
 - RDS master secret (AWS-managed) → host-assembled `DATABASE_URL`
 - `resend_api_key` — **required to boot this image** with `APP_ENV=production`. Does **not** by itself prove production email is live.
+- `launch_admin_token` — required while launch readiness is enabled. Plain string, at least 32 characters, not a placeholder and not the local development bearer. This is not `app_secret_key`. Absence fails assembly and startup. Populating it does **not** prove production launch readiness.
 - Host env: `PUBLIC_APP_BASE_URL=https://piqsavi.com`, `TRUSTED_HOSTS=piqsavi.com,www.piqsavi.com`, legal version ids `privacy-2026-09-11` / `terms-2026-09-11`, sqlalchemy persistence, demo/seed/launcher off.
 
 GitHub Environment `production` variables only: `AWS_ROLE_ARN`, `AWS_REGION`, `AWS_ACCOUNT_ID`, production target-group ARN. Required reviewers on `main`.

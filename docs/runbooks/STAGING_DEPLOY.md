@@ -11,6 +11,7 @@
 - [ ] GitHub Environment `staging` exists (`main` only)
 - [ ] Vars set: `AWS_ROLE_ARN` (= `dealbrain-staging-gha-deploy`), `AWS_REGION=us-east-1`, `AWS_ACCOUNT_ID`, `STAGING_TARGET_GROUP_ARN` (exact Terraform `alb_target_group_arn` output)
 - [ ] Secrets populated under `dealbrain/staging/*` including `ghcr_pull`
+- [ ] Required leaf `dealbrain/staging/launch_admin_token` (plain string, at least 32 characters, not a placeholder and not the local development bearer). `assemble-runtime-env.py` fails closed without it. Do not put the token in GitHub or git. The next staging deploy cannot assemble a runtime env until this value exists out of band.
 - [ ] For Resend cutover: optional leaf `dealbrain/staging/resend_api_key` (plain string). Missing/placeholder keeps `TRANSACTIONAL_EMAIL_PROVIDER=null`. Do not put the key in GitHub or git. Production attach remains Sprint 41.
 - [ ] EC2 SSM Online; `/opt/dealbrain/bootstrap.ok` present (implies Docker engine + signed Compose plugin — Sprint 25b.5a)
 - [ ] Successful **Build Image** workflow run on `main` (note run ID)

@@ -39,6 +39,7 @@ STRONG_DB = (
 )
 STRONG_SECRET = "prod-ops-secret-key-value-32chars!!"
 RESEND_KEY = "re_phase1_configured_key_not_real"
+LAUNCH_ADMIN_TOKEN = "injected-launch-admin-authority-32chars"
 
 
 def _read(path: Path) -> str:
@@ -83,6 +84,7 @@ def _prod_settings(**overrides: object) -> Settings:
         "TRANSACTIONAL_EMAIL_FROM_NAME": "PiqSavi",
         "PUBLIC_APP_BASE_URL": "https://piqsavi.com",
         "TRUSTED_PROXY_CIDRS": "10.20.0.0/24,10.20.1.0/24,172.16.0.0/12",
+        "LAUNCH_ADMIN_TOKEN": LAUNCH_ADMIN_TOKEN,
     }
     base.update(overrides)
     return Settings(**base)  # type: ignore[arg-type]
@@ -226,6 +228,7 @@ def test_staging_runtime_assembly_still_works(tmp_path: Path) -> None:
         mapping = {
             "dealbrain/staging/app_secret_key": "staging-only-not-for-production-use-32c",
             "dealbrain/staging/cors_origins": "https://staging.piqsavi.com",
+            "dealbrain/staging/launch_admin_token": LAUNCH_ADMIN_TOKEN,
         }
         if secret_id not in mapping:
             raise mod.SecretAssemblyError(f"missing {secret_id}")
@@ -314,6 +317,7 @@ def test_production_runtime_assembly_requires_resend_and_writes_contract(
             "dealbrain/production/app_secret_key": STRONG_SECRET,
             "dealbrain/production/cors_origins": "https://piqsavi.com",
             "dealbrain/production/resend_api_key": RESEND_KEY,
+            "dealbrain/production/launch_admin_token": LAUNCH_ADMIN_TOKEN,
         }
         if secret_id not in mapping:
             raise mod.SecretAssemblyError(f"missing {secret_id}")
