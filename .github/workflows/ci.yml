@@ -78,6 +78,7 @@ jobs:
             tests/unit/test_sprint25b5f_immutable_oidc_subject.py \
             tests/unit/test_sprint40_2_dependency_audit.py \
             tests/unit/test_sprint40_sast_baseline.py \
+            tests/unit/test_sprint40_application_secret_scan.py \
             tests/unit/test_sprint40_5_url_trust.py \
             tests/unit/test_sprint40_6_csp.py \
             -q
