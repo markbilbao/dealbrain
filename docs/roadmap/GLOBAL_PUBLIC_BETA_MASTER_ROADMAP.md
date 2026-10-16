@@ -1257,6 +1257,14 @@ R6 stays PARTIAL. The secret-scanning capability is IMPLEMENTED-NOT-PROVEN. SAST
 
 Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
 
+### Sprint 40 container vulnerability gate (2026-10-17)
+
+This note does not rewrite the application secret scan above or any earlier note, and it does not change Sprint 38 or Sprint 39 status. It is not named Sprint 40.8. Grype 0.120.1 scans the locally built runtime image in CI and again before GHCR publication. The scanned release tag is the tag that is pushed. The release manifest still uses the post-push registry digest. Evidence: [`evidence/SPRINT_40_CONTAINER_VULNERABILITY_SCAN_2026-10-17.md`](evidence/SPRINT_40_CONTAINER_VULNERABILITY_SCAN_2026-10-17.md). Starting `main` is `6ed3662d520d9e41a4bdc3df5ccc56b49c520300`.
+
+The local scan reported 1182 packages and 172 findings, including 55 HIGH Debian 13 matches with no fixed version listed. The baseline has 0 exceptions. The gate fails closed. Container vulnerability scanning is not a passing control and is not PROVEN. IaC security scanning remains absent. R6 stays PARTIAL. Secret scanning and SAST stay IMPLEMENTED-NOT-PROVEN. The historical MEDIUM "No Dependabot/CodeQL/Trivy/pip-audit" stays CLOSED BY IMPLEMENTATION for the original no-dependency-scanner condition. This note does not broaden that finding. This note does not select IaC scanning. This note does not close Sprint 40.
+
+Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLETE. Not PRODUCTION PROVEN. Not LAUNCH READY. Sprint 38 stays IN PROGRESS and ENGINEERING COMPLETE, with closure validation blocked on Sprint 41. Sprint 39 stays IN PROGRESS and is not ENGINEERING COMPLETE. The Sprint 39 Class C count remains 19. The Sprint 39 selected next engineering slice remains NONE. Sprint 41 stays UNSTARTED. No deploy was performed. No Shopify call was made. Routing stays 0. Public Results stays disabled. Affiliate activation is unchanged. Live research stays off. Real Shopify calls stay 0.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |
