@@ -327,8 +327,13 @@ def test_build_and_publication_gated_on_successful_resolution() -> None:
     resolve_idx = next(i for i, s in enumerate(steps) if s.get("id") == "resolve")
     names_after = [s.get("name") for s in steps[resolve_idx + 1 :]]
     assert "Checkout exact commit" in names_after
-    assert "Build and push immutable image" in names_after
+    assert "Build release image locally" in names_after
+    assert "Container vulnerability gate" in names_after
+    assert "Push scanned release image" in names_after
     assert "Create release manifest" in names_after
+    gate = names_after.index("Container vulnerability gate")
+    push = names_after.index("Push scanned release image")
+    assert gate < push
     assert "Upload release manifest artifact" in names_after
     # Default shell steps fail the job when a prior required step fails; no
     # continue-on-error on resolve or publication path.
