@@ -66,3 +66,5 @@ With `APP_ENV=development`, the control image served `GET /live` 200 and `GET /r
 ## Status
 
 Container vulnerability scanning stays fail-closed and is not PROVEN. R6 stays PARTIAL. IaC security scanning stays absent. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. Sprint 38, Sprint 39, and Sprint 41 are unchanged. No Shopify call, live research, affiliate activation, or deploy was performed. Full pytest on this unchanged application tree: 4566 passed, 5 skipped.
+
+The later zlib experiment is recorded in `docs/roadmap/evidence/SPRINT_40_ALPINE_ZLIB_EXPERIMENT_2026-10-18.md`. This comparison's matrix is unchanged.
