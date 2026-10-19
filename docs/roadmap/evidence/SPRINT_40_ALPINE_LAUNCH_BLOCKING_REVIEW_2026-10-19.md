@@ -107,3 +107,7 @@ Recommend adopting the minimized Alpine runtime already measured on `dealbrain:c
 The committed `Dockerfile` stays `python:3.12-slim` until the owner approves that change. This review does not commit the Alpine Dockerfile.
 
 The Debian image gate remains fail-closed. Container vulnerability scanning is not PROVEN. R6 stays PARTIAL. IaC scanning stays absent. Sprint 40 stays Planned.
+
+## Owner decision
+
+The owner approved this Alpine runtime and the exact exception set in `sprint40-alpine-proposed-grype-exceptions.json`. The committed implementation is recorded in `SPRINT_40_ALPINE_RUNTIME_IMPLEMENTATION_2026-10-19.md`. This review's earlier recommendation, written before that approval, is unchanged.
