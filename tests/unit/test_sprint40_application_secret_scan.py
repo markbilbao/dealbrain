@@ -237,7 +237,7 @@ def test_scanner_and_baseline_do_not_contain_raw_secret_values(
     captured = capsys.readouterr()
     combined = captured.out + captured.err
     assert "secret_scan_25a: OK" in captured.out
-    assert "application_python=649" in captured.out
+    assert "application_python=650" in captured.out
     assert "findings=8" in captured.out
     assert "exceptions=8" in captured.out
     for secret in (DEMO_PASSWORD, _LOCAL_DEVELOPMENT_GATE, FAKE_AWS_KEY):
@@ -251,8 +251,8 @@ def test_scanner_and_baseline_do_not_contain_raw_secret_values(
 def test_reviewed_demo_exceptions_are_exact_and_a_new_credential_fails(tmp_path: Path) -> None:
     baseline = load_baseline(BASELINE_PATH)
     result = scan_tree(ROOT)
-    assert result.application_python == 649
-    assert result.files == 812
+    assert result.application_python == 650
+    assert result.files == 813
     assert compare_findings(result.findings, baseline["exceptions"]) == []
     counts = Counter(item["rationale"] for item in baseline["exceptions"])
     assert counts["safe_demo_constant"] == 2

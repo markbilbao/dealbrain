@@ -7,7 +7,6 @@ access. It carries the same identity tuple already stored on the snapshot.
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import hmac
 import json
@@ -18,6 +17,7 @@ from starlette.responses import Response
 
 from app.core.config import settings
 from app.domain.entities.shopping_assistant import ConversationOwner
+from app.security.base64url import decode_urlsafe_b64, encode_urlsafe_b64
 
 OWNER_COOKIE = "piqsavi_decision_owner"
 COOKIE_MAX_BYTES = 768
@@ -27,12 +27,11 @@ _PLACEHOLDER_SECRETS = frozenset({"", "changeme", "secret", "dev", "test", "pass
 
 
 def _b64encode(raw: bytes) -> str:
-    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    return encode_urlsafe_b64(raw)
 
 
 def _b64decode(value: str) -> bytes:
-    pad = "=" * (-len(value) % 4)
-    return base64.urlsafe_b64decode(value + pad)
+    return decode_urlsafe_b64(value)
 
 
 def signing_secret() -> bytes | None:
