@@ -45,7 +45,16 @@ def test_production_code_does_not_reach_imap_pop_or_cookie_js() -> None:
     offenders: list[str] = []
     for path in _python_sources(APP) + _python_sources(ALEMBIC):
         text = _text(path)
-        if any(token in text for token in ("imaplib", "poplib", "js_output")):
+        if any(
+            token in text
+            for token in (
+                "imaplib",
+                "poplib",
+                "js_output",
+                "Morsel.js_output",
+                "BaseCookie.js_output",
+            )
+        ):
             offenders.append(path.relative_to(ROOT).as_posix())
     assert offenders == []
 

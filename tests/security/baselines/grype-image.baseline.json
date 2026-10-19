@@ -4,5 +4,170 @@
   "scanner_version": "0.120.1",
   "target_type": "local_docker_image",
   "max_allowed_db_built_age": "120h",
-  "exceptions": []
+  "exceptions": [
+    {
+      "id": "GRYPE-001",
+      "vulnerability_id": "CVE-2025-60876",
+      "package_name": "busybox",
+      "package_version": "1.37.0-r31",
+      "package_type": "apk",
+      "package_purl": "pkg:apk/alpine/busybox@1.37.0-r31?arch=x86_64&distro=alpine-3.24.2",
+      "severity": "Medium",
+      "fix_state": "unknown",
+      "fixed_versions": [],
+      "fingerprint": "af374eb82e451484d6d8fc70fda50e8030d9b1fa92477ded368cbd8ec4dda630",
+      "rationale": "not_applicable",
+      "reason": "Real BusyBox wget flaw. Production app, Alembic, Dockerfile, Compose, CI, runtime and deploy scripts, and the urllib healthcheck never invoke busybox wget or /usr/bin/wget."
+    },
+    {
+      "id": "GRYPE-002",
+      "vulnerability_id": "CVE-2025-60876",
+      "package_name": "busybox-binsh",
+      "package_version": "1.37.0-r31",
+      "package_type": "apk",
+      "package_purl": "pkg:apk/alpine/busybox-binsh@1.37.0-r31?arch=x86_64&distro=alpine-3.24.2&upstream=busybox",
+      "severity": "Medium",
+      "fix_state": "unknown",
+      "fixed_versions": [],
+      "fingerprint": "580bd18a79c8ed298c06d7a63a691c0022d3994f6fcaac925197c389810d27a7",
+      "rationale": "not_applicable",
+      "reason": "Same CVE on busybox-binsh, which contains only the /bin/sh symlink and not the wget request builder. Production code does not invoke wget."
+    },
+    {
+      "id": "GRYPE-003",
+      "vulnerability_id": "CVE-2025-60876",
+      "package_name": "ssl_client",
+      "package_version": "1.37.0-r31",
+      "package_type": "apk",
+      "package_purl": "pkg:apk/alpine/ssl_client@1.37.0-r31?arch=x86_64&distro=alpine-3.24.2&upstream=busybox",
+      "severity": "Medium",
+      "fix_state": "unknown",
+      "fixed_versions": [],
+      "fingerprint": "d0c255f2f714db9ba04a8948b9315b791865fbb88cea4be2a8d8d8fa9e4162a0",
+      "rationale": "not_applicable",
+      "reason": "Same CVE on ssl_client 1.37.0-r31, the separate TLS helper binary, not the wget request builder. Production code does not invoke wget."
+    },
+    {
+      "id": "GRYPE-004",
+      "vulnerability_id": "CVE-2025-12781",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Medium",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.13.10",
+        "3.14.1",
+        "3.15.0a2"
+      ],
+      "fingerprint": "19f5b7ee2ba48646e37d29170249a26647c40f584bc65d86bb6a415baade2f3d",
+      "rationale": "not_applicable",
+      "reason": "Production cookies reject plus and slash in app.security.base64url and never call urlsafe_b64decode. No application model uses pydantic Base64Url types."
+    },
+    {
+      "id": "GRYPE-005",
+      "vulnerability_id": "CVE-2025-15366",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Medium",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.13.15",
+        "3.14.7",
+        "3.15.0a6"
+      ],
+      "fingerprint": "a91f28a7d75a4f98526e2c1e9078432ff90ef12f77a1fa7e4c3f42109e048502",
+      "rationale": "not_applicable",
+      "reason": "imaplib remains in the image. Application code, Alembic, and locked runtime site-packages do not import it, so no attacker command reaches IMAP4._command."
+    },
+    {
+      "id": "GRYPE-006",
+      "vulnerability_id": "CVE-2025-15367",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Medium",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.15.0a6"
+      ],
+      "fingerprint": "eea63833c14932c7683b2dd4509b1c2f02b8d61555ea72bf1306809cb418ed5e",
+      "rationale": "not_applicable",
+      "reason": "poplib remains in the image. Application code, Alembic, and locked runtime site-packages do not import it, so no attacker command reaches POP3._putcmd."
+    },
+    {
+      "id": "GRYPE-007",
+      "vulnerability_id": "CVE-2026-3446",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Medium",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.13.13",
+        "3.14.4",
+        "3.15.0a8"
+      ],
+      "fingerprint": "3ae063f814dd51fa1c04f9c6f6c32a9d225d68b0ddf88a6ffd96640972341159",
+      "rationale": "not_applicable",
+      "reason": "Cookie payloads are HMAC-checked first, then decoded with validate=True after rejecting bytes past the first padded block. Application code does not call the unvalidated decoder."
+    },
+    {
+      "id": "GRYPE-008",
+      "vulnerability_id": "CVE-2026-12345",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Medium",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.15.0rc3"
+      ],
+      "fingerprint": "9bb51031077d89677ab27f02340fbcdf56f888595383312f9d916bf8a750fb50",
+      "rationale": "not_applicable",
+      "reason": "The running application does not construct tempfile.TemporaryDirectory. anyio only defines a wrapper. uvloop and SQLAlchemy hits are test helpers the server does not import."
+    },
+    {
+      "id": "GRYPE-009",
+      "vulnerability_id": "CVE-2026-6019",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Medium",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.13.14",
+        "3.14.5rc1",
+        "3.15.0b1"
+      ],
+      "fingerprint": "d8308e625054761fc058649e7acd96f4b1c0f8a1e2bd8911bd704ab2660a3a78",
+      "rationale": "not_applicable",
+      "reason": "Application code and locked runtime dependencies do not call Morsel.js_output or BaseCookie.js_output. Grype severity stays Medium. The CNA score is not written into the gate."
+    },
+    {
+      "id": "GRYPE-010",
+      "vulnerability_id": "CVE-2026-3479",
+      "package_name": "python",
+      "package_version": "3.12.15",
+      "package_type": "binary",
+      "package_purl": "pkg:generic/python@3.12.15",
+      "severity": "Negligible",
+      "fix_state": "fixed",
+      "fixed_versions": [
+        "3.13.13",
+        "3.14.4",
+        "3.15.0a8"
+      ],
+      "fingerprint": "93fb72fea50f23280c2adc7733d607e1a1229b5ec01fe0247a95a43abd27334b",
+      "rationale": "false_positive",
+      "reason": "PSF CNA disputes this: the docs were wrong, pkgutil.get_data matches open(), and there is no vulnerability under that model. CVSS v4 is 0.0. Grype severity stays Negligible."
+    }
+  ]
 }

@@ -242,7 +242,12 @@ def test_scanner_version_and_checksum_are_pinned() -> None:
     assert committed["scanner"] == "grype"
     assert committed["scanner_version"] == "0.120.1"
     assert committed["target_type"] == "local_docker_image"
-    assert committed["exceptions"] == []
+    approved = json.loads(
+        (ROOT / "docs/roadmap/evidence/sprint40-alpine-proposed-grype-exceptions.json").read_text(
+            encoding="utf-8"
+        )
+    )["exceptions"]
+    assert committed["exceptions"] == approved
 
 
 def test_malformed_scanner_json_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,9 +1,9 @@
 {
-  "status": "proposed_not_loaded",
-  "image": "dealbrain:cand-alpine-min",
+  "status": "loaded_into_baseline",
+  "image": "dealbrain:ci-local",
   "scanner": "grype",
   "scanner_version": "0.120.1",
-  "note": "Proposal only. tests/security/baselines/grype-image.baseline.json exceptions stay empty until the owner accepts this set.",
+  "note": "Owner approved this exact set. It was copied into tests/security/baselines/grype-image.baseline.json after the committed Alpine image findings matched these identities.",
   "exceptions": [
     {
       "id": "GRYPE-001",
