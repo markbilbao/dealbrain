@@ -80,4 +80,6 @@ Host pytest on this unchanged tree: 4566 passed, 5 skipped. That suite runs on t
 
 Alpine 3.24.2 plus `apk upgrade --no-cache zlib` is the leading migration candidate. It is the first measured full runtime image with Critical 0 and High 0, and the production checks in this note passed. The committed `Dockerfile` stays `python:3.12-slim` until an owner accepts the move from glibc to musl. Do not baseline the remaining Medium, Low, or Negligible matches.
 
+The minimized runtime review is recorded in `docs/roadmap/evidence/SPRINT_40_ALPINE_MINIMIZED_REVIEW_2026-10-19.md`. This experiment's zlib result is unchanged.
+
 Container vulnerability scanning on the committed Debian image stays fail-closed and is not PROVEN. R6 stays PARTIAL. IaC security scanning stays absent. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. Sprint 38, Sprint 39, and Sprint 41 are unchanged. No Shopify call, live research, affiliate activation, or deploy was performed.
