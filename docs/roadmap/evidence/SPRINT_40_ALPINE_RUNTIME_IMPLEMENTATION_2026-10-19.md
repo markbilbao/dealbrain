@@ -86,4 +86,4 @@ Host pytest: 4577 passed, 5 skipped. Ruff baseline, secret scan, pip-audit, and 
 
 ## Status
 
-Container vulnerability scanning on this committed Alpine image is IMPLEMENTED-NOT-PROVEN until GitHub CI is green. This local gate run is not production proof. R6 stays PARTIAL because IaC security scanning is absent. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. No image was published and no deploy was performed.
+GitHub CI run https://github.com/markbilbao/dealbrain/actions/runs/39221691578 on `b2b2e9150c6408224b9dabcdfe8ebced1b821cf3` succeeded. Lint, contracts, pytest, Compose, Terraform, and the image job passed. The image job printed `container_vuln_gate: OK` with critical 0 and high 0. Container vulnerability scanning is IMPLEMENTED-NOT-PROVEN. This is not production proof. R6 stays PARTIAL because IaC security scanning is absent. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. No image was published and no deploy was performed.
