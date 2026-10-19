@@ -379,6 +379,20 @@ def _reject_wildcard(value: object, label: str, *, allow_query: bool = False) ->
     return value
 
 
+def _normalize_fix_state(value: object, vulnerability_id: str) -> str:
+    """Map Grype's empty fix state to unknown.
+
+    An empty string means the scanner did not classify the fix. It does not
+    drop the finding or change its severity.
+    """
+
+    if value == "":
+        return "unknown"
+    if value not in FIX_STATES:
+        raise GateError(f"grype match {vulnerability_id} has an unexpected fix state")
+    return str(value)
+
+
 def _fixed_versions(value: object, label: str) -> tuple[str, ...]:
     if not isinstance(value, list):
         raise GateError(f"{label} must be a list")
@@ -407,9 +421,7 @@ def finding_from_match(match: object) -> Finding:
     fix = vulnerability.get("fix")
     if not isinstance(fix, dict):
         raise GateError(f"grype match {vulnerability_id} is missing fix metadata")
-    fix_state = fix.get("state")
-    if fix_state not in FIX_STATES:
-        raise GateError(f"grype match {vulnerability_id} has an unexpected fix state")
+    fix_state = _normalize_fix_state(fix.get("state"), vulnerability_id)
     package_name = _reject_wildcard(artifact.get("name"), "package name")
     package_version = _reject_wildcard(artifact.get("version"), "package version")
     package_type = _reject_wildcard(artifact.get("type"), "package type")

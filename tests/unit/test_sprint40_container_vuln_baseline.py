@@ -314,6 +314,43 @@ def test_wildcard_vulnerability_id_and_package_are_rejected() -> None:
         finding_from_match(match)
 
 
+def _match(fix_state: object | None, *, include_fix: bool = True) -> dict:
+    vulnerability: dict[str, object] = {
+        "id": "CVE-2025-60876",
+        "severity": "Medium",
+    }
+    if include_fix:
+        vulnerability["fix"] = {"state": fix_state, "versions": []}
+    return {
+        "vulnerability": vulnerability,
+        "artifact": {
+            "name": "busybox",
+            "version": "1.37.0-r31",
+            "type": "apk",
+            "purl": "pkg:apk/alpine/busybox@1.37.0-r31",
+        },
+    }
+
+
+def test_empty_fix_state_normalizes_to_unknown() -> None:
+    empty = finding_from_match(_match(""))
+    explicit = finding_from_match(_match("unknown"))
+    assert empty.fix_state == "unknown"
+    assert explicit.fix_state == "unknown"
+    assert empty.fingerprint() == explicit.fingerprint()
+    for state in ("fixed", "not-fixed", "wont-fix", "unknown"):
+        assert finding_from_match(_match(state)).fix_state == state
+    for rejected in (" ", "ignored", None, 0, ["fixed"]):
+        with pytest.raises(GateError, match="unexpected fix state"):
+            finding_from_match(_match(rejected))
+    with pytest.raises(GateError, match="missing fix metadata"):
+        finding_from_match(_match("", include_fix=False))
+    missing_object = _match("")
+    missing_object["vulnerability"]["fix"] = None
+    with pytest.raises(GateError, match="missing fix metadata"):
+        finding_from_match(missing_object)
+
+
 def test_new_unbaselined_finding_fails() -> None:
     item = _finding()
     regressions = compare([item], [])
