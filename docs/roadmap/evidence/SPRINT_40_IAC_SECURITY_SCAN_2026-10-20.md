@@ -135,6 +135,8 @@ No image was published.
 
 Because the baseline is empty and 24 findings remain, the Terraform job fails closed. That is the verdict. IaC security scanning is implemented and fail-closed. It is not a passing control. It is not PROVEN. It is not IMPLEMENTED-NOT-PROVEN, because this slice uses that label only when the gate is in CI and CI passes.
 
+GitHub Actions run `39415287343` on draft PR #208 finished with conclusion `failure` at head `f21612defeb8ac1a8e14f09f597143f1b66e650a`. The Terraform job installed Trivy 0.76.0, passed fmt and the three validates, and failed on `python scripts/check_iac_security_baseline.py`. The step log matches the local gate: 70 Terraform files, 24 findings, 0 exceptions, 4 Critical, 5 High, 5 Medium, 10 Low, 0 Unknown. Docker image build, Docker Compose config, and Lint, contracts, and pytest succeeded. The pytest job includes the secret scan, pip-audit, Bandit, contract tests, architecture-lock tests, and the full suite.
+
 ## R6
 
 Secret scanning, dependency scanning, SAST, and container vulnerability scanning stay as they were on the starting commit. Container vulnerability scanning stays IMPLEMENTED-NOT-PROVEN. The Terraform class now has one pinned scanner in CI, and that scanner does not pass. R6 stays PARTIAL. No Included requirement is PROVEN. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. This record does not select Sprint 41.
