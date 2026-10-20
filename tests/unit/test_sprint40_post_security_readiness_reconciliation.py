@@ -203,7 +203,7 @@ def test_scanners_and_url_trust_match_the_reading() -> None:
     assert "scripts/check_pip_audit_baseline.py" in ci
     assert "terraform validate" in ci
     assert "codeql" not in ci.lower()
-    assert "trivy" not in ci.lower()
+    assert "aquasecurity/trivy-action" not in ci.lower()
     assert "checkov" not in ci.lower()
     assert "tfsec" not in ci.lower()
     audit = AUDIT.read_text(encoding="utf-8")

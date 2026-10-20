@@ -1269,6 +1269,10 @@ Sprint 40 stays Planned. It is not COMPLETE / CLOSED and not ENGINEERING COMPLET
 
 This note does not rewrite the container-gate note above and does not select IaC scanning. Bookworm reported 3 Critical and 79 High. Bookworm plus `apt-get upgrade` matched it. Alpine reported 1 High and uses musl, so it is not selected. Removing uv and global pip left the 55 Debian 13 HIGH matches. The committed Dockerfile stays `python:3.12-slim`. No exception was added. Evidence: [`evidence/SPRINT_40_CONTAINER_BASE_COMPARISON_2026-10-17.md`](evidence/SPRINT_40_CONTAINER_BASE_COMPARISON_2026-10-17.md). R6 stays PARTIAL. Sprint 40 stays Planned and is not ENGINEERING COMPLETE.
 
+### Sprint 40 IaC security scan (2026-10-20)
+
+This note does not rewrite the container-gate note above or any earlier note, and it does not change Sprint 38 or Sprint 39 status. It is not named Sprint 40.8. It is not a Sprint 40 reconciliation. Starting `main` is `078d768f2653dc0ac69f94063ea04ff57584fe15`. Trivy 0.76.0 scans `infra/terraform` in CI. The archive checksum is `e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7`. The first scan reported 30 findings. Public-subnet auto-assigned addresses and the ALB open egress were fixed in source. The rescan reported 24 findings and 0 exceptions. The gate fails closed. IaC security scanning is not a passing control, is not PROVEN, and is not IMPLEMENTED-NOT-PROVEN. Container vulnerability scanning stays IMPLEMENTED-NOT-PROVEN. R6 stays PARTIAL. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. No Terraform apply was performed. No deploy was performed. Evidence: [`evidence/SPRINT_40_IAC_SECURITY_SCAN_2026-10-20.md`](evidence/SPRINT_40_IAC_SECURITY_SCAN_2026-10-20.md). The Docker dependency stage still references `ghcr.io/astral-sh/uv:latest`. This note does not change it. This note does not select Sprint 41.
+
 ### Parallelizable after prerequisites
 
 | Work | May overlap |

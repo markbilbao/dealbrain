@@ -378,7 +378,7 @@ def test_ci_does_not_add_hosted_code_scanning_permissions() -> None:
     assert "codeql" not in text.lower()
     assert "upload-sarif" not in text
     assert "github/codeql-action" not in text
-    assert "trivy" not in text.lower()
+    assert "aquasecurity/trivy-action" not in text.lower()
     assert "checkov" not in text.lower()
     assert "tfsec" not in text.lower()
 

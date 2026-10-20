@@ -1,0 +1,138 @@
+# Sprint 40 IaC security scan (2026-10-20)
+
+This record does not rewrite the 2026-10-09 readiness audit, the Sprint 40.1 through Sprint 40.7 records, the later reconciliations, the security-readiness package, the SAST gate, the secret scan, or the container-vulnerability records. It is not named Sprint 40.8. It is not a Sprint 40 reconciliation. It does not declare Sprint 40 ENGINEERING COMPLETE. No Terraform apply was performed. No deploy was performed. No AWS resource was changed.
+
+## Starting point
+
+- Starting `main`: `078d768f2653dc0ac69f94063ea04ff57584fe15`
+- PR #207 is merged. This slice does not reuse it.
+- Post-merge verification supplied for that commit: CI #517 SUCCESS, Build Image #182 SUCCESS
+- Published deployment-authority digest at the start: `ghcr.io/markbilbao/dealbrain@sha256:1eb63088d25251d82331c55c37ff66173e2250a0305e1838187a7475c051a323`
+- Container vulnerability scanning at the start: IMPLEMENTED-NOT-PROVEN
+- IaC security scanning at the start: absent. `terraform fmt` and `terraform validate` are not this control.
+- R6 at the start: PARTIAL
+- Sprint 40 at the start: not ENGINEERING COMPLETE
+
+## Scanner
+
+Trivy is pinned at exactly `0.76.0`. That tag was the current stable GitHub release on 2026-10-20 (`published_at` `2026-10-14T11:45:44Z`, not a prerelease, not a draft). The official asset is `trivy_0.76.0_Linux-64bit.tar.gz`. Its SHA-256, taken from `trivy_0.76.0_checksums.txt` on the same release, is `e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7`.
+
+`scripts/security/install_trivy.sh` downloads that archive and the published checksum file over HTTPS, requires the pinned digest to appear in the checksum file, and runs `sha256sum -c` before `tar` extracts `trivy`. The helper refuses a non-linux/amd64 host, refuses archive members that are absolute or contain `..`, and checks that the extracted binary prints `Version: 0.76.0`. It does not use `sudo`, `curl | sh`, `latest`, or an unpinned GitHub Action.
+
+The gate does not use `aquasecurity/trivy-action`, tfsec, or Checkov. tfsec is not a second scanner. The checks bundle tag `mirror.gcr.io/aquasec/trivy-checks:2` is floating, so the gate does not use it. Each run passes `--skip-check-update` and a fresh `--cache-dir`. Trivy then logs `Falling back to embedded checks`. Those embedded checks from the pinned binary are the rule source. A different `ERROR` line, or `Ignore finding` on stderr, fails the gate.
+
+## Scope
+
+The only scan argument is `infra/terraform`. That tree contains `account/`, `environments/staging/`, `environments/production/`, and `modules/`. The command is `trivy config` with `--misconfig-scanners terraform`, `--tf-exclude-downloaded-modules`, `--skip-dirs **/.terraform/**`, and severities `UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL`. `--config=` and `--ignorefile=` are empty, which disables a Trivy config file and a `.trivyignore` file. The gate also rejects those files, and any `trivy:ignore` directive, in the Terraform tree.
+
+The scan does not read Terraform state, does not init a backend, does not run `terraform apply`, and does not call AWS. No production credentials are required.
+
+Trivy 0.76.0 reports one result row for each scanned root and extra rows for module files that have failures. On this tree the result targets are `account`, `environments/production`, `environments/staging`, and the module files that failed. Clean modules such as `ec2`, `iam`, `github_oidc`, `github_deploy_role`, and the SSM document modules are parsed through those roots and do not get their own failure row. The gate fails if any of the three roots is missing, if a result path leaves `infra/terraform`, if state or `.terraform` is a target, or if a Terraform directory is neither a result path nor a local module referenced from the scanned roots.
+
+## Gate
+
+`scripts/check_iac_security_baseline.py` requires Trivy `0.76.0`, parses the JSON itself, and fails closed when the report is missing, malformed, truncated, the wrong schema, the wrong artifact, or the wrong version. `MisconfSummary.Failures` must equal the number of `FAIL` findings in that result. A status other than `FAIL` or `PASS` fails the gate. Exit codes other than 0 fail the gate. Trivy's own exit code is forced to 0 when findings exist so the repository baseline, not the binary's exit code, is the verdict.
+
+A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards, cannot use `accepted_risk`, and must carry a fingerprint that matches those fields. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`, and `exceptions: []`.
+
+## Initial scan
+
+The first scan, before the source edits below, used the same pinned binary and embedded checks.
+
+| Item | Count |
+|---|---|
+| Terraform files | 70 |
+| Findings | 30 |
+| Critical | 6 |
+| High | 9 |
+| Medium | 5 |
+| Low | 10 |
+| Unknown | 0 |
+
+Rule ids: `AWS-0017` (3), `AWS-0053` (2), `AWS-0054` (2), `AWS-0089` (3), `AWS-0098` (2), `AWS-0104` (4), `AWS-0132` (3), `AWS-0133` (2), `AWS-0164` (4), `AWS-0176` (2), `AWS-0177` (1), `AWS-0178` (2).
+
+No exception was written from that inventory.
+
+## Fixes
+
+Two findings were source defects that did not change the documented architecture. They were edited and the tree was scanned again. Nothing was applied.
+
+- `AWS-0164` (High, four results). Public subnets set `map_public_ip_on_launch = true`. Those subnets exist so the internet-facing ALB and the NAT gateway have a route to the internet gateway. Neither of those resources uses this flag. The API instance is in a private subnet with `associate_public_ip = false`. The flag is now `false`, so an instance launched in a public subnet does not receive a public address by default. An instance can still set its own association explicitly.
+- `AWS-0104` on `aws_vpc_security_group_egress_rule.alb_all` (Critical, staging and production). The rule was all protocols to `0.0.0.0/0`. Its comment said the ALB egress was for VPC targets. The only target is the API security group on TCP 8000, which is already the API ingress pair. The rule is now `aws_vpc_security_group_egress_rule.alb_to_api`: TCP 8000 to that security group. The next Terraform apply, which this slice does not run, would replace the old rule address.
+
+The rescan no longer reports `AWS-0164` or the ALB `AWS-0104` results.
+
+## Findings left for an owner decision
+
+The baseline is still empty. These 24 findings are unbaselined. They were not risk-accepted. Critical and High findings were not given a convenience exception. False-positive and not-applicable notes below are proposals only.
+
+| Rule | Severity | Count | Resource | Classification |
+|---|---|---|---|---|
+| AWS-0054 | Critical | 2 | `aws_lb_listener.http_forward` via `module.alb`, lines 83–94, staging and production | Real. Both environments default `alb_certificate_arn` to empty. Staging documents that empty value as the HTTP bootstrap. Production says the ARN is required before public traffic, but the committed default is still empty, so the listener forwards HTTP. Removing it, or inventing a certificate, changes that bootstrap. Not fixed. Not baselined. |
+| AWS-0104 | Critical | 2 | `aws_vpc_security_group_egress_rule.api_all`, line 73, staging and production | Real. The API security group allows all egress to `0.0.0.0/0`. `docs/architecture/SPRINT_25B2_AWS_OIDC_AND_DEPLOY_IAM.md` records that egress as required for GHCR, Secrets Manager, SSM, and RDS while NAT is the path. Closing it needs VPC endpoints or an equivalent architecture change. Not fixed. Not baselined. |
+| AWS-0053 | High | 2 | `aws_lb.this` `internal = false`, staging and production | Real public exposure, and it is the documented internet-facing ALB. Making the load balancer internal removes public ingress. Not fixed. Not baselined. |
+| AWS-0132 | High | 1 | production ALB access-log bucket, lines 90–99, SSE-S3 `AES256` | Not applicable as a CMK change. The check text says SSE-KMS is not supported for an S3 server access-log destination and that SSE-S3 should be used there. The bucket already uses SSE-S3, blocks public access, and denies insecure transport. Switching it to a CMK would fight the delivery path. Proposed only. Not baselined. |
+| AWS-0132 | High | 2 | release-artifacts bucket, lines 42–51, staging and production | Real hardening choice. The buckets are already encrypted with SSE-S3. A customer managed key changes the key policy and the host role that reads bundles. Not fixed. Not baselined. |
+| AWS-0178 | Medium | 2 | VPC has no flow log, staging and production | Real visibility gap. Adding a flow log is a new log destination and a cost. Operational monitoring remains Sprint 42. Not shown here to be a separate launch-blocking defect. Not fixed. Not suppressed. |
+| AWS-0176 | Medium | 2 | RDS IAM database authentication off, staging and production | Real optional control. The instance uses `manage_master_user_password`. The application path is that secret, not IAM database authentication. Turning the flag on does not replace that design. Not fixed. Not baselined. |
+| AWS-0177 | Medium | 1 | `deletion_protection` on staging only, line 35 | Real for staging, and the staging variable default is `false`. Production's default is `true`, and Trivy did not report production. Forcing staging on changes the documented staging destroy posture. Not fixed. Not baselined. |
+| AWS-0017 | Low | 3 | production CloudWatch log groups, lines 22–33, 35–46, and 48–59 | Real CMK request. The groups use AWS default encryption. A customer managed key is new key management. Not fixed. Not baselined. |
+| AWS-0089 | Low | 3 | ALB log bucket (production) and release-artifacts bucket (staging and production) | Real access-logging request. The ALB bucket is the log destination. Another bucket would be required to log it. Not fixed. Not baselined. |
+| AWS-0133 | Low | 2 | RDS Performance Insights off, staging and production | Real monitoring add-on. It is not a network or encryption defect. Not fixed. Not baselined. |
+| AWS-0098 | Low | 2 | Secrets Manager secrets with no `kms_key_id`, staging and production | Real CMK request. The resources do not select a weaker custom key; AWS applies its default key when `kms_key_id` is omitted. A customer managed key is new key management. Not fixed. Not baselined. |
+
+Trivy did not report the staging and production ingress default `0.0.0.0/0` on ports 80 and 443. That default is unchanged. This record does not invent a finding for it.
+
+`AWS-0054` has no source-resource occurrence in the JSON. The gate keeps Trivy's caller resource `module.alb` plus the file and line range. The other rows above use the occurrence resource when Trivy emitted one.
+
+## Final scan
+
+```
+iac_security_gate: FAIL
+scanner=trivy
+scanner_version=0.76.0
+scope=infra/terraform
+checks=embedded
+sha256=e24b1c51293c1b15e4ba8d45bbc7891ba053f90278ec2698f3562c993e145fe7
+terraform_files=70
+findings=24
+exceptions=0
+critical=4
+high=5
+medium=5
+low=10
+unknown=0
+```
+
+Exit code 1. Every remaining finding is unbaselined. The gate did not pass.
+
+## Local tests
+
+`tests/unit/test_sprint40_iac_security_baseline.py` covers the pinned version, a wrong version, malformed JSON, missing results, a wrong artifact and a missing root, state outside the tree, an unknown finding, an exact exception, a stale exception, an excess duplicate exception, wildcard and malformed exceptions, severity counts, path and resource identity, and a `trivy:ignore` directive or ignore file. The committed baseline is empty. A synthetic finding fails that baseline.
+
+The broader command results are recorded in the validation section of this file after they are run. They are not invented here.
+
+## CI
+
+`.github/workflows/ci.yml` keeps Terraform fmt, Terraform validate, Ruff, contracts, pytest, the secret scan, pip-audit, Bandit, the Grype container scan, and Compose validation. The Terraform job installs Trivy 0.76.0 and runs `python scripts/check_iac_security_baseline.py` after validate. The job has no AWS credentials and no production secrets. A failing gate fails the job. `build-image.yml` is unchanged and does not run this scan.
+
+Because the baseline is empty and 24 findings remain, the Terraform job fails closed. That is the verdict. IaC security scanning is implemented and fail-closed. It is not a passing control. It is not PROVEN. It is not IMPLEMENTED-NOT-PROVEN, because this slice uses that label only when the gate is in CI and CI passes.
+
+## R6
+
+Secret scanning, dependency scanning, SAST, and container vulnerability scanning stay as they were on the starting commit. Container vulnerability scanning stays IMPLEMENTED-NOT-PROVEN. The Terraform class now has one pinned scanner in CI, and that scanner does not pass. R6 stays PARTIAL. No Included requirement is PROVEN. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. This record does not select Sprint 41.
+
+## Supply chain, left for the later reconciliation
+
+The Docker dependency stage still copies from `ghcr.io/astral-sh/uv:latest` (`Dockerfile`, `COPY --from=ghcr.io/astral-sh/uv:latest`). That floating build-tool reference was not changed. The later Sprint 40 reconciliation should evaluate it against the supply-chain and immutable-build requirement. It did not block this IaC scan.
+
+## What this slice did not do
+
+- No `terraform apply`
+- No deploy
+- No AWS mutation, account creation, secret rotation, or live resource scan
+- No staging or production configuration
+- No Shopify activation, live research, routing change, or affiliate change
+- No image publication
+- No second IaC scanner
+- No baseline exception

@@ -80,6 +80,7 @@ jobs:
             tests/unit/test_sprint40_sast_baseline.py \
             tests/unit/test_sprint40_application_secret_scan.py \
             tests/unit/test_sprint40_container_vuln_baseline.py \
+            tests/unit/test_sprint40_iac_security_baseline.py \
             tests/unit/test_sprint40_5_url_trust.py \
             tests/unit/test_sprint40_6_csp.py \
             -q
@@ -120,6 +121,19 @@ jobs:
         run: |
           terraform init -backend=false -input=false
           terraform validate
+
+      # Sprint 40 IaC gate. Pinned Trivy misconfiguration scan of committed Terraform.
+      # Source only. This job does not authenticate to AWS and does not read state.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Trivy 0.76.0
+        run: bash scripts/security/install_trivy.sh
+
+      - name: IaC security scan (Trivy baseline gate)
+        run: python scripts/check_iac_security_baseline.py
 
   compose:
     name: Docker Compose config
