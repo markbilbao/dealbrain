@@ -179,3 +179,7 @@ A successful local run of these commands does **not** mean an image was publishe
 ## Architecture locks
 
 Sprint 25b.1 does not modify DealScore, Recommendation, Marketplace ranking, Shopping Assistant ranking, Personal AI, affiliate/merchant neutrality, Sprint 22 probe semantics, Sprint 23 adapters/schema, Sprint 24 API contracts, Sprint 25a Terraform isolation, RDS secret model, or Compose `api`/`migrate` ownership. No `/api/v2`.
+
+## Additive note — scan before publication (2026-10-17)
+
+This note does not rewrite the digest contract above. Build Image now builds the release image locally with the final OCI labels and the immutable `sha-<gitsha>` tag, runs the container vulnerability gate on that local tag, and runs `docker push` on that same tag only after the gate succeeds. The registry digest is still read after the push from `RepoDigests`, validated as `sha256:<64 lowercase hex>`, confirmed with `imagetools inspect`, and stored in the release manifest. Deployment authority remains the registry digest. A failed gate does not authenticate to GHCR and does not push.

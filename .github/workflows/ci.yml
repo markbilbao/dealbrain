@@ -79,6 +79,7 @@ jobs:
             tests/unit/test_sprint40_2_dependency_audit.py \
             tests/unit/test_sprint40_sast_baseline.py \
             tests/unit/test_sprint40_application_secret_scan.py \
+            tests/unit/test_sprint40_container_vuln_baseline.py \
             tests/unit/test_sprint40_5_url_trust.py \
             tests/unit/test_sprint40_6_csp.py \
             -q
@@ -197,3 +198,23 @@ jobs:
         run: |
           docker run --rm --entrypoint python "dealbrain:ci-${{ github.sha }}" -c \
             "import httpx; import app.auth.email_resend"
+
+      - name: Install Grype 0.120.1
+        run: bash scripts/security/install_grype.sh
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      # Same local-image gate as release publication. This job does not log in to GHCR or push.
+      - name: Container vulnerability gate
+        run: uv run python scripts/check_container_vuln_baseline.py --image "docker:dealbrain:ci-${{ github.sha }}"

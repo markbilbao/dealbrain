@@ -7,7 +7,6 @@ schema version, and selected time.
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import hmac
 import json
@@ -20,6 +19,7 @@ from starlette.responses import Response
 from app.analytics.identity import is_analytics_subject_id, new_analytics_subject_id
 from app.analytics.retention import PRODUCT_ANALYTICS_ENGINEERING_TTL_SECONDS
 from app.consumer.decision_owner import cookie_requires_secure, signing_secret
+from app.security.base64url import decode_urlsafe_b64, encode_urlsafe_b64
 
 TrackingChoice = Literal["essential_only", "analytics_allowed"]
 
@@ -202,9 +202,8 @@ def apply_tracking_choice(
 
 
 def _b64encode(raw: bytes) -> str:
-    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    return encode_urlsafe_b64(raw)
 
 
 def _b64decode(value: str) -> bytes:
-    pad = "=" * (-len(value) % 4)
-    return base64.urlsafe_b64decode(value + pad)
+    return decode_urlsafe_b64(value)

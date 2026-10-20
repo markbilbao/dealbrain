@@ -92,9 +92,11 @@ def test_build_image_publishes_only_immutable_sha_tags() -> None:
 
 def test_build_image_captures_and_validates_digest() -> None:
     text = _workflow_text(BUILD_WORKFLOW)
-    assert "steps.push.outputs.digest" in text
+    assert "docker push" in text
+    assert "image_digest=$DIGEST" in text
     assert r"^sha256:[0-9a-f]{64}$" in text
     assert "imagetools inspect" in text
+    assert "steps.digest.outputs.image_digest" in text
 
 
 def test_build_image_does_not_deploy_or_use_aws() -> None:

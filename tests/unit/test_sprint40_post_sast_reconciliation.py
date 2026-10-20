@@ -233,12 +233,15 @@ def test_sast_gate_shape_still_matches_the_reading() -> None:
     assert "scripts/secret_scan_25a.py" in ci
     assert "terraform validate" in ci
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-    assert "python:3.12-slim" in dockerfile
+    assert "python:3.12-alpine3.24" in dockerfile
     assert "ghcr.io/astral-sh/uv:latest" in dockerfile
     build = (ROOT / ".github/workflows/build-image.yml").read_text(encoding="utf-8")
-    assert "push: true" in build
+    assert "push: false" in build
+    assert "push: true" not in build
     assert "trivy" not in build.lower()
-    assert "grype" not in build.lower()
+    lowered = build.lower()
+    assert lowered.index("container vulnerability gate") < lowered.index("log in to ghcr")
+    assert lowered.index("log in to ghcr") < lowered.index("docker push")
     assert "checkov" not in ci.lower()
     assert "tfsec" not in ci.lower()
     assert SHOPIFY_PRODUCTION_CATALOG_ENDPOINT == "https://catalog.shopify.com/api/ucp/mcp"
