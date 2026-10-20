@@ -110,7 +110,24 @@ Exit code 1. Every remaining finding is unbaselined. The gate did not pass.
 
 `tests/unit/test_sprint40_iac_security_baseline.py` covers the pinned version, a wrong version, malformed JSON, missing results, a wrong artifact and a missing root, state outside the tree, an unknown finding, an exact exception, a stale exception, an excess duplicate exception, wildcard and malformed exceptions, severity counts, path and resource identity, and a `trivy:ignore` directive or ignore file. The committed baseline is empty. A synthetic finding fails that baseline.
 
-The broader command results are recorded in the validation section of this file after they are run. They are not invented here.
+Local commands on this tree:
+
+| Check | Result |
+|---|---|
+| IaC gate | FAIL, exit 1. 70 Terraform files, 24 findings, 0 exceptions, 4 Critical, 5 High, 5 Medium, 10 Low, 0 Unknown |
+| IaC gate unit tests | Passed inside the full pytest run |
+| `terraform fmt -check -recursive infra/terraform` | Pass, Terraform 1.15.8 |
+| `terraform validate` account | Success, `-backend=false` |
+| `terraform validate` staging | Success, `-backend=false` |
+| `terraform validate` production | Success, `-backend=false` |
+| Ruff baseline | OK. check 91, unformatted 82, no new regressions |
+| Secret scan | OK. 815 files, 650 application Python files, 8 findings, 8 exceptions |
+| pip-audit 2.10.1 | OK. 73 packages, 0 vulnerabilities, 0 exceptions |
+| Bandit 1.9.4 | OK. 650 files, 34 findings, 34 exceptions |
+| Full pytest | 4585 passed, 8 skipped, and 1 failed. The failure was `test_reviewed_demo_exceptions_are_exact_and_a_new_credential_fails` expecting 813 scanned files. The gate script and installer are two new files under `scripts/`, so the scan reads 815. The assertion was updated to 815. No new secret finding was reported. The secret-scan file and the IaC gate tests then passed together (26). The CI architecture-lock set passed (303). The full suite was not repeated after that one-line count change. |
+| Docker Compose config | Pass for production and staging. `docker compose config` exited 0 for both overlays. |
+
+No image was published.
 
 ## CI
 
