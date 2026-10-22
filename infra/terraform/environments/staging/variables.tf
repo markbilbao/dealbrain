@@ -125,7 +125,7 @@ variable "skip_final_snapshot" {
 }
 
 variable "alb_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS. Empty = HTTP-only bootstrap (TLS deferred)."
+  description = "ACM certificate ARN for HTTPS. Empty does not create a public application listener."
   type        = string
   default     = ""
 }

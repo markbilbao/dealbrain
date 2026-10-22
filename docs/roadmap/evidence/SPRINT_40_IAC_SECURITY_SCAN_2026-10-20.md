@@ -155,3 +155,32 @@ The Docker dependency stage still copies from `ghcr.io/astral-sh/uv:latest` (`Do
 - No image publication
 - No second IaC scanner
 - No baseline exception
+
+## Owner decisions applied (2026-10-22)
+
+This section does not rewrite the inventory above. It records the owner decisions applied on the same draft branch. No Terraform apply was performed. No deploy was performed. No AWS resource was changed. The baseline is still empty.
+
+`AWS-0054` was fixed in source. `infra/terraform/modules/alb/main.tf` no longer has `aws_lb_listener.http_forward`. The HTTPS listener still exists only when `certificate_arn` is non-empty. Port 80 is `aws_lb_listener.http_redirect`, and only when `certificate_arn` is non-empty and `enable_http_redirect` is true. An empty certificate creates no public application listener. Variable descriptions in the ALB module, staging, and production, plus the Terraform README, `docs/SPRINT_25A_INFRASTRUCTURE.md`, the staging deploy pipeline note, and the production cutover runbook, no longer say that an empty certificate means an HTTP-only bootstrap.
+
+`AWS-0104` on `aws_vpc_security_group_egress_rule.api_all` was removed. API egress is now two rules: `api_https` (TCP 443 to `0.0.0.0/0`) and `api_to_rds` (TCP 5432 to the RDS security group). There is no `ip_protocol = "-1"` rule. No DNS egress rule was added. The RDS security group still has `egress = []`.
+
+The pinned Trivy 0.76.0 rescan, with the baseline still empty, reported 22 findings: 2 Critical, 5 High, 5 Medium, 10 Low, 0 Unknown. Both `AWS-0054` findings are gone. Both `api_all` findings are gone. The rescan added two new Critical findings:
+
+| Rule | Severity | Resource | Caller | Lines | Fingerprint |
+|---|---|---|---|---|---|
+| AWS-0104 | Critical | `aws_vpc_security_group_egress_rule.api_https` | `environments/staging/main.tf` `module.security_groups` | `modules/security_groups/main.tf` 77–77 | `9e8497f7734dd975357b9c7cb37bf14d95e1267bdbf294098a2aeecfce90c9e9` |
+| AWS-0104 | Critical | `aws_vpc_security_group_egress_rule.api_https` | `environments/production/main.tf` `module.security_groups` | `modules/security_groups/main.tf` 77–77 | `d0ad7490521db278f1841a1efb7c6c40f0656309d04d97c8f8ed345dcfd1d277` |
+
+Title: "A security group rule should not allow unrestricted egress to any IP address." The checked line is `cidr_ipv4 = "0.0.0.0/0"` on TCP 443. That is the owner-required HTTPS egress for GHCR, Secrets Manager, SSM, and CloudWatch APIs. It is a new Critical finding. It was not baselined. The five approved High exceptions were not loaded, because this rescan did not leave only those High findings. The gate stays fail-closed.
+
+The five High findings that the owner had approved, and that this rescan still reports unchanged, are not exceptions in the baseline:
+
+| Rule | Caller | Fingerprint |
+|---|---|---|
+| AWS-0053 | staging `module.alb` | `30c2ab0c289c6db05f9c6fb9a75c52dad58ef16b0c927949e296167d0b3f93c1` |
+| AWS-0053 | production `module.alb` | `6f477aef7e895a5e0c234f45d31c8b0c4791d8a63fb952f259b19795222a57f7` |
+| AWS-0132 | production `module.logging` ALB access-log bucket, lines 90–99 | `04f17ed0a254dd3c106d1b296becd39faa2c1f2bacd5f915d1d8bfd8429e561c` |
+| AWS-0132 | staging `module.release_artifacts`, lines 42–51 | `2dea7fcaa85f683d00fb3b6fbd6e088ea5636c76575d6da04454777321a24471` |
+| AWS-0132 | production `module.release_artifacts`, lines 42–51 | `83eddb869b1914609e89ea10a3faf7a45bd71bb9fc805abb0305811a1245fdfe` |
+
+Medium and Low findings are unchanged from the 24-finding rescan: AWS-0178 (2), AWS-0176 (2), AWS-0177 (1), AWS-0017 (3), AWS-0089 (3), AWS-0133 (2), AWS-0098 (2). None were baselined.

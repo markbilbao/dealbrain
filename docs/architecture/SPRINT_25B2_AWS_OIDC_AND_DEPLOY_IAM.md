@@ -107,7 +107,7 @@ Role: `${name_prefix}-api-host` (`dealbrain-staging-api-host` / `dealbrain-produ
 | EC2 in private subnet, `associate_public_ip = false` | **Repository-implemented** |
 | NAT Gateway for egress (default on) | **Repository-implemented** → SSM public endpoints reachable after apply |
 | VPC endpoints for `ssm` / `ssmmessages` / `ec2messages` | **Missing** (optional; not required while NAT exists) |
-| API SG egress `0.0.0.0/0` | **Repository-implemented** (needed for GHCR, SM, SSM, RDS) |
+| API SG egress TCP 443 to `0.0.0.0/0` and TCP 5432 to the RDS SG | **Repository-implemented** (GHCR, SM, SSM, CloudWatch APIs, and RDS) |
 | SSM agent | **Expected** on AL2023 AMI (preinstalled); not asserted in Terraform; user_data empty (Docker install deferred) |
 | Public SSH | **Not present** (correct) |
 

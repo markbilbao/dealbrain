@@ -34,7 +34,7 @@ perform `terraform apply` unless an operator explicitly runs it.
   **and** separate from the staging release-artifacts bucket). Locking uses **S3 native
   lockfiles** (`use_lockfile = true`). DynamoDB lock tables are obsolete and must not be
   created for new backends.
-- ACM certificate ARN (optional until TLS cutover; leave empty for HTTP bootstrap)
+- ACM certificate ARN. Empty leaves the ALB with no public application listener. HTTPS exists only when the ARN is set. Port 80 redirects to HTTPS only when that ARN is set and HTTP redirect is enabled.
 - GitHub repository owner/name for OIDC trust variables (25b.2); staging **and
   production** require numeric `github_repository_owner_id` / `github_repository_id`
   for the immutable OIDC `sub` (confirmed `309556720` / `1314423275` for

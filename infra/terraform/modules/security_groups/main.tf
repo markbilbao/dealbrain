@@ -66,11 +66,24 @@ resource "aws_vpc_security_group_ingress_rule" "api_from_alb" {
   referenced_security_group_id = aws_security_group.alb.id
 }
 
-resource "aws_vpc_security_group_egress_rule" "api_all" {
+# API egress is these two rules only. There is no all-protocol rule.
+# Amazon-provided Route 53 Resolver DNS does not get a security-group DNS rule.
+resource "aws_vpc_security_group_egress_rule" "api_https" {
   security_group_id = aws_security_group.api.id
-  description       = "Egress for image pulls, Secrets Manager, RDS, CloudWatch"
-  ip_protocol       = "-1"
+  description       = "HTTPS to GHCR, Secrets Manager, SSM, and CloudWatch APIs"
+  ip_protocol       = "tcp"
+  from_port         = 443
+  to_port           = 443
   cidr_ipv4         = "0.0.0.0/0"
+}
+
+resource "aws_vpc_security_group_egress_rule" "api_to_rds" {
+  security_group_id            = aws_security_group.api.id
+  description                  = "PostgreSQL to the RDS security group only"
+  ip_protocol                  = "tcp"
+  from_port                    = 5432
+  to_port                      = 5432
+  referenced_security_group_id = aws_security_group.rds.id
 }
 
 # RDS SG uses inline rules so Terraform removes the AWS default allow-all

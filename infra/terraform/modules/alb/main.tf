@@ -60,6 +60,8 @@ resource "aws_lb_listener" "https" {
 }
 
 locals {
+  # An empty certificate does not create a public application listener.
+  # Port 80 redirects to HTTPS only when a certificate ARN is set and redirect is enabled.
   http_redirect = var.certificate_arn != "" && var.enable_http_redirect
 }
 
@@ -77,18 +79,5 @@ resource "aws_lb_listener" "http_redirect" {
       protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
-  }
-}
-
-resource "aws_lb_listener" "http_forward" {
-  count = local.http_redirect ? 0 : 1
-
-  load_balancer_arn = aws_lb.this.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
   }
 }
