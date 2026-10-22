@@ -423,26 +423,106 @@ def _api_https_finding(caller_path: str) -> Finding:
     )
 
 
+_HIGH_EXCEPTIONS = {
+    "30c2ab0c289c6db05f9c6fb9a75c52dad58ef16b0c927949e296167d0b3f93c1": {
+        "rationale": "accepted_risk",
+        "rule_id": "AWS-0053",
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+        "caller_resource": "module.alb",
+        "resource": "aws_lb.this",
+        "path": "infra/terraform/modules/alb/main.tf",
+        "start_line": 3,
+        "end_line": 3,
+        "markers": ("staging.piqsavi.com", "API EC2 stays private", "HTTPS requires a certificate"),
+    },
+    "6f477aef7e895a5e0c234f45d31c8b0c4791d8a63fb952f259b19795222a57f7": {
+        "rationale": "accepted_risk",
+        "rule_id": "AWS-0053",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.alb",
+        "resource": "aws_lb.this",
+        "path": "infra/terraform/modules/alb/main.tf",
+        "start_line": 3,
+        "end_line": 3,
+        "markers": ("controlled public beta", "API EC2 stays private", "does not forward"),
+    },
+    "04f17ed0a254dd3c106d1b296becd39faa2c1f2bacd5f915d1d8bfd8429e561c": {
+        "rationale": "not_applicable",
+        "rule_id": "AWS-0132",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.logging",
+        "resource": "module.logging",
+        "path": "infra/terraform/modules/logging/main.tf",
+        "start_line": 90,
+        "end_line": 99,
+        "markers": ("ALB access-log destination", "SSE-S3", "customer-managed KMS key"),
+    },
+    "2dea7fcaa85f683d00fb3b6fbd6e088ea5636c76575d6da04454777321a24471": {
+        "rationale": "accepted_risk",
+        "rule_id": "AWS-0132",
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+        "caller_resource": "module.release_artifacts",
+        "resource": "module.release_artifacts",
+        "path": "infra/terraform/modules/release_artifacts/main.tf",
+        "start_line": 42,
+        "end_line": 51,
+        "markers": ("SSE-S3", "deploy bundles and evidence", "application secrets"),
+    },
+    "83eddb869b1914609e89ea10a3faf7a45bd71bb9fc805abb0305811a1245fdfe": {
+        "rationale": "accepted_risk",
+        "rule_id": "AWS-0132",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.release_artifacts",
+        "resource": "module.release_artifacts",
+        "path": "infra/terraform/modules/release_artifacts/main.tf",
+        "start_line": 42,
+        "end_line": 51,
+        "markers": ("SSE-S3", "application secrets", "customer-managed key policy"),
+    },
+}
+
+
+def _finding_from_exception(item: dict) -> Finding:
+    identity = {
+        "rule_id": item["rule_id"],
+        "severity": item["severity"],
+        "title": item["title"],
+        "path": item["path"],
+        "start_line": item["start_line"],
+        "end_line": item["end_line"],
+        "resource": item["resource"],
+        "caller_path": item["caller_path"],
+        "caller_resource": item["caller_resource"],
+        "namespace": item["namespace"],
+    }
+    assert fingerprint_for(identity) == item["fingerprint"]
+    return Finding(**identity, fingerprint=item["fingerprint"])
+
+
 def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
     assert RATIONALES == ("false_positive", "not_applicable", "accepted_risk")
     data = load_baseline(BASELINE)
     assert data["scanner_version"] == TRIVY_VERSION
     assert data["scope"] == SCAN_RELATIVE
     exceptions = data["exceptions"]
-    assert len(exceptions) == 2
-    by_caller = {item["caller_path"]: item for item in exceptions}
-    assert set(by_caller) == set(_API_HTTPS_FINGERPRINTS)
+    assert len(exceptions) == 7
+    critical = [item for item in exceptions if item["severity"] == "CRITICAL"]
+    high = [item for item in exceptions if item["severity"] == "HIGH"]
+    assert len(critical) == 2
+    assert len(high) == 5
+    assert not any(item["severity"] in {"MEDIUM", "LOW", "UNKNOWN"} for item in exceptions)
+    by_fingerprint = {item["fingerprint"]: item for item in critical}
+    assert set(by_fingerprint) == set(_API_HTTPS_FINGERPRINTS.values())
     findings: list[Finding] = []
     for caller_path, digest in _API_HTTPS_FINGERPRINTS.items():
-        item = by_caller[caller_path]
-        assert item["fingerprint"] == digest
+        item = by_fingerprint[digest]
         assert item["rationale"] == "accepted_risk"
         assert item["rule_id"] == "AWS-0104"
-        assert item["severity"] == "CRITICAL"
         assert item["resource"] == "aws_vpc_security_group_egress_rule.api_https"
         assert item["path"] == "infra/terraform/modules/security_groups/main.tf"
         assert item["start_line"] == 77
         assert item["end_line"] == 77
+        assert item["caller_path"] == caller_path
         assert item["caller_resource"] == "module.security_groups"
         assert item["namespace"] == "builtin.aws.ec2.aws0104"
         assert "*" not in json.dumps(item)
@@ -454,20 +534,37 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         assert finding.fingerprint == digest
         assert exception_matches(finding, item)
         findings.append(finding)
-    assert compare(findings, exceptions) == []
+    accepted: list[Finding] = []
+    for item in exceptions:
+        assert "*" not in json.dumps(item)
+        assert "?" not in json.dumps(item)
+        assert len(item["reason"]) <= 300
+        accepted.append(_finding_from_exception(item))
+    for digest, expected in _HIGH_EXCEPTIONS.items():
+        item = next(row for row in high if row["fingerprint"] == digest)
+        assert item["rationale"] == expected["rationale"]
+        assert item["rule_id"] == expected["rule_id"]
+        assert item["caller_path"] == expected["caller_path"]
+        assert item["caller_resource"] == expected["caller_resource"]
+        assert item["resource"] == expected["resource"]
+        assert item["path"] == expected["path"]
+        assert item["start_line"] == expected["start_line"]
+        assert item["end_line"] == expected["end_line"]
+        assert item["severity"] == "HIGH"
+        for marker in expected["markers"]:
+            assert marker in item["reason"]
+    assert compare(accepted, exceptions) == []
     other_critical = _finding()
     assert other_critical.severity == "CRITICAL"
-    assert other_critical.resource != "aws_vpc_security_group_egress_rule.api_https"
-    regressions = compare([*findings, other_critical], exceptions)
-    assert regressions == [f"unbaselined IaC finding: {other_critical.label()}"]
-    high = _finding(
+    assert other_critical.fingerprint not in {item.fingerprint for item in accepted}
+    unmatched_high = _finding(
         severity="HIGH",
         rule_id="AWS-0053",
         namespace="builtin.aws.elb.aws0053",
-        resource="aws_lb.this",
+        resource="aws_lb.other",
         path="infra/terraform/modules/alb/main.tf",
-        start_line=3,
-        end_line=3,
+        start_line=4,
+        end_line=4,
     )
     medium = _finding(
         severity="MEDIUM",
@@ -479,20 +576,26 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         rule_id="AWS-0017",
         namespace="builtin.aws.cloudwatch.aws0017",
     )
-    remaining = compare([*findings, other_critical, high, medium, low], exceptions)
-    assert [line for line in remaining if "unbaselined" in line] == [
+    leftovers = (other_critical, unmatched_high, medium, low)
+    remaining = compare([*accepted, *leftovers], exceptions)
+    assert [line for line in remaining if line.startswith("unbaselined")] == [
         f"unbaselined IaC finding: {item.label()}"
         for item in sorted(
-            (other_critical, high, medium, low),
-            key=lambda item: (item.path, item.start_line, item.rule_id, item.caller_path),
+            leftovers,
+            key=lambda item: (
+                item.path,
+                item.start_line,
+                item.rule_id,
+                item.caller_path,
+                item.resource,
+            ),
         )
     ]
     stale = compare([], exceptions)
-    assert len(stale) == 2
+    assert len(stale) == 7
     assert all(line.startswith("stale baseline exception") for line in stale)
     one_caller = compare(findings[:1], exceptions)
-    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 1
-    assert not any(line.startswith("unbaselined IaC finding") for line in one_caller)
+    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 6
     changed = json.loads(json.dumps(exceptions))
     changed[0]["fingerprint"] = "b" * 64
     path = _write_baseline(tmp_path / "changed-fingerprint.json", _baseline(exceptions=changed))
@@ -503,8 +606,8 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
     path = _write_baseline(tmp_path / "broad.json", _baseline(exceptions=[broad]))
     with pytest.raises(GateError, match="wildcard"):
         load_baseline(path)
-    assert run(BASELINE, scan=lambda: findings) == 0
-    assert run(BASELINE, scan=lambda: [*findings, other_critical]) == 1
+    assert run(BASELINE, scan=lambda: accepted) == 0
+    assert run(BASELINE, scan=lambda: [*accepted, other_critical, medium, low]) == 1
     assert run(BASELINE, scan=lambda: []) == 1
 
 

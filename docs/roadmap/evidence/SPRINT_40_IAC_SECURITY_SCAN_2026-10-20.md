@@ -33,7 +33,7 @@ Trivy 0.76.0 reports one result row for each scanned root and extra rows for mod
 
 `scripts/check_iac_security_baseline.py` requires Trivy `0.76.0`, parses the JSON itself, and fails closed when the report is missing, malformed, truncated, the wrong schema, the wrong artifact, or the wrong version. `MisconfSummary.Failures` must equal the number of `FAIL` findings in that result. A status other than `FAIL` or `PASS` fails the gate. Exit codes other than 0 fail the gate. Trivy's own exit code is forced to 0 when findings exist so the repository baseline, not the binary's exit code, is the verdict.
 
-A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists only the two `api_https` acceptances in the owner-acceptance section below.
+A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists the two `api_https` acceptances and the five High treatments recorded below. Medium and Low findings stay unbaselined.
 
 ## Initial scan
 
@@ -259,3 +259,43 @@ Both rows are resource `aws_vpc_security_group_egress_rule.api_https`, path `inf
 Residual risk that remains accepted for this beta: any process on the private API instance can open TCP 443 to any IPv4 address, and NAT translates that connection to the internet. The rule allows no other port and no other protocol. Ingress stays TCP 8000 from the ALB security group. A person who already has code execution on that host can send HTTPS to destinations other than GHCR, the package mirrors, and AWS, because the security group cannot filter by hostname.
 
 Outbound controls need another review before wider production exposure. The five High findings and the Medium and Low findings stay unbaselined. The IaC gate still fails closed on those remaining findings. No `terraform apply` was performed. No deploy was performed. No AWS resource was changed. This is not a Sprint 40 reconciliation.
+
+## Owner treatment of the five High findings (2026-10-22)
+
+On October 22, 2026 the owner approved narrowly scoped treatment of the five previously reviewed High findings. The two `api_https` exceptions above are unchanged. Medium and Low findings stay unbaselined. No Terraform source changed. No `terraform apply` was performed. No deploy was performed. No AWS resource was changed. This is not a Sprint 40 reconciliation.
+
+The pinned Trivy 0.76.0 scan still reports 22 findings. These five identities match the current scan.
+
+| Rule | Environment | Rationale | Caller | Lines | Fingerprint |
+|---|---|---|---|---|---|
+| AWS-0053 | production | `accepted_risk` | `module.alb` | `modules/alb/main.tf` 3–3 | `6f477aef7e895a5e0c234f45d31c8b0c4791d8a63fb952f259b19795222a57f7` |
+| AWS-0053 | staging | `accepted_risk` | `module.alb` | `modules/alb/main.tf` 3–3 | `30c2ab0c289c6db05f9c6fb9a75c52dad58ef16b0c927949e296167d0b3f93c1` |
+| AWS-0132 | production ALB logs | `not_applicable` | `module.logging` | `modules/logging/main.tf` 90–99 | `04f17ed0a254dd3c106d1b296becd39faa2c1f2bacd5f915d1d8bfd8429e561c` |
+| AWS-0132 | staging release artifacts | `accepted_risk` | `module.release_artifacts` | `modules/release_artifacts/main.tf` 42–51 | `2dea7fcaa85f683d00fb3b6fbd6e088ea5636c76575d6da04454777321a24471` |
+| AWS-0132 | production release artifacts | `accepted_risk` | `module.release_artifacts` | `modules/release_artifacts/main.tf` 42–51 | `83eddb869b1914609e89ea10a3faf7a45bd71bb9fc805abb0305811a1245fdfe` |
+
+### Production public ALB
+
+`aws_lb.this` sets `internal = false`. That is the public entry for the controlled public beta. The canonical public hostname in the Sprint 41 production plan is `piqsavi.com`. The API instance stays in a private subnet with `associate_public_ip = false`. Its only ingress is TCP 8000 from the ALB security group. The HTTPS listener exists only when `certificate_arn` is non-empty. Port 80 is a redirect to HTTPS only when that certificate is set and `enable_http_redirect` is true. There is no HTTP forward listener.
+
+Residual exposure: once a certificate is present, any internet client that can reach the ALB can open the public listener. `allowed_ingress_cidrs` still defaults to `0.0.0.0/0`. Production DNS cutover remains a later gate. The owner accepts that public exposure for this beta.
+
+### Staging public ALB
+
+Public staging is required by existing evidence, so this finding is `accepted_risk`.
+
+`https://staging.piqsavi.com` is the documented public staging hostname, and the 2026-09-10 launch-readiness record maps it to the staging ALB. Owner browser checks, identity-email links (`PUBLIC_APP_BASE_URL=https://staging.piqsavi.com`), and Shopify fetches of the public UCP profile use that hostname from the internet. An internal load balancer would remove those paths. The same private-host, ALB-only ingress, and certificate-gated listener controls apply. Staging does not pass a separate `internal` flag; the shared module sets `internal = false`.
+
+Residual exposure: staging ingress also defaults to `0.0.0.0/0`. Anyone on the internet can reach the staging listener when a certificate is configured. The Terraform `domain_name` default is still the placeholder `staging.dealbrain.example`. The live hostname evidence is the staging DNS and browser record above, not that placeholder.
+
+### Production ALB access-log bucket
+
+This bucket is `module.logging`, and production passes its name to `module.alb` as `access_logs_bucket`. Its default encryption is SSE-S3 (`AES256`). Current AWS Application Load Balancer documentation, [Enable access logs for your Application Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/enable-access-logging.html), says the only supported server-side encryption option for that destination is Amazon S3-managed keys (SSE-S3). The troubleshooting section says a bucket that uses an unsupported encryption option must be changed back to SSE-S3. A customer-managed KMS key would make this destination invalid for ALB log delivery, so the CMK recommendation does not apply. The exception rationale is `not_applicable`. Staging does not enable this bucket.
+
+### Release-artifacts buckets
+
+Staging and production each instantiate `module.release_artifacts`. Both buckets use SSE-S3, block all four public-access settings, enable versioning, and deny non-TLS transport. The module contract is integrity-checked deploy bundles and append-only deploy evidence. Application secrets are Secrets Manager resources. No Terraform backend in this repository targets these buckets. Host IAM is limited to `releases/*` and `evidence/*`.
+
+The bucket-policy comment mentions denying use as Terraform state. The policy statement itself is `DenyInsecureTransport` only. That statement does not add a separate state-key deny.
+
+The owner accepts SSE-S3 for the controlled beta on both buckets. Residual limitation: the account cannot attach a key policy, disable the key, or record separate KMS decrypt events for these objects. Encryption at rest remains Amazon S3-managed AES-256.
