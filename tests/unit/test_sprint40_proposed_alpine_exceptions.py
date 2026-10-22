@@ -21,7 +21,7 @@ APPROVED = (
         "busybox",
         "1.37.0-r31",
         "not_applicable",
-        "af374eb82e451484d6d8fc70fda50e8030d9b1fa92477ded368cbd8ec4dda630",
+        "5d211c5669ac5dcba38c683130583e021b0b181967ec7d5dc1a106d341edf47b",
     ),
     (
         "GRYPE-002",
@@ -29,7 +29,7 @@ APPROVED = (
         "busybox-binsh",
         "1.37.0-r31",
         "not_applicable",
-        "580bd18a79c8ed298c06d7a63a691c0022d3994f6fcaac925197c389810d27a7",
+        "7676c996e099f0038f33f2b9a5cf7f1e22d7062ffbc95490aeca457d3e36ab88",
     ),
     (
         "GRYPE-003",
@@ -37,7 +37,7 @@ APPROVED = (
         "ssl_client",
         "1.37.0-r31",
         "not_applicable",
-        "d0c255f2f714db9ba04a8948b9315b791865fbb88cea4be2a8d8d8fa9e4162a0",
+        "9e1fbf40a84eb3dcf073f86d46d43bc1d5a4090bdf5b1f0600a3735a0b46755b",
     ),
     (
         "GRYPE-004",

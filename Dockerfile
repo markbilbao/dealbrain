@@ -1,6 +1,10 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.12-alpine3.24 AS base
+# Official library/python tag 3.12-alpine3.24.
+# Manifest-list digest verified from registry-1.docker.io on 2026-10-22.
+# linux/amd64 manifest: sha256:9b98a8d37794ca093ba8d5afe1ffac52f5a15168b9b4e67594d86c20e14fa681
+# CPython 3.12.15. Alpine 3.24.3 (/etc/alpine-release).
+FROM python:3.12-alpine3.24@sha256:92abd2ba1bdfb48b1e2ac224b582dd1558d0d4bb11c903b126b5bf9c448fd656 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

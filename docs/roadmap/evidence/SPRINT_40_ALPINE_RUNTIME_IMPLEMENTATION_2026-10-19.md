@@ -87,3 +87,11 @@ Host pytest: 4577 passed, 5 skipped. Ruff baseline, secret scan, pip-audit, and 
 ## Status
 
 GitHub CI run https://github.com/markbilbao/dealbrain/actions/runs/39221691578 on `b2b2e9150c6408224b9dabcdfe8ebced1b821cf3` succeeded. Lint, contracts, pytest, Compose, Terraform, and the image job passed. The image job printed `container_vuln_gate: OK` with critical 0 and high 0. Container vulnerability scanning is IMPLEMENTED-NOT-PROVEN. This is not production proof. R6 stays PARTIAL because IaC security scanning is absent. Sprint 40 stays Planned and is not ENGINEERING COMPLETE. No image was published and no deploy was performed.
+
+## Pinned base (2026-10-22)
+
+This section does not rewrite the 2026-10-19 build above. The Dockerfile base is now the same tag with an immutable digest:
+
+`python:3.12-alpine3.24@sha256:92abd2ba1bdfb48b1e2ac224b582dd1558d0d4bb11c903b126b5bf9c448fd656`
+
+That digest is the official manifest list from `registry-1.docker.io` for `library/python:3.12-alpine3.24`, verified on 2026-10-22. The linux/amd64 manifest is `sha256:9b98a8d37794ca093ba8d5afe1ffac52f5a15168b9b4e67594d86c20e14fa681`. The image reports CPython 3.12.15 and Alpine 3.24.3. Python and Alpine stay in the 3.12 and 3.24 families. `uv.lock` changes only `certifi` from 2026.7.22 to 2026.10.19. The three CVE-2025-60876 exceptions keep the same vulnerability, packages, version `1.37.0-r31`, and rationale. Their PURLs now say `alpine-3.24.3`. No image was published and no deploy was performed.
