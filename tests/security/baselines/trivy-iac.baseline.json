@@ -289,6 +289,36 @@
       "fingerprint": "c297fffc3fbf710a044d003d8cffe64be9fb0c5fc814d70b744399f4b2207ae1",
       "rationale": "accepted_risk",
       "reason": "Production explicit owner acceptance on 2026-10-22 for the controlled beta. Residual risk: customer-managed encryption keys are absent on the Secrets Manager resources. Review required before wider production exposure."
+    },
+    {
+      "rule_id": "AWS-0078",
+      "severity": "LOW",
+      "title": "Performance Insights encryption should use Customer Managed Keys",
+      "path": "infra/terraform/modules/rds/main.tf",
+      "start_line": 10,
+      "end_line": 48,
+      "resource": "module.rds",
+      "caller_path": "infra/terraform/environments/staging/main.tf",
+      "caller_resource": "module.rds",
+      "namespace": "builtin.aws.rds.aws0078",
+      "fingerprint": "fb297b059e4a46f9e77f937c731e042d1c4697d9e5e1095b8ee94006b79f3c86",
+      "rationale": "accepted_risk",
+      "reason": "Staging: Database Insights Standard remains enabled. Performance Insights retention is seven days. Data is encrypted with an AWS-managed KMS key. Owner accepts lack of customer-managed key controls for the controlled beta. Key-management requirements need review before wider production exposure."
+    },
+    {
+      "rule_id": "AWS-0078",
+      "severity": "LOW",
+      "title": "Performance Insights encryption should use Customer Managed Keys",
+      "path": "infra/terraform/modules/rds/main.tf",
+      "start_line": 10,
+      "end_line": 48,
+      "resource": "module.rds",
+      "caller_path": "infra/terraform/environments/production/main.tf",
+      "caller_resource": "module.rds",
+      "namespace": "builtin.aws.rds.aws0078",
+      "fingerprint": "9af8c32be9274932eb861ec51721436edea85898f8dca8ab727ad6ee909771a7",
+      "rationale": "accepted_risk",
+      "reason": "Production: Database Insights Standard remains enabled. Performance Insights retention is seven days. Data is encrypted with an AWS-managed KMS key. Owner accepts lack of customer-managed key controls for the controlled beta. Key-management requirements need review before wider production exposure."
     }
   ]
 }

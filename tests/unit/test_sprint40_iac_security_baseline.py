@@ -626,6 +626,22 @@ _LOW_EXCEPTIONS = {
         "markers": ("customer-managed encryption keys are absent", "Secrets Manager resources"),
     },
 }
+_PI_KMS_REASON_MARKERS = (
+    "Database Insights Standard remains enabled",
+    "Performance Insights retention is seven days",
+    "Data is encrypted with an AWS-managed KMS key",
+    "lack of customer-managed key controls",
+    "controlled beta",
+    "Key-management requirements need review before wider production exposure",
+)
+_PI_KMS_EXCEPTIONS = {
+    "fb297b059e4a46f9e77f937c731e042d1c4697d9e5e1095b8ee94006b79f3c86": {
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+    },
+    "9af8c32be9274932eb861ec51721436edea85898f8dca8ab727ad6ee909771a7": {
+        "caller_path": "infra/terraform/environments/production/main.tf",
+    },
+}
 
 
 def _finding_from_exception(item: dict) -> Finding:
@@ -651,7 +667,7 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
     assert data["scanner_version"] == TRIVY_VERSION
     assert data["scope"] == SCAN_RELATIVE
     exceptions = data["exceptions"]
-    assert len(exceptions) == 19
+    assert len(exceptions) == 21
     critical = [item for item in exceptions if item["severity"] == "CRITICAL"]
     high = [item for item in exceptions if item["severity"] == "HIGH"]
     medium = [item for item in exceptions if item["severity"] == "MEDIUM"]
@@ -659,7 +675,7 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
     assert len(critical) == 2
     assert len(high) == 5
     assert len(medium) == 2
-    assert len(low) == 10
+    assert len(low) == 12
     assert not any(item["severity"] == "UNKNOWN" for item in exceptions)
     by_fingerprint = {item["fingerprint"]: item for item in critical}
     assert set(by_fingerprint) == set(_API_HTTPS_FINGERPRINTS.values())
@@ -718,8 +734,10 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         assert item["namespace"] == "builtin.aws.rds.aws0176"
         for marker in _MEDIUM_REASON_MARKERS:
             assert marker in item["reason"]
-    assert {item["fingerprint"] for item in low} == set(_LOW_EXCEPTIONS)
+    assert {item["fingerprint"] for item in low} == set(_LOW_EXCEPTIONS) | set(_PI_KMS_EXCEPTIONS)
     for item in low:
+        if item["fingerprint"] not in _LOW_EXCEPTIONS:
+            continue
         expected = _LOW_EXCEPTIONS[item["fingerprint"]]
         assert item["rationale"] == "accepted_risk"
         assert item["severity"] == "LOW"
@@ -738,6 +756,21 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         for marker in _LOW_REASON_MARKERS:
             assert marker in item["reason"]
         for marker in expected["markers"]:
+            assert marker in item["reason"]
+    pi_rows = [item for item in low if item["rule_id"] == "AWS-0078"]
+    assert {item["fingerprint"] for item in pi_rows} == set(_PI_KMS_EXCEPTIONS)
+    for item in pi_rows:
+        expected = _PI_KMS_EXCEPTIONS[item["fingerprint"]]
+        assert item["rationale"] == "accepted_risk"
+        assert item["title"] == "Performance Insights encryption should use Customer Managed Keys"
+        assert item["path"] == "infra/terraform/modules/rds/main.tf"
+        assert item["start_line"] == 10
+        assert item["end_line"] == 48
+        assert item["resource"] == "module.rds"
+        assert item["caller_resource"] == "module.rds"
+        assert item["caller_path"] == expected["caller_path"]
+        assert item["namespace"] == "builtin.aws.rds.aws0078"
+        for marker in _PI_KMS_REASON_MARKERS:
             assert marker in item["reason"]
     assert compare(accepted, exceptions) == []
     other_critical = _finding()
@@ -778,10 +811,10 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         )
     ]
     stale = compare([], exceptions)
-    assert len(stale) == 19
+    assert len(stale) == 21
     assert all(line.startswith("stale baseline exception") for line in stale)
     one_caller = compare(findings[:1], exceptions)
-    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 18
+    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 20
     changed = json.loads(json.dumps(exceptions))
     changed[0]["fingerprint"] = "b" * 64
     path = _write_baseline(tmp_path / "changed-fingerprint.json", _baseline(exceptions=changed))
