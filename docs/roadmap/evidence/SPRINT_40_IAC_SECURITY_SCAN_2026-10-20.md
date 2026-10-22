@@ -388,3 +388,27 @@ On October 22, 2026 the owner explicitly accepted AWS-managed KMS encryption for
 |---|---|
 | staging | `fb297b059e4a46f9e77f937c731e042d1c4697d9e5e1095b8ee94006b79f3c86` |
 | production | `9af8c32be9274932eb861ec51721436edea85898f8dca8ab727ad6ee909771a7` |
+
+## uv image pin (2026-10-22)
+
+The dependency stage no longer copies `ghcr.io/astral-sh/uv:latest`. It copies the official Astral image `ghcr.io/astral-sh/uv:0.13.5` by immutable manifest-list digest. The Python base digest is unchanged. `uv.lock`, application dependencies, Alpine, Terraform, and the Trivy baseline are unchanged. This is not a Sprint 40 reconciliation and it does not start Sprint 41.
+
+| Field | Value |
+|---|---|
+| Version | uv 0.13.5 (`x86_64-unknown-linux-musl` in the linux/amd64 image) |
+| Tag | `0.13.5` |
+| Registry | `ghcr.io/astral-sh/uv` |
+| Source | `https://github.com/astral-sh/uv` |
+| GitHub release | `https://github.com/astral-sh/uv/releases/tag/0.13.5`, published 2026-10-22T01:35:54Z, not a prerelease |
+| Image revision | `46776a95d6686ac0160c10611327ce491e6b202f` (the release target commit) |
+| Index digest | `sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff` |
+| linux/amd64 manifest | `sha256:a12ede1e6dc90d3b3e600d0901731e71f0ab0f4d72683ea097b76c19c43cc8df` |
+| linux/arm64 manifest | `sha256:d3a8362fee5c061dd78452b5915598fc8fbd15050db3a3d919fba5f2e38c629a` |
+
+Verification on 2026-10-22: an anonymous `ghcr.io` pull token was used. `curl` and a separate Python client both received `Docker-Content-Digest: sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff` for tag `0.13.5`, and that value matched the SHA-256 of the raw OCI index bytes. The index `org.opencontainers.image.version` is `0.13.5`. The index contains a `linux/amd64` manifest. The platform config blob `sha256:2ded3f959e5d71c0de7340c3dba896a4c03ecbc00c24f2720f9a560ec5ec4b1c` is `architecture: amd64`, `os: linux`, entrypoint `/uv`, and the same version and revision labels. The linux/amd64 layer `sha256:7c79a68fb7de557c5181ba22e4558a1efd745dfdcdb341514122d5690616b057` contains `uv` and `uvx`. The extracted `uv` binary prints `uv 0.13.5 (x86_64-unknown-linux-musl)`. At verification time, tag `latest` resolved to the same index digest. The pin uses the version tag plus the index digest.
+
+The official GitHub musl archive `uv-x86_64-unknown-linux-musl.tar.gz` matched release checksum `57ef9d9ccb01fb1bd998df995b0dd221b52f7d7841fbea93f2d4463bf61fb7a9`. The binary inside that archive is not byte-identical to the binary in the GHCR image (archive binary `1981106dde7ff09d000678bbaa0049deee68bd5d3560856f9f112f8d576dc9bc`, image binary `783ddacbd62bce7d3201bd1d0c2287ac3aa63813ce91f97292c83f26d6227a26`). The image binary is a non-PIE static executable. The archive binary is static-PIE. Both report version 0.13.5. The pinned reference is the official GHCR image, identified by the registry digest and OCI labels.
+
+`uv 0.13.5` `lock --check` against the committed `uv.lock` (version 1, revision 5) exited 0 and left the lock bytes unchanged. `uv sync --no-dev --no-install-project` in a copy of `pyproject.toml` and `uv.lock` installed the 31 locked runtime packages and left the lock bytes unchanged. A follow-up `uv sync --no-dev --no-install-project --locked --offline` also succeeded.
+
+The Dockerfile command remains `uv sync --no-dev --no-install-project`. It does not pass `--frozen` or `--locked`. With this uv and this lock, the command did not rewrite `uv.lock`. If `pyproject.toml` and `uv.lock` later diverge, that command can update the copied lock inside the image and install the new resolution. `--locked` would fail that build. `--frozen` would sync without updating the lock. The command was left unchanged.
