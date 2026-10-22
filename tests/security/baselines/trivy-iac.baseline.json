@@ -109,6 +109,36 @@
       "fingerprint": "83eddb869b1914609e89ea10a3faf7a45bd71bb9fc805abb0305811a1245fdfe",
       "rationale": "accepted_risk",
       "reason": "Production explicit owner risk acceptance on 2026-10-22 to retain SSE-S3 on the release-artifacts bucket for this beta. Bundles and evidence only, no Terraform state or application secrets. Public access is blocked. There is no customer-managed key policy or separate KMS audit."
+    },
+    {
+      "rule_id": "AWS-0176",
+      "severity": "MEDIUM",
+      "title": "RDS IAM Database Authentication Disabled",
+      "path": "infra/terraform/modules/rds/main.tf",
+      "start_line": 10,
+      "end_line": 48,
+      "resource": "module.rds",
+      "caller_path": "infra/terraform/environments/staging/main.tf",
+      "caller_resource": "module.rds",
+      "namespace": "builtin.aws.rds.aws0176",
+      "fingerprint": "22c9faba3fe761322af784f2c7ca20c9ec8930fcb5a14b0e5463bec325ab4af2",
+      "rationale": "accepted_risk",
+      "reason": "Staging 2026-10-22 accepts Secrets Manager password authentication for this controlled beta. Residual risk: the AWS-managed master secret remains the application credential. Review least-privileged application DB credentials before launch. IAM authentication migration is a separate decision."
+    },
+    {
+      "rule_id": "AWS-0176",
+      "severity": "MEDIUM",
+      "title": "RDS IAM Database Authentication Disabled",
+      "path": "infra/terraform/modules/rds/main.tf",
+      "start_line": 10,
+      "end_line": 48,
+      "resource": "module.rds",
+      "caller_path": "infra/terraform/environments/production/main.tf",
+      "caller_resource": "module.rds",
+      "namespace": "builtin.aws.rds.aws0176",
+      "fingerprint": "116e42aeb1fd6b8967dd296973a5e58f2ed29d7461f3b4525aa864134d45acbb",
+      "rationale": "accepted_risk",
+      "reason": "Production 2026-10-22 accepts Secrets Manager password authentication for this controlled beta. Residual risk: the AWS-managed master secret remains the application credential. Review least-privileged application DB credentials before launch. IAM authentication migration is a separate decision."
     }
   ]
 }

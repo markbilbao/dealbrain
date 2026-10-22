@@ -33,7 +33,7 @@ Trivy 0.76.0 reports one result row for each scanned root and extra rows for mod
 
 `scripts/check_iac_security_baseline.py` requires Trivy `0.76.0`, parses the JSON itself, and fails closed when the report is missing, malformed, truncated, the wrong schema, the wrong artifact, or the wrong version. `MisconfSummary.Failures` must equal the number of `FAIL` findings in that result. A status other than `FAIL` or `PASS` fails the gate. Exit codes other than 0 fail the gate. Trivy's own exit code is forced to 0 when findings exist so the repository baseline, not the binary's exit code, is the verdict.
 
-A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists the two `api_https` acceptances and the five High treatments recorded below. Medium and Low findings stay unbaselined.
+A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists the two `api_https` acceptances, the five High treatments, and the two AWS-0176 password-authentication acceptances recorded below. The VPC flow-log and staging deletion-protection Medium findings were removed in source. Low findings stay unbaselined.
 
 ## Initial scan
 
@@ -299,3 +299,38 @@ Staging and production each instantiate `module.release_artifacts`. Both buckets
 The bucket-policy comment mentions denying use as Terraform state. The policy statement itself is `DenyInsecureTransport` only. That statement does not add a separate state-key deny.
 
 The owner accepts SSE-S3 for the controlled beta on both buckets. Residual limitation: the account cannot attach a key policy, disable the key, or record separate KMS decrypt events for these objects. Encryption at rest remains Amazon S3-managed AES-256.
+
+## Owner treatment of the five Medium findings (2026-10-22)
+
+On October 22, 2026 the owner approved a limited treatment of the five Medium findings. The seven earlier exceptions are unchanged. No Low finding was baselined. No `terraform apply` was performed. No deploy was performed. No AWS resource was changed. This is not a Sprint 40 reconciliation and it does not start Sprint 41 or Sprint 42.
+
+### AWS-0178 REJECT flow logs
+
+Staging and production each get one VPC-level flow log from `module.networking`. `traffic_type` is `REJECT`. The destination is a dedicated S3 bucket in that module, not the ALB access-log bucket. The bucket blocks public access, denies non-TLS transport, and expires current and noncurrent objects after 14 days. Delivery is limited to `delivery.logs.amazonaws.com` `s3:PutObject` on `AWSLogs/<account>/*` and `s3:GetBucketAcl` on the bucket, each conditioned on `aws:SourceAccount`, `aws:SourceArn`, and, for the write, `s3:x-amz-acl = bucket-owner-full-control`. The API instance role gains no permission.
+
+SSE-S3 on this bucket produced a new High AWS-0132 in a pinned Trivy 0.76.0 probe. That design was not committed. VPC flow logs can use a customer-managed key, unlike ALB access logs, so the bucket uses SSE-KMS with the key ARN, annual rotation, and a delivery key-policy statement for the same service principal and source conditions. The account root keeps `kms:*` on that key so IAM can administer it. The rescan of this tree added no new Critical or High finding.
+
+The same rescan added two Low AWS-0089 results, one per environment, on `aws_s3_bucket.flow_logs` at `modules/networking/main.tf` lines 184–191. Staging fingerprint `125d716eb7d515ffd2e36df7fd025653ab36496e3ca7f2a708eeb56415427cf6`. Production fingerprint `35e2f7db63b0a19ff5dfa5ab45d65e74c339c3eb5301f62771d615a711a948b9`. They are not baselined. A second bucket for server access logs would move the same Low, and an SSE-S3 logging bucket would reintroduce AWS-0132. Security settings were not weakened to clear it.
+
+REJECT-only flow logs do not monitor successful outbound HTTPS. Accepted NAT traffic to GHCR, package mirrors, and AWS APIs is absent from these logs. Successful outbound traffic monitoring and alerting remain an explicit future operational requirement. This slice does not implement that monitoring and does not complete Sprint 42.
+
+These resources are source only. A later apply would create two customer-managed keys and two buckets and would start vended-log delivery charges. This slice does not apply them and does not incur those charges.
+
+### AWS-0176 password authentication
+
+`iam_database_authentication_enabled` stays unset. The application still builds `DATABASE_URL` from the AWS-managed RDS master secret in Secrets Manager. Enabling the RDS flag would not switch that path, and granting `rds_iam` to the master user would make IAM authentication take precedence over the password.
+
+The owner accepts that password design temporarily for the controlled beta. The baseline adds exactly two `accepted_risk` rows for the current identities. Both are `module.rds`, `modules/rds/main.tf` lines 10–48, namespace `builtin.aws.rds.aws0176`, title "RDS IAM Database Authentication Disabled".
+
+| Environment | Caller | Fingerprint |
+|---|---|---|
+| staging | `infra/terraform/environments/staging/main.tf` `module.rds` | `22c9faba3fe761322af784f2c7ca20c9ec8930fcb5a14b0e5463bec325ab4af2` |
+| production | `infra/terraform/environments/production/main.tf` `module.rds` | `116e42aeb1fd6b8967dd296973a5e58f2ed29d7461f3b4525aa864134d45acbb` |
+
+Residual risk: the master password in the AWS-managed secret remains the application credential. A least-privileged application DB credential must be reviewed before launch. A future IAM database authentication migration is a separate decision and is not implemented here.
+
+### AWS-0177 staging deletion safety
+
+Staging `deletion_protection` now defaults to `true`, and staging `skip_final_snapshot` now defaults to `false`. Production behavior is unchanged. Staging backup retention stays 7 days. Staging Multi-AZ stays off. The staging example tfvars matches those defaults. No staging teardown script required the old skip.
+
+Deletion now requires deliberate operator intervention: protection must be turned off before destroy, and destroy writes a final snapshot. That snapshot may incur storage charges. The pinned scan no longer reports AWS-0177.

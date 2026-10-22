@@ -481,6 +481,24 @@ _HIGH_EXCEPTIONS = {
     },
 }
 
+_MEDIUM_EXCEPTIONS = {
+    "22c9faba3fe761322af784f2c7ca20c9ec8930fcb5a14b0e5463bec325ab4af2": {
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+    },
+    "116e42aeb1fd6b8967dd296973a5e58f2ed29d7461f3b4525aa864134d45acbb": {
+        "caller_path": "infra/terraform/environments/production/main.tf",
+    },
+}
+_MEDIUM_REASON_MARKERS = (
+    "Secrets Manager password authentication",
+    "controlled beta",
+    "AWS-managed master secret",
+    "Residual risk",
+    "application credential",
+    "least-privileged application DB credentials before launch",
+    "IAM authentication migration is a separate decision",
+)
+
 
 def _finding_from_exception(item: dict) -> Finding:
     identity = {
@@ -505,12 +523,14 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
     assert data["scanner_version"] == TRIVY_VERSION
     assert data["scope"] == SCAN_RELATIVE
     exceptions = data["exceptions"]
-    assert len(exceptions) == 7
+    assert len(exceptions) == 9
     critical = [item for item in exceptions if item["severity"] == "CRITICAL"]
     high = [item for item in exceptions if item["severity"] == "HIGH"]
+    medium = [item for item in exceptions if item["severity"] == "MEDIUM"]
     assert len(critical) == 2
     assert len(high) == 5
-    assert not any(item["severity"] in {"MEDIUM", "LOW", "UNKNOWN"} for item in exceptions)
+    assert len(medium) == 2
+    assert not any(item["severity"] in {"LOW", "UNKNOWN"} for item in exceptions)
     by_fingerprint = {item["fingerprint"]: item for item in critical}
     assert set(by_fingerprint) == set(_API_HTTPS_FINGERPRINTS.values())
     findings: list[Finding] = []
@@ -553,6 +573,21 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         assert item["severity"] == "HIGH"
         for marker in expected["markers"]:
             assert marker in item["reason"]
+    assert {item["fingerprint"] for item in medium} == set(_MEDIUM_EXCEPTIONS)
+    for item in medium:
+        expected = _MEDIUM_EXCEPTIONS[item["fingerprint"]]
+        assert item["rationale"] == "accepted_risk"
+        assert item["rule_id"] == "AWS-0176"
+        assert item["title"] == "RDS IAM Database Authentication Disabled"
+        assert item["path"] == "infra/terraform/modules/rds/main.tf"
+        assert item["start_line"] == 10
+        assert item["end_line"] == 48
+        assert item["resource"] == "module.rds"
+        assert item["caller_resource"] == "module.rds"
+        assert item["caller_path"] == expected["caller_path"]
+        assert item["namespace"] == "builtin.aws.rds.aws0176"
+        for marker in _MEDIUM_REASON_MARKERS:
+            assert marker in item["reason"]
     assert compare(accepted, exceptions) == []
     other_critical = _finding()
     assert other_critical.severity == "CRITICAL"
@@ -592,10 +627,10 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         )
     ]
     stale = compare([], exceptions)
-    assert len(stale) == 7
+    assert len(stale) == 9
     assert all(line.startswith("stale baseline exception") for line in stale)
     one_caller = compare(findings[:1], exceptions)
-    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 6
+    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 8
     changed = json.loads(json.dumps(exceptions))
     changed[0]["fingerprint"] = "b" * 64
     path = _write_baseline(tmp_path / "changed-fingerprint.json", _baseline(exceptions=changed))

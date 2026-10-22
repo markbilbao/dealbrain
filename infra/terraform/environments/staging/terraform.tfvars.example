@@ -32,9 +32,11 @@ db_name            = "dealbrain"
 db_username        = "dealbrain"
 
 backup_retention_days = 7
-deletion_protection   = false
-multi_az              = false
-skip_final_snapshot   = true
+# Destroy requires an operator to disable deletion protection first.
+# The final snapshot may incur storage charges.
+deletion_protection = true
+multi_az            = false
+skip_final_snapshot = false
 
 # Leave empty until ACM cert exists (Sprint 25b+ DNS/TLS).
 alb_certificate_arn = ""

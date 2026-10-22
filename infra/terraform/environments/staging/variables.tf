@@ -107,9 +107,9 @@ variable "backup_retention_days" {
 }
 
 variable "deletion_protection" {
-  description = "RDS deletion protection."
+  description = "RDS deletion protection. Destroy requires an operator to disable this first."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "multi_az" {
@@ -119,9 +119,9 @@ variable "multi_az" {
 }
 
 variable "skip_final_snapshot" {
-  description = "Skip final snapshot on destroy (staging may be true)."
+  description = "Skip the final snapshot on destroy. Staging keeps a final snapshot; that snapshot may incur storage charges."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "alb_certificate_arn" {

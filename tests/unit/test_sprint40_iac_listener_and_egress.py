@@ -15,6 +15,10 @@ ALB_VARIABLES = ROOT / "infra/terraform/modules/alb/variables.tf"
 SECURITY_GROUPS = ROOT / "infra/terraform/modules/security_groups/main.tf"
 EC2 = ROOT / "infra/terraform/modules/ec2/main.tf"
 LOGGING = ROOT / "infra/terraform/modules/logging/main.tf"
+NETWORKING = ROOT / "infra/terraform/modules/networking/main.tf"
+IAM = ROOT / "infra/terraform/modules/iam/main.tf"
+RDS = ROOT / "infra/terraform/modules/rds/main.tf"
+STAGING_EXAMPLE = ROOT / "infra/terraform/environments/staging/terraform.tfvars.example"
 RELEASE_ARTIFACTS = ROOT / "infra/terraform/modules/release_artifacts/main.tf"
 STAGING = ROOT / "infra/terraform/environments/staging/main.tf"
 PRODUCTION = ROOT / "infra/terraform/environments/production/main.tf"
@@ -183,3 +187,86 @@ def test_alb_access_log_bucket_stays_on_sse_s3() -> None:
     assert 'sse_algorithm = "AES256"' in encryption
     assert "aws:kms" not in encryption
     assert "kms_master_key_id" not in encryption
+
+
+def _assignment(text: str, name: str) -> str:
+    match = re.search(rf'(?m)^variable "{name}" \{{(.*?)^\}}', text, re.DOTALL)
+    assert match is not None, name
+    default = re.search(r"(?m)^\s*default\s+=\s+(.+)$", match.group(1))
+    assert default is not None, name
+    return default.group(1).strip()
+
+
+def test_reject_flow_logs_use_a_dedicated_encrypted_bucket() -> None:
+    text = NETWORKING.read_text(encoding="utf-8")
+    assert "successful outbound HTTPS" in text
+    assert "not the" in text and "API instance role" in text
+    blocks = _blocks(text)
+    flow_logs = [name for kind, name, _body in blocks if kind == "aws_flow_log"]
+    assert flow_logs == ["reject"]
+    flow = _one(blocks, "aws_flow_log", "reject")
+    assert "vpc_id               = aws_vpc.this.id" in flow
+    assert 'traffic_type         = "REJECT"' in flow
+    assert 'log_destination_type = "s3"' in flow
+    assert "log_destination      = aws_s3_bucket.flow_logs.arn" in flow
+    assert "aws_s3_bucket.alb_logs" not in text
+    assert "iam_role" not in flow
+
+    bucket = _one(blocks, "aws_s3_bucket", "flow_logs")
+    assert "vpc-flow-logs" in bucket
+    public = _one(blocks, "aws_s3_bucket_public_access_block", "flow_logs")
+    assert "block_public_acls       = true" in public
+    assert "block_public_policy     = true" in public
+    assert "ignore_public_acls      = true" in public
+    assert "restrict_public_buckets = true" in public
+    encryption = _one(blocks, "aws_s3_bucket_server_side_encryption_configuration", "flow_logs")
+    assert 'sse_algorithm     = "aws:kms"' in encryption
+    assert "kms_master_key_id = aws_kms_key.flow_logs.arn" in encryption
+    lifecycle = _one(blocks, "aws_s3_bucket_lifecycle_configuration", "flow_logs")
+    assert "days = 14" in lifecycle
+    assert "noncurrent_days = 14" in lifecycle
+    policy = _one(blocks, "aws_s3_bucket_policy", "flow_logs")
+    assert "DenyInsecureTransport" in policy
+    assert "delivery.logs.amazonaws.com" in policy
+    assert "s3:PutObject" in policy
+    assert "s3:GetBucketAcl" in policy
+    assert "s3:ListBucket" not in policy
+    assert "AWSLogs/${local.account_id}/*" in policy
+    assert "aws:SourceAccount" in policy
+    assert "aws:SourceArn" in policy
+    assert "bucket-owner-full-control" in policy
+    key = _one(blocks, "aws_kms_key", "flow_logs")
+    assert "enable_key_rotation     = true" in key
+    assert "AllowVpcFlowLogDelivery" in key
+    assert "delivery.logs.amazonaws.com" in key
+    iam = IAM.read_text(encoding="utf-8")
+    assert "flow_logs" not in iam
+    assert "delivery.logs.amazonaws.com" not in iam
+    for path in (STAGING, PRODUCTION):
+        environment = path.read_text(encoding="utf-8")
+        assert environment.count('module "networking"') == 1
+
+
+def test_staging_rds_requires_protection_and_a_final_snapshot() -> None:
+    staging = STAGING_VARIABLES.read_text(encoding="utf-8")
+    production = PRODUCTION_VARIABLES.read_text(encoding="utf-8")
+    assert _assignment(staging, "deletion_protection") == "true"
+    assert _assignment(staging, "skip_final_snapshot") == "false"
+    assert _assignment(staging, "backup_retention_days") == "7"
+    assert _assignment(staging, "multi_az") == "false"
+    assert "storage charges" in staging
+    assert _assignment(production, "deletion_protection") == "true"
+    assert _assignment(production, "skip_final_snapshot") == "false"
+    assert "skip_final_snapshot == false" in production
+    assert "backup_retention_days >= 30" in production
+    assert _assignment(production, "multi_az") == "true"
+    example = STAGING_EXAMPLE.read_text(encoding="utf-8")
+    assert "deletion_protection = true" in example
+    assert "skip_final_snapshot = false" in example
+    assert "backup_retention_days = 7" in example
+    assert "multi_az            = false" in example
+    rds = RDS.read_text(encoding="utf-8")
+    assert "iam_database_authentication_enabled" not in rds
+    assert "manage_master_user_password = true" in rds
+    assert "deletion_protection       = var.deletion_protection" in rds
+    assert "skip_final_snapshot       = var.skip_final_snapshot" in rds

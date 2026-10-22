@@ -68,7 +68,7 @@ variable "multi_az" {
 }
 
 variable "skip_final_snapshot" {
-  description = "Skip final snapshot on destroy. Must be false for production."
+  description = "Skip the final snapshot on destroy. Staging and production defaults are false. A final snapshot may incur storage charges."
   type        = bool
   default     = false
 }

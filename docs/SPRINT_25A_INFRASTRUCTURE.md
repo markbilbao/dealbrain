@@ -90,7 +90,7 @@ terraform init -backend=false && terraform validate
 | App secrets path | `dealbrain/staging/*` | `dealbrain/production/*` |
 | RDS master secret | Distinct AWS-managed Secrets Manager ARN | Distinct AWS-managed Secrets Manager ARN |
 | IAM | Read staging app + staging RDS secret; **deny** production path | Read production app + production RDS secret; **deny** staging path |
-| RDS backups | ≥7 days | ≥30 days, deletion protection, Multi-AZ |
+| RDS backups | ≥7 days, deletion protection, final snapshot on destroy | ≥30 days, deletion protection, Multi-AZ, final snapshot on destroy |
 | State | Separate key / backend | Separate key / backend |
 
 Production credentials must never be granted to staging roles or hosts.
@@ -239,7 +239,10 @@ evidence before merge — do not claim local validate/build passed.
 
 ## Teardown cautions
 
-- Production RDS has deletion protection and requires a final snapshot
+- Staging and production RDS have deletion protection and require a final snapshot
+- Destroying either instance requires an operator to disable deletion protection first
+- That final snapshot may incur storage charges
+- Staging backup retention stays at least 7 days and Multi-AZ stays off; production stays at least 30 days and Multi-AZ
 - Secrets have recovery windows — do not destroy casually
 - Never copy unsanitized production data to staging
 
