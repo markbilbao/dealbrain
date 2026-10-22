@@ -41,5 +41,9 @@ def test_production_uv_image_is_digest_pinned() -> None:
         "/uv /uvx /bin/"
     )
     assert pinned in dockerfile
-    assert "python:3.12-alpine3.24@sha256:92abd2ba1bdfb48b1e2ac224b582dd1558d0d4bb11c903b126b5bf9c448fd656" in dockerfile
+    python_base = (
+        "python:3.12-alpine3.24@sha256:"
+        "92abd2ba1bdfb48b1e2ac224b582dd1558d0d4bb11c903b126b5bf9c448fd656"
+    )
+    assert python_base in dockerfile
     assert "ghcr.io/astral-sh/uv:latest" not in dockerfile
