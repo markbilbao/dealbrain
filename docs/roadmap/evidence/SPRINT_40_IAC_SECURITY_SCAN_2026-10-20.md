@@ -184,3 +184,61 @@ The five High findings that the owner had approved, and that this rescan still r
 | AWS-0132 | production `module.release_artifacts`, lines 42–51 | `83eddb869b1914609e89ea10a3faf7a45bd71bb9fc805abb0305811a1245fdfe` |
 
 Medium and Low findings are unchanged from the 24-finding rescan: AWS-0178 (2), AWS-0176 (2), AWS-0177 (1), AWS-0017 (3), AWS-0089 (3), AWS-0133 (2), AWS-0098 (2). None were baselined.
+
+## AWS-0104 `api_https` classification (2026-10-22)
+
+This section records an owner decision for the two remaining Critical findings. It does not accept the risk. Preserving NAT for the PH-first controlled public beta is under consideration and is not formal acceptance. The baseline stays empty. `RATIONALES` in `scripts/check_iac_security_baseline.py` stays `false_positive` and `not_applicable`. No Terraform, scanner, or gate file changed in this slice. No `terraform apply` was performed. No deploy was performed. No AWS resource was changed. This is not a Sprint 40 reconciliation.
+
+Recommended classification: real architectural exposure, pending explicit acceptance. The label that can record that acceptance later is `accepted_risk`. That label is absent from the gate. `not_applicable` is untrue here. `false_positive` is untrue here.
+
+### Why outbound HTTPS through NAT is required
+
+The API host is in a private subnet with `associate_public_ip = false`. Staging and production both default `enable_nat_gateway` to true. The private route table sends `0.0.0.0/0` to the NAT gateway. There is no `aws_vpc_endpoint` in `infra/terraform`.
+
+That path is what the host uses for:
+
+- Amazon Linux 2023 `dnf` during bootstrap, including `docker`, `awscli`, and, on production, `amazon-ssm-agent`.
+- `https://download.docker.com` for the Docker Inc GPG key and the `docker-compose-plugin` RPM. The host keeps the Amazon Linux `docker` RPM.
+- `ghcr.io` login and `docker pull`. `scripts/deploy/host/ghcr-login.sh` reads `dealbrain/<env>/ghcr_pull` from Secrets Manager. Host IAM denies `ecr:*`.
+- Public AWS HTTPS APIs that the instance role calls today: Secrets Manager, STS, S3 release bundles and evidence, CloudWatch Logs, SSM (`ssm`, `ssmmessages`, `ec2messages`), and the deploy-time EC2 and load-balancer describe calls.
+
+`api_to_rds` is separate: TCP 5432 to the RDS security group only. The RDS security group keeps `egress = []`. Amazon-provided DNS does not use an API security-group DNS rule. Those paths are outside this finding.
+
+### Why staging and production both report it
+
+`aws_vpc_security_group_egress_rule.api_https` is one resource in `infra/terraform/modules/security_groups/main.tf`. Staging `module.security_groups` and production `module.security_groups` each instantiate that module. Trivy emits one finding per caller. The checked line in both is `cidr_ipv4 = "0.0.0.0/0"` at line 77. Title: "A security group rule should not allow unrestricted egress to any IP address." Namespace: `builtin.aws.ec2.aws0104`. Severity: CRITICAL. Rule: AWS-0104.
+
+| Environment | Caller | Resource | Path | Fingerprint |
+|---|---|---|---|---|
+| staging | `infra/terraform/environments/staging/main.tf` `module.security_groups` | `aws_vpc_security_group_egress_rule.api_https` | `infra/terraform/modules/security_groups/main.tf` 77–77 | `9e8497f7734dd975357b9c7cb37bf14d95e1267bdbf294098a2aeecfce90c9e9` |
+| production | `infra/terraform/environments/production/main.tf` `module.security_groups` | `aws_vpc_security_group_egress_rule.api_https` | `infra/terraform/modules/security_groups/main.tf` 77–77 | `d0ad7490521db278f1841a1efb7c6c40f0656309d04d97c8f8ed345dcfd1d277` |
+
+CI run `39764647224` on head `7c744f7a62315d6d03aa567d929445bcdf2f637e` reported these two fingerprints with the same identities. The Terraform job failed on the empty baseline. The other CI jobs passed.
+
+### Bounded Terraform source fix
+
+No edit limited to this security-group rule can delete `0.0.0.0/0` and keep the current bootstrap and deploy path. A security group matches IP addresses and ports. It cannot name `ghcr.io`, the Amazon Linux mirrors, or `download.docker.com`. Those names are not stable AWS prefix lists. Replacing the CIDR with a snapshot of third-party addresses would break the next address change and would still miss the public AWS APIs unless those APIs moved too.
+
+Interface VPC endpoints for Secrets Manager, STS, CloudWatch Logs, SSM, EC2, and Elastic Load Balancing, plus an S3 gateway endpoint, would move those AWS calls off the public internet. They would leave GHCR, `dnf`, and `download.docker.com` on HTTPS to the internet. The `api_https` rule, and AWS-0104, would remain. Removing that remaining public HTTPS path means a different image and bootstrap design, such as a prebaked AMI or an in-VPC registry. That is an architecture change, outside a bounded source fix.
+
+### Residual risk of TCP 443 to `0.0.0.0/0`
+
+Any process on the API instance can open TCP port 443 to any IPv4 address. NAT translates that connection to the internet. The rule allows no other port and no other protocol. The instance stays unreachable from the internet on this rule: API ingress is TCP 8000 from the ALB security group only, `associate_public_ip` is false, and the subnet is private. A person who already has code execution on that host can use the rule to send HTTPS anywhere, including hosts other than GHCR, the package mirrors, and AWS. The rule cannot limit destinations by hostname.
+
+### Why `not_applicable` cannot describe these findings
+
+AWS-0104 fires because the committed rule sets `cidr_ipv4 = "0.0.0.0/0"`. The scanner read that line correctly, so `false_positive` is untrue. The check's control, "do not allow unrestricted egress," applies to this rule. Keeping the rule is a choice to retain a broad egress path. `not_applicable` would hide that choice. The gate rejects `accepted_risk` today: `test_wildcard_and_malformed_exceptions_are_rejected` expects `load_baseline` to fail when an exception uses that rationale.
+
+### Smallest policy change, not implemented
+
+When the owner explicitly accepts this NAT path, the smallest policy change is:
+
+1. Add `accepted_risk` to `RATIONALES` in `scripts/check_iac_security_baseline.py`.
+2. Point the existing rejection test at a different illegal token, so unknown rationales still fail.
+3. Add exactly two baseline exceptions, one per identity in the table above, with rationale `accepted_risk` and a one-line reason that names `api_https`, TCP 443, `0.0.0.0/0`, the private host, and the retained NAT path for GHCR, package mirrors, and public AWS APIs.
+
+That change adds no new exception fields, no wildcard, and no rule-wide suppression. It does not load the five previously approved High findings unless a later approval says these Criticals no longer block them. This slice does not make the policy change and does not add the exceptions.
+
+### Cost and architecture
+
+This slice adds no AWS spend. Leaving the current design in place keeps the NAT charges already in the defaults: staging uses one NAT gateway (`single_nat_gateway` default true); production uses one NAT gateway per public subnet (`single_nat_gateway` default false). NAT is billed per gateway-hour and per gigabyte processed. Interface endpoints would add hourly and data charges per endpoint per Availability Zone and would still leave AWS-0104 in place while GHCR and the package mirrors use the public internet. An S3 gateway endpoint has no hourly charge and does not remove this finding by itself.
