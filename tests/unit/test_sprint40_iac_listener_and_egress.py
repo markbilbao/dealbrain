@@ -270,3 +270,9 @@ def test_staging_rds_requires_protection_and_a_final_snapshot() -> None:
     assert "manage_master_user_password = true" in rds
     assert "deletion_protection       = var.deletion_protection" in rds
     assert "skip_final_snapshot       = var.skip_final_snapshot" in rds
+    assert 'database_insights_mode                = "standard"' in rds
+    assert "performance_insights_enabled          = true" in rds
+    assert "performance_insights_retention_period = 7" in rds
+    assert "performance_insights_kms_key_id" not in rds
+    assert "monitoring_interval" not in rds
+    assert '"advanced"' not in rds

@@ -36,11 +36,11 @@ resource "aws_db_instance" "this" {
   skip_final_snapshot       = var.skip_final_snapshot
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.name_prefix}-final"
 
-  # Copy tags to snapshots for recoverability
-  copy_tags_to_snapshot = true
-
-  # Prefer parameter-group defaults; application uses asyncpg DSN at runtime.
-  auto_minor_version_upgrade = true
+  copy_tags_to_snapshot                 = true
+  auto_minor_version_upgrade            = true
+  database_insights_mode                = "standard"
+  performance_insights_enabled          = true
+  performance_insights_retention_period = 7
 
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-postgres"
