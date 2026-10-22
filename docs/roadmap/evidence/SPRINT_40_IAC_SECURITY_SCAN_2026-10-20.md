@@ -33,7 +33,7 @@ Trivy 0.76.0 reports one result row for each scanned root and extra rows for mod
 
 `scripts/check_iac_security_baseline.py` requires Trivy `0.76.0`, parses the JSON itself, and fails closed when the report is missing, malformed, truncated, the wrong schema, the wrong artifact, or the wrong version. `MisconfSummary.Failures` must equal the number of `FAIL` findings in that result. A status other than `FAIL` or `PASS` fails the gate. Exit codes other than 0 fail the gate. Trivy's own exit code is forced to 0 when findings exist so the repository baseline, not the binary's exit code, is the verdict.
 
-A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists the two `api_https` acceptances, the five High treatments, and the two AWS-0176 password-authentication acceptances recorded below. The VPC flow-log and staging deletion-protection Medium findings were removed in source. Low findings stay unbaselined.
+A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists the two `api_https` acceptances, the five High treatments, the two AWS-0176 password-authentication acceptances, and the ten Low acceptances recorded below. The VPC flow-log and staging deletion-protection Medium findings were removed in source. The two AWS-0133 findings were removed in source. Enabling Performance Insights without a customer-managed key adds two unbaselined AWS-0078 findings. Those two are not exceptions.
 
 ## Initial scan
 
@@ -334,3 +334,48 @@ Residual risk: the master password in the AWS-managed secret remains the applica
 Staging `deletion_protection` now defaults to `true`, and staging `skip_final_snapshot` now defaults to `false`. Production behavior is unchanged. Staging backup retention stays 7 days. Staging Multi-AZ stays off. The staging example tfvars matches those defaults. No staging teardown script required the old skip.
 
 Deletion now requires deliberate operator intervention: protection must be turned off before destroy, and destroy writes a final snapshot. That snapshot may incur storage charges. The pinned scan no longer reports AWS-0177.
+
+## Owner treatment of the twelve Low findings (2026-10-22)
+
+On October 22, 2026 the owner approved ten exact `accepted_risk` exceptions and a source fix for the two AWS-0133 findings. The nine earlier exceptions are unchanged. No `terraform apply` was performed. No deploy was performed. No AWS resource was changed. This is not a Sprint 40 reconciliation and it does not start Sprint 41.
+
+### AWS-0017 CloudWatch log groups
+
+Production `module.logging` keeps service-managed encryption on `aws_cloudwatch_log_group.api`, `host`, and `migrate`. The baseline adds three `accepted_risk` rows. Each names the controlled beta, records that customer-managed encryption keys are absent on that CloudWatch log group, and requires review before wider production exposure.
+
+| Group | Lines | Fingerprint |
+|---|---|---|
+| api | 22–33 | `56153c2beb2134bc7eb835981d509c7a240aa18e30636480971ddaba6cfea0f6` |
+| host | 35–46 | `318f0c59debc260c5579c753143c6fdf6427d85b31a053a3685fb8ae845f1c79` |
+| migrate | 48–59 | `be8af6d106f002fa5417333c2867abaab914e87f64ae63f565a13013760ecf81` |
+
+### AWS-0089 S3 server access logging
+
+Five buckets stay without S3 server access logging. The baseline adds five `accepted_risk` rows. Each records that S3 server access logging is absent and requires review before wider production exposure.
+
+| Bucket | Caller | Lines | Fingerprint |
+|---|---|---|---|
+| ALB access logs | production `module.logging` | 61–71 | `4abda7579a6361f0a0734027b9318a9080c6aac7a64d34236db70c4a888d9c07` |
+| release artifacts | staging `module.release_artifacts` | 12–23 | `e3053edc21bbd18841654e03ca7d06626d22befbbb7cd36ff2d71fa3aaf51c89` |
+| release artifacts | production `module.release_artifacts` | 12–23 | `e8bf73e72445f0b5b33db881b99caf497172d76b624a35e33f195b18818fe05c` |
+| VPC flow logs | staging `module.networking` | 184–191 | `125d716eb7d515ffd2e36df7fd025653ab36496e3ca7f2a708eeb56415427cf6` |
+| VPC flow logs | production `module.networking` | 184–191 | `35e2f7db63b0a19ff5dfa5ab45d65e74c339c3eb5301f62771d615a711a948b9` |
+
+### AWS-0098 Secrets Manager
+
+Both secret modules keep the AWS managed key `aws/secretsmanager`. The baseline adds two `accepted_risk` rows. Each records that customer-managed encryption keys are absent on the Secrets Manager resources and requires review before wider production exposure. These rows do not cover the RDS-managed master secret.
+
+| Environment | Fingerprint |
+|---|---|
+| staging | `f3bc24f32f07b4e1a9e962d8ca96b42c6dd233a0a1b4b9ce6e51904adbfa0894` |
+| production | `c297fffc3fbf710a044d003d8cffe64be9fb0c5fc814d70b744399f4b2207ae1` |
+
+### AWS-0133 Database Insights Standard
+
+The locked AWS provider is `5.100.0` in the account, staging, and production lock files. That provider's `aws_db_instance` schema includes `database_insights_mode` (`standard` or `advanced`), `performance_insights_enabled`, and `performance_insights_retention_period`. Retention `7` is an allowed value. None of those three attributes is `ForceNew`. Create and modify both send them on `CreateDBInstance` and `ModifyDBInstance`. The module sets Standard mode, Performance Insights on, and seven-day retention for the shared RDS module used by staging and production. It does not set Advanced mode, a retention above 7 days, `performance_insights_kms_key_id`, Enhanced Monitoring, or `apply_immediately`.
+
+PostgreSQL authentication, instance classes, backup retention, deletion protection, final snapshots, storage encryption, and the private network settings are unchanged. The `aws_db_instance.this` block remains lines 10–48, so the two AWS-0176 identities stay the same.
+
+AWS documents that modifying a DB instance to enable Database Insights Standard does not cause downtime. The provider update path is `ModifyDBInstance`, so a later apply is an in-place change rather than a replacement. `apply_immediately` stays unset. This slice does not apply that change.
+
+The pinned Trivy 0.76.0 rescan no longer reports AWS-0133. It reports two new Low AWS-0078 findings, one per environment, on the same `module.rds` block at lines 10–48. The title is "Performance Insights encryption should use Customer Managed Keys." Staging fingerprint `fb297b059e4a46f9e77f937c731e042d1c4697d9e5e1095b8ee94006b79f3c86`. Production fingerprint `9af8c32be9274932eb861ec51721436edea85898f8dca8ab727ad6ee909771a7`. The check fires because `performance_insights_kms_key_id` is unset and RDS uses its AWS managed key. A customer-managed key was not added. These two findings are not baselined. The IaC gate stays fail-closed on them. Another owner decision is required before an exception or a customer-managed key.

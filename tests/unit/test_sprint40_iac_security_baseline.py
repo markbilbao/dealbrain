@@ -498,6 +498,134 @@ _MEDIUM_REASON_MARKERS = (
     "least-privileged application DB credentials before launch",
     "IAM authentication migration is a separate decision",
 )
+_LOW_REASON_MARKERS = (
+    "explicit owner acceptance",
+    "controlled beta",
+    "Residual risk",
+    "Review required before wider production exposure",
+)
+_LOW_EXCEPTIONS = {
+    "56153c2beb2134bc7eb835981d509c7a240aa18e30636480971ddaba6cfea0f6": {
+        "rule_id": "AWS-0017",
+        "title": "CloudWatch log groups should be encrypted using CMK",
+        "path": "infra/terraform/modules/logging/main.tf",
+        "start_line": 22,
+        "end_line": 33,
+        "resource": "module.logging",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.logging",
+        "namespace": "builtin.aws.cloudwatch.aws0017",
+        "markers": ("customer-managed encryption keys are absent", "api CloudWatch log group"),
+    },
+    "318f0c59debc260c5579c753143c6fdf6427d85b31a053a3685fb8ae845f1c79": {
+        "rule_id": "AWS-0017",
+        "title": "CloudWatch log groups should be encrypted using CMK",
+        "path": "infra/terraform/modules/logging/main.tf",
+        "start_line": 35,
+        "end_line": 46,
+        "resource": "module.logging",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.logging",
+        "namespace": "builtin.aws.cloudwatch.aws0017",
+        "markers": ("customer-managed encryption keys are absent", "host CloudWatch log group"),
+    },
+    "be8af6d106f002fa5417333c2867abaab914e87f64ae63f565a13013760ecf81": {
+        "rule_id": "AWS-0017",
+        "title": "CloudWatch log groups should be encrypted using CMK",
+        "path": "infra/terraform/modules/logging/main.tf",
+        "start_line": 48,
+        "end_line": 59,
+        "resource": "module.logging",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.logging",
+        "namespace": "builtin.aws.cloudwatch.aws0017",
+        "markers": ("customer-managed encryption keys are absent", "migrate CloudWatch log group"),
+    },
+    "4abda7579a6361f0a0734027b9318a9080c6aac7a64d34236db70c4a888d9c07": {
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "path": "infra/terraform/modules/logging/main.tf",
+        "start_line": 61,
+        "end_line": 71,
+        "resource": "module.logging",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.logging",
+        "namespace": "builtin.aws.s3.aws0089",
+        "markers": ("S3 server access logging is absent", "ALB access-log bucket"),
+    },
+    "e3053edc21bbd18841654e03ca7d06626d22befbbb7cd36ff2d71fa3aaf51c89": {
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "path": "infra/terraform/modules/release_artifacts/main.tf",
+        "start_line": 12,
+        "end_line": 23,
+        "resource": "module.release_artifacts",
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+        "caller_resource": "module.release_artifacts",
+        "namespace": "builtin.aws.s3.aws0089",
+        "markers": ("S3 server access logging is absent", "release-artifacts bucket"),
+    },
+    "e8bf73e72445f0b5b33db881b99caf497172d76b624a35e33f195b18818fe05c": {
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "path": "infra/terraform/modules/release_artifacts/main.tf",
+        "start_line": 12,
+        "end_line": 23,
+        "resource": "module.release_artifacts",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.release_artifacts",
+        "namespace": "builtin.aws.s3.aws0089",
+        "markers": ("S3 server access logging is absent", "release-artifacts bucket"),
+    },
+    "125d716eb7d515ffd2e36df7fd025653ab36496e3ca7f2a708eeb56415427cf6": {
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "path": "infra/terraform/modules/networking/main.tf",
+        "start_line": 184,
+        "end_line": 191,
+        "resource": "module.networking",
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+        "caller_resource": "module.networking",
+        "namespace": "builtin.aws.s3.aws0089",
+        "markers": ("S3 server access logging is absent", "VPC flow-log bucket"),
+    },
+    "35e2f7db63b0a19ff5dfa5ab45d65e74c339c3eb5301f62771d615a711a948b9": {
+        "rule_id": "AWS-0089",
+        "title": "S3 Bucket Logging",
+        "path": "infra/terraform/modules/networking/main.tf",
+        "start_line": 184,
+        "end_line": 191,
+        "resource": "module.networking",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.networking",
+        "namespace": "builtin.aws.s3.aws0089",
+        "markers": ("S3 server access logging is absent", "VPC flow-log bucket"),
+    },
+    "f3bc24f32f07b4e1a9e962d8ca96b42c6dd233a0a1b4b9ce6e51904adbfa0894": {
+        "rule_id": "AWS-0098",
+        "title": "Secrets Manager should use customer managed keys",
+        "path": "infra/terraform/modules/secrets/main.tf",
+        "start_line": 18,
+        "end_line": 30,
+        "resource": "module.secrets",
+        "caller_path": "infra/terraform/environments/staging/main.tf",
+        "caller_resource": "module.secrets",
+        "namespace": "builtin.aws.ssm.aws0098",
+        "markers": ("customer-managed encryption keys are absent", "Secrets Manager resources"),
+    },
+    "c297fffc3fbf710a044d003d8cffe64be9fb0c5fc814d70b744399f4b2207ae1": {
+        "rule_id": "AWS-0098",
+        "title": "Secrets Manager should use customer managed keys",
+        "path": "infra/terraform/modules/secrets/main.tf",
+        "start_line": 18,
+        "end_line": 30,
+        "resource": "module.secrets",
+        "caller_path": "infra/terraform/environments/production/main.tf",
+        "caller_resource": "module.secrets",
+        "namespace": "builtin.aws.ssm.aws0098",
+        "markers": ("customer-managed encryption keys are absent", "Secrets Manager resources"),
+    },
+}
 
 
 def _finding_from_exception(item: dict) -> Finding:
@@ -523,14 +651,16 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
     assert data["scanner_version"] == TRIVY_VERSION
     assert data["scope"] == SCAN_RELATIVE
     exceptions = data["exceptions"]
-    assert len(exceptions) == 9
+    assert len(exceptions) == 19
     critical = [item for item in exceptions if item["severity"] == "CRITICAL"]
     high = [item for item in exceptions if item["severity"] == "HIGH"]
     medium = [item for item in exceptions if item["severity"] == "MEDIUM"]
+    low = [item for item in exceptions if item["severity"] == "LOW"]
     assert len(critical) == 2
     assert len(high) == 5
     assert len(medium) == 2
-    assert not any(item["severity"] in {"LOW", "UNKNOWN"} for item in exceptions)
+    assert len(low) == 10
+    assert not any(item["severity"] == "UNKNOWN" for item in exceptions)
     by_fingerprint = {item["fingerprint"]: item for item in critical}
     assert set(by_fingerprint) == set(_API_HTTPS_FINGERPRINTS.values())
     findings: list[Finding] = []
@@ -588,6 +718,27 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         assert item["namespace"] == "builtin.aws.rds.aws0176"
         for marker in _MEDIUM_REASON_MARKERS:
             assert marker in item["reason"]
+    assert {item["fingerprint"] for item in low} == set(_LOW_EXCEPTIONS)
+    for item in low:
+        expected = _LOW_EXCEPTIONS[item["fingerprint"]]
+        assert item["rationale"] == "accepted_risk"
+        assert item["severity"] == "LOW"
+        for field in (
+            "rule_id",
+            "title",
+            "path",
+            "start_line",
+            "end_line",
+            "resource",
+            "caller_path",
+            "caller_resource",
+            "namespace",
+        ):
+            assert item[field] == expected[field]
+        for marker in _LOW_REASON_MARKERS:
+            assert marker in item["reason"]
+        for marker in expected["markers"]:
+            assert marker in item["reason"]
     assert compare(accepted, exceptions) == []
     other_critical = _finding()
     assert other_critical.severity == "CRITICAL"
@@ -627,10 +778,10 @@ def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
         )
     ]
     stale = compare([], exceptions)
-    assert len(stale) == 9
+    assert len(stale) == 19
     assert all(line.startswith("stale baseline exception") for line in stale)
     one_caller = compare(findings[:1], exceptions)
-    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 8
+    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 18
     changed = json.loads(json.dumps(exceptions))
     changed[0]["fingerprint"] = "b" * 64
     path = _write_baseline(tmp_path / "changed-fingerprint.json", _baseline(exceptions=changed))
