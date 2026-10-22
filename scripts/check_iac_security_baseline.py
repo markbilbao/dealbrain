@@ -13,8 +13,8 @@ The scan target is ``infra/terraform`` only. The gate parses Trivy's JSON
 itself. ``.trivyignore``, ``trivy.yaml``, and ``#trivy:ignore`` are rejected.
 A finding is accepted only when the baseline names that same rule, severity,
 title, file, line range, resource, caller, namespace, and fingerprint.
-The baseline starts empty. Critical and high findings are not given a
-convenience exception by this gate.
+``accepted_risk`` records one explicit owner acceptance of that one finding.
+Critical and high findings are not given a convenience exception by this gate.
 
 Usage:
     uv run python scripts/check_iac_security_baseline.py
@@ -43,7 +43,7 @@ SCAN_RELATIVE = "infra/terraform"
 SCOPE = "infra/terraform"
 CHECKS = "embedded"
 SEVERITIES = ("UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL")
-RATIONALES = ("false_positive", "not_applicable")
+RATIONALES = ("false_positive", "not_applicable", "accepted_risk")
 REQUIRED_ROOTS = (
     "account",
     "environments/production",

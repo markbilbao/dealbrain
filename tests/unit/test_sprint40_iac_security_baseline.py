@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from scripts.check_iac_security_baseline import (
+    RATIONALES,
     REQUIRED_ROOTS,
     SCAN_RELATIVE,
     TRIVY_LINUX_AMD64_SHA256,
@@ -322,10 +323,11 @@ def test_wildcard_and_malformed_exceptions_are_rejected(tmp_path: Path) -> None:
     path = _write_baseline(tmp_path / "fingerprint.json", _baseline(exceptions=[bad_fingerprint]))
     with pytest.raises(GateError, match="fingerprint does not match"):
         load_baseline(path)
-    accepted = _exception_for(finding, rationale="accepted_risk")
-    path = _write_baseline(tmp_path / "risk.json", _baseline(exceptions=[accepted]))
-    with pytest.raises(GateError, match="rationale"):
-        load_baseline(path)
+    for rationale in ("waived", "risk_accepted", "accepted"):
+        unknown = _exception_for(finding, rationale=rationale)
+        path = _write_baseline(tmp_path / f"{rationale}.json", _baseline(exceptions=[unknown]))
+        with pytest.raises(GateError, match="rationale"):
+            load_baseline(path)
     missing = _exception_for(finding)
     del missing["resource"]
     path = _write_baseline(tmp_path / "missing.json", _baseline(exceptions=[missing]))
@@ -394,17 +396,116 @@ def test_scanner_cannot_silently_ignore_findings(tmp_path: Path) -> None:
         parse_trivy_document(document, ROOT)
 
 
-def test_committed_baseline_is_empty_and_a_synthetic_finding_fails() -> None:
+_API_HTTPS_FINGERPRINTS = {
+    "infra/terraform/environments/staging/main.tf": (
+        "9e8497f7734dd975357b9c7cb37bf14d95e1267bdbf294098a2aeecfce90c9e9"
+    ),
+    "infra/terraform/environments/production/main.tf": (
+        "d0ad7490521db278f1841a1efb7c6c40f0656309d04d97c8f8ed345dcfd1d277"
+    ),
+}
+_API_HTTPS_REASON_MARKERS = (
+    "api_https",
+    "TCP 443 to 0.0.0.0/0",
+    "private EC2 application host",
+    "NAT egress architecture",
+    "required external HTTPS services",
+    "explicit owner risk acceptance",
+)
+
+
+def _api_https_finding(caller_path: str) -> Finding:
+    return _finding(
+        start_line=77,
+        end_line=77,
+        resource="aws_vpc_security_group_egress_rule.api_https",
+        caller_path=caller_path,
+    )
+
+
+def test_committed_api_https_acceptances_are_exact(tmp_path: Path) -> None:
+    assert RATIONALES == ("false_positive", "not_applicable", "accepted_risk")
     data = load_baseline(BASELINE)
-    assert data["exceptions"] == []
     assert data["scanner_version"] == TRIVY_VERSION
     assert data["scope"] == SCAN_RELATIVE
-    synthetic = _finding()
-    assert compare([synthetic], data["exceptions"]) == [
-        f"unbaselined IaC finding: {synthetic.label()}"
+    exceptions = data["exceptions"]
+    assert len(exceptions) == 2
+    by_caller = {item["caller_path"]: item for item in exceptions}
+    assert set(by_caller) == set(_API_HTTPS_FINGERPRINTS)
+    findings: list[Finding] = []
+    for caller_path, digest in _API_HTTPS_FINGERPRINTS.items():
+        item = by_caller[caller_path]
+        assert item["fingerprint"] == digest
+        assert item["rationale"] == "accepted_risk"
+        assert item["rule_id"] == "AWS-0104"
+        assert item["severity"] == "CRITICAL"
+        assert item["resource"] == "aws_vpc_security_group_egress_rule.api_https"
+        assert item["path"] == "infra/terraform/modules/security_groups/main.tf"
+        assert item["start_line"] == 77
+        assert item["end_line"] == 77
+        assert item["caller_resource"] == "module.security_groups"
+        assert item["namespace"] == "builtin.aws.ec2.aws0104"
+        assert "*" not in json.dumps(item)
+        assert "?" not in json.dumps(item)
+        assert len(item["reason"]) <= 300
+        for marker in _API_HTTPS_REASON_MARKERS:
+            assert marker in item["reason"]
+        finding = _api_https_finding(caller_path)
+        assert finding.fingerprint == digest
+        assert exception_matches(finding, item)
+        findings.append(finding)
+    assert compare(findings, exceptions) == []
+    other_critical = _finding()
+    assert other_critical.severity == "CRITICAL"
+    assert other_critical.resource != "aws_vpc_security_group_egress_rule.api_https"
+    regressions = compare([*findings, other_critical], exceptions)
+    assert regressions == [f"unbaselined IaC finding: {other_critical.label()}"]
+    high = _finding(
+        severity="HIGH",
+        rule_id="AWS-0053",
+        namespace="builtin.aws.elb.aws0053",
+        resource="aws_lb.this",
+        path="infra/terraform/modules/alb/main.tf",
+        start_line=3,
+        end_line=3,
+    )
+    medium = _finding(
+        severity="MEDIUM",
+        rule_id="AWS-0178",
+        namespace="builtin.aws.ec2.aws0178",
+    )
+    low = _finding(
+        severity="LOW",
+        rule_id="AWS-0017",
+        namespace="builtin.aws.cloudwatch.aws0017",
+    )
+    remaining = compare([*findings, other_critical, high, medium, low], exceptions)
+    assert [line for line in remaining if "unbaselined" in line] == [
+        f"unbaselined IaC finding: {item.label()}"
+        for item in sorted(
+            (other_critical, high, medium, low),
+            key=lambda item: (item.path, item.start_line, item.rule_id, item.caller_path),
+        )
     ]
-    assert run(BASELINE, scan=lambda: [synthetic]) == 1
-    assert run(BASELINE, scan=lambda: []) == 0
+    stale = compare([], exceptions)
+    assert len(stale) == 2
+    assert all(line.startswith("stale baseline exception") for line in stale)
+    one_caller = compare(findings[:1], exceptions)
+    assert sum(line.startswith("stale baseline exception") for line in one_caller) == 1
+    assert not any(line.startswith("unbaselined IaC finding") for line in one_caller)
+    changed = json.loads(json.dumps(exceptions))
+    changed[0]["fingerprint"] = "b" * 64
+    path = _write_baseline(tmp_path / "changed-fingerprint.json", _baseline(exceptions=changed))
+    with pytest.raises(GateError, match="fingerprint does not match"):
+        load_baseline(path)
+    broad = json.loads(json.dumps(exceptions[0]))
+    broad["resource"] = "aws_*"
+    path = _write_baseline(tmp_path / "broad.json", _baseline(exceptions=[broad]))
+    with pytest.raises(GateError, match="wildcard"):
+        load_baseline(path)
+    assert run(BASELINE, scan=lambda: findings) == 0
+    assert run(BASELINE, scan=lambda: [*findings, other_critical]) == 1
+    assert run(BASELINE, scan=lambda: []) == 1
 
 
 def test_ci_runs_the_gate_in_the_terraform_job_without_aws() -> None:

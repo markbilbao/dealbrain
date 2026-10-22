@@ -33,7 +33,7 @@ Trivy 0.76.0 reports one result row for each scanned root and extra rows for mod
 
 `scripts/check_iac_security_baseline.py` requires Trivy `0.76.0`, parses the JSON itself, and fails closed when the report is missing, malformed, truncated, the wrong schema, the wrong artifact, or the wrong version. `MisconfSummary.Failures` must equal the number of `FAIL` findings in that result. A status other than `FAIL` or `PASS` fails the gate. Exit codes other than 0 fail the gate. Trivy's own exit code is forced to 0 when findings exist so the repository baseline, not the binary's exit code, is the verdict.
 
-A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards, cannot use `accepted_risk`, and must carry a fingerprint that matches those fields. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`, and `exceptions: []`.
+A finding identity is the rule id, severity, exact title, repository path, start and end line, resource address, caller path, caller resource, namespace, and the SHA-256 of that normalized identity. Severity alone is not an identity. Baseline exceptions cannot use wildcards and must carry a fingerprint that matches those fields. Allowed rationales are `false_positive`, `not_applicable`, and `accepted_risk`. `accepted_risk` records one explicit owner acceptance of one exact finding. One exception matches one finding. A leftover exception is stale, or excess when it repeats a finding already matched. The committed baseline is version 1, scanner `trivy`, scope `infra/terraform`, checks `embedded`. It began empty. It now lists only the two `api_https` acceptances in the owner-acceptance section below.
 
 ## Initial scan
 
@@ -242,3 +242,20 @@ That change adds no new exception fields, no wildcard, and no rule-wide suppress
 ### Cost and architecture
 
 This slice adds no AWS spend. Leaving the current design in place keeps the NAT charges already in the defaults: staging uses one NAT gateway (`single_nat_gateway` default true); production uses one NAT gateway per public subnet (`single_nat_gateway` default false). NAT is billed per gateway-hour and per gigabyte processed. Interface endpoints would add hourly and data charges per endpoint per Availability Zone and would still leave AWS-0104 in place while GHCR and the package mirrors use the public internet. An S3 gateway endpoint has no hourly charge and does not remove this finding by itself.
+
+## Owner acceptance of the two `api_https` findings (2026-10-22)
+
+On October 22, 2026 the owner explicitly accepted the residual outbound HTTPS risk for the two AWS-0104 findings below, and approved retaining outbound TCP 443 to `0.0.0.0/0` through NAT for the current PH-first controlled public beta. That acceptance covers these two findings only. It does not approve unrestricted all-protocol egress. It does not approve the five High findings or any Medium or Low finding.
+
+`accepted_risk` is now an allowed rationale in `scripts/check_iac_security_baseline.py`. The baseline lists exactly two exceptions. Each one uses the full identity from the pinned Trivy 0.76.0 scan, rationale `accepted_risk`, and a one-line reason naming `api_https`, TCP 443 to `0.0.0.0/0`, the private EC2 application host, the NAT egress architecture, the required external HTTPS services, and the explicit owner risk acceptance.
+
+| Environment | Caller | Fingerprint |
+|---|---|---|
+| staging | `infra/terraform/environments/staging/main.tf` `module.security_groups` | `9e8497f7734dd975357b9c7cb37bf14d95e1267bdbf294098a2aeecfce90c9e9` |
+| production | `infra/terraform/environments/production/main.tf` `module.security_groups` | `d0ad7490521db278f1841a1efb7c6c40f0656309d04d97c8f8ed345dcfd1d277` |
+
+Both rows are resource `aws_vpc_security_group_egress_rule.api_https`, path `infra/terraform/modules/security_groups/main.tf` lines 77–77, namespace `builtin.aws.ec2.aws0104`, severity CRITICAL, title "A security group rule should not allow unrestricted egress to any IP address."
+
+Residual risk that remains accepted for this beta: any process on the private API instance can open TCP 443 to any IPv4 address, and NAT translates that connection to the internet. The rule allows no other port and no other protocol. Ingress stays TCP 8000 from the ALB security group. A person who already has code execution on that host can send HTTPS to destinations other than GHCR, the package mirrors, and AWS, because the security group cannot filter by hostname.
+
+Outbound controls need another review before wider production exposure. The five High findings and the Medium and Low findings stay unbaselined. The IaC gate still fails closed on those remaining findings. No `terraform apply` was performed. No deploy was performed. No AWS resource was changed. This is not a Sprint 40 reconciliation.
