@@ -411,4 +411,4 @@ The official GitHub musl archive `uv-x86_64-unknown-linux-musl.tar.gz` matched r
 
 `uv 0.13.5` `lock --check` against the committed `uv.lock` (version 1, revision 5) exited 0 and left the lock bytes unchanged. `uv sync --no-dev --no-install-project` in a copy of `pyproject.toml` and `uv.lock` installed the 31 locked runtime packages and left the lock bytes unchanged. A follow-up `uv sync --no-dev --no-install-project --locked --offline` also succeeded.
 
-The Dockerfile command remains `uv sync --no-dev --no-install-project`. It does not pass `--frozen` or `--locked`. With this uv and this lock, the command did not rewrite `uv.lock`. If `pyproject.toml` and `uv.lock` later diverge, that command can update the copied lock inside the image and install the new resolution. `--locked` would fail that build. `--frozen` would sync without updating the lock. The command was left unchanged.
+The dependency install is now `uv sync --locked --no-dev --no-install-project`. `--locked` fails the build when `uv.lock` would change. `uv.lock` and the application dependencies are unchanged. This is not a Sprint 40 reconciliation and it does not start Sprint 41.

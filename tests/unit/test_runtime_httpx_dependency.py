@@ -30,7 +30,7 @@ def test_resend_adapter_imports_httpx() -> None:
 
 def test_production_sync_excludes_dev_extras() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-    assert "uv sync --no-dev --no-install-project" in dockerfile
+    assert "uv sync --locked --no-dev --no-install-project" in dockerfile
 
 
 def test_production_uv_image_is_digest_pinned() -> None:

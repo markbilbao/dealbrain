@@ -25,7 +25,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c12
 
 COPY pyproject.toml ./
 COPY uv.lock* ./
-RUN uv sync --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project
 
 # --- Runtime stage ---
 FROM base AS runtime
