@@ -19,7 +19,7 @@ variable "security_group_id" {
 }
 
 variable "certificate_arn" {
-  description = "ACM certificate ARN for HTTPS. Empty string disables HTTPS listener (HTTP only for bootstrap)."
+  description = "ACM certificate ARN for the HTTPS listener. Empty does not create an HTTP listener."
   type        = string
   default     = ""
 }

@@ -51,7 +51,7 @@ Today this step fails closed. Owner/ops (not this agent) must apply isolated pro
 - Do **not** use the staging ALB as production.
 - ACM (or Cloudflare origin TLS) covering `piqsavi.com` and `www.piqsavi.com`.
 - ALB target group health `/ready`.
-- HTTPS listener + HTTP→HTTPS redirect (`certificate_arn` non-empty).
+- HTTPS listener + HTTP→HTTPS redirect (`certificate_arn` non-empty). An empty ARN does not create an HTTP listener that forwards application traffic.
 
 Re-verify live: production ALB `/ready` 200 **before** DNS.
 

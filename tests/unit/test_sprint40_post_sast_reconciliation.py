@@ -234,7 +234,10 @@ def test_sast_gate_shape_still_matches_the_reading() -> None:
     assert "terraform validate" in ci
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "python:3.12-alpine3.24" in dockerfile
-    assert "ghcr.io/astral-sh/uv:latest" in dockerfile
+    assert (
+        "ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff"
+        in dockerfile
+    )
     build = (ROOT / ".github/workflows/build-image.yml").read_text(encoding="utf-8")
     assert "push: false" in build
     assert "push: true" not in build

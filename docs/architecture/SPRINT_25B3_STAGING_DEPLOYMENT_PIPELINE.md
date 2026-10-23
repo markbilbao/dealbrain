@@ -609,7 +609,7 @@ Older directories beyond current + previous may be pruned after a successful dep
 | Local probe interval | 5s |
 | Local max wait | 180s after recreate |
 | ALB max wait | 300s (matches TG interval×thresholds) |
-| TLS | ALB may be HTTP-only if ACM empty — verify via TG health + localhost; public HTTPS when cert set |
+| TLS | Empty ACM ARN creates no public application listener. Verify via target-group health and localhost. Public HTTPS exists when the certificate ARN is set |
 
 Do **not** weaken Sprint 22 probe semantics.
 

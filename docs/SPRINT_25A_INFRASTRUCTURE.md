@@ -90,7 +90,7 @@ terraform init -backend=false && terraform validate
 | App secrets path | `dealbrain/staging/*` | `dealbrain/production/*` |
 | RDS master secret | Distinct AWS-managed Secrets Manager ARN | Distinct AWS-managed Secrets Manager ARN |
 | IAM | Read staging app + staging RDS secret; **deny** production path | Read production app + production RDS secret; **deny** staging path |
-| RDS backups | ≥7 days | ≥30 days, deletion protection, Multi-AZ |
+| RDS backups | ≥7 days, deletion protection, final snapshot on destroy | ≥30 days, deletion protection, Multi-AZ, final snapshot on destroy |
 | State | Separate key / backend | Separate key / backend |
 
 Production credentials must never be granted to staging roles or hosts.
@@ -143,8 +143,9 @@ docker compose -f infra/compose/docker-compose.base.yml \
 
 ## Security group model
 
-- ALB SG: 80/443 from `allowed_ingress_cidrs`
+- ALB SG: 80/443 from `allowed_ingress_cidrs`; egress TCP 8000 to the API SG only
 - API SG: port 8000 **only** from ALB SG
+- API SG egress: TCP 443 to `0.0.0.0/0` for HTTPS APIs (GHCR, Secrets Manager, SSM, CloudWatch); TCP 5432 to the RDS SG only. No all-protocol egress and no DNS security-group rule
 - RDS SG: port 5432 **only** from API SG; **explicit empty egress** (no outbound)
 - RDS `publicly_accessible = false`
 
@@ -155,7 +156,9 @@ Target group health check path is fixed to `/ready` (Sprint 22 readiness). Unrea
 ## TLS assumptions
 
 - Public TLS terminates at the ALB (ACM certificate ARN variable)
-- Empty `alb_certificate_arn` → HTTP listener only (bootstrap); HTTPS listener created when ARN is set
+- Empty `alb_certificate_arn` does not create an HTTP listener. The ALB has no public application listener until a certificate ARN is set
+- HTTPS listener is created only when the ARN is set
+- Port 80 redirects to HTTPS only when the ARN is set and HTTP redirect is enabled
 - App may speak HTTP to the ALB on the private path; `X-Forwarded-*` trust is an edge concern
 
 ## Production configuration gate
@@ -236,7 +239,10 @@ evidence before merge — do not claim local validate/build passed.
 
 ## Teardown cautions
 
-- Production RDS has deletion protection and requires a final snapshot
+- Staging and production RDS have deletion protection and require a final snapshot
+- Destroying either instance requires an operator to disable deletion protection first
+- That final snapshot may incur storage charges
+- Staging backup retention stays at least 7 days and Multi-AZ stays off; production stays at least 30 days and Multi-AZ
 - Secrets have recovery windows — do not destroy casually
 - Never copy unsanitized production data to staging
 

@@ -135,7 +135,7 @@ variable "skip_final_snapshot" {
 }
 
 variable "alb_certificate_arn" {
-  description = "ACM certificate ARN for HTTPS. Required before public traffic."
+  description = "ACM certificate ARN for HTTPS. Required before public traffic. Empty does not create a public application listener."
   type        = string
   default     = ""
 }

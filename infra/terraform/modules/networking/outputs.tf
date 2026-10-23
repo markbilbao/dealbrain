@@ -22,3 +22,8 @@ output "nat_gateway_ids" {
   description = "NAT gateway IDs (empty when disabled)."
   value       = aws_nat_gateway.this[*].id
 }
+
+output "flow_logs_bucket_name" {
+  description = "Dedicated S3 bucket for this VPC's REJECT flow logs."
+  value       = aws_s3_bucket.flow_logs.bucket
+}

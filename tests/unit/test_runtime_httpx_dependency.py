@@ -30,4 +30,20 @@ def test_resend_adapter_imports_httpx() -> None:
 
 def test_production_sync_excludes_dev_extras() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
-    assert "uv sync --no-dev --no-install-project" in dockerfile
+    assert "uv sync --locked --no-dev --no-install-project" in dockerfile
+
+
+def test_production_uv_image_is_digest_pinned() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    pinned = (
+        "COPY --from=ghcr.io/astral-sh/uv:0.13.5@sha256:"
+        "32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff "
+        "/uv /uvx /bin/"
+    )
+    assert pinned in dockerfile
+    python_base = (
+        "python:3.12-alpine3.24@sha256:"
+        "92abd2ba1bdfb48b1e2ac224b582dd1558d0d4bb11c903b126b5bf9c448fd656"
+    )
+    assert python_base in dockerfile
+    assert "ghcr.io/astral-sh/uv:latest" not in dockerfile

@@ -1,6 +1,10 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.12-alpine3.24 AS base
+# Official library/python tag 3.12-alpine3.24.
+# Manifest-list digest verified from registry-1.docker.io on 2026-10-22.
+# linux/amd64 manifest: sha256:9b98a8d37794ca093ba8d5afe1ffac52f5a15168b9b4e67594d86c20e14fa681
+# CPython 3.12.15. Alpine 3.24.3 (/etc/alpine-release).
+FROM python:3.12-alpine3.24@sha256:92abd2ba1bdfb48b1e2ac224b582dd1558d0d4bb11c903b126b5bf9c448fd656 AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -12,11 +16,16 @@ WORKDIR /app
 # --- Dependencies stage: uv and uvx are not copied into the runtime stage ---
 FROM base AS deps
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Official ghcr.io/astral-sh/uv tag 0.13.5.
+# Manifest-list digest verified from ghcr.io on 2026-10-22.
+# linux/amd64 manifest: sha256:a12ede1e6dc90d3b3e600d0901731e71f0ab0f4d72683ea097b76c19c43cc8df
+# uv 0.13.5 (x86_64-unknown-linux-musl). Source https://github.com/astral-sh/uv
+# revision 46776a95d6686ac0160c10611327ce491e6b202f (GitHub release 0.13.5).
+COPY --from=ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff /uv /uvx /bin/
 
 COPY pyproject.toml ./
 COPY uv.lock* ./
-RUN uv sync --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project
 
 # --- Runtime stage ---
 FROM base AS runtime
